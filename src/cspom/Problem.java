@@ -77,7 +77,7 @@ public class Problem {
 	 * @param name :
 	 *            the name of the problem
 	 */
-	public Problem(String name) {
+	public Problem(final String name) {
 		this.name = name;
 
 		variables = new ArrayList<Variable>();

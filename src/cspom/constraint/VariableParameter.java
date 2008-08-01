@@ -1,7 +1,5 @@
 package cspom.constraint;
 
-import java.util.regex.Pattern;
-
 import cspom.variable.Variable;
 
 public class VariableParameter implements Parameter {
@@ -11,7 +9,7 @@ public class VariableParameter implements Parameter {
 //	private Number current;
 	public final static String PATTERN = "\\ *[a-zA-Z_][a-zA-Z_0-9]*\\ *";
 
-	public VariableParameter(String name, Variable variable) {
+	public VariableParameter(final String name, final Variable variable) {
 		this.variable = variable;
 		this.name = name;
 	}
@@ -36,10 +34,4 @@ public class VariableParameter implements Parameter {
 		return name ;
 	}
 	
-	public static void main(String[] args) {
-		Pattern pattern = Pattern.compile(PATTERN);
-		System.out.println(pattern.matcher(args[0]).matches());
-	}
-	
-
 }

@@ -10,8 +10,8 @@ public class ExtensionConstraint extends AbstractConstraint {
 
 	private final Extension relation;
 
-	public ExtensionConstraint(String name, List<Variable> scope,
-			Extension relation) {
+	public ExtensionConstraint(final String name, final List<Variable> scope,
+			final Extension relation) {
 		super(name, scope);
 		this.relation = relation;
 	}

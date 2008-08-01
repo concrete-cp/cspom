@@ -19,6 +19,7 @@
 
 package cspom;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,34 +53,22 @@ public final class ProblemHandler extends DefaultHandler {
 	 */
 	private final Map<String, Domain> domains;
 
-	private int nbDomains = 0;
-
 	/**
 	 * Liste des variables.
 	 */
 	private final Map<String, Variable> variables;
-
-	// private final List<Variable> orderedVariables;
-
-	private int nbVariables = 0;
 
 	/**
 	 * Liste des relations définissant les contraintes.
 	 */
 	private final Map<String, Extension> relations;
 
-	private int nbRelations = 0;
-
 	private final Map<String, Predicate> predicates;
-
-	private int nbPredicates = 0;
 
 	/**
 	 * Liste des contraintes.
 	 */
 	private final Map<String, Constraint> constraints;
-
-	private int nbConstraints = 0;
 
 	private Position position = Position.UNKNOWN;
 
@@ -96,7 +85,7 @@ public final class ProblemHandler extends DefaultHandler {
 
 	private final Problem problem;
 
-	public ProblemHandler(Problem problem) {
+	public ProblemHandler(final Problem problem) {
 		super();
 
 		this.problem = problem;
@@ -163,37 +152,20 @@ public final class ProblemHandler extends DefaultHandler {
 	public void startElement(final String uri, final String localName,
 			final String qName, final Attributes attributes) {
 
-		if ("domains".equals(qName)) {
-
-			nbDomains = Integer.parseInt(attributes.getValue("nbDomains"));
-
-		} else if ("domain".equals(qName)) {
+		if ("domain".equals(qName)) {
 			position = Position.DOMAIN;
 			copyAttributes(attributes, new String[] { "name" });
-
-		} else if ("variables".equals(qName)) {
-
-			nbVariables = Integer.parseInt(attributes.getValue("nbVariables"));
 
 		} else if ("variable".equals(qName)) {
 
 			addVariable(attributes.getValue("name"), attributes
 					.getValue("domain"));
 
-		} else if ("relations".equals(qName)) {
-
-			nbRelations = Integer.parseInt(attributes.getValue("nbRelations"));
-
 		} else if ("relation".equals(qName)) {
 			position = Position.RELATION;
 
 			copyAttributes(attributes, new String[] { "name", "nbTuples",
 					"arity", "semantics" });
-
-		} else if ("predicates".equals(qName)) {
-
-			nbPredicates = Integer
-					.parseInt(attributes.getValue("nbPredicates"));
 
 		} else if ("predicate".equals(qName)) {
 
@@ -212,11 +184,6 @@ public final class ProblemHandler extends DefaultHandler {
 				&& Position.PREDICATE.equals(position)) {
 
 			position = Position.PREDICATE_EXPRESSION;
-
-		} else if ("constraints".equals(qName)) {
-
-			nbConstraints = Integer.parseInt(attributes
-					.getValue("nbConstraints"));
 
 		} else if ("constraint".equals(qName)) {
 
@@ -239,12 +206,12 @@ public final class ProblemHandler extends DefaultHandler {
 	}
 
 	@Override
-	public void characters(final char[] ch, final int start, final int length) {
+	public void characters(final char[] characters, final int start, final int length) {
 
 		if (position == Position.PREDICATE_PARAMETERS) {
-			predicateContents.append(ch, start, length);
+			predicateContents.append(characters, start, length);
 		} else {
-			contents.append(ch, start, length);
+			contents.append(characters, start, length);
 		}
 	}
 
@@ -323,6 +290,8 @@ public final class ProblemHandler extends DefaultHandler {
 			}
 			break;
 
+			
+		default:
 		}
 
 		position = Position.UNKNOWN;
@@ -440,23 +409,23 @@ public final class ProblemHandler extends DefaultHandler {
 	}
 
 	public int getNbConstraints() {
-		return nbConstraints;
+		return constraints.size();
 	}
 
 	public int getNbDomains() {
-		return nbDomains;
+		return domains.size();
 	}
 
 	public int getNbPredicates() {
-		return nbPredicates;
+		return predicates.size();
 	}
 
 	public int getNbRelations() {
-		return nbRelations;
+		return relations.size();
 	}
 
 	public int getNbVariables() {
-		return nbVariables;
+		return variables.size();
 	}
 
 }

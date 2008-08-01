@@ -10,7 +10,7 @@ import cspom.variable.Variable;
 public class GlobalConstraint extends AbstractConstraint {
 	private final String type;
 
-	public GlobalConstraint(String name, List<Variable> scope, String type) {
+	public GlobalConstraint(final String name, final List<Variable> scope, final String type) {
 		super(name, scope);
 		this.type = type;
 	}

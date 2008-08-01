@@ -21,7 +21,7 @@ public class Scope {
 	
 	private final int arity;
 	
-	public Scope(Constraint constraint) {
+	public Scope(final Constraint constraint) {
 		this.scope = constraint.getScope();
 		this.arity = constraint.getArity();
 		constraints = new ArrayList<Constraint>();
@@ -32,7 +32,7 @@ public class Scope {
 		return scope;
 	}
 	
-	public static Scope findScope(Collection<Variable> scope, Collection<Scope> scopes) {
+	public static Scope findScope(final Collection<Variable> scope, final Collection<Scope> scopes) {
 		for (Scope s: scopes) {
 			if (s.isSameScope(scope)) {
 				return s;
@@ -45,7 +45,7 @@ public class Scope {
 		return arity;
 	}
 	
-	public boolean isSameScope(Collection<Variable> scope) {
+	public boolean isSameScope(final Collection<Variable> scope) {
 		if (scope.size() != arity) {
 			return false ;
 		}
@@ -57,7 +57,7 @@ public class Scope {
 		return true;
 	}
 	
-	public void addConstraint(Constraint constraint) {
+	public void addConstraint(final Constraint constraint) {
 		if (!isSameScope(constraint.getScope())) {
 			throw new InvalidParameterException("Bad scope for " + constraint + " in " + this);
 		}

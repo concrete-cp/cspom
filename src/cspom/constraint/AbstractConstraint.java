@@ -18,10 +18,10 @@ public abstract class AbstractConstraint implements Constraint {
 	private final int arity;
 
 	private final Map<Variable, Integer> positions;
-	
+
 	private final DomainSignature domainSignature;
 
-	public AbstractConstraint(String name, List<Variable> scope) {
+	public AbstractConstraint(final String name, final List<Variable> scope) {
 		this.scope = scope;
 		this.name = name;
 		arity = scope.size();
@@ -29,7 +29,7 @@ public abstract class AbstractConstraint implements Constraint {
 		for (int i = arity; --i >= 0;) {
 			positions.put(scope.get(i), i);
 		}
-		
+
 		domainSignature = new DomainSignature();
 		for (Variable v : scope) {
 			domainSignature.add(v.getDomain());
@@ -77,7 +77,7 @@ public abstract class AbstractConstraint implements Constraint {
 		return domainSignature;
 	}
 
-	public static List<String> parse(String parameters) {
+	public static List<String> parse(final String parameters) {
 		final Pattern pattern = Pattern.compile(ConstantParameter.PATTERN);
 		final Matcher matcher = pattern.matcher(parameters);
 

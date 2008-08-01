@@ -9,9 +9,9 @@ package cspom;
 
 public abstract class AbstractRelation implements Relation {
 
-	final String name;
+	final private String name;
 	
-	public AbstractRelation(String name) {
+	public AbstractRelation(final String name) {
 		this.name = name;
 	}
 

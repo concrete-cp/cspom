@@ -10,8 +10,8 @@ public class ConstantParameter implements Parameter {
 
 	public final static String PATTERN = "-?\\+?\\ *\\d*\\.?\\d*e?-?\\+?\\d";
 
-	public ConstantParameter(String name, Number integer) {
-		constant = integer;
+	public ConstantParameter(final String name, final Number constant) {
+		this.constant = constant;
 		this.name = name;
 	}
 

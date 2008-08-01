@@ -36,9 +36,9 @@ public class Predicate extends AbstractRelation {
 			.getSimpleName());
 
 	static {
-		final ScriptEngine se = new ScriptEngineManager()
+		final ScriptEngine scriptEngine = new ScriptEngineManager()
 				.getEngineByName("JavaScript");
-		if (se == null) {
+		if (scriptEngine == null) {
 			logger.warning("Could not find JavaScript engine");
 			bindings = null;
 			engine = null;
@@ -50,16 +50,16 @@ public class Predicate extends AbstractRelation {
 					url = new URL("file:predefinedFunctions.js");
 				}
 
-				se.eval(new InputStreamReader(url.openStream()));
+				scriptEngine.eval(new InputStreamReader(url.openStream()));
 			} catch (Exception e) {
 				logger.throwing(Predicate.class.getSimpleName(), "static", e);
 			}
-			bindings = se.getBindings(ScriptContext.ENGINE_SCOPE);
-			engine = (Compilable) se;
+			bindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
+			engine = (Compilable) scriptEngine;
 		}
 	}
 
-	public Predicate(String name, String parameters, String expression)
+	public Predicate(final String name, final String parameters, final String expression)
 			throws ScriptException {
 		this(name, new ArrayList<String>(), new HashMap<String, Type>(),
 				expression.trim());
@@ -70,8 +70,8 @@ public class Predicate extends AbstractRelation {
 		}
 	}
 
-	public Predicate(String name, List<String> parameters,
-			Map<String, Type> types, String expression) throws ScriptException {
+	public Predicate(final String name, final List<String> parameters,
+			final Map<String, Type> types, final String expression) throws ScriptException {
 		super(name);
 		this.parameters = parameters;
 		this.types = types;
