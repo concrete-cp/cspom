@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import cspom.constraint.Constraint;
 import cspom.constraint.DomainSignature;
@@ -91,11 +92,11 @@ public class RelationManager implements Iterable<Relation>{
 
 	public String toString() {
 		final StringBuilder stb = new StringBuilder();
-		for (Relation p : relations.keySet()) {
-			stb.append(p).append('\n');
-			for (DomainSignature i : relations.get(p).keySet()) {
-				stb.append('\t').append(i).append('\n');
-				for (Constraint c : relations.get(p).get(i)) {
+		for (Entry<Relation, Map<DomainSignature, Collection<Constraint>>> p : relations.entrySet()) {
+			stb.append(p.getKey()).append('\n');
+			for (Entry<DomainSignature, Collection<Constraint>> i : p.getValue().entrySet()) {
+				stb.append('\t').append(i.getKey()).append('\n');
+				for (Constraint c : i.getValue()) {
 					stb.append("\t\t").append(c).append('\n');
 				}
 			}
