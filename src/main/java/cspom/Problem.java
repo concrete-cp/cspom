@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javax.script.ScriptException;
