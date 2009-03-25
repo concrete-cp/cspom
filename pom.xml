@@ -16,7 +16,7 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>cspfj</groupId>
+			<groupId>org.kohsuke</groupId>
 			<artifactId>bzip2</artifactId>
 			<version>1.0</version>
 		</dependency>
