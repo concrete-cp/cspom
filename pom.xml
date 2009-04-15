@@ -5,7 +5,7 @@
 	<groupId>cspom</groupId>
 	<artifactId>cspom</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>CSP Object Model</name>
 	<url>http://cspfj.sourceforge.net/</url>
 	<repositories>
