@@ -52,7 +52,7 @@ import cspom.variable.Variable;
  * 
  */
 public class Problem {
-	public final static String VERSION = $Rev$;
+	public final static String VERSION = "$Rev$";
 
 	private final String name;
 
