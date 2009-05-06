@@ -33,42 +33,42 @@ import cspom.variable.Variable;
  */
 public interface Constraint {
 
-	/**
-	 * @return the (ordered) scope of the constraint
-	 */
-	List<Variable> getScope();
+    /**
+     * @return the scope of the constraint
+     */
+    Variable[] getScope();
 
-	/**
-	 * @return the name of the constraint
-	 */
-	String getName();
+    /**
+     * @return the name of the constraint
+     */
+    String getName();
 
-	/**
-	 * @return the arity of the constraint. Defined as arity ==
-	 *         getScope().size()
-	 */
-	int getArity();
+    /**
+     * @return the arity of the constraint. Defined as arity ==
+     *         getScope().size()
+     */
+    int getArity();
 
-	/**
-	 * Evaluates a given instantiation.
-	 * 
-	 * @param numbers
-	 *            the instantiation to evaluate. For all i,
-	 *            getScope()[i].contains(numbers[i]).
-	 * @return true iff the constraint allows the instantiation
-	 * @throws ScriptException
-	 */
-	boolean evaluate(Number[] numbers) throws ScriptException;
+    /**
+     * Evaluates a given instantiation.
+     * 
+     * @param numbers
+     *            the instantiation to evaluate. For all i,
+     *            getScope()[i].contains(numbers[i]).
+     * @return true iff the constraint allows the instantiation
+     * @throws ScriptException
+     */
+    boolean evaluate(Number[] numbers) throws ScriptException;
 
-	int getPosition(Variable variable);
+    int getPosition(Variable variable);
 
-	Constraint standardize(List<Variable> scope);
+    Constraint standardize(Variable[] scope);
 
-	/**
-	 * @return the signature of the constraints. The signature is calculated by
-	 *         summing the hashcodes of the domain of the involved variables.
-	 */
-	DomainSignature signature();
-	
-	Relation getRelation();
+    /**
+     * @return the signature of the constraints. The signature is calculated by
+     *         summing the hashcodes of the domain of the involved variables.
+     */
+    DomainSignature signature();
+
+    Relation getRelation();
 }

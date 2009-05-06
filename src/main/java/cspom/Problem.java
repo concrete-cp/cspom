@@ -3,6 +3,8 @@ package cspom;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -117,6 +119,22 @@ public class Problem {
         return url.openStream();
     }
 
+    public static Problem load(final String string)
+            throws FileNotFoundException, ParseException, IOException {
+        final URI uri;
+        try {
+            uri = new URI(string);
+        } catch (URISyntaxException e) {
+            throw new ParseException(e.toString(), 0);
+        }
+
+        if (uri.getScheme() == null) {
+            return load(new URL("file://" + uri));
+        }
+
+        return load(uri.toURL());
+    }
+
     public static Problem load(final URL url) throws ParseException,
             FileNotFoundException, IOException {
         final Problem problem = new Problem(url.getPath());
@@ -215,8 +233,7 @@ public class Problem {
         for (Constraint c : constraints) {
             final Number[] values = new Number[c.getArity()];
             for (int i = c.getArity(); --i >= 0;) {
-                values[i] = solution
-                        .get(variables.indexOf(c.getScope().get(i)));
+                values[i] = solution.get(variables.indexOf(c.getScope()[i]));
             }
             if (!c.evaluate(values)) {
                 falsified.add(c);
@@ -228,7 +245,7 @@ public class Problem {
 
     public void standardizeConstraints() {
         for (Scope s : getScopes()) {
-            final List<Variable> finalScope = s.getScope();
+            final Variable[] finalScope = s.getScope();
             for (Constraint c : new ArrayList<Constraint>(s.getConstraints())) {
                 if (!finalScope.equals(c.getScope())) {
                     s.getConstraints().remove(c);

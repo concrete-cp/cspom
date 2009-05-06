@@ -47,384 +47,384 @@ import cspom.variable.Variable;
 
 public final class ProblemHandler extends DefaultHandler {
 
-	/**
-	 * Liste des domaines.
-	 */
-	private final Map<String, Domain> domains;
-
-	/**
-	 * Liste des variables.
-	 */
-	private final Map<String, Variable> variables;
-
-	/**
-	 * Liste des relations définissant les contraintes.
-	 */
-	private final Map<String, Extension> relations;
-
-	private final Map<String, Predicate> predicates;
+    /**
+     * Liste des domaines.
+     */
+    private final Map<String, Domain> domains;
+
+    /**
+     * Liste des variables.
+     */
+    private final Map<String, Variable> variables;
+
+    /**
+     * Liste des relations définissant les contraintes.
+     */
+    private final Map<String, Extension> relations;
+
+    private final Map<String, Predicate> predicates;
 
-	/**
-	 * Liste des contraintes.
-	 */
-	private final Map<String, Constraint> constraints;
+    /**
+     * Liste des contraintes.
+     */
+    private final Map<String, Constraint> constraints;
 
-	private Position position = Position.UNKNOWN;
+    private Position position = Position.UNKNOWN;
 
-	private StringBuilder contents;
+    private StringBuilder contents;
 
-	private final Map<String, String> currentAttributes;
+    private final Map<String, String> currentAttributes;
 
-	private final static Logger logger = Logger
-			.getLogger("csploader.ProblemHandler");
+    private final static Logger logger = Logger
+            .getLogger("csploader.ProblemHandler");
 
-	private Locator locator;
+    private Locator locator;
 
-	private StringBuilder predicateContents;
+    private StringBuilder predicateContents;
 
-	private final Problem problem;
+    private final Problem problem;
 
-	public ProblemHandler(final Problem problem) {
-		super();
+    public ProblemHandler(final Problem problem) {
+        super();
 
-		this.problem = problem;
-		currentAttributes = new HashMap<String, String>();
-		domains = new HashMap<String, Domain>();
-		relations = new HashMap<String, Extension>();
-		predicates = new HashMap<String, Predicate>();
-		variables = new HashMap<String, Variable>();
-		// orderedVariables = new ArrayList<Variable>();
-		constraints = new HashMap<String, Constraint>();
+        this.problem = problem;
+        currentAttributes = new HashMap<String, String>();
+        domains = new HashMap<String, Domain>();
+        relations = new HashMap<String, Extension>();
+        predicates = new HashMap<String, Predicate>();
+        variables = new HashMap<String, Variable>();
+        // orderedVariables = new ArrayList<Variable>();
+        constraints = new HashMap<String, Constraint>();
 
-		contents = new StringBuilder();
+        contents = new StringBuilder();
 
-	}
+    }
 
-	@Override
-	public void setDocumentLocator(final Locator locator) {
-		this.locator = locator;
-	}
+    @Override
+    public void setDocumentLocator(final Locator locator) {
+        this.locator = locator;
+    }
 
-	private void addVariable(final String name, final String domain) {
-		final Variable variable = new Variable(name, domains.get(domain));
-		variables.put(name, variable);
-		problem.addVariable(variable);
-		// logger.finer(variable.toString());
-	}
+    private void addVariable(final String name, final String domain) {
+        final Variable variable = new Variable(name, domains.get(domain));
+        variables.put(name, variable);
+        problem.addVariable(variable);
+        // logger.finer(variable.toString());
+    }
 
-	private Constraint createConstraint(final String name,
-			final String varNames, final String parameters,
-			final String reference) throws SAXParseException {
-		final String[] scopeList = varNames.split(" +");
-		final List<Variable> scope = new ArrayList<Variable>(scopeList.length);
-		for (int i = 0; i < scopeList.length; i++) {
-			scope.add(variables.get(scopeList[i]));
-		}
+    private Constraint createConstraint(final String name,
+            final String varNames, final String parameters,
+            final String reference) throws SAXParseException {
+        final String[] scopeList = varNames.split(" +");
+        final Variable[] scope = new Variable[scopeList.length];
+        for (int i = 0; i < scopeList.length; i++) {
+            scope[i] = variables.get(scopeList[i]);
+        }
 
-		if (reference.startsWith("global:")) {
-			return new GlobalConstraint(name, scope, reference.substring(7));
-		}
+        if (reference.startsWith("global:")) {
+            return new GlobalConstraint(name, reference.substring(7), scope);
+        }
 
-		final Extension extension = relations.get(reference);
-		if (extension != null) {
-			return new ExtensionConstraint(name, scope, extension);
+        final Extension extension = relations.get(reference);
+        if (extension != null) {
+            return new ExtensionConstraint(name, extension, scope);
 
-		}
+        }
 
-		final Predicate predicate = predicates.get(reference);
-		if (predicate == null) {
-			throw new SAXParseException("Unknown reference " + reference,
-					locator);
-		}
+        final Predicate predicate = predicates.get(reference);
+        if (predicate == null) {
+            throw new SAXParseException("Unknown reference " + reference,
+                    locator);
+        }
 
-		return new PredicateConstraint(name, scope, parameters, predicates
-				.get(reference));
-	}
+        return new PredicateConstraint(name, parameters, predicates
+                .get(reference), scope);
+    }
 
-	/**
-	 * Génère variables et contraintes à partir du fichier XML.
-	 * 
-	 * @see org.xml.sax.ContentHandler#startElement(java.lang.String,
-	 *      java.lang.String, java.lang.String, org.xml.sax.Attributes)
-	 */
-	@Override
-	public void startElement(final String uri, final String localName,
-			final String qName, final Attributes attributes) {
+    /**
+     * Génère variables et contraintes à partir du fichier XML.
+     * 
+     * @see org.xml.sax.ContentHandler#startElement(java.lang.String,
+     *      java.lang.String, java.lang.String, org.xml.sax.Attributes)
+     */
+    @Override
+    public void startElement(final String uri, final String localName,
+            final String qName, final Attributes attributes) {
 
-		if ("domain".equals(qName)) {
-			position = Position.DOMAIN;
-			copyAttributes(attributes, new String[] { "name" });
+        if ("domain".equals(qName)) {
+            position = Position.DOMAIN;
+            copyAttributes(attributes, new String[] { "name" });
 
-		} else if ("variable".equals(qName)) {
+        } else if ("variable".equals(qName)) {
 
-			addVariable(attributes.getValue("name"), attributes
-					.getValue("domain"));
+            addVariable(attributes.getValue("name"), attributes
+                    .getValue("domain"));
 
-		} else if ("relation".equals(qName)) {
-			position = Position.RELATION;
+        } else if ("relation".equals(qName)) {
+            position = Position.RELATION;
 
-			copyAttributes(attributes, new String[] { "name", "nbTuples",
-					"arity", "semantics" });
+            copyAttributes(attributes, new String[] { "name", "nbTuples",
+                    "arity", "semantics" });
 
-		} else if ("predicate".equals(qName)) {
+        } else if ("predicate".equals(qName)) {
 
-			position = Position.PREDICATE;
+            position = Position.PREDICATE;
 
-			copyAttributes(attributes, new String[] { "name" });
+            copyAttributes(attributes, new String[] { "name" });
 
-			predicateContents = new StringBuilder();
+            predicateContents = new StringBuilder();
 
-		} else if ("parameters".equals(qName)
-				&& Position.PREDICATE.equals(position)) {
+        } else if ("parameters".equals(qName)
+                && Position.PREDICATE.equals(position)) {
 
-			position = Position.PREDICATE_PARAMETERS;
+            position = Position.PREDICATE_PARAMETERS;
 
-		} else if ("expression".equals(qName)
-				&& Position.PREDICATE.equals(position)) {
+        } else if ("expression".equals(qName)
+                && Position.PREDICATE.equals(position)) {
 
-			position = Position.PREDICATE_EXPRESSION;
+            position = Position.PREDICATE_EXPRESSION;
 
-		} else if ("constraint".equals(qName)) {
+        } else if ("constraint".equals(qName)) {
 
-			position = Position.CONSTRAINT;
+            position = Position.CONSTRAINT;
 
-			copyAttributes(attributes, new String[] { "name", "arity", "scope",
-					"reference" });
+            copyAttributes(attributes, new String[] { "name", "arity", "scope",
+                    "reference" });
 
-		}
+        }
 
-	}
+    }
 
-	private void copyAttributes(final Attributes attributes, final String[] keys) {
-		contents = new StringBuilder();
-		currentAttributes.clear();
+    private void copyAttributes(final Attributes attributes, final String[] keys) {
+        contents = new StringBuilder();
+        currentAttributes.clear();
 
-		for (String key : keys) {
-			currentAttributes.put(key, attributes.getValue(key));
-		}
-	}
+        for (String key : keys) {
+            currentAttributes.put(key, attributes.getValue(key));
+        }
+    }
 
-	@Override
-	public void characters(final char[] characters, final int start, final int length) {
+    @Override
+    public void characters(final char[] characters, final int start,
+            final int length) {
 
-		if (position == Position.PREDICATE_PARAMETERS) {
-			predicateContents.append(characters, start, length);
-		} else {
-			contents.append(characters, start, length);
-		}
-	}
+        if (position == Position.PREDICATE_PARAMETERS) {
+            predicateContents.append(characters, start, length);
+        } else {
+            contents.append(characters, start, length);
+        }
+    }
 
-	@Override
-	public void endElement(final String uri, final String localName,
-			final String qName) throws SAXException {
-		super.endElement(uri, localName, qName);
+    @Override
+    public void endElement(final String uri, final String localName,
+            final String qName) throws SAXException {
+        super.endElement(uri, localName, qName);
 
-		switch (position) {
-		case DOMAIN:
-			assert "domain".equals(qName);
-			{
-				final String name = currentAttributes.get("name");
+        switch (position) {
+        case DOMAIN:
+            assert "domain".equals(qName);
+            {
+                final String name = currentAttributes.get("name");
 
-				final Domain domain = parseDomain(name, contents.toString());
+                final Domain domain = parseDomain(name, contents.toString());
 
-				domains.put(name, domain);
-				// logger.finer(domain.toString());
-			}
-			break;
+                domains.put(name, domain);
+                // logger.finer(domain.toString());
+            }
+            break;
 
-		case RELATION:
-			assert "relation".equals(qName);
-			{
-				final String name = currentAttributes.get("name");
+        case RELATION:
+            assert "relation".equals(qName);
+            {
+                final String name = currentAttributes.get("name");
 
-				final Extension relation = parseRelation(name, Integer
-						.parseInt(currentAttributes.get("arity")), Integer
-						.parseInt(currentAttributes.get("nbTuples")),
-						currentAttributes.get("semantics"), contents.toString());
+                final Extension relation = parseRelation(name, Integer
+                        .parseInt(currentAttributes.get("arity")), Integer
+                        .parseInt(currentAttributes.get("nbTuples")),
+                        currentAttributes.get("semantics"), contents.toString());
 
-				relations.put(name, relation);
-				// logger.finer(relation.toString());
-			}
-			break;
+                relations.put(name, relation);
+                // logger.finer(relation.toString());
+            }
+            break;
 
-		case PREDICATE_PARAMETERS:
-			assert "parameters".equals(qName);
-			position = Position.PREDICATE;
-			return;
+        case PREDICATE_PARAMETERS:
+            assert "parameters".equals(qName);
+            position = Position.PREDICATE;
+            return;
 
-		case PREDICATE_EXPRESSION:
-			assert "functional".equals(qName);
-			{
-				final String name = currentAttributes.get("name");
-				final Predicate predicate;
-				try {
-					predicate = parsePredicate(name, predicateContents
-							.toString(), contents.toString());
-				} catch (ScriptException e) {
-					logger.throwing(ProblemHandler.class.getSimpleName(),
-							"end", e);
-					throw new SAXParseException(e.toString(), locator);
-				}
+        case PREDICATE_EXPRESSION:
+            assert "functional".equals(qName);
+            {
+                final String name = currentAttributes.get("name");
+                final Predicate predicate;
+                try {
+                    predicate = parsePredicate(name, predicateContents
+                            .toString(), contents.toString());
+                } catch (ScriptException e) {
+                    logger.throwing(ProblemHandler.class.getSimpleName(),
+                            "end", e);
+                    throw new SAXParseException(e.toString(), locator);
+                }
 
-				predicates.put(name, predicate);
-				// logger.finer(predicate.toString());
-			}
-			position = Position.PREDICATE;
-			return;
+                predicates.put(name, predicate);
+                // logger.finer(predicate.toString());
+            }
+            position = Position.PREDICATE;
+            return;
 
-		case CONSTRAINT:
-			assert "parameters".equals(qName) || "constraint".equals(qName);
-			{
-				final String name = currentAttributes.get("name");
+        case CONSTRAINT:
+            assert "parameters".equals(qName) || "constraint".equals(qName);
+            {
+                final String name = currentAttributes.get("name");
 
-				final Constraint constraint = createConstraint(name,
-						currentAttributes.get("scope"), contents.toString(),
-						currentAttributes.get("reference"));
+                final Constraint constraint = createConstraint(name,
+                        currentAttributes.get("scope"), contents.toString(),
+                        currentAttributes.get("reference"));
 
-				problem.addConstraint(constraint);
-				constraints.put(name, constraint);
+                problem.addConstraint(constraint);
+                constraints.put(name, constraint);
 
-				// logger.finer(constraint.toString());
+                // logger.finer(constraint.toString());
 
-			}
-			break;
+            }
+            break;
 
-			
-		default:
-		}
+        default:
+        }
 
-		position = Position.UNKNOWN;
+        position = Position.UNKNOWN;
 
-	}
+    }
 
-	private Domain parseDomain(final String name, final String domain)
-			throws SAXParseException {
+    private Domain parseDomain(final String name, final String domain)
+            throws SAXParseException {
 
-		final String[] listOfValues = domain.trim().split(" +");
+        final String[] listOfValues = domain.trim().split(" +");
 
-		if (listOfValues.length == 1 && listOfValues[0].contains("..")) {
-			final String[] fromto = listOfValues[0].trim().split("\\.\\.");
-			try {
+        if (listOfValues.length == 1 && listOfValues[0].contains("..")) {
+            final String[] fromto = listOfValues[0].trim().split("\\.\\.");
+            try {
 
-				final int start = Integer.parseInt(fromto[0]);
-				final int end = Integer.parseInt(fromto[1]);
-				return new IntervalDomain(name, start, end);
+                final int start = Integer.parseInt(fromto[0]);
+                final int end = Integer.parseInt(fromto[1]);
+                return new IntervalDomain(name, start, end);
 
-			} catch (NumberFormatException e) {
-				throw new SAXParseException(e.toString(), locator);
-			}
+            } catch (NumberFormatException e) {
+                throw new SAXParseException(e.toString(), locator);
+            }
 
-		}
+        }
 
-		final List<Number> values = new ArrayList<Number>();
+        final List<Number> values = new ArrayList<Number>();
 
-		for (String currentValue : listOfValues) {
-			if (currentValue.contains("..")) {
+        for (String currentValue : listOfValues) {
+            if (currentValue.contains("..")) {
 
-				final String[] fromto = currentValue.split("\\.\\.");
-				final int start = Integer.parseInt(fromto[0]);
-				final int end = Integer.parseInt(fromto[1]);
-				for (int i = 0; i <= end - start; i++) {
-					values.add(i + start);
-				}
+                final String[] fromto = currentValue.split("\\.\\.");
+                final int start = Integer.parseInt(fromto[0]);
+                final int end = Integer.parseInt(fromto[1]);
+                for (int i = 0; i <= end - start; i++) {
+                    values.add(i + start);
+                }
 
-			} else {
+            } else {
 
-				values.add(Integer.parseInt(currentValue.trim()));
+                values.add(Integer.parseInt(currentValue.trim()));
 
-			}
-		}
-		return new ExtensiveDomain(name, values);
-	}
+            }
+        }
+        return new ExtensiveDomain(name, values);
+    }
 
-	private Number[][] parseTuples(final int arity, final int nbTuples,
-			final String string) throws SAXParseException {
+    private Number[][] parseTuples(final int arity, final int nbTuples,
+            final String string) throws SAXParseException {
 
-		if (nbTuples < 1) {
-			return new Number[0][];
-		}
+        if (nbTuples < 1) {
+            return new Number[0][];
+        }
 
-		final Number[][] tuples = new Number[nbTuples][arity];
+        final Number[][] tuples = new Number[nbTuples][arity];
 
-		final String[] tupleList = string.split("\\|");
+        final String[] tupleList = string.split("\\|");
 
-		if (tupleList.length != nbTuples) {
-			throw new SAXParseException("Inconsistent number of Tuples ("
-					+ tupleList.length + " /= " + nbTuples + ") in " + string,
-					locator);
-		}
+        if (tupleList.length != nbTuples) {
+            throw new SAXParseException("Inconsistent number of Tuples ("
+                    + tupleList.length + " /= " + nbTuples + ") in " + string,
+                    locator);
+        }
 
-		for (int i = nbTuples; --i >= 0;) {
+        for (int i = nbTuples; --i >= 0;) {
 
-			final String[] valueList = tupleList[i].trim().split(" +");
+            final String[] valueList = tupleList[i].trim().split(" +");
 
-			if (valueList.length != arity) {
-				throw new SAXParseException("Incorrect arity ("
-						+ valueList.length + " /= " + arity + ") in "
-						+ tupleList[i].trim(), locator);
-			}
+            if (valueList.length != arity) {
+                throw new SAXParseException("Incorrect arity ("
+                        + valueList.length + " /= " + arity + ") in "
+                        + tupleList[i].trim(), locator);
+            }
 
-			for (int j = arity; --j >= 0;) {
-				tuples[i][j] = Integer.parseInt(valueList[j]);
-			}
+            for (int j = arity; --j >= 0;) {
+                tuples[i][j] = Integer.parseInt(valueList[j]);
+            }
 
-		}
+        }
 
-		logger.finest(tuplesToString(tuples));
+        logger.finest(tuplesToString(tuples));
 
-		return tuples;
-	}
+        return tuples;
+    }
 
-	private String tuplesToString(final Number[][] tuples) {
-		final StringBuilder stb = new StringBuilder();
-		stb.append("Tuples : [");
-		if (tuples.length > 0) {
-			stb.append(Arrays.toString(tuples[0]));
-		}
-		for (int i = 1; i < tuples.length; i++) {
-			stb.append(", ").append(Arrays.toString(tuples[i]));
-		}
+    private String tuplesToString(final Number[][] tuples) {
+        final StringBuilder stb = new StringBuilder();
+        stb.append("Tuples : [");
+        if (tuples.length > 0) {
+            stb.append(Arrays.toString(tuples[0]));
+        }
+        for (int i = 1; i < tuples.length; i++) {
+            stb.append(", ").append(Arrays.toString(tuples[i]));
+        }
 
-		stb.append(']');
-		return stb.toString();
-	}
+        stb.append(']');
+        return stb.toString();
+    }
 
-	private Extension parseRelation(final String name, final int arity,
-			final int nbTuples, final String semantics, final String relation)
-			throws SAXParseException {
-		final Number[][] tuples = parseTuples(arity, nbTuples, relation);
+    private Extension parseRelation(final String name, final int arity,
+            final int nbTuples, final String semantics, final String relation)
+            throws SAXParseException {
+        final Number[][] tuples = parseTuples(arity, nbTuples, relation);
 
-		return new Extension(name, arity, nbTuples, semantics, tuples);
-	}
+        return new Extension(name, arity, nbTuples, semantics, tuples);
+    }
 
-	private Predicate parsePredicate(final String name,
-			final String parameters, final String expression)
-			throws ScriptException {
-		return new Predicate(name, parameters, expression);
-	}
+    private Predicate parsePredicate(final String name,
+            final String parameters, final String expression)
+            throws ScriptException {
+        return new Predicate(name, parameters, expression);
+    }
 
-	private enum Position {
-		DOMAIN, RELATION, PREDICATE, PREDICATE_PARAMETERS, PREDICATE_EXPRESSION, CONSTRAINT, UNKNOWN
-	}
+    private enum Position {
+        DOMAIN, RELATION, PREDICATE, PREDICATE_PARAMETERS, PREDICATE_EXPRESSION, CONSTRAINT, UNKNOWN
+    }
 
-	public int getNbConstraints() {
-		return constraints.size();
-	}
+    public int getNbConstraints() {
+        return constraints.size();
+    }
 
-	public int getNbDomains() {
-		return domains.size();
-	}
+    public int getNbDomains() {
+        return domains.size();
+    }
 
-	public int getNbPredicates() {
-		return predicates.size();
-	}
+    public int getNbPredicates() {
+        return predicates.size();
+    }
 
-	public int getNbRelations() {
-		return relations.size();
-	}
+    public int getNbRelations() {
+        return relations.size();
+    }
 
-	public int getNbVariables() {
-		return variables.size();
-	}
+    public int getNbVariables() {
+        return variables.size();
+    }
 
 }
