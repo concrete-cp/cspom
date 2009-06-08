@@ -1,9 +1,8 @@
 package cspom.constraint;
 
-import java.util.List;
-
 import javax.script.ScriptException;
 
+import cspom.Problem;
 import cspom.Relation;
 import cspom.variable.Variable;
 

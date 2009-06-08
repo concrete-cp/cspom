@@ -9,7 +9,6 @@ package cspom;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import cspom.constraint.Constraint;
 import cspom.variable.Variable;
@@ -69,8 +68,8 @@ public class Scope {
 
     public void addConstraint(final Constraint constraint) {
         if (!isSameScope(constraint.getScope())) {
-            throw new InvalidParameterException("Bad scope for "
-                    + constraint + " in " + this);
+            throw new InvalidParameterException("Bad scope for " + constraint
+                    + " in " + this);
         }
         constraints.add(constraint);
     }

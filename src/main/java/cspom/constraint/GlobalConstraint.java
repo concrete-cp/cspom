@@ -1,7 +1,6 @@
 package cspom.constraint;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import cspom.Relation;
@@ -21,7 +20,7 @@ public class GlobalConstraint extends AbstractConstraint {
     }
 
     public Relation getRelation() {
-        throw new IllegalArgumentException();
+        throw new UnsupportedOperationException();
     }
 
     public boolean evaluate(final Number[] numbers) {
@@ -38,7 +37,7 @@ public class GlobalConstraint extends AbstractConstraint {
     }
 
     public Constraint standardize(final Variable[] scope) {
-        throw new IllegalArgumentException();
+        throw new UnsupportedOperationException();
     }
 
     public String toString() {

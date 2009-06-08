@@ -1,6 +1,5 @@
 package cspom.extension;
 
-import java.util.List;
 import java.util.Map;
 
 import cspom.constraint.AbstractConstraint;
