@@ -161,7 +161,8 @@ public class Problem {
             reader.parse(new InputSource(problemIS));
         } catch (SAXParseException e) {
             logger.throwing(Problem.class.getSimpleName(), "load", e);
-            throw new ParseException(e.toString(), e.getLineNumber());
+            throw new ParseException("line " + e.getLineNumber() + ": "
+                    + e.toString(), e.getLineNumber());
         } catch (SAXException e) {
             throw new ParseException(e.toString(), 0);
         }

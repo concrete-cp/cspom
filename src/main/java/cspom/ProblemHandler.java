@@ -75,7 +75,7 @@ public final class ProblemHandler extends DefaultHandler {
 
     private final Map<String, String> currentAttributes;
 
-    private final static Logger logger = Logger
+    private final static Logger LOGGER = Logger
             .getLogger("csploader.ProblemHandler");
 
     private Locator locator;
@@ -119,6 +119,10 @@ public final class ProblemHandler extends DefaultHandler {
         final Variable[] scope = new Variable[scopeList.length];
         for (int i = 0; i < scopeList.length; i++) {
             scope[i] = variables.get(scopeList[i]);
+            if (scope[i] == null) {
+                throw new SAXParseException("Could not find variable "
+                        + scopeList[i] + " from the scope of " + name, locator);
+            }
         }
 
         if (reference.startsWith("global:")) {
@@ -150,7 +154,6 @@ public final class ProblemHandler extends DefaultHandler {
     @Override
     public void startElement(final String uri, final String localName,
             final String qName, final Attributes attributes) {
-
         if ("domain".equals(qName)) {
             position = Position.DOMAIN;
             copyAttributes(attributes, new String[] { "name" });
@@ -192,7 +195,6 @@ public final class ProblemHandler extends DefaultHandler {
                     "reference" });
 
         }
-
     }
 
     private void copyAttributes(final Attributes attributes, final String[] keys) {
@@ -262,7 +264,7 @@ public final class ProblemHandler extends DefaultHandler {
                     predicate = parsePredicate(name, predicateContents
                             .toString(), contents.toString());
                 } catch (ScriptException e) {
-                    logger.throwing(ProblemHandler.class.getSimpleName(),
+                    LOGGER.throwing(ProblemHandler.class.getSimpleName(),
                             "end", e);
                     throw new SAXParseException(e.toString(), locator);
                 }
@@ -274,7 +276,10 @@ public final class ProblemHandler extends DefaultHandler {
             return;
 
         case CONSTRAINT:
-            assert "parameters".equals(qName) || "constraint".equals(qName);
+            if (!"parameters".equals(qName) && !"constraint".equals(qName)) {
+                throw new SAXParseException("Unknown tag " + qName, locator);
+            }
+
             {
                 final String name = currentAttributes.get("name");
 
@@ -370,7 +375,7 @@ public final class ProblemHandler extends DefaultHandler {
 
         }
 
-        logger.finest(tuplesToString(tuples));
+        LOGGER.finest(tuplesToString(tuples));
 
         return tuples;
     }
