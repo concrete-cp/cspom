@@ -48,24 +48,24 @@ import cspom.variable.Variable;
 public final class ProblemHandler extends DefaultHandler {
 
     /**
-     * Liste des domaines.
+     * List of domains.
      */
     private final Map<String, Domain> domains;
 
     /**
-     * Liste des variables.
+     * List of variables.
      */
     private final Map<String, Variable> variables;
 
     /**
-     * Liste des relations définissant les contraintes.
+     * List of relations defining the constraints in extension.
      */
     private final Map<String, Extension> relations;
 
     private final Map<String, Predicate> predicates;
 
     /**
-     * Liste des contraintes.
+     * Liste of constraints.
      */
     private final Map<String, Constraint> constraints;
 
@@ -146,7 +146,7 @@ public final class ProblemHandler extends DefaultHandler {
     }
 
     /**
-     * Génère variables et contraintes à partir du fichier XML.
+     * Generate variable and constraints from the XML data.
      * 
      * @see org.xml.sax.ContentHandler#startElement(java.lang.String,
      *      java.lang.String, java.lang.String, org.xml.sax.Attributes)
