@@ -3,7 +3,6 @@ package cspom.constraint;
 import javax.script.ScriptException;
 
 import cspom.Problem;
-import cspom.Relation;
 import cspom.variable.Variable;
 
 /**
@@ -38,11 +37,6 @@ public interface Constraint {
     Variable[] getScope();
 
     /**
-     * @return the name of the constraint
-     */
-    String getName();
-
-    /**
      * @return the arity of the constraint. Defined as arity ==
      *         getScope().size()
      */
@@ -68,6 +62,4 @@ public interface Constraint {
      *         summing the hashcodes of the domain of the involved variables.
      */
     DomainSignature signature();
-
-    Relation getRelation();
 }

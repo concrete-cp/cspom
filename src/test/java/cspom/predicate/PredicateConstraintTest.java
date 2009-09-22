@@ -9,11 +9,11 @@ import javax.script.ScriptException;
 import org.junit.Before;
 import org.junit.Test;
 
-import cspom.predicate.Predicate;
 import cspom.predicate.PredicateConstraint;
 import cspom.variable.Domain;
 import cspom.variable.ExtensiveDomain;
 import cspom.variable.Variable;
+import cspom.xcsp.Predicate;
 
 public class PredicateConstraintTest {
 

@@ -16,9 +16,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import cspom.AbstractRelation;
-
-public class Predicate extends AbstractRelation {
+public class Predicate {
 
 	private final Map<String, Type> types;
 
@@ -44,8 +42,7 @@ public class Predicate extends AbstractRelation {
 			engine = null;
 		} else {
 			try {
-				URL url = Predicate.class
-						.getResource("predefinedFunctions.js");
+				URL url = Predicate.class.getResource("predefinedFunctions.js");
 				if (url == null) {
 					url = new URL("file:predefinedFunctions.js");
 				}
@@ -59,10 +56,10 @@ public class Predicate extends AbstractRelation {
 		}
 	}
 
-	public Predicate(final String name, final String parameters, final String expression)
+	public Predicate(final String parameters, final String expression)
 			throws ScriptException {
-		this(name, new ArrayList<String>(), new HashMap<String, Type>(),
-				expression.trim());
+		this(new ArrayList<String>(), new HashMap<String, Type>(), expression
+				.trim());
 		final String[] args = parameters.trim().split(" +");
 		for (int i = 0; i < args.length; i += 2) {
 			types.put(args[i + 1], Type.parse(args[i]));
@@ -70,9 +67,9 @@ public class Predicate extends AbstractRelation {
 		}
 	}
 
-	public Predicate(final String name, final List<String> parameters,
-			final Map<String, Type> types, final String expression) throws ScriptException {
-		super(name);
+	public Predicate(final List<String> parameters,
+			final Map<String, Type> types, final String expression)
+			throws ScriptException {
 		this.parameters = parameters;
 		this.types = types;
 		this.expression = expression;

@@ -21,9 +21,7 @@ package cspom.extension;
 
 import java.util.Arrays;
 
-import cspom.AbstractRelation;
-
-public final class Extension extends AbstractRelation {
+public final class Extension {
 
 	// private static final Logger logger = Logger
 	// .getLogger("competitor.problem.relation");
@@ -36,18 +34,18 @@ public final class Extension extends AbstractRelation {
 
 	private final int nbTuples;
 
-	public Extension(final String name, final int arity, final int nbTuples,
+	public Extension(final int arity, final int nbTuples,
 			final boolean supports, final Number[][] tuples) {
-		super(name);
+		super();
 		this.arity = arity;
 		this.supports = supports;
 		this.tuples = tuples;
 		this.nbTuples = nbTuples;
 	}
 
-	public Extension(final String name, final int arity, final int nbTuples,
+	public Extension(final int arity, final int nbTuples,
 			final String semantics, final Number[][] tuples) {
-		this(name, arity, nbTuples, "supports".equals(semantics), tuples);
+		this(arity, nbTuples, "supports".equals(semantics), tuples);
 	}
 
 	public int getArity() {
@@ -75,8 +73,9 @@ public final class Extension extends AbstractRelation {
 
 	public String toString() {
 
-		return super.toString() + ": " + arity + "-ary, " + tuples.length + " tuples, "
-				+ (supports ? "supports" : "conflicts");// + ": " +
+		return super.toString() + ": " + arity + "-ary, " + tuples.length
+				+ " tuples, " + (supports ? "supports" : "conflicts");// + ": "
+																		// +
 		// tupleString();
 
 	}
@@ -101,6 +100,6 @@ public final class Extension extends AbstractRelation {
 				tuples[i][j] = this.tuples[i][newOrder[j]];
 			}
 		}
-		return new Extension(getName(), arity, nbTuples, supports, tuples);
+		return new Extension(arity, nbTuples, supports, tuples);
 	}
 }

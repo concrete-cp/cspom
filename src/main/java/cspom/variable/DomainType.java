@@ -1,5 +1,5 @@
 package cspom.variable;
 
 public enum DomainType {
-	EXTENSIVE,INTERVAL;
+	EXTENSIVE,INTERVAL,UNKNOWN;
 }

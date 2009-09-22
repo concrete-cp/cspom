@@ -8,7 +8,7 @@ import javax.script.ScriptException;
 import org.junit.Before;
 import org.junit.Test;
 
-import cspom.predicate.Predicate;
+import cspom.xcsp.Predicate;
 
 public class PredicateTest {
 

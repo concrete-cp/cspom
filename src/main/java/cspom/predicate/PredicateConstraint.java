@@ -14,8 +14,9 @@ import cspom.constraint.AbstractConstraint;
 import cspom.constraint.ConstantParameter;
 import cspom.constraint.Parameter;
 import cspom.constraint.VariableParameter;
-import cspom.predicate.Predicate.Type;
 import cspom.variable.Variable;
+import cspom.xcsp.Predicate;
+import cspom.xcsp.Predicate.Type;
 
 public class PredicateConstraint extends AbstractConstraint {
 

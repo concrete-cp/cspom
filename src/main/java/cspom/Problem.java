@@ -27,10 +27,10 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
 import cspom.constraint.Constraint;
-import cspom.constraint.GlobalConstraint;
-import cspom.predicate.PredicateConstraint;
+import cspom.extension.ExtensionConstraint;
 import cspom.variable.Domain;
 import cspom.variable.Variable;
+import cspom.xcsp.ProblemHandler;
 
 /**
  * 
@@ -56,212 +56,184 @@ import cspom.variable.Variable;
  * 
  */
 public class Problem {
-    public final static String VERSION;
+	public final static String VERSION;
 
-    static {
-        Matcher matcher = Pattern.compile("Rev:\\ (\\d+)").matcher(
-                "$Rev$");
-        matcher.find();
-        VERSION = matcher.group(1);
-    }
+	static {
+		Matcher matcher = Pattern.compile("Rev:\\ (\\d+)").matcher(
+				"$Rev$");
+		matcher.find();
+		VERSION = matcher.group(1);
+	}
 
-    private final String name;
+	private final String name;
 
-    private final List<Variable> variables;
+	private final List<Variable> variables;
 
-    private final Collection<Constraint> constraints;
+	private final Collection<Constraint> constraints;
 
-    // private final Collection<Extension> extensions;
+	private final Collection<Scope> scopes;
 
-    private final Collection<Scope> scopes;
+	private final Collection<Domain> domains;
 
-    private final Collection<Domain> domains;
+	private final static Logger logger = Logger
+			.getLogger("cspfj.problem.XMLGenerator");
 
-    private final RelationManager relationManager;
+	/**
+	 * Creates an empty problem, without any initial variables nor constraints.
+	 * 
+	 * @param name
+	 *            : the name of the problem
+	 */
+	public Problem(final String name) {
+		this.name = name;
 
-    private final static Logger logger = Logger
-            .getLogger("cspfj.problem.XMLGenerator");
+		variables = new ArrayList<Variable>();
+		constraints = new ArrayList<Constraint>();
+		scopes = new ArrayList<Scope>();
+		// extensions = new ArrayList<Extension>();
+		domains = new ArrayList<Domain>();
 
-    /**
-     * Creates an empty problem, without any initial variables nor constraints.
-     * 
-     * @param name
-     *            : the name of the problem
-     */
-    public Problem(final String name) {
-        this.name = name;
+	}
 
-        variables = new ArrayList<Variable>();
-        constraints = new ArrayList<Constraint>();
-        scopes = new ArrayList<Scope>();
-        relationManager = new RelationManager();
-        // extensions = new ArrayList<Extension>();
-        domains = new ArrayList<Domain>();
+	public static InputStream problemInputStream(final URL url)
+			throws IOException {
 
-    }
+		final String path = url.getPath();
 
-    public static InputStream problemInputStream(final URL url)
-            throws IOException {
+		if (path.endsWith(".gz")) {
+			return new GZIPInputStream(url.openStream());
+		}
 
-        final String path = url.getPath();
+		if (path.endsWith(".bz2")) {
+			final InputStream is = url.openStream();
+			is.read();
+			is.read();
+			return new CBZip2InputStream(is);
+		}
 
-        if (path.endsWith(".gz")) {
-            return new GZIPInputStream(url.openStream());
-        }
+		return url.openStream();
+	}
 
-        if (path.endsWith(".bz2")) {
-            final InputStream is = url.openStream();
-            is.read();
-            is.read();
-            return new CBZip2InputStream(is);
-        }
+	public static Problem load(final String string)
+			throws FileNotFoundException, ParseException, IOException {
+		final URI uri;
+		try {
+			uri = new URI(string);
+		} catch (URISyntaxException e) {
+			throw new ParseException(e.toString(), 0);
+		}
 
-        return url.openStream();
-    }
+		if (uri.getScheme() == null) {
+			return load(new URL("file://" + uri));
+		}
 
-    public static Problem load(final String string)
-            throws FileNotFoundException, ParseException, IOException {
-        final URI uri;
-        try {
-            uri = new URI(string);
-        } catch (URISyntaxException e) {
-            throw new ParseException(e.toString(), 0);
-        }
+		return load(uri.toURL());
+	}
 
-        if (uri.getScheme() == null) {
-            return load(new URL("file://" + uri));
-        }
+	public static Problem load(final URL url) throws ParseException,
+			FileNotFoundException, IOException {
+		final Problem problem = new Problem(url.getPath());
+		final InputStream problemIS = problemInputStream(url);
+		final SAXParserFactory saxParserFactory = SAXParserFactory
+				.newInstance();
+		final SAXParser saxParser;
+		final XMLReader reader;
 
-        return load(uri.toURL());
-    }
+		try {
+			saxParser = saxParserFactory.newSAXParser();
+			reader = saxParser.getXMLReader();
+		} catch (ParserConfigurationException e) {
+			throw new ParseException(e.toString(), 0);
+		} catch (SAXException e) {
+			throw new ParseException(e.toString(), 0);
+		}
 
-    public static Problem load(final URL url) throws ParseException,
-            FileNotFoundException, IOException {
-        final Problem problem = new Problem(url.getPath());
-        final InputStream problemIS = problemInputStream(url);
-        final SAXParserFactory saxParserFactory = SAXParserFactory
-                .newInstance();
-        final SAXParser saxParser;
-        final XMLReader reader;
+		final ProblemHandler handler = new ProblemHandler(problem);
 
-        try {
-            saxParser = saxParserFactory.newSAXParser();
-            reader = saxParser.getXMLReader();
-        } catch (ParserConfigurationException e) {
-            throw new ParseException(e.toString(), 0);
-        } catch (SAXException e) {
-            throw new ParseException(e.toString(), 0);
-        }
+		reader.setContentHandler(handler);
 
-        final ProblemHandler handler = new ProblemHandler(problem);
+		try {
+			reader.parse(new InputSource(problemIS));
+		} catch (SAXParseException e) {
+			logger.throwing(Problem.class.getSimpleName(), "load", e);
+			throw new ParseException("line " + e.getLineNumber() + ": "
+					+ e.toString(), e.getLineNumber());
+		} catch (SAXException e) {
+			throw new ParseException(e.toString(), 0);
+		}
+		//
+		// problem.variables.addAll(handler.getVariables());
+		// problem.constraints.addAll(handler.getConstraints());
 
-        reader.setContentHandler(handler);
+		return problem;
+	}
 
-        try {
-            reader.parse(new InputSource(problemIS));
-        } catch (SAXParseException e) {
-            logger.throwing(Problem.class.getSimpleName(), "load", e);
-            throw new ParseException("line " + e.getLineNumber() + ": "
-                    + e.toString(), e.getLineNumber());
-        } catch (SAXException e) {
-            throw new ParseException(e.toString(), 0);
-        }
-        //
-        // problem.variables.addAll(handler.getVariables());
-        // problem.constraints.addAll(handler.getConstraints());
+	public void addVariable(final Variable variable) {
+		variables.add(variable);
+		domains.add(variable.getDomain());
+	}
 
-        return problem;
-    }
+	public void addConstraint(final Constraint constraint) {
+		constraints.add(constraint);
 
-    public void addVariable(final Variable variable) {
-        variables.add(variable);
-        domains.add(variable.getDomain());
-    }
+		final Scope scope = Scope.findScope(constraint.getScope(), scopes);
+		if (scope == null) {
+			scopes.add(new Scope(constraint));
+		} else {
+			scope.addConstraint(constraint);
+		}
+	}
 
-    public void addConstraint(final Constraint constraint) {
-        constraints.add(constraint);
+	public List<Variable> getVariables() {
+		return variables;
+	}
 
-        final Scope scope = Scope.findScope(constraint.getScope(), scopes);
-        if (scope == null) {
-            scopes.add(new Scope(constraint));
-        } else {
-            scope.addConstraint(constraint);
-        }
+	public Collection<Constraint> getConstraints() {
+		return constraints;
+	}
 
-        if (!(constraint instanceof GlobalConstraint)) {
-            relationManager.linkRelation(constraint.getRelation(), constraint);
-        }
+	public Collection<Scope> getScopes() {
+		return scopes;
+	}
 
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void semiCompilePredicates() throws ScriptException {
-        for (Constraint c : constraints) {
-            if (!(c instanceof PredicateConstraint)) {
-                continue;
-            }
-            ((PredicateConstraint) c).semiCompile(relationManager);
-        }
-        // System.out.println(predicateManager);
-    }
+	public Collection<Constraint> checkSolution(final List<Number> solution)
+			throws ScriptException {
+		final Collection<Constraint> falsified = new ArrayList<Constraint>();
+		for (Constraint c : constraints) {
+			final Number[] values = new Number[c.getArity()];
+			for (int i = c.getArity(); --i >= 0;) {
+				values[i] = solution.get(variables.indexOf(c.getScope()[i]));
+			}
+			if (!c.evaluate(values)) {
+				falsified.add(c);
+			}
+		}
+		logger.info("Checked " + solution + " : " + falsified.size());
+		return falsified;
+	}
 
-    public List<Variable> getVariables() {
-        return variables;
-    }
+//	public void standardizeConstraints() {
+//		for (Scope s : getScopes()) {
+//			final Variable[] finalScope = s.getScope();
+//			for (Constraint c : new ArrayList<Constraint>(s.getConstraints())) {
+//				if (!finalScope.equals(c.getScope())) {
+//					s.getConstraints().remove(c);
+//					constraints.remove(c);
+//					relationManager.unlinkRelation(c.getRelation(), c);
+//					final Constraint standardized = c.standardize(finalScope);
+//					addConstraint(standardized);
+//				}
+//			}
+//
+//		}
+//	}
 
-    public Collection<Constraint> getConstraints() {
-        return constraints;
-    }
-
-    public Collection<Scope> getScopes() {
-        return scopes;
-    }
-
-    // public Collection<Extension> getExtensions() {
-    // return extensions;
-    // }
-
-    public RelationManager getRelationManager() {
-        return relationManager;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Collection<Constraint> checkSolution(final List<Number> solution)
-            throws ScriptException {
-        final Collection<Constraint> falsified = new ArrayList<Constraint>();
-        for (Constraint c : constraints) {
-            final Number[] values = new Number[c.getArity()];
-            for (int i = c.getArity(); --i >= 0;) {
-                values[i] = solution.get(variables.indexOf(c.getScope()[i]));
-            }
-            if (!c.evaluate(values)) {
-                falsified.add(c);
-            }
-        }
-        logger.info("Checked " + solution + " : " + falsified.size());
-        return falsified;
-    }
-
-    public void standardizeConstraints() {
-        for (Scope s : getScopes()) {
-            final Variable[] finalScope = s.getScope();
-            for (Constraint c : new ArrayList<Constraint>(s.getConstraints())) {
-                if (!finalScope.equals(c.getScope())) {
-                    s.getConstraints().remove(c);
-                    constraints.remove(c);
-                    relationManager.unlinkRelation(c.getRelation(), c);
-                    final Constraint standardized = c.standardize(finalScope);
-                    addConstraint(standardized);
-                }
-            }
-
-        }
-    }
-
-    public Collection<Domain> getDomains() {
-        return domains;
-    }
+	public Collection<Domain> getDomains() {
+		return domains;
+	}
 
 }

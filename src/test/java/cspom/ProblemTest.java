@@ -13,9 +13,9 @@ import javax.script.ScriptException;
 import org.junit.Test;
 
 import cspom.constraint.Constraint;
-import cspom.predicate.Predicate;
 import cspom.predicate.PredicateConstraint;
 import cspom.variable.Variable;
+import cspom.xcsp.Predicate;
 
 public class ProblemTest {
 
