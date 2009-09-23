@@ -1,5 +1,7 @@
 package cspom.constraint;
 
+import java.util.Arrays;
+
 import javax.script.ScriptException;
 
 import cspom.variable.Variable;
@@ -29,4 +31,17 @@ public class GeneralConstraint extends AbstractConstraint {
 		return null;
 	}
 
+	@Override
+	public boolean equals(Object object) {
+		if (!(object instanceof GeneralConstraint)) {
+			return false;
+		}
+		final GeneralConstraint constraint = (GeneralConstraint) object;
+		return Arrays.equals(getScope(), constraint.getScope())
+				&& description.equals(constraint.description);
+	}
+
+	public int hashCode() {
+		return super.hashCode() * description.hashCode();
+	}
 }

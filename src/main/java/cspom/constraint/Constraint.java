@@ -1,5 +1,8 @@
 package cspom.constraint;
 
+import java.util.Collection;
+import java.util.List;
+
 import javax.script.ScriptException;
 
 import cspom.Problem;
@@ -56,10 +59,4 @@ public interface Constraint {
     int getPosition(Variable variable);
 
     Constraint standardize(Variable[] scope);
-
-    /**
-     * @return the signature of the constraints. The signature is calculated by
-     *         summing the hashcodes of the domain of the involved variables.
-     */
-    DomainSignature signature();
 }

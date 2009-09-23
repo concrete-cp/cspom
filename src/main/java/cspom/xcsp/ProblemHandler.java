@@ -65,7 +65,7 @@ public final class ProblemHandler extends DefaultHandler {
 	private final Map<String, Predicate> predicates;
 
 	/**
-	 * Liste of constraints.
+	 * List of constraints.
 	 */
 	private final Map<String, Constraint> constraints;
 

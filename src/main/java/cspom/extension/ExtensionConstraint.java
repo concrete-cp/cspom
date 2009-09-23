@@ -1,5 +1,6 @@
 package cspom.extension;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import cspom.constraint.AbstractConstraint;
@@ -34,8 +35,14 @@ public class ExtensionConstraint extends AbstractConstraint {
 	}
 
 	public ExtensionConstraint standardize(final Variable[] scope) {
+		assert scope.length == getArity();
 		final int[] newPosition = new int[getArity()];
-		final Map<Variable, Variable> newOrder = newOrder(scope);
+		final Map<Variable, Variable> newOrder = new HashMap<Variable, Variable>(
+				getArity());
+
+		for (int i = scope.length; --i >= 0;) {
+			newOrder.put(this.getScope()[i], scope[i]);
+		}
 
 		for (int i = getArity(); --i >= 0;) {
 			newPosition[i] = position(newOrder.get(getScope()[i]));
@@ -43,5 +50,4 @@ public class ExtensionConstraint extends AbstractConstraint {
 
 		return new ExtensionConstraint(relation.reverse(newPosition), scope);
 	}
-
 }

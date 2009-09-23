@@ -30,6 +30,6 @@ public class Variable {
 	}
 
 	public String toString() {
-		return name + " (" + domain + ")";
+		return name;
 	}
 }

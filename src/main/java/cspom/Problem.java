@@ -9,7 +9,10 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,9 +29,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
+import cspom.compiler.ConstraintCompiler;
 import cspom.constraint.Constraint;
-import cspom.extension.ExtensionConstraint;
-import cspom.variable.Domain;
 import cspom.variable.Variable;
 import cspom.xcsp.ProblemHandler;
 
@@ -67,13 +69,11 @@ public class Problem {
 
 	private final String name;
 
-	private final List<Variable> variables;
+	private final List<Variable> variableList;
+
+	private final Map<String, Variable> variableMap;
 
 	private final Collection<Constraint> constraints;
-
-	private final Collection<Scope> scopes;
-
-	private final Collection<Domain> domains;
 
 	private final static Logger logger = Logger
 			.getLogger("cspfj.problem.XMLGenerator");
@@ -87,12 +87,9 @@ public class Problem {
 	public Problem(final String name) {
 		this.name = name;
 
-		variables = new ArrayList<Variable>();
+		variableList = new LinkedList<Variable>();
+		variableMap = new HashMap<String, Variable>();
 		constraints = new ArrayList<Constraint>();
-		scopes = new ArrayList<Scope>();
-		// extensions = new ArrayList<Extension>();
-		domains = new ArrayList<Domain>();
-
 	}
 
 	public static InputStream problemInputStream(final URL url)
@@ -168,32 +165,21 @@ public class Problem {
 		return problem;
 	}
 
-	public void addVariable(final Variable variable) {
-		variables.add(variable);
-		domains.add(variable.getDomain());
-	}
-
-	public void addConstraint(final Constraint constraint) {
-		constraints.add(constraint);
-
-		final Scope scope = Scope.findScope(constraint.getScope(), scopes);
-		if (scope == null) {
-			scopes.add(new Scope(constraint));
-		} else {
-			scope.addConstraint(constraint);
-		}
-	}
-
 	public List<Variable> getVariables() {
-		return variables;
+		return variableList;
+	}
+
+	private void addVariable(Variable variable)
+			throws DuplicateVariableException {
+		if (variableMap.put(variable.getName(), variable) != null) {
+			throw new DuplicateVariableException();
+		}
+		variableList.add(variable);
+
 	}
 
 	public Collection<Constraint> getConstraints() {
 		return constraints;
-	}
-
-	public Collection<Scope> getScopes() {
-		return scopes;
 	}
 
 	public String getName() {
@@ -206,7 +192,7 @@ public class Problem {
 		for (Constraint c : constraints) {
 			final Number[] values = new Number[c.getArity()];
 			for (int i = c.getArity(); --i >= 0;) {
-				values[i] = solution.get(variables.indexOf(c.getScope()[i]));
+				values[i] = solution.get(variableList.indexOf(c.getScope()[i]));
 			}
 			if (!c.evaluate(values)) {
 				falsified.add(c);
@@ -216,24 +202,32 @@ public class Problem {
 		return falsified;
 	}
 
-//	public void standardizeConstraints() {
-//		for (Scope s : getScopes()) {
-//			final Variable[] finalScope = s.getScope();
-//			for (Constraint c : new ArrayList<Constraint>(s.getConstraints())) {
-//				if (!finalScope.equals(c.getScope())) {
-//					s.getConstraints().remove(c);
-//					constraints.remove(c);
-//					relationManager.unlinkRelation(c.getRelation(), c);
-//					final Constraint standardized = c.standardize(finalScope);
-//					addConstraint(standardized);
-//				}
-//			}
-//
-//		}
-//	}
+	public Variable var(int lb, int ub) {
+		final Variable variable = new Variable(lb, ub);
+		try {
+			addVariable(variable);
+		} catch (DuplicateVariableException e) {
+			throw new IllegalStateException();
+		}
+		return variable;
+	}
 
-	public Collection<Domain> getDomains() {
-		return domains;
+	public void ctr(String string) {
+		merge(ConstraintCompiler.compile(string, variableMap));
+	}
+
+	private void merge(Problem problem) {
+		for (Variable v : problem.variableList) {
+			if (!variableMap.containsValue(v)) {
+				try {
+					addVariable(v);
+				} catch (DuplicateVariableException e) {
+					throw new IllegalStateException(e);
+				}
+			}
+		}
+
+		constraints.addAll(problem.constraints);
 	}
 
 }
