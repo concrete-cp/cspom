@@ -212,7 +212,7 @@ public class Problem {
 		return variable;
 	}
 
-	public void ctr(String string) {
+	public void ctr(String string) throws ParseException {
 		merge(ConstraintCompiler.compile(string, variableMap));
 	}
 

@@ -8,9 +8,9 @@ import cspom.variable.Variable;
 public class Queens {
 
 	public static Problem queens(int nbQueens) throws ParseException {
-		
+
 		Problem problem = new Problem(nbQueens + "-queens");
-		
+
 		Variable[] queens = new Variable[nbQueens];
 
 		for (int i = nbQueens; --i >= 0;) {
@@ -19,9 +19,9 @@ public class Queens {
 
 		for (int i = nbQueens; --i >= 0;) {
 			for (int j = i; --j >= 0;) {
-				problem.ctr(queens[i] + " != " + queens[j]);
-				problem.ctr("abs(" + queens[i] + "-" + queens[j] + ") != "
-						+ (j - i));
+				problem.ctr("neq(" + queens[i] + " , " + queens[j] + ")");
+				problem.ctr("neq(abs(sub(" + queens[i] + "," + queens[j]
+						+ ")), " + Math.abs(i - j) + ")");
 			}
 		}
 

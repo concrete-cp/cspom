@@ -1,6 +1,7 @@
 package cspom.variable;
 
 public class Variable {
+	private static int noname = 0;
 	private final Domain domain;
 	private final String name;
 
@@ -10,7 +11,7 @@ public class Variable {
 	}
 
 	public Variable(final Domain domain) {
-		this(null, domain);
+		this(generateName(), domain);
 	}
 
 	public Variable(final String name, final int lB, final int uB) {
@@ -18,7 +19,7 @@ public class Variable {
 	}
 
 	public Variable(final int lB, final int uB) {
-		this(null, lB, uB);
+		this(generateName(), lB, uB);
 	}
 
 	public Domain getDomain() {
@@ -31,5 +32,9 @@ public class Variable {
 
 	public String toString() {
 		return name;
+	}
+
+	private static String generateName() {
+		return "Generated" + noname++;
 	}
 }

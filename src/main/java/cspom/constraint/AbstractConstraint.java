@@ -46,15 +46,6 @@ public abstract class AbstractConstraint implements Constraint {
 		return positions.get(variable);
 	}
 
-	protected int position(final Variable variable) {
-		for (int i = scope.length; --i >= 0;) {
-			if (scope[i] == variable) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
 	public int hashCode() {
 		return Arrays.hashCode(scope);
 	}

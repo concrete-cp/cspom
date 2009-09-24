@@ -45,7 +45,7 @@ public class ExtensionConstraint extends AbstractConstraint {
 		}
 
 		for (int i = getArity(); --i >= 0;) {
-			newPosition[i] = position(newOrder.get(getScope()[i]));
+			newPosition[i] = getPosition(newOrder.get(getScope()[i]));
 		}
 
 		return new ExtensionConstraint(relation.reverse(newPosition), scope);
