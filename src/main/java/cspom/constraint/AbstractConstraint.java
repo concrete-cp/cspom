@@ -16,13 +16,17 @@ public abstract class AbstractConstraint implements Constraint {
 
 	private final Map<Variable, Integer> positions;
 
-	public AbstractConstraint(final Variable... scope) {
-		this(null, scope);
+	private String description;
+
+	public AbstractConstraint(final String description, final Variable... scope) {
+		this(null, description, scope);
 	}
 
-	public AbstractConstraint(final String name, final Variable... scope) {
+	public AbstractConstraint(final String name, final String description,
+			final Variable... scope) {
 		this.scope = scope;
 		this.name = name;
+		this.description = description;
 		arity = scope.length;
 		positions = new HashMap<Variable, Integer>(arity);
 		for (int i = arity; --i >= 0;) {
@@ -47,6 +51,20 @@ public abstract class AbstractConstraint implements Constraint {
 	}
 
 	public int hashCode() {
-		return Arrays.hashCode(scope);
+		return Arrays.hashCode(scope) * getDescription().hashCode();
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (!(object instanceof AbstractConstraint)) {
+			return false;
+		}
+		final AbstractConstraint constraint = (AbstractConstraint) object;
+		return Arrays.equals(getScope(), constraint.getScope())
+				&& description.equals(constraint.description);
 	}
 }

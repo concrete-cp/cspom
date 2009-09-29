@@ -4,6 +4,7 @@ public class Variable {
 	private static int noname = 0;
 	private final Domain domain;
 	private final String name;
+	private boolean root = false;
 
 	public Variable(final String name, final Domain domain) {
 		this.domain = domain;
@@ -32,6 +33,10 @@ public class Variable {
 
 	public String toString() {
 		return name;
+	}
+	
+	public void setRoot() {
+		root = true;
 	}
 
 	private static String generateName() {

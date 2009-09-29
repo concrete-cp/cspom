@@ -169,13 +169,17 @@ public class Problem {
 		return variableList;
 	}
 
-	private void addVariable(Variable variable)
+	public void addVariable(Variable variable)
 			throws DuplicateVariableException {
 		if (variableMap.put(variable.getName(), variable) != null) {
 			throw new DuplicateVariableException();
 		}
 		variableList.add(variable);
 
+	}
+
+	public void addConstraint(Constraint constraint) {
+		constraints.add(constraint);
 	}
 
 	public Collection<Constraint> getConstraints() {
@@ -212,8 +216,22 @@ public class Problem {
 		return variable;
 	}
 
+	public Variable var(String name, int lb, int ub) {
+		final Variable variable = new Variable(name, lb, ub);
+		try {
+			addVariable(variable);
+		} catch (DuplicateVariableException e) {
+			throw new IllegalStateException();
+		}
+		return variable;
+	}
+
 	public void ctr(String string) throws ParseException {
 		merge(ConstraintCompiler.compile(string, variableMap));
+	}
+
+	public Variable getVariable(String variableName) {
+		return variableMap.get(variableName);
 	}
 
 	private void merge(Problem problem) {
@@ -230,4 +248,53 @@ public class Problem {
 		constraints.addAll(problem.constraints);
 	}
 
+	public String toString() {
+		final StringBuilder stb = new StringBuilder();
+		for (Variable v : variableList) {
+			stb.append(v).append('\n');
+		}
+		for (Constraint c : constraints) {
+			stb.append(c).append('\n');
+		}
+		return stb.toString();
+	}
+
+	public String toGML() {
+		final StringBuilder stb = new StringBuilder();
+		stb.append("graph [\n");
+		stb.append("directed 0\n");
+		for (Variable v : variableList) {
+			stb.append("node [\n");
+			stb.append("id \"").append(v.getName()).append("\"\n");
+			stb.append("label \"").append(v.getName()).append("\"\n");
+			stb.append("]\n");
+		}
+
+		int gen = 0;
+		for (Constraint c : constraints) {
+			if (c.getArity() > 2) {
+				stb.append("node [\n");
+				stb.append("id \"cons").append(gen).append("\"\n");
+				stb.append("label \"").append(c.getDescription())
+						.append("\"\n");
+				stb.append("]\n");
+
+				for (Variable v : c.getScope()) {
+					stb.append("edge [\n");
+					stb.append("source \"cons").append(gen).append("\"\n");
+					stb.append("target \"").append(v.getName()).append("\"\n");
+					stb.append("]\n");
+				}
+				gen++;
+			} else if (c.getArity() == 2) {
+				stb.append("edge [\n");
+				stb.append("source \"").append(c.getScope()[0]).append("\"\n");
+				stb.append("target \"").append(c.getScope()[1]).append("\"\n");
+				stb.append("]\n");
+			}
+		}
+		stb.append("]\n");
+
+		return stb.toString();
+	}
 }

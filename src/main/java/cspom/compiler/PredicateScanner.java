@@ -92,10 +92,17 @@ public class PredicateScanner {
 			return IDENTIFIER.matcher(operator).matches();
 		}
 
-		public boolean isLeaf() {
-			return child == null;
+		public boolean isLeaf() throws ParseException {
+			if (child == null) {
+				if (!isInteger() && !isIdentifier()) {
+					throw new ParseException(
+							"Leaves should be variables or constants", 0);
+				}
+				return true;
+			}
+			return false;
 		}
-		
+
 		private void tree(StringBuilder stb, int level) {
 			for (int i = level; --i >= 0;) {
 				stb.append("-");

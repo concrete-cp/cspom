@@ -59,4 +59,6 @@ public interface Constraint {
     int getPosition(Variable variable);
 
     Constraint standardize(Variable[] scope);
+    
+    String getDescription();
 }

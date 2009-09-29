@@ -1,5 +1,7 @@
 package cspom.constraint;
 
+import java.util.Arrays;
+
 import javax.script.ScriptException;
 
 import cspom.variable.Variable;
@@ -10,19 +12,16 @@ public class FunctionalConstraint extends AbstractConstraint {
 
 	private final Variable[] arguments;
 
-	private final String function;
-
 	public FunctionalConstraint(Variable result, String function,
 			Variable... arguments) {
-		super(concatenate(result, arguments));
+		super(function, concatenate(result, arguments));
 		this.result = result;
 		this.arguments = arguments;
-		this.function = function;
 
 	}
 
-	private static <T> T[] concatenate(T element, T[] array) {
-		T[] result = (T[]) new Object[array.length + 1];
+	private static Variable[] concatenate(Variable element, Variable[] array) {
+		Variable[] result = new Variable[array.length + 1];
 		result[0] = element;
 		System.arraycopy(array, 0, result, 1, array.length);
 		return result;
@@ -38,6 +37,18 @@ public class FunctionalConstraint extends AbstractConstraint {
 	public Constraint standardize(Variable[] scope) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public Variable getResultVariable() {
+		return result;
+	}
+
+	public Variable[] getArguments() {
+		return arguments;
+	}
+
+	public String toString() {
+		return result + " = " + getDescription() + Arrays.toString(arguments);
 	}
 
 }

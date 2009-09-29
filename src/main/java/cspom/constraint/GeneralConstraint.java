@@ -7,16 +7,13 @@ import javax.script.ScriptException;
 import cspom.variable.Variable;
 
 public class GeneralConstraint extends AbstractConstraint {
-	private String description;
 
 	public GeneralConstraint(String name, String description, Variable... scope) {
-		super(name, scope);
-		this.description = description;
+		super(name, description, scope);
 	}
 
 	public GeneralConstraint(String description, Variable... scope) {
-		super(scope);
-		this.description = description;
+		super(description, scope);
 	}
 
 	@Override
@@ -29,19 +26,5 @@ public class GeneralConstraint extends AbstractConstraint {
 	public Constraint standardize(Variable[] scope) {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public boolean equals(Object object) {
-		if (!(object instanceof GeneralConstraint)) {
-			return false;
-		}
-		final GeneralConstraint constraint = (GeneralConstraint) object;
-		return Arrays.equals(getScope(), constraint.getScope())
-				&& description.equals(constraint.description);
-	}
-
-	public int hashCode() {
-		return super.hashCode() * description.hashCode();
 	}
 }

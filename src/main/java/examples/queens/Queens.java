@@ -14,7 +14,7 @@ public class Queens {
 		Variable[] queens = new Variable[nbQueens];
 
 		for (int i = nbQueens; --i >= 0;) {
-			queens[i] = problem.var(0, nbQueens);
+			queens[i] = problem.var("q" + i, 0, nbQueens);
 		}
 
 		for (int i = nbQueens; --i >= 0;) {
@@ -29,6 +29,6 @@ public class Queens {
 	}
 
 	public static void main(String[] args) throws ParseException {
-		queens(8);
+		System.out.println(queens(8).toGML());
 	}
 }
