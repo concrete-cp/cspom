@@ -2,6 +2,7 @@ package examples.queens;
 
 import java.text.ParseException;
 
+import cspom.DuplicateVariableException;
 import cspom.Problem;
 import cspom.variable.Variable;
 
@@ -14,7 +15,11 @@ public class Queens {
 		Variable[] queens = new Variable[nbQueens];
 
 		for (int i = nbQueens; --i >= 0;) {
-			queens[i] = problem.var("q" + i, 0, nbQueens);
+			try {
+				queens[i] = problem.var("q" + i, 0, nbQueens);
+			} catch (DuplicateVariableException e) {
+				throw new IllegalStateException(e);
+			}
 		}
 
 		for (int i = nbQueens; --i >= 0;) {

@@ -1,11 +1,13 @@
 package cspom.xcsp;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import cspom.compiler.PredicateScanner;
 import cspom.variable.Variable;
 
 public class Predicate {
@@ -68,38 +70,48 @@ public class Predicate {
 			return UNKNOWN;
 		}
 	}
-	
-	 private static List<Parameter> parseParameters(
-	            final String allParameters, final Predicate predicate,
-	            final Variable[] scope) {
-	        final List<Parameter> parameters = new ArrayList<Parameter>();
 
-	        final String[] stringParameters = allParameters.trim().split(
-	                " +");
+	private static int seekVariable(String string, Variable[] scope) {
+		for (int i = scope.length; --i >= 0;) {
+			if (string.equals(scope[i].getName())) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
-	        for (int i = 0; i < stringParameters.length; i++) {
-	            final String parameterName = predicate.getParameters()
-	                    .get(i);
+	public String applyParameters(String parameters, Variable[] scope)
+			throws ParseException {
+		final String[] stringParameters = parameters.trim().split(" +");
 
-	            if (CONSTANT_PATTERN.matcher(stringParameters[i])
-	                    .matches()) {
-	                parameters.add(new ConstantParameter(parameterName,
-	                        Integer.parseInt(stringParameters[i])));
-	            } else {
-	                final int variable = seekVariable(
-	                        stringParameters[i], scope);
+		if (stringParameters.length != this.parameters.size()) {
+			throw new ParseException("Incorrect parameter count", 0);
+		}
 
-	                if (variable >= 0) {
-	                    parameters.add(new VariableParameter(
-	                            parameterName, scope[variable]));
-	                } else {
-	                    throw new IllegalArgumentException(
-	                            "Could not find variable "
-	                                    + stringParameters[i] + " "
-	                                    + scope);
-	                }
-	            }
-	        }
-	        return parameters;
-	    }
+		String applyied = expression;
+
+		for (int i = 0; i < stringParameters.length; i++) {
+			controlParameter(stringParameters[i], scope);
+			applyied = applyied.replaceAll(this.parameters.get(i),
+					stringParameters[i]);
+		}
+
+		return applyied;
+	}
+
+	private void controlParameter(String string, Variable[] scope)
+			throws ParseException {
+		if (PredicateScanner.INTEGER.matcher(string).matches()) {
+			return;
+		}
+		if (PredicateScanner.IDENTIFIER.matcher(string).matches()) {
+			if (seekVariable(string, scope) < 0) {
+				throw new ParseException("Could not find variable " + string
+						+ " in " + scope, 0);
+			}
+			return;
+		}
+		throw new ParseException("Could not recognize " + string, 0);
+
+	}
 }

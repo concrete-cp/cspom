@@ -19,14 +19,11 @@
 
 package cspom.xcsp;
 
+import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
-
-import javax.script.ScriptException;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -34,12 +31,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import cspom.DuplicateVariableException;
 import cspom.Problem;
-import cspom.constraint.Constraint;
-import cspom.constraint.GeneralConstraint;
 import cspom.extension.Extension;
 import cspom.extension.ExtensionConstraint;
-import cspom.predicate.PredicateConstraint;
 import cspom.variable.Domain;
 import cspom.variable.ExtensiveDomain;
 import cspom.variable.IntervalDomain;
@@ -53,30 +48,17 @@ public final class ProblemHandler extends DefaultHandler {
 	private final Map<String, Domain> domains;
 
 	/**
-	 * List of variables.
-	 */
-	private final Map<String, Variable> variables;
-
-	/**
 	 * List of relations defining the constraints in extension.
 	 */
 	private final Map<String, Extension> relations;
 
 	private final Map<String, Predicate> predicates;
 
-	/**
-	 * List of constraints.
-	 */
-	private final Map<String, Constraint> constraints;
-
 	private Position position = Position.UNKNOWN;
 
 	private StringBuilder contents;
 
 	private final Map<String, String> currentAttributes;
-
-	private final static Logger LOGGER = Logger
-			.getLogger("csploader.ProblemHandler");
 
 	private Locator locator;
 
@@ -92,9 +74,7 @@ public final class ProblemHandler extends DefaultHandler {
 		domains = new HashMap<String, Domain>();
 		relations = new HashMap<String, Extension>();
 		predicates = new HashMap<String, Predicate>();
-		variables = new HashMap<String, Variable>();
 		// orderedVariables = new ArrayList<Variable>();
-		constraints = new HashMap<String, Constraint>();
 
 		contents = new StringBuilder();
 
@@ -105,44 +85,56 @@ public final class ProblemHandler extends DefaultHandler {
 		this.locator = locator;
 	}
 
-	private void addVariable(final String name, final String domain) {
+	private void addVariable(final String name, final String domain)
+			throws ParseException {
 		final Variable variable = new Variable(name, domains.get(domain));
-		variables.put(name, variable);
-		problem.addVariable(variable);
-		// logger.finer(variable.toString());
+		try {
+			problem.addVariable(variable);
+		} catch (DuplicateVariableException e) {
+			throw new ParseException("Variable " + variable
+					+ " is defined twice", locator.getLineNumber());
+		}
 	}
 
-	private Constraint createConstraint(final String name,
-			final String varNames, final String parameters,
-			final String reference) throws SAXParseException {
+	private void addConstraint(final String name, final String varNames,
+			final String parameters, final String reference)
+			throws ParseException {
 		final String[] scopeList = varNames.split(" +");
 		final Variable[] scope = new Variable[scopeList.length];
 		for (int i = 0; i < scopeList.length; i++) {
-			scope[i] = variables.get(scopeList[i]);
+			scope[i] = problem.getVariable(scopeList[i]);
 			if (scope[i] == null) {
-				throw new SAXParseException("Could not find variable "
-						+ scopeList[i] + " from the scope of " + name, locator);
+				throw new ParseException("Could not find variable "
+						+ scopeList[i] + " from the scope of " + name, locator
+						.getLineNumber());
 			}
 		}
 
 		if (reference.startsWith("global:")) {
-			return new GeneralConstraint(name, reference.substring(7), scope);
+			final StringBuilder stb = new StringBuilder(reference.substring(7));
+			stb.append("(").append(scope[0]);
+			for (int i = 1; i < scope.length; i++) {
+				stb.append(", ").append(scope[i]);
+			}
+			stb.append(")");
+			problem.ctr(stb.toString());
+			return;
 		}
 
 		final Extension extension = relations.get(reference);
 		if (extension != null) {
-			return new ExtensionConstraint(name, extension, scope);
-
+			problem.addConstraint(new ExtensionConstraint(name, extension,
+					scope));
+			return;
 		}
 
 		final Predicate predicate = predicates.get(reference);
 		if (predicate == null) {
-			throw new SAXParseException("Unknown reference " + reference,
-					locator);
+			throw new ParseException("Unknown reference " + reference, locator
+					.getLineNumber());
 		}
 
-		return new PredicateConstraint(name, parameters, predicates
-				.get(reference), scope);
+		problem.ctr(predicate.applyParameters(parameters, scope));
 	}
 
 	/**
@@ -153,15 +145,21 @@ public final class ProblemHandler extends DefaultHandler {
 	 */
 	@Override
 	public void startElement(final String uri, final String localName,
-			final String qName, final Attributes attributes) {
+			final String qName, final Attributes attributes)
+			throws SAXParseException {
 		if ("domain".equals(qName)) {
 			position = Position.DOMAIN;
 			copyAttributes(attributes, new String[] { "name" });
 
 		} else if ("variable".equals(qName)) {
 
-			addVariable(attributes.getValue("name"), attributes
-					.getValue("domain"));
+			try {
+				addVariable(attributes.getValue("name"), attributes
+						.getValue("domain"));
+			} catch (ParseException e) {
+				throw new SAXParseException("Could not create variable",
+						locator, e);
+			}
 
 		} else if ("relation".equals(qName)) {
 			position = Position.RELATION;
@@ -240,10 +238,20 @@ public final class ProblemHandler extends DefaultHandler {
 			{
 				final String name = currentAttributes.get("name");
 
-				final Extension relation = parseRelation(name, Integer
-						.parseInt(currentAttributes.get("arity")), Integer
-						.parseInt(currentAttributes.get("nbTuples")),
-						currentAttributes.get("semantics"), contents.toString());
+				Extension relation;
+				try {
+					relation = new Extension(name, Integer
+							.parseInt(currentAttributes.get("arity")), Integer
+							.parseInt(currentAttributes.get("nbTuples")),
+							currentAttributes.get("semantics"), contents
+									.toString());
+				} catch (NumberFormatException e) {
+					throw new SAXParseException("Could not read number",
+							locator, e);
+				} catch (ParseException e) {
+					throw new SAXParseException("Error parsing tuples",
+							locator, e);
+				}
 
 				relations.put(name, relation);
 				// logger.finer(relation.toString());
@@ -259,15 +267,8 @@ public final class ProblemHandler extends DefaultHandler {
 			assert "functional".equals(qName);
 			{
 				final String name = currentAttributes.get("name");
-				final Predicate predicate;
-				try {
-					predicate = parsePredicate(name, predicateContents
-							.toString(), contents.toString());
-				} catch (ScriptException e) {
-					LOGGER.throwing(ProblemHandler.class.getSimpleName(),
-							"end", e);
-					throw new SAXParseException(e.toString(), locator);
-				}
+				final Predicate predicate = new Predicate(predicateContents
+						.toString(), contents.toString());
 
 				predicates.put(name, predicate);
 				// logger.finer(predicate.toString());
@@ -283,12 +284,14 @@ public final class ProblemHandler extends DefaultHandler {
 			{
 				final String name = currentAttributes.get("name");
 
-				final Constraint constraint = createConstraint(name,
-						currentAttributes.get("scope"), contents.toString(),
-						currentAttributes.get("reference"));
-
-				problem.addConstraint(constraint);
-				constraints.put(name, constraint);
+				try {
+					addConstraint(name, currentAttributes.get("scope"),
+							contents.toString(), currentAttributes
+									.get("reference"));
+				} catch (ParseException e) {
+					throw new SAXParseException("Could not create constraint "
+							+ name, locator, e);
+				}
 
 				// logger.finer(constraint.toString());
 
@@ -342,78 +345,8 @@ public final class ProblemHandler extends DefaultHandler {
 		return new ExtensiveDomain(name, values);
 	}
 
-	private Number[][] parseTuples(final int arity, final int nbTuples,
-			final String string) throws SAXParseException {
-
-		if (nbTuples < 1) {
-			return new Number[0][];
-		}
-
-		final Number[][] tuples = new Number[nbTuples][arity];
-
-		final String[] tupleList = string.split("\\|");
-
-		if (tupleList.length != nbTuples) {
-			throw new SAXParseException("Inconsistent number of Tuples ("
-					+ tupleList.length + " /= " + nbTuples + ") in " + string,
-					locator);
-		}
-
-		for (int i = nbTuples; --i >= 0;) {
-
-			final String[] valueList = tupleList[i].trim().split(" +");
-
-			if (valueList.length != arity) {
-				throw new SAXParseException("Incorrect arity ("
-						+ valueList.length + " /= " + arity + ") in "
-						+ tupleList[i].trim(), locator);
-			}
-
-			for (int j = arity; --j >= 0;) {
-				tuples[i][j] = Integer.parseInt(valueList[j]);
-			}
-
-		}
-
-		LOGGER.finest(tuplesToString(tuples));
-
-		return tuples;
-	}
-
-	private String tuplesToString(final Number[][] tuples) {
-		final StringBuilder stb = new StringBuilder();
-		stb.append("Tuples : [");
-		if (tuples.length > 0) {
-			stb.append(Arrays.toString(tuples[0]));
-		}
-		for (int i = 1; i < tuples.length; i++) {
-			stb.append(", ").append(Arrays.toString(tuples[i]));
-		}
-
-		stb.append(']');
-		return stb.toString();
-	}
-
-	private Extension parseRelation(final String name, final int arity,
-			final int nbTuples, final String semantics, final String relation)
-			throws SAXParseException {
-		final Number[][] tuples = parseTuples(arity, nbTuples, relation);
-
-		return new Extension(arity, nbTuples, semantics, tuples);
-	}
-
-	private Predicate parsePredicate(final String name,
-			final String parameters, final String expression)
-			throws ScriptException {
-		return new Predicate(parameters, expression);
-	}
-
 	private enum Position {
 		DOMAIN, RELATION, PREDICATE, PREDICATE_PARAMETERS, PREDICATE_EXPRESSION, CONSTRAINT, UNKNOWN
-	}
-
-	public int getNbConstraints() {
-		return constraints.size();
 	}
 
 	public int getNbDomains() {
@@ -426,10 +359,6 @@ public final class ProblemHandler extends DefaultHandler {
 
 	public int getNbRelations() {
 		return relations.size();
-	}
-
-	public int getNbVariables() {
-		return variables.size();
 	}
 
 }

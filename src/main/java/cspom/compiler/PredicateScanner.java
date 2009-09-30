@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 public class PredicateScanner {
 
-	private final static Pattern INTEGER = Pattern.compile("[0-9]*");
+	public final static Pattern INTEGER = Pattern.compile("[0-9]*");
 
-	private final static Pattern IDENTIFIER = Pattern.compile("[a-zA-Z_]\\w*");
+	public final static Pattern IDENTIFIER = Pattern.compile("[a-zA-Z_]\\w*");
 
 	private PredicateScanner() {
 

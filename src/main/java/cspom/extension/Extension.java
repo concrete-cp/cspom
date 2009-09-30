@@ -19,6 +19,7 @@
 
 package cspom.extension;
 
+import java.text.ParseException;
 import java.util.Arrays;
 
 public final class Extension {
@@ -34,18 +35,58 @@ public final class Extension {
 
 	private final int nbTuples;
 
-	public Extension(final int arity, final int nbTuples,
+	private final String name;
+
+	public Extension(final String name, final int arity, final int nbTuples,
 			final boolean supports, final Number[][] tuples) {
 		super();
 		this.arity = arity;
 		this.supports = supports;
 		this.tuples = tuples;
 		this.nbTuples = nbTuples;
+		this.name = name;
 	}
 
-	public Extension(final int arity, final int nbTuples,
-			final String semantics, final Number[][] tuples) {
-		this(arity, nbTuples, "supports".equals(semantics), tuples);
+	public Extension(final String name, final int arity, final int nbTuples,
+			final String semantics, final String extension)
+			throws ParseException {
+		this(name, arity, nbTuples, "supports".equals(semantics), parseTuples(
+				arity, nbTuples, extension));
+	}
+
+	private static Number[][] parseTuples(final int arity, final int nbTuples,
+			final String string) throws ParseException {
+
+		if (nbTuples < 1) {
+			return new Number[0][];
+		}
+
+		final Number[][] tuples = new Number[nbTuples][arity];
+
+		final String[] tupleList = string.split("\\|");
+
+		if (tupleList.length != nbTuples) {
+			throw new ParseException("Inconsistent number of Tuples ("
+					+ tupleList.length + " /= " + nbTuples + ") in " + string,
+					0);
+		}
+
+		for (int i = nbTuples; --i >= 0;) {
+
+			final String[] valueList = tupleList[i].trim().split(" +");
+
+			if (valueList.length != arity) {
+				throw new ParseException("Incorrect arity (" + valueList.length
+						+ " /= " + arity + ") in " + tupleList[i].trim(), 0);
+			}
+
+			for (int j = arity; --j >= 0;) {
+				tuples[i][j] = Integer.parseInt(valueList[j]);
+			}
+
+		}
+
+		return tuples;
 	}
 
 	public int getArity() {
@@ -75,7 +116,7 @@ public final class Extension {
 
 		return super.toString() + ": " + arity + "-ary, " + tuples.length
 				+ " tuples, " + (supports ? "supports" : "conflicts");// + ": "
-																		// +
+		// +
 		// tupleString();
 
 	}
@@ -100,6 +141,10 @@ public final class Extension {
 				tuples[i][j] = this.tuples[i][newOrder[j]];
 			}
 		}
-		return new Extension(arity, nbTuples, supports, tuples);
+		return new Extension("rev-" + name, arity, nbTuples, supports, tuples);
+	}
+
+	public String getName() {
+		return name;
 	}
 }

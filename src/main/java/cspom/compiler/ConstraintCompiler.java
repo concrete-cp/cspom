@@ -16,21 +16,26 @@ import cspom.variable.Variable;
 
 public class ConstraintCompiler {
 
-	public static Problem compile(String expression,
-			Map<String, Variable> existingVariables) throws ParseException {
+	final private Problem mainProblem;
+
+	public ConstraintCompiler(Problem mainProblem) {
+		this.mainProblem = mainProblem;
+	}
+
+	public Problem compile(String expression) throws ParseException {
 		final Node root = PredicateScanner.scan(expression);
 		final Problem problem = new Problem(expression);
 
-		Variable result = addToProblem(root, problem, existingVariables);
+		Variable result = addToProblem(root, problem);
 		result.setRoot();
 
 		return problem;
 	}
 
-	private static Variable addToProblem(Node node, Problem problem,
-			Map<String, Variable> existingVariables) throws ParseException {
+	private Variable addToProblem(Node node, Problem problem)
+			throws ParseException {
 		if (node.isLeaf()) {
-			return addVariable(node, problem, existingVariables);
+			return addVariable(node, problem);
 		}
 		Variable result = new Variable(new UnknownDomain());
 		try {
@@ -40,7 +45,7 @@ public class ConstraintCompiler {
 		}
 		Collection<Variable> operands = new ArrayList<Variable>();
 		for (Node n = node.getChild(); n != null; n = n.getSibling()) {
-			operands.add(addToProblem(n, problem, existingVariables));
+			operands.add(addToProblem(n, problem));
 		}
 		Constraint constraint = new FunctionalConstraint(result, node
 				.getOperator(), operands.toArray(new Variable[operands.size()]));
@@ -48,20 +53,20 @@ public class ConstraintCompiler {
 		return result;
 	}
 
-	private static Variable addVariable(Node node, Problem problem,
-			Map<String, Variable> existingVariables) {
+	private Variable addVariable(Node node, Problem problem) {
 		Variable existing = problem.getVariable(node.getOperator());
 		if (existing != null) {
 			return existing;
 		}
 
-		existing = existingVariables.get(node.getOperator());
+		existing = mainProblem.getVariable(node.getOperator());
 		if (existing != null) {
 			try {
 				problem.addVariable(existing);
 			} catch (DuplicateVariableException e) {
 				throw new IllegalStateException(e);
 			}
+			return existing;
 		}
 
 		final Variable newVariable;

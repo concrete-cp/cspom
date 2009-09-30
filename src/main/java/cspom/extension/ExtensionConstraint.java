@@ -12,7 +12,7 @@ public class ExtensionConstraint extends AbstractConstraint {
 
 	public ExtensionConstraint(final String name, final Extension relation,
 			final Variable... scope) {
-		super(name, null, scope);
+		super(name, "ext-" + relation.getName(), scope);
 		this.relation = relation;
 	}
 

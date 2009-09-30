@@ -30,6 +30,7 @@ public abstract class AbstractConstraint implements Constraint {
 		arity = scope.length;
 		positions = new HashMap<Variable, Integer>(arity);
 		for (int i = arity; --i >= 0;) {
+			scope[i].registerConstraint(this);
 			positions.put(scope[i], i);
 		}
 	}
@@ -47,7 +48,11 @@ public abstract class AbstractConstraint implements Constraint {
 	}
 
 	public int getPosition(final Variable variable) {
-		return positions.get(variable);
+		final Integer position = positions.get(variable);
+		if (position == null) {
+			return -1;
+		}
+		return position;
 	}
 
 	public int hashCode() {

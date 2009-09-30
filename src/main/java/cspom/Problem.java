@@ -75,8 +75,11 @@ public class Problem {
 
 	private final Collection<Constraint> constraints;
 
-	private final static Logger logger = Logger
-			.getLogger("cspfj.problem.XMLGenerator");
+	private final static Logger logger = Logger.getLogger(Problem.class
+			.getSimpleName());
+
+	private final ConstraintCompiler constraintCompiler = new ConstraintCompiler(
+			this);
 
 	/**
 	 * Creates an empty problem, without any initial variables nor constraints.
@@ -153,8 +156,9 @@ public class Problem {
 			reader.parse(new InputSource(problemIS));
 		} catch (SAXParseException e) {
 			logger.throwing(Problem.class.getSimpleName(), "load", e);
-			throw new ParseException("line " + e.getLineNumber() + ": "
-					+ e.toString(), e.getLineNumber());
+			throw new IllegalStateException(e);
+			// throw new ParseException("line " + e.getLineNumber() + ": "
+			// + e.toString(), e.getLineNumber());
 		} catch (SAXException e) {
 			throw new ParseException(e.toString(), 0);
 		}
@@ -216,18 +220,15 @@ public class Problem {
 		return variable;
 	}
 
-	public Variable var(String name, int lb, int ub) {
+	public Variable var(String name, int lb, int ub)
+			throws DuplicateVariableException {
 		final Variable variable = new Variable(name, lb, ub);
-		try {
-			addVariable(variable);
-		} catch (DuplicateVariableException e) {
-			throw new IllegalStateException();
-		}
+		addVariable(variable);
 		return variable;
 	}
 
 	public void ctr(String string) throws ParseException {
-		merge(ConstraintCompiler.compile(string, variableMap));
+		merge(constraintCompiler.compile(string));
 	}
 
 	public Variable getVariable(String variableName) {
@@ -277,6 +278,9 @@ public class Problem {
 				stb.append("id \"cons").append(gen).append("\"\n");
 				stb.append("label \"").append(c.getDescription())
 						.append("\"\n");
+				stb.append("graphics [\n");
+				stb.append("fill \"#FFAA00\"\n");
+				stb.append("]\n");
 				stb.append("]\n");
 
 				for (Variable v : c.getScope()) {
@@ -290,6 +294,8 @@ public class Problem {
 				stb.append("edge [\n");
 				stb.append("source \"").append(c.getScope()[0]).append("\"\n");
 				stb.append("target \"").append(c.getScope()[1]).append("\"\n");
+				stb.append("label \"").append(c.getDescription())
+						.append("\"\n");
 				stb.append("]\n");
 			}
 		}
