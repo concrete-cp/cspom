@@ -7,7 +7,7 @@ import cspom.constraint.Constraint;
 
 public class Variable {
 	private static int noname = 0;
-	private final Domain domain;
+	private Domain domain;
 	private final String name;
 	private boolean root = false;
 	private final Set<Constraint> constraints;
@@ -34,6 +34,10 @@ public class Variable {
 		return domain;
 	}
 
+	public void setDomain(Domain domain) {
+		this.domain = domain;
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -53,11 +57,11 @@ public class Variable {
 		}
 		constraints.add(constraint);
 	}
-	
+
 	public boolean deregisterConstraint(Constraint constraint) {
 		return !constraints.remove(constraint);
 	}
-	
+
 	public Set<Constraint> getConstraints() {
 		return constraints;
 	}

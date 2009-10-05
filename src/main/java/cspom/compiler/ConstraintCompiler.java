@@ -3,7 +3,6 @@ package cspom.compiler;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 import cspom.DuplicateVariableException;
 import cspom.Problem;

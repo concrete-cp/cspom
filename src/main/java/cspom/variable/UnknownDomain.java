@@ -5,7 +5,7 @@ import java.util.List;
 public class UnknownDomain implements Domain {
 
 	public static enum Type {
-		BOOLEAN, INTEGER, UNKNOWN
+		INTEGER, UNKNOWN
 	}
 
 	private Type type = Type.UNKNOWN;
