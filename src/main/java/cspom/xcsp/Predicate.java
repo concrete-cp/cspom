@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import cspom.compiler.PredicateScanner;
-import cspom.variable.Variable;
+import cspom.variable.CSPOMVariable;
 
 public class Predicate {
 
@@ -71,7 +71,7 @@ public class Predicate {
 		}
 	}
 
-	private static int seekVariable(String string, Variable[] scope) {
+	private static int seekVariable(String string, CSPOMVariable[] scope) {
 		for (int i = scope.length; --i >= 0;) {
 			if (string.equals(scope[i].getName())) {
 				return i;
@@ -80,7 +80,7 @@ public class Predicate {
 		return -1;
 	}
 
-	public String applyParameters(String parameters, Variable[] scope)
+	public String applyParameters(String parameters, CSPOMVariable[] scope)
 			throws ParseException {
 		final String[] stringParameters = parameters.trim().split(" +");
 
@@ -99,7 +99,7 @@ public class Predicate {
 		return applyied;
 	}
 
-	private void controlParameter(String string, Variable[] scope)
+	private void controlParameter(String string, CSPOMVariable[] scope)
 			throws ParseException {
 		if (PredicateScanner.INTEGER.matcher(string).matches()) {
 			return;

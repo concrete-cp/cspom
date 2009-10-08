@@ -4,56 +4,59 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import cspom.CSPOM;
 import cspom.DuplicateVariableException;
-import cspom.Problem;
 import cspom.compiler.PredicateScanner.Node;
-import cspom.constraint.Constraint;
+import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
+import cspom.variable.CSPOMVariable;
 import cspom.variable.Constant;
 import cspom.variable.UnknownDomain;
-import cspom.variable.Variable;
+import cspom.variable.UnknownDomain.Type;
 
 public class ConstraintCompiler {
 
-	final private Problem mainProblem;
+	final private CSPOM mainProblem;
 
-	public ConstraintCompiler(Problem mainProblem) {
+	public ConstraintCompiler(CSPOM mainProblem) {
 		this.mainProblem = mainProblem;
 	}
 
-	public Problem compile(String expression) throws ParseException {
+	public CSPOM split(String expression) throws ParseException {
 		final Node root = PredicateScanner.scan(expression);
-		final Problem problem = new Problem(expression);
+		final CSPOM problem = new CSPOM();
 
-		Variable result = addToProblem(root, problem);
+		CSPOMVariable result = addToProblem(root, problem);
 		result.setRoot();
 
 		return problem;
 	}
 
-	private Variable addToProblem(Node node, Problem problem)
+	private CSPOMVariable addToProblem(Node node, CSPOM problem)
 			throws ParseException {
 		if (node.isLeaf()) {
 			return addVariable(node, problem);
 		}
-		Variable result = new Variable(new UnknownDomain());
+		CSPOMVariable result = new CSPOMVariable(
+				new UnknownDomain(Type.UNKNOWN));
 		try {
 			problem.addVariable(result);
 		} catch (DuplicateVariableException e) {
 			throw new IllegalStateException(e);
 		}
-		Collection<Variable> operands = new ArrayList<Variable>();
+		Collection<CSPOMVariable> operands = new ArrayList<CSPOMVariable>();
 		for (Node n = node.getChild(); n != null; n = n.getSibling()) {
 			operands.add(addToProblem(n, problem));
 		}
-		Constraint constraint = new FunctionalConstraint(result, node
-				.getOperator(), operands.toArray(new Variable[operands.size()]));
+		CSPOMConstraint constraint = new FunctionalConstraint(result, node
+				.getOperator(), operands.toArray(new CSPOMVariable[operands
+				.size()]));
 		problem.addConstraint(constraint);
 		return result;
 	}
 
-	private Variable addVariable(Node node, Problem problem) {
-		Variable existing = problem.getVariable(node.getOperator());
+	private CSPOMVariable addVariable(Node node, CSPOM problem) {
+		CSPOMVariable existing = problem.getVariable(node.getOperator());
 		if (existing != null) {
 			return existing;
 		}
@@ -68,9 +71,9 @@ public class ConstraintCompiler {
 			return existing;
 		}
 
-		final Variable newVariable;
+		final CSPOMVariable newVariable;
 		if (node.isIdentifier()) {
-			newVariable = new Variable(new UnknownDomain());
+			newVariable = new CSPOMVariable(new UnknownDomain(Type.UNKNOWN));
 		} else if (node.isInteger()) {
 			newVariable = new Constant(Integer.parseInt(node.getOperator()));
 		} else {

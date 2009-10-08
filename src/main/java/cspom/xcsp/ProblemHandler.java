@@ -32,13 +32,13 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import cspom.DuplicateVariableException;
-import cspom.Problem;
+import cspom.CSPOM;
 import cspom.extension.Extension;
 import cspom.extension.ExtensionConstraint;
 import cspom.variable.Domain;
 import cspom.variable.ExtensiveDomain;
 import cspom.variable.IntervalDomain;
-import cspom.variable.Variable;
+import cspom.variable.CSPOMVariable;
 
 public final class ProblemHandler extends DefaultHandler {
 
@@ -64,9 +64,9 @@ public final class ProblemHandler extends DefaultHandler {
 
 	private StringBuilder predicateContents;
 
-	private final Problem problem;
+	private final CSPOM problem;
 
-	public ProblemHandler(final Problem problem) {
+	public ProblemHandler(final CSPOM problem) {
 		super();
 
 		this.problem = problem;
@@ -87,7 +87,7 @@ public final class ProblemHandler extends DefaultHandler {
 
 	private void addVariable(final String name, final String domain)
 			throws ParseException {
-		final Variable variable = new Variable(name, domains.get(domain));
+		final CSPOMVariable variable = new CSPOMVariable(name, domains.get(domain));
 		try {
 			problem.addVariable(variable);
 		} catch (DuplicateVariableException e) {
@@ -100,7 +100,7 @@ public final class ProblemHandler extends DefaultHandler {
 			final String parameters, final String reference)
 			throws ParseException {
 		final String[] scopeList = varNames.split(" +");
-		final Variable[] scope = new Variable[scopeList.length];
+		final CSPOMVariable[] scope = new CSPOMVariable[scopeList.length];
 		for (int i = 0; i < scopeList.length; i++) {
 			scope[i] = problem.getVariable(scopeList[i]);
 			if (scope[i] == null) {

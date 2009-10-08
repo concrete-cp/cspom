@@ -4,20 +4,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cspom.constraint.AbstractConstraint;
-import cspom.variable.Variable;
+import cspom.variable.CSPOMVariable;
 
 public class ExtensionConstraint extends AbstractConstraint {
 
 	private final Extension relation;
 
 	public ExtensionConstraint(final String name, final Extension relation,
-			final Variable... scope) {
+			final CSPOMVariable... scope) {
 		super(name, "ext-" + relation.getName(), scope);
 		this.relation = relation;
 	}
 
 	public ExtensionConstraint(final Extension relation,
-			final Variable... scope) {
+			final CSPOMVariable... scope) {
 		super(null, scope);
 		this.relation = relation;
 	}
@@ -34,10 +34,10 @@ public class ExtensionConstraint extends AbstractConstraint {
 		return relation.evaluate(numbers);
 	}
 
-	public ExtensionConstraint standardize(final Variable[] scope) {
+	public ExtensionConstraint standardize(final CSPOMVariable[] scope) {
 		assert scope.length == getArity();
 		final int[] newPosition = new int[getArity()];
-		final Map<Variable, Variable> newOrder = new HashMap<Variable, Variable>(
+		final Map<CSPOMVariable, CSPOMVariable> newOrder = new HashMap<CSPOMVariable, CSPOMVariable>(
 				getArity());
 
 		for (int i = scope.length; --i >= 0;) {

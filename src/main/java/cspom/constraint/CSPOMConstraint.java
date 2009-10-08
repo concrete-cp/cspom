@@ -1,12 +1,10 @@
 package cspom.constraint;
 
-import java.util.Collection;
-import java.util.List;
-
+import javax.management.relation.Relation;
 import javax.script.ScriptException;
 
-import cspom.Problem;
-import cspom.variable.Variable;
+import cspom.CSPOM;
+import cspom.variable.CSPOMVariable;
 
 /**
  * A constraint involves a finite set of variables and is used to define the set
@@ -29,15 +27,15 @@ import cspom.variable.Variable;
  * @author Julien Vion
  * 
  * @see Relation
- * @see Variable
- * @see Problem
+ * @see CSPOMVariable
+ * @see CSPOM
  */
-public interface Constraint {
+public interface CSPOMConstraint {
 
     /**
      * @return the scope of the constraint
      */
-    Variable[] getScope();
+    CSPOMVariable[] getScope();
 
     /**
      * @return the arity of the constraint. Defined as arity ==
@@ -56,9 +54,9 @@ public interface Constraint {
      */
     boolean evaluate(Number[] numbers) throws ScriptException;
 
-    int getPosition(Variable variable);
+    int getPosition(CSPOMVariable variable);
 
-    Constraint standardize(Variable[] scope);
+    CSPOMConstraint standardize(CSPOMVariable[] scope);
     
     String getDescription();
 }

@@ -1,18 +1,21 @@
 package examples.queens;
 
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import cspom.DuplicateVariableException;
-import cspom.Problem;
-import cspom.variable.Variable;
+import cspom.CSPOM;
+import cspom.compiler.ConstraintTransformer;
+import cspom.variable.CSPOMVariable;
 
 public class Queens {
 
-	public static Problem queens(int nbQueens) throws ParseException {
+	public static CSPOM queens(int nbQueens) throws ParseException {
 
-		Problem problem = new Problem(nbQueens + "-queens");
+		CSPOM problem = new CSPOM();
 
-		Variable[] queens = new Variable[nbQueens];
+		CSPOMVariable[] queens = new CSPOMVariable[nbQueens];
 
 		for (int i = nbQueens; --i >= 0;) {
 			try {

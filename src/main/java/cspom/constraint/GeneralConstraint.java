@@ -1,18 +1,16 @@
 package cspom.constraint;
 
-import java.util.Arrays;
-
 import javax.script.ScriptException;
 
-import cspom.variable.Variable;
+import cspom.variable.CSPOMVariable;
 
 public class GeneralConstraint extends AbstractConstraint {
 
-	public GeneralConstraint(String name, String description, Variable... scope) {
+	public GeneralConstraint(String name, String description, CSPOMVariable... scope) {
 		super(name, description, scope);
 	}
 
-	public GeneralConstraint(String description, Variable... scope) {
+	public GeneralConstraint(String description, CSPOMVariable... scope) {
 		super(description, scope);
 	}
 
@@ -23,7 +21,7 @@ public class GeneralConstraint extends AbstractConstraint {
 	}
 
 	@Override
-	public Constraint standardize(Variable[] scope) {
+	public CSPOMConstraint standardize(CSPOMVariable[] scope) {
 		// TODO Auto-generated method stub
 		return null;
 	}

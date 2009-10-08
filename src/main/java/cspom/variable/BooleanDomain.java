@@ -19,8 +19,18 @@
 
 package cspom.variable;
 
+import java.util.ArrayList;
+import java.util.List;
 
 public final class BooleanDomain implements Domain {
+
+	private final static List<Number> domain01;
+
+	static {
+		domain01 = new ArrayList<Number>(2);
+		domain01.add(0);
+		domain01.add(1);
+	}
 
 	public BooleanDomain() {
 		super();
@@ -32,6 +42,10 @@ public final class BooleanDomain implements Domain {
 
 	public int getNbValues() {
 		return 2;
+	}
+
+	public List<Number> getValues() {
+		return domain01;
 	}
 
 	@Override

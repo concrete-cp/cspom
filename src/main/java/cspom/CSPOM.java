@@ -30,8 +30,8 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
 import cspom.compiler.ConstraintCompiler;
-import cspom.constraint.Constraint;
-import cspom.variable.Variable;
+import cspom.constraint.CSPOMConstraint;
+import cspom.variable.CSPOMVariable;
 import cspom.xcsp.ProblemHandler;
 
 /**
@@ -53,11 +53,11 @@ import cspom.xcsp.ProblemHandler;
  * 
  * 
  * @author Julien Vion
- * @see Constraint
- * @see Variable
+ * @see CSPOMConstraint
+ * @see CSPOMVariable
  * 
  */
-public class Problem {
+public class CSPOM {
 	public final static String VERSION;
 
 	static {
@@ -67,32 +67,24 @@ public class Problem {
 		VERSION = matcher.group(1);
 	}
 
-	private final String name;
+	private final List<CSPOMVariable> variableList;
 
-	private final List<Variable> variableList;
+	private final Map<String, CSPOMVariable> variableMap;
 
-	private final Map<String, Variable> variableMap;
+	private final Collection<CSPOMConstraint> constraints;
 
-	private final Collection<Constraint> constraints;
-
-	private final static Logger logger = Logger.getLogger(Problem.class
+	private final static Logger logger = Logger.getLogger(CSPOM.class
 			.getSimpleName());
 
-	private final ConstraintCompiler constraintCompiler = new ConstraintCompiler(
-			this);
+	private ConstraintCompiler constraintCompiler;
 
 	/**
 	 * Creates an empty problem, without any initial variables nor constraints.
-	 * 
-	 * @param name
-	 *            : the name of the problem
 	 */
-	public Problem(final String name) {
-		this.name = name;
-
-		variableList = new LinkedList<Variable>();
-		variableMap = new HashMap<String, Variable>();
-		constraints = new ArrayList<Constraint>();
+	public CSPOM() {
+		variableList = new LinkedList<CSPOMVariable>();
+		variableMap = new HashMap<String, CSPOMVariable>();
+		constraints = new ArrayList<CSPOMConstraint>();
 	}
 
 	public static InputStream problemInputStream(final URL url)
@@ -114,8 +106,8 @@ public class Problem {
 		return url.openStream();
 	}
 
-	public static Problem load(final String string)
-			throws FileNotFoundException, ParseException, IOException {
+	public static CSPOM load(final String string) throws FileNotFoundException,
+			ParseException, IOException {
 		final URI uri;
 		try {
 			uri = new URI(string);
@@ -130,9 +122,9 @@ public class Problem {
 		return load(uri.toURL());
 	}
 
-	public static Problem load(final URL url) throws ParseException,
+	public static CSPOM load(final URL url) throws ParseException,
 			FileNotFoundException, IOException {
-		final Problem problem = new Problem(url.getPath());
+		final CSPOM problem = new CSPOM();
 		final InputStream problemIS = problemInputStream(url);
 		final SAXParserFactory saxParserFactory = SAXParserFactory
 				.newInstance();
@@ -155,7 +147,7 @@ public class Problem {
 		try {
 			reader.parse(new InputSource(problemIS));
 		} catch (SAXParseException e) {
-			logger.throwing(Problem.class.getSimpleName(), "load", e);
+			logger.throwing(CSPOM.class.getSimpleName(), "load", e);
 			throw new IllegalStateException(e);
 			// throw new ParseException("line " + e.getLineNumber() + ": "
 			// + e.toString(), e.getLineNumber());
@@ -169,11 +161,11 @@ public class Problem {
 		return problem;
 	}
 
-	public List<Variable> getVariables() {
+	public List<CSPOMVariable> getVariables() {
 		return variableList;
 	}
 
-	public void addVariable(Variable variable)
+	public void addVariable(CSPOMVariable variable)
 			throws DuplicateVariableException {
 		if (variableMap.put(variable.getName(), variable) != null) {
 			throw new DuplicateVariableException();
@@ -182,22 +174,18 @@ public class Problem {
 
 	}
 
-	public void addConstraint(Constraint constraint) {
+	public void addConstraint(CSPOMConstraint constraint) {
 		constraints.add(constraint);
 	}
 
-	public Collection<Constraint> getConstraints() {
+	public Collection<CSPOMConstraint> getConstraints() {
 		return constraints;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public Collection<Constraint> checkSolution(final List<Number> solution)
+	public Collection<CSPOMConstraint> checkSolution(final List<Number> solution)
 			throws ScriptException {
-		final Collection<Constraint> falsified = new ArrayList<Constraint>();
-		for (Constraint c : constraints) {
+		final Collection<CSPOMConstraint> falsified = new ArrayList<CSPOMConstraint>();
+		for (CSPOMConstraint c : constraints) {
 			final Number[] values = new Number[c.getArity()];
 			for (int i = c.getArity(); --i >= 0;) {
 				values[i] = solution.get(variableList.indexOf(c.getScope()[i]));
@@ -210,8 +198,8 @@ public class Problem {
 		return falsified;
 	}
 
-	public Variable var(int lb, int ub) {
-		final Variable variable = new Variable(lb, ub);
+	public CSPOMVariable var(int lb, int ub) {
+		final CSPOMVariable variable = new CSPOMVariable(lb, ub);
 		try {
 			addVariable(variable);
 		} catch (DuplicateVariableException e) {
@@ -220,23 +208,26 @@ public class Problem {
 		return variable;
 	}
 
-	public Variable var(String name, int lb, int ub)
+	public CSPOMVariable var(String name, int lb, int ub)
 			throws DuplicateVariableException {
-		final Variable variable = new Variable(name, lb, ub);
+		final CSPOMVariable variable = new CSPOMVariable(name, lb, ub);
 		addVariable(variable);
 		return variable;
 	}
 
 	public void ctr(String string) throws ParseException {
-		merge(constraintCompiler.compile(string));
+		if (constraintCompiler == null) {
+			constraintCompiler = new ConstraintCompiler(this);
+		}
+		merge(constraintCompiler.split(string));
 	}
 
-	public Variable getVariable(String variableName) {
+	public CSPOMVariable getVariable(String variableName) {
 		return variableMap.get(variableName);
 	}
 
-	private void merge(Problem problem) {
-		for (Variable v : problem.variableList) {
+	private void merge(CSPOM problem) {
+		for (CSPOMVariable v : problem.variableList) {
 			if (!variableMap.containsValue(v)) {
 				try {
 					addVariable(v);
@@ -251,10 +242,10 @@ public class Problem {
 
 	public String toString() {
 		final StringBuilder stb = new StringBuilder();
-		for (Variable v : variableList) {
+		for (CSPOMVariable v : variableList) {
 			stb.append(v).append('\n');
 		}
-		for (Constraint c : constraints) {
+		for (CSPOMConstraint c : constraints) {
 			stb.append(c).append('\n');
 		}
 		return stb.toString();
@@ -264,7 +255,7 @@ public class Problem {
 		final StringBuilder stb = new StringBuilder();
 		stb.append("graph [\n");
 		stb.append("directed 0\n");
-		for (Variable v : variableList) {
+		for (CSPOMVariable v : variableList) {
 			stb.append("node [\n");
 			stb.append("id \"").append(v.getName()).append("\"\n");
 			stb.append("label \"").append(v.getName()).append("\"\n");
@@ -272,7 +263,7 @@ public class Problem {
 		}
 
 		int gen = 0;
-		for (Constraint c : constraints) {
+		for (CSPOMConstraint c : constraints) {
 			if (c.getArity() > 2) {
 				stb.append("node [\n");
 				stb.append("id \"cons").append(gen).append("\"\n");
@@ -283,7 +274,7 @@ public class Problem {
 				stb.append("]\n");
 				stb.append("]\n");
 
-				for (Variable v : c.getScope()) {
+				for (CSPOMVariable v : c.getScope()) {
 					stb.append("edge [\n");
 					stb.append("source \"cons").append(gen).append("\"\n");
 					stb.append("target \"").append(v.getName()).append("\"\n");

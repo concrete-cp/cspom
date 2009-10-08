@@ -4,38 +4,38 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import cspom.variable.Variable;
+import cspom.variable.CSPOMVariable;
 
-public abstract class AbstractConstraint implements Constraint {
+public abstract class AbstractConstraint implements CSPOMConstraint {
 
 	private final String name;
 
-	private final Variable[] scope;
+	private final CSPOMVariable[] scope;
 
 	private final int arity;
 
-	private final Map<Variable, Integer> positions;
+	private final Map<CSPOMVariable, Integer> positions;
 
 	private String description;
 
-	public AbstractConstraint(final String description, final Variable... scope) {
+	public AbstractConstraint(final String description, final CSPOMVariable... scope) {
 		this(null, description, scope);
 	}
 
 	public AbstractConstraint(final String name, final String description,
-			final Variable... scope) {
+			final CSPOMVariable... scope) {
 		this.scope = scope;
 		this.name = name;
 		this.description = description;
 		arity = scope.length;
-		positions = new HashMap<Variable, Integer>(arity);
+		positions = new HashMap<CSPOMVariable, Integer>(arity);
 		for (int i = arity; --i >= 0;) {
 			scope[i].registerConstraint(this);
 			positions.put(scope[i], i);
 		}
 	}
 
-	public Variable[] getScope() {
+	public CSPOMVariable[] getScope() {
 		return scope;
 	}
 
@@ -47,7 +47,7 @@ public abstract class AbstractConstraint implements Constraint {
 		return arity;
 	}
 
-	public int getPosition(final Variable variable) {
+	public int getPosition(final CSPOMVariable variable) {
 		final Integer position = positions.get(variable);
 		if (position == null) {
 			return -1;

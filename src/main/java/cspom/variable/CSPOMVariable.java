@@ -3,30 +3,30 @@ package cspom.variable;
 import java.util.HashSet;
 import java.util.Set;
 
-import cspom.constraint.Constraint;
+import cspom.constraint.CSPOMConstraint;
 
-public class Variable {
+public class CSPOMVariable {
 	private static int noname = 0;
 	private Domain domain;
 	private final String name;
 	private boolean root = false;
-	private final Set<Constraint> constraints;
+	private final Set<CSPOMConstraint> constraints;
 
-	public Variable(final String name, final Domain domain) {
+	public CSPOMVariable(final String name, final Domain domain) {
 		this.domain = domain;
 		this.name = name;
-		constraints = new HashSet<Constraint>();
+		constraints = new HashSet<CSPOMConstraint>();
 	}
 
-	public Variable(final Domain domain) {
+	public CSPOMVariable(final Domain domain) {
 		this(generateName(), domain);
 	}
 
-	public Variable(final String name, final int lB, final int uB) {
+	public CSPOMVariable(final String name, final int lB, final int uB) {
 		this(name, new IntervalDomain("dom(" + name + ")", lB, uB));
 	}
 
-	public Variable(final int lB, final int uB) {
+	public CSPOMVariable(final int lB, final int uB) {
 		this(generateName(), lB, uB);
 	}
 
@@ -50,7 +50,7 @@ public class Variable {
 		root = true;
 	}
 
-	public void registerConstraint(Constraint constraint) {
+	public void registerConstraint(CSPOMConstraint constraint) {
 		if (constraint.getPosition(this) < 0) {
 			throw new IllegalArgumentException(this
 					+ " should be in the scope of " + constraint);
@@ -58,11 +58,11 @@ public class Variable {
 		constraints.add(constraint);
 	}
 
-	public boolean deregisterConstraint(Constraint constraint) {
+	public boolean deregisterConstraint(CSPOMConstraint constraint) {
 		return !constraints.remove(constraint);
 	}
 
-	public Set<Constraint> getConstraints() {
+	public Set<CSPOMConstraint> getConstraints() {
 		return constraints;
 	}
 

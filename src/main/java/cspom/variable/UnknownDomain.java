@@ -8,8 +8,13 @@ public class UnknownDomain implements Domain {
 		INTEGER, UNKNOWN
 	}
 
-	private Type type = Type.UNKNOWN;
+	private Type type;
 
+	public UnknownDomain(Type type) {
+		super();
+		this.type = type;
+	}
+	
 	@Override
 	public String getName() {
 		return null;
