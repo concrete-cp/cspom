@@ -10,9 +10,7 @@ import cspom.compiler.PredicateScanner.Node;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.Constant;
-import cspom.variable.UnknownDomain;
-import cspom.variable.UnknownDomain.Type;
+import cspom.variable.CSPOMVariable.DomainType;
 
 public class ConstraintCompiler {
 
@@ -37,8 +35,7 @@ public class ConstraintCompiler {
 		if (node.isLeaf()) {
 			return addVariable(node, problem);
 		}
-		CSPOMVariable result = new CSPOMVariable(
-				new UnknownDomain(Type.UNKNOWN));
+		CSPOMVariable result = new CSPOMVariable(DomainType.UNKNOWN);
 		try {
 			problem.addVariable(result);
 		} catch (DuplicateVariableException e) {
@@ -73,9 +70,10 @@ public class ConstraintCompiler {
 
 		final CSPOMVariable newVariable;
 		if (node.isIdentifier()) {
-			newVariable = new CSPOMVariable(new UnknownDomain(Type.UNKNOWN));
+			newVariable = new CSPOMVariable(DomainType.UNKNOWN);
 		} else if (node.isInteger()) {
-			newVariable = new Constant(Integer.parseInt(node.getOperator()));
+			newVariable = new CSPOMVariable(Integer
+					.parseInt(node.getOperator()));
 		} else {
 			throw new IllegalStateException();
 		}

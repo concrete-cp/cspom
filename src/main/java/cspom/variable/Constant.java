@@ -1,8 +1,14 @@
 package cspom.variable;
 
-public class Constant extends CSPOMVariable {
+public final class Constant implements Domain {
+	private final Number value;
 
-	public Constant(final Number value) {
-		super(value.toString(), new SingletonDomain(value));
+	public Constant(Number value) {
+		this.value = value;
 	}
+
+	public Number getValue() {
+		return value;
+	}
+
 }

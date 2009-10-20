@@ -31,21 +31,22 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import cspom.DuplicateVariableException;
 import cspom.CSPOM;
+import cspom.DuplicateVariableException;
 import cspom.extension.Extension;
 import cspom.extension.ExtensionConstraint;
+import cspom.variable.CSPOMVariable;
 import cspom.variable.Domain;
 import cspom.variable.ExtensiveDomain;
-import cspom.variable.IntervalDomain;
-import cspom.variable.CSPOMVariable;
+import cspom.variable.Interval;
+import cspom.variable.CSPOMVariable.DomainType;
 
 public final class ProblemHandler extends DefaultHandler {
 
 	/**
 	 * List of domains.
 	 */
-	private final Map<String, Domain> domains;
+	private final Map<String, Object> domains;
 
 	/**
 	 * List of relations defining the constraints in extension.
@@ -71,10 +72,9 @@ public final class ProblemHandler extends DefaultHandler {
 
 		this.problem = problem;
 		currentAttributes = new HashMap<String, String>();
-		domains = new HashMap<String, Domain>();
+		domains = new HashMap<String, Object>();
 		relations = new HashMap<String, Extension>();
 		predicates = new HashMap<String, Predicate>();
-		// orderedVariables = new ArrayList<Variable>();
 
 		contents = new StringBuilder();
 
@@ -87,7 +87,16 @@ public final class ProblemHandler extends DefaultHandler {
 
 	private void addVariable(final String name, final String domain)
 			throws ParseException {
-		final CSPOMVariable variable = new CSPOMVariable(name, domains.get(domain));
+		final Object dom = domains.get(domain);
+		final CSPOMVariable variable;
+		if (dom instanceof Interval) {
+			variable = new CSPOMVariable(name, (Interval) dom);
+		} else if (dom instanceof List<?>) {
+			variable = new CSPOMVariable(name, (List<Number>) dom);
+		} else {
+			throw new IllegalArgumentException(domain + " not recognized");
+		}
+
 		try {
 			problem.addVariable(variable);
 		} catch (DuplicateVariableException e) {
@@ -226,9 +235,7 @@ public final class ProblemHandler extends DefaultHandler {
 			{
 				final String name = currentAttributes.get("name");
 
-				final Domain domain = parseDomain(name, contents.toString());
-
-				domains.put(name, domain);
+				parseDomain(name, contents.toString());
 				// logger.finer(domain.toString());
 			}
 			break;
@@ -305,7 +312,7 @@ public final class ProblemHandler extends DefaultHandler {
 
 	}
 
-	private Domain parseDomain(final String name, final String domain)
+	private void parseDomain(final String name, final String domain)
 			throws SAXParseException {
 
 		final String[] listOfValues = domain.trim().split(" +");
@@ -316,33 +323,37 @@ public final class ProblemHandler extends DefaultHandler {
 
 				final int start = Integer.parseInt(fromto[0]);
 				final int end = Integer.parseInt(fromto[1]);
-				return new IntervalDomain(name, start, end);
+				domains.put(name, new Interval(start, end));
 
 			} catch (NumberFormatException e) {
 				throw new SAXParseException(e.toString(), locator);
 			}
 
-		}
+		} else {
 
-		final List<Number> values = new ArrayList<Number>();
+			final List<Number> values = new ArrayList<Number>();
 
-		for (String currentValue : listOfValues) {
-			if (currentValue.contains("..")) {
+			for (String currentValue : listOfValues) {
+				if (currentValue.contains("..")) {
 
-				final String[] fromto = currentValue.split("\\.\\.");
-				final int start = Integer.parseInt(fromto[0]);
-				final int end = Integer.parseInt(fromto[1]);
-				for (int i = 0; i <= end - start; i++) {
-					values.add(i + start);
+					final String[] fromto = currentValue.split("\\.\\.");
+					final int start = Integer.parseInt(fromto[0]);
+					final int end = Integer.parseInt(fromto[1]);
+					for (int i = 0; i <= end - start; i++) {
+						values.add(i + start);
+					}
+
+				} else {
+
+					values.add(Integer.parseInt(currentValue.trim()));
+
 				}
-
-			} else {
-
-				values.add(Integer.parseInt(currentValue.trim()));
-
 			}
+
+			domains.put(name, values);
+
 		}
-		return new ExtensiveDomain(name, values);
+
 	}
 
 	private enum Position {

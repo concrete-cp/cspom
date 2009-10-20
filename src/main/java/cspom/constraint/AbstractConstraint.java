@@ -18,7 +18,8 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 
 	private String description;
 
-	public AbstractConstraint(final String description, final CSPOMVariable... scope) {
+	public AbstractConstraint(final String description,
+			final CSPOMVariable... scope) {
 		this(null, description, scope);
 	}
 
@@ -30,8 +31,8 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 		arity = scope.length;
 		positions = new HashMap<CSPOMVariable, Integer>(arity);
 		for (int i = arity; --i >= 0;) {
-			scope[i].registerConstraint(this);
 			positions.put(scope[i], i);
+			scope[i].registerConstraint(this);
 		}
 	}
 
