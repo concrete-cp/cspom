@@ -239,7 +239,7 @@ public class CSPOM {
 
 		constraints.addAll(problem.constraints);
 	}
-
+	
 	public String toString() {
 		final StringBuilder stb = new StringBuilder();
 		for (CSPOMVariable v : variableList) {

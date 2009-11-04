@@ -39,7 +39,6 @@ import cspom.variable.CSPOMVariable;
 import cspom.variable.Domain;
 import cspom.variable.ExtensiveDomain;
 import cspom.variable.Interval;
-import cspom.variable.CSPOMVariable.DomainType;
 
 public final class ProblemHandler extends DefaultHandler {
 

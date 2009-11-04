@@ -14,15 +14,6 @@ public final class CSPOMVariable {
 	private DomainType domainType;
 	private Domain domain;
 
-	public enum DomainType {
-		UNKNOWN, UNKNOWN_INT, EXT_INT, INTERVAL_INT, BOOLEAN, CONSTANT;
-
-		public boolean isInt() {
-			return this == UNKNOWN_INT || this == EXT_INT
-					|| this == INTERVAL_INT;
-		}
-	}
-
 	public DomainType getDomainType() {
 		return domainType;
 	}

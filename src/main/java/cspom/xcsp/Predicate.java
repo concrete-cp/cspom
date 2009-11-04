@@ -5,29 +5,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import cspom.compiler.PredicateScanner;
 import cspom.variable.CSPOMVariable;
+import cspom.variable.DomainType;
 
 public class Predicate {
 
-	private final Map<String, Type> types;
+	private final Map<String, DomainType> types;
 
 	private final List<String> parameters;
 
 	private final String expression;
 
-	private final static Logger logger = Logger.getLogger(Predicate.class
-			.getSimpleName());
+	// private final static Logger logger = Logger.getLogger(Predicate.class
+	// .getSimpleName());
 
 	public Predicate(final String parameters, final String expression) {
 		this.parameters = new ArrayList<String>();
-		types = new HashMap<String, Type>();
+		types = new HashMap<String, DomainType>();
 		this.expression = expression.trim();
 		final String[] args = parameters.trim().split(" +");
 		for (int i = 0; i < args.length; i += 2) {
-			types.put(args[i + 1], Type.parse(args[i]));
+			types.put(args[i + 1], Enum.valueOf(DomainType.class, args[i]));
 			this.parameters.add(args[i + 1]);
 		}
 	}
@@ -44,7 +44,7 @@ public class Predicate {
 		return expression;
 	}
 
-	public final Map<String, Type> getTypes() {
+	public final Map<String, DomainType> getTypes() {
 		return types;
 	}
 
@@ -58,17 +58,6 @@ public class Predicate {
 
 	public int hashCode() {
 		return expression.hashCode();
-	}
-
-	public enum Type {
-		INTEGER, UNKNOWN;
-
-		public static Type parse(final String type) {
-			if ("int".equals(type)) {
-				return INTEGER;
-			}
-			return UNKNOWN;
-		}
 	}
 
 	private static int seekVariable(String string, CSPOMVariable[] scope) {

@@ -10,7 +10,7 @@ import cspom.compiler.PredicateScanner.Node;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.CSPOMVariable.DomainType;
+import cspom.variable.DomainType;
 
 public class ConstraintCompiler {
 
