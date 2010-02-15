@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -44,6 +45,9 @@ public final class ProblemHandler extends DefaultHandler {
 		domain, variable, relation, predicate, parameters, expression, constraint, unknown
 	};
 
+	private static final Logger LOGGER = Logger.getLogger(ProblemHandler.class
+			.getSimpleName());
+
 	/**
 	 * List of domains.
 	 */
@@ -63,8 +67,6 @@ public final class ProblemHandler extends DefaultHandler {
 	private final Map<String, String> currentAttributes;
 
 	private Locator locator;
-
-	private StringBuilder predicateContents;
 
 	private final CSPOM problem;
 
@@ -101,8 +103,10 @@ public final class ProblemHandler extends DefaultHandler {
 		try {
 			problem.addVariable(variable);
 		} catch (DuplicateVariableException e) {
-			throw new ParseException("Variable " + variable
-					+ " is defined twice", locator.getLineNumber());
+			final ParseException exc = new ParseException("Variable "
+					+ variable + " is defined twice", locator.getLineNumber());
+			exc.initCause(e);
+			throw exc;
 		}
 	}
 
@@ -157,8 +161,15 @@ public final class ProblemHandler extends DefaultHandler {
 	public void startElement(final String uri, final String localName,
 			final String qName, final Attributes attributes)
 			throws SAXParseException {
+		Elements element;
+		try {
+			element = Elements.valueOf(qName);
+		} catch (java.lang.IllegalArgumentException e) {
+			element = Elements.unknown;
+			LOGGER.warning("Unrecognized element :" + qName);
+		}
 
-		switch (Elements.valueOf(qName)) {
+		switch (element) {
 		case domain:
 			position = Elements.domain;
 			copyAttributes(attributes, new String[] { "name" });
@@ -186,11 +197,13 @@ public final class ProblemHandler extends DefaultHandler {
 
 			copyAttributes(attributes, new String[] { "name" });
 
-			predicateContents = new StringBuilder();
+			contents = new StringBuilder();
 
 		case parameters:
 			if (!Elements.predicate.equals(position)) {
-				throw new SAXParseException("Misplaced parameters", locator);
+				throw new SAXParseException(
+						"Misplaced parameters (should not be in " + position
+								+ ")", locator);
 			}
 
 			position = Elements.parameters;
@@ -228,11 +241,8 @@ public final class ProblemHandler extends DefaultHandler {
 	public void characters(final char[] characters, final int start,
 			final int length) {
 
-		if (Elements.parameters.equals(position)) {
-			predicateContents.append(characters, start, length);
-		} else {
-			contents.append(characters, start, length);
-		}
+		contents.append(characters, start, length);
+
 	}
 
 	@Override
@@ -246,7 +256,12 @@ public final class ProblemHandler extends DefaultHandler {
 			{
 				final String name = currentAttributes.get("name");
 
-				parseDomain(name, contents.toString());
+				try {
+					parseDomain(name, contents.toString());
+				} catch (NumberFormatException e) {
+					throw new SAXParseException("Unrecognized number", locator,
+							e);
+				}
 				// logger.finer(domain.toString());
 			}
 			break;
@@ -288,7 +303,7 @@ public final class ProblemHandler extends DefaultHandler {
 			assert "functional".equals(qName);
 			{
 				final String name = currentAttributes.get("name");
-				final Predicate predicate = new Predicate(predicateContents
+				final Predicate predicate = new Predicate(contents
 						.toString(), contents.toString());
 
 				predicates.put(name, predicate);
@@ -327,21 +342,16 @@ public final class ProblemHandler extends DefaultHandler {
 	}
 
 	private void parseDomain(final String name, final String domain)
-			throws SAXParseException {
+			throws NumberFormatException {
 
 		final String[] listOfValues = domain.trim().split(" +");
 
 		if (listOfValues.length == 1 && listOfValues[0].contains("..")) {
 			final String[] fromto = listOfValues[0].trim().split("\\.\\.");
-			try {
 
-				final int start = Integer.parseInt(fromto[0]);
-				final int end = Integer.parseInt(fromto[1]);
-				domains.put(name, new Interval(start, end));
-
-			} catch (NumberFormatException e) {
-				throw new SAXParseException(e.toString(), locator);
-			}
+			final int start = Integer.parseInt(fromto[0]);
+			final int end = Integer.parseInt(fromto[1]);
+			domains.put(name, new Interval(start, end));
 
 		} else {
 
