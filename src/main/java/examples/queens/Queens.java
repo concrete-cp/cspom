@@ -1,15 +1,17 @@
 package examples.queens;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 
-import cspom.DuplicateVariableException;
 import cspom.CSPOM;
-import cspom.compiler.ConstraintTransformer;
+import cspom.DuplicateVariableException;
 import cspom.variable.CSPOMVariable;
 
 public class Queens {
+
+	private static final int SIZE = 8;
+
+	private Queens() {
+	}
 
 	public static CSPOM queens(int nbQueens) throws ParseException {
 
@@ -37,6 +39,6 @@ public class Queens {
 	}
 
 	public static void main(String[] args) throws ParseException {
-		System.out.println(queens(8).toGML());
+		System.out.println(queens(SIZE).toGML());
 	}
 }

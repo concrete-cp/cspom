@@ -20,7 +20,9 @@
 package cspom.extension;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 public final class Extension {
 
@@ -29,39 +31,22 @@ public final class Extension {
 
 	private final int arity;
 
-	private final boolean supports;
+	private final boolean init;
 
-	private final Number[][] tuples;
-
-	private final int nbTuples;
+	private final Collection<Number[]> tuples;
 
 	private final String name;
 
-	public Extension(final String name, final int arity, final int nbTuples,
-			final boolean supports, final Number[][] tuples) {
+	public Extension(final String name, final int arity, final boolean init) {
 		super();
 		this.arity = arity;
-		this.supports = supports;
-		this.tuples = tuples;
-		this.nbTuples = nbTuples;
+		this.init = init;
+		this.tuples = new ArrayList<Number[]>();
 		this.name = name;
 	}
 
-	public Extension(final String name, final int arity, final int nbTuples,
-			final String semantics, final String extension)
+	public void parse(final int nbTuples, final String string)
 			throws ParseException {
-		this(name, arity, nbTuples, "supports".equals(semantics), parseTuples(
-				arity, nbTuples, extension));
-	}
-
-	private static Number[][] parseTuples(final int arity, final int nbTuples,
-			final String string) throws ParseException {
-
-		if (nbTuples < 1) {
-			return new Number[0][];
-		}
-
-		final Number[][] tuples = new Number[nbTuples][arity];
 
 		final String[] tupleList = string.split("\\|");
 
@@ -71,33 +56,37 @@ public final class Extension {
 					0);
 		}
 
-		for (int i = nbTuples; --i >= 0;) {
-
-			final String[] valueList = tupleList[i].trim().split(" +");
+		for (String parsedTuple : tupleList) {
+			final String[] valueList = parsedTuple.trim().split(" +");
 
 			if (valueList.length != arity) {
 				throw new ParseException("Incorrect arity (" + valueList.length
-						+ " /= " + arity + ") in " + tupleList[i].trim(), 0);
+						+ " /= " + arity + ") in " + parsedTuple.trim(), 0);
 			}
 
+			final Number[] tuple = new Number[arity];
 			for (int j = arity; --j >= 0;) {
-				tuples[i][j] = Integer.parseInt(valueList[j]);
+				tuple[j] = Integer.parseInt(valueList[j]);
 			}
+			addTuple(tuple);
 
 		}
+	}
 
-		return tuples;
+	public void addTuple(final Number[] tuple) {
+		assert tuple.length == arity;
+		tuples.add(tuple.clone());
 	}
 
 	public int getArity() {
 		return arity;
 	}
 
-	public boolean isSupports() {
-		return supports;
+	public boolean init() {
+		return init;
 	}
 
-	public Number[][] getTuples() {
+	public Collection<Number[]> getTuples() {
 		return tuples;
 	}
 
@@ -114,34 +103,39 @@ public final class Extension {
 
 	public String toString() {
 
-		return super.toString() + ": " + arity + "-ary, " + tuples.length
-				+ " tuples, " + (supports ? "supports" : "conflicts");// + ": "
+		return super.toString() + ": " + arity + "-ary, " + tuples.size()
+				+ " tuples, " + (init ? "conflicts" : "supports");// + ": "
 		// +
 		// tupleString();
 
 	}
 
 	public int getNbTuples() {
-		return nbTuples;
+		return tuples.size();
 	}
 
 	public boolean evaluate(final Number[] values) {
 		for (Number[] tuple : tuples) {
 			if (Arrays.equals(tuple, values)) {
-				return supports;
+				return !init;
 			}
 		}
-		return !supports;
+		return init;
 	}
 
 	public Extension reverse(final int[] newOrder) {
-		final Number[][] tuples = new Number[this.tuples.length][this.tuples[0].length];
-		for (int i = tuples.length; --i >= 0;) {
-			for (int j = tuples[i].length; --j >= 0;) {
-				tuples[i][j] = this.tuples[i][newOrder[j]];
+		final Extension reversed = new Extension("rev-" + name, arity, init);
+
+		for (Number[] tuple : tuples) {
+			final Number[] reversedTuple = new Number[arity];
+			for (int j = arity; --j >= 0;) {
+				reversedTuple[j] = tuple[newOrder[j]];
 			}
+			reversed.addTuple(reversedTuple);
 		}
-		return new Extension("rev-" + name, arity, nbTuples, supports, tuples);
+
+		assert reversed.getNbTuples() == getNbTuples();
+		return reversed;
 	}
 
 	public String getName() {

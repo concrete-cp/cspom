@@ -6,11 +6,11 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
-public class PredicateScanner {
+public final class PredicateScanner {
 
-	public final static Pattern INTEGER = Pattern.compile("[0-9]*");
+	public static final Pattern INTEGER = Pattern.compile("[0-9]*");
 
-	public final static Pattern IDENTIFIER = Pattern.compile("[a-zA-Z_]\\w*");
+	public static final Pattern IDENTIFIER = Pattern.compile("[a-zA-Z_]\\w*");
 
 	private PredicateScanner() {
 
@@ -55,7 +55,7 @@ public class PredicateScanner {
 		return currentNode;
 	}
 
-	public static class Node {
+	public static final class Node {
 		private Node sibling;
 		private Node child;
 		private String operator;

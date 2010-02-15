@@ -6,7 +6,7 @@ import java.util.Map;
 import cspom.constraint.AbstractConstraint;
 import cspom.variable.CSPOMVariable;
 
-public class ExtensionConstraint extends AbstractConstraint {
+public final class ExtensionConstraint extends AbstractConstraint {
 
 	private final Extension relation;
 

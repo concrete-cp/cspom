@@ -12,9 +12,9 @@ import cspom.constraint.FunctionalConstraint;
 import cspom.variable.CSPOMVariable;
 import cspom.variable.DomainType;
 
-public class ConstraintCompiler {
+public final class ConstraintCompiler {
 
-	final private CSPOM mainProblem;
+	private final CSPOM mainProblem;
 
 	public ConstraintCompiler(CSPOM mainProblem) {
 		this.mainProblem = mainProblem;

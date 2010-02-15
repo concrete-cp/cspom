@@ -57,11 +57,15 @@ import cspom.xcsp.ProblemHandler;
  * @see CSPOMVariable
  * 
  */
-public class CSPOM {
-	public final static String VERSION;
+public final class CSPOM {
+
+	private static final Logger LOGGER = Logger.getLogger(CSPOM.class
+			.getSimpleName());
+
+	public static final String VERSION;
 
 	static {
-		Matcher matcher = Pattern.compile("Rev:\\ (\\d+)").matcher(
+		final Matcher matcher = Pattern.compile("Rev:\\ (\\d+)").matcher(
 				"$Rev$");
 		matcher.find();
 		VERSION = matcher.group(1);
@@ -72,9 +76,6 @@ public class CSPOM {
 	private final Map<String, CSPOMVariable> variableMap;
 
 	private final Collection<CSPOMConstraint> constraints;
-
-	private final static Logger logger = Logger.getLogger(CSPOM.class
-			.getSimpleName());
 
 	private ConstraintCompiler constraintCompiler;
 
@@ -106,8 +107,8 @@ public class CSPOM {
 		return url.openStream();
 	}
 
-	public static CSPOM load(final String string) throws FileNotFoundException,
-			ParseException, IOException {
+	public static CSPOM load(final String string) throws ParseException,
+			IOException {
 		final URI uri;
 		try {
 			uri = new URI(string);
@@ -122,8 +123,7 @@ public class CSPOM {
 		return load(uri.toURL());
 	}
 
-	public static CSPOM load(final URL url) throws ParseException,
-			FileNotFoundException, IOException {
+	public static CSPOM load(final URL url) throws ParseException, IOException {
 		final CSPOM problem = new CSPOM();
 		final InputStream problemIS = problemInputStream(url);
 		final SAXParserFactory saxParserFactory = SAXParserFactory
@@ -147,7 +147,7 @@ public class CSPOM {
 		try {
 			reader.parse(new InputSource(problemIS));
 		} catch (SAXParseException e) {
-			logger.throwing(CSPOM.class.getSimpleName(), "load", e);
+			LOGGER.throwing(CSPOM.class.getSimpleName(), "load", e);
 			throw new IllegalStateException(e);
 			// throw new ParseException("line " + e.getLineNumber() + ": "
 			// + e.toString(), e.getLineNumber());
@@ -194,7 +194,7 @@ public class CSPOM {
 				falsified.add(c);
 			}
 		}
-		logger.info("Checked " + solution + " : " + falsified.size());
+		LOGGER.info("Checked " + solution + " : " + falsified.size());
 		return falsified;
 	}
 
@@ -239,7 +239,7 @@ public class CSPOM {
 
 		constraints.addAll(problem.constraints);
 	}
-	
+
 	public String toString() {
 		final StringBuilder stb = new StringBuilder();
 		for (CSPOMVariable v : variableList) {

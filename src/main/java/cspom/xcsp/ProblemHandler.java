@@ -36,11 +36,13 @@ import cspom.DuplicateVariableException;
 import cspom.extension.Extension;
 import cspom.extension.ExtensionConstraint;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.Domain;
-import cspom.variable.ExtensiveDomain;
 import cspom.variable.Interval;
 
 public final class ProblemHandler extends DefaultHandler {
+
+	private static enum Elements {
+		domain, variable, relation, predicate, parameters, expression, constraint, unknown
+	};
 
 	/**
 	 * List of domains.
@@ -54,7 +56,7 @@ public final class ProblemHandler extends DefaultHandler {
 
 	private final Map<String, Predicate> predicates;
 
-	private Position position = Position.UNKNOWN;
+	private Elements position = Elements.unknown;
 
 	private StringBuilder contents;
 
@@ -155,12 +157,14 @@ public final class ProblemHandler extends DefaultHandler {
 	public void startElement(final String uri, final String localName,
 			final String qName, final Attributes attributes)
 			throws SAXParseException {
-		if ("domain".equals(qName)) {
-			position = Position.DOMAIN;
+
+		switch (Elements.valueOf(qName)) {
+		case domain:
+			position = Elements.domain;
 			copyAttributes(attributes, new String[] { "name" });
+			break;
 
-		} else if ("variable".equals(qName)) {
-
+		case variable:
 			try {
 				addVariable(attributes.getValue("name"), attributes
 						.getValue("domain"));
@@ -168,38 +172,46 @@ public final class ProblemHandler extends DefaultHandler {
 				throw new SAXParseException("Could not create variable",
 						locator, e);
 			}
+			break;
 
-		} else if ("relation".equals(qName)) {
-			position = Position.RELATION;
+		case relation:
+			position = Elements.relation;
 
 			copyAttributes(attributes, new String[] { "name", "nbTuples",
 					"arity", "semantics" });
+			break;
 
-		} else if ("predicate".equals(qName)) {
-
-			position = Position.PREDICATE;
+		case predicate:
+			position = Elements.predicate;
 
 			copyAttributes(attributes, new String[] { "name" });
 
 			predicateContents = new StringBuilder();
 
-		} else if ("parameters".equals(qName)
-				&& Position.PREDICATE.equals(position)) {
+		case parameters:
+			if (!Elements.predicate.equals(position)) {
+				throw new SAXParseException("Misplaced parameters", locator);
+			}
 
-			position = Position.PREDICATE_PARAMETERS;
+			position = Elements.parameters;
+			break;
 
-		} else if ("expression".equals(qName)
-				&& Position.PREDICATE.equals(position)) {
+		case expression:
+			if (!Elements.predicate.equals(position)) {
+				throw new SAXParseException("Misplaced expression", locator);
+			}
 
-			position = Position.PREDICATE_EXPRESSION;
+			position = Elements.expression;
+			break;
 
-		} else if ("constraint".equals(qName)) {
-
-			position = Position.CONSTRAINT;
+		case constraint:
+			position = Elements.constraint;
 
 			copyAttributes(attributes, new String[] { "name", "arity", "scope",
 					"reference" });
+			break;
 
+		default:
 		}
 	}
 
@@ -216,7 +228,7 @@ public final class ProblemHandler extends DefaultHandler {
 	public void characters(final char[] characters, final int start,
 			final int length) {
 
-		if (position == Position.PREDICATE_PARAMETERS) {
+		if (Elements.parameters.equals(position)) {
 			predicateContents.append(characters, start, length);
 		} else {
 			contents.append(characters, start, length);
@@ -229,7 +241,7 @@ public final class ProblemHandler extends DefaultHandler {
 		super.endElement(uri, localName, qName);
 
 		switch (position) {
-		case DOMAIN:
+		case domain:
 			assert "domain".equals(qName);
 			{
 				final String name = currentAttributes.get("name");
@@ -239,22 +251,25 @@ public final class ProblemHandler extends DefaultHandler {
 			}
 			break;
 
-		case RELATION:
+		case relation:
 			assert "relation".equals(qName);
 			{
 				final String name = currentAttributes.get("name");
 
-				Extension relation;
+				final Extension relation;
 				try {
 					relation = new Extension(name, Integer
-							.parseInt(currentAttributes.get("arity")), Integer
-							.parseInt(currentAttributes.get("nbTuples")),
-							currentAttributes.get("semantics"), contents
-									.toString());
+							.parseInt(currentAttributes.get("arity")),
+							"conflicts".equals(currentAttributes
+									.get("semantics")));
+					relation.parse(Integer.parseInt(currentAttributes
+							.get("nbTuples")), contents.toString());
 				} catch (NumberFormatException e) {
 					throw new SAXParseException("Could not read number",
 							locator, e);
-				} catch (ParseException e) {
+				}
+
+				catch (ParseException e) {
 					throw new SAXParseException("Error parsing tuples",
 							locator, e);
 				}
@@ -264,12 +279,12 @@ public final class ProblemHandler extends DefaultHandler {
 			}
 			break;
 
-		case PREDICATE_PARAMETERS:
+		case parameters:
 			assert "parameters".equals(qName);
-			position = Position.PREDICATE;
+			position = Elements.predicate;
 			return;
 
-		case PREDICATE_EXPRESSION:
+		case expression:
 			assert "functional".equals(qName);
 			{
 				final String name = currentAttributes.get("name");
@@ -279,10 +294,10 @@ public final class ProblemHandler extends DefaultHandler {
 				predicates.put(name, predicate);
 				// logger.finer(predicate.toString());
 			}
-			position = Position.PREDICATE;
+			position = Elements.predicate;
 			return;
 
-		case CONSTRAINT:
+		case constraint:
 			if (!"parameters".equals(qName) && !"constraint".equals(qName)) {
 				throw new SAXParseException("Unknown tag " + qName, locator);
 			}
@@ -307,7 +322,7 @@ public final class ProblemHandler extends DefaultHandler {
 		default:
 		}
 
-		position = Position.UNKNOWN;
+		position = Elements.unknown;
 
 	}
 
@@ -353,10 +368,6 @@ public final class ProblemHandler extends DefaultHandler {
 
 		}
 
-	}
-
-	private enum Position {
-		DOMAIN, RELATION, PREDICATE, PREDICATE_PARAMETERS, PREDICATE_EXPRESSION, CONSTRAINT, UNKNOWN
 	}
 
 	public int getNbDomains() {

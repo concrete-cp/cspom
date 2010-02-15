@@ -6,7 +6,7 @@ import javax.script.ScriptException;
 
 import cspom.variable.CSPOMVariable;
 
-public class FunctionalConstraint extends AbstractConstraint {
+public final class FunctionalConstraint extends AbstractConstraint {
 
 	private final CSPOMVariable result;
 

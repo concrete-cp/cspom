@@ -54,7 +54,7 @@ public interface CSPOMConstraint {
      */
     boolean evaluate(Number[] numbers) throws ScriptException;
 
-    int getPosition(CSPOMVariable variable);
+    Integer getPosition(CSPOMVariable variable);
 
     CSPOMConstraint standardize(CSPOMVariable[] scope);
     

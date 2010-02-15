@@ -16,7 +16,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 
 	private final Map<CSPOMVariable, Integer> positions;
 
-	private String description;
+	private final String description;
 
 	public AbstractConstraint(final String description,
 			final CSPOMVariable... scope) {
@@ -36,32 +36,33 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 		}
 	}
 
-	public CSPOMVariable[] getScope() {
+	public final CSPOMVariable[] getScope() {
 		return scope;
 	}
 
+	@Override
 	public String toString() {
 		return "(" + Arrays.toString(scope) + ")";
 	}
 
-	public int getArity() {
+	public final int getArity() {
 		return arity;
 	}
 
-	public int getPosition(final CSPOMVariable variable) {
-		final Integer position = positions.get(variable);
-		if (position == null) {
-			return -1;
-		}
-		return position;
+	public final Integer getPosition(final CSPOMVariable variable) {
+		return positions.get(variable);
 	}
 
 	public int hashCode() {
 		return Arrays.hashCode(scope) * getDescription().hashCode();
 	}
 
-	public String getDescription() {
+	public final String getDescription() {
 		return description;
+	}
+
+	public final String getName() {
+		return name;
 	}
 
 	@Override

@@ -4,7 +4,7 @@ import javax.script.ScriptException;
 
 import cspom.variable.CSPOMVariable;
 
-public class GeneralConstraint extends AbstractConstraint {
+public final class GeneralConstraint extends AbstractConstraint {
 
 	public GeneralConstraint(String name, String description, CSPOMVariable... scope) {
 		super(name, description, scope);

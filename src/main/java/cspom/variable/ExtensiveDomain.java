@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class ExtensiveDomain implements Domain {
-	final List<Number> values;
+	private final List<Number> values;
 
 	public ExtensiveDomain(Number... values) {
 		this(Arrays.asList(values));

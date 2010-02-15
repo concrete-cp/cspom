@@ -10,7 +10,7 @@ import cspom.compiler.PredicateScanner;
 import cspom.variable.CSPOMVariable;
 import cspom.variable.DomainType;
 
-public class Predicate {
+public final class Predicate {
 
 	private final Map<String, DomainType> types;
 
