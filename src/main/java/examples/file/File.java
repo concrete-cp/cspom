@@ -6,14 +6,19 @@ import java.text.ParseException;
 
 import cspom.CSPOM;
 
-public class File {
+public final class File {
 	private File() {
 	}
 
-	public static void main(String[] args) throws ParseException, IOException {
-		new FileWriter("fapp.gml")
-				.append(
-						CSPOM.load(File.class.getResource("fapp01-0200-0.xml"))
-								.toGML()).close();
+	public static void main(String[] args) throws IOException {
+		try {
+			new FileWriter("fapp.gml").append(
+					CSPOM.load(File.class.getResource("queens-12.xml"))
+							.toGML()).close();
+		} catch (ParseException e) {
+			System.err.println(e.getMessage() + " at line "
+					+ e.getErrorOffset());
+			e.printStackTrace();
+		}
 	}
 }

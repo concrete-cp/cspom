@@ -25,7 +25,7 @@ public final class ConstraintCompiler {
 		final CSPOM problem = new CSPOM();
 
 		CSPOMVariable result = addToProblem(root, problem);
-		result.setRoot();
+		result.setRoot(true);
 
 		return problem;
 	}
@@ -35,7 +35,7 @@ public final class ConstraintCompiler {
 		if (node.isLeaf()) {
 			return addVariable(node, problem);
 		}
-		CSPOMVariable result = new CSPOMVariable(DomainType.UNKNOWN);
+		CSPOMVariable result = new CSPOMVariable(null);
 		try {
 			problem.addVariable(result);
 		} catch (DuplicateVariableException e) {
@@ -70,7 +70,7 @@ public final class ConstraintCompiler {
 
 		final CSPOMVariable newVariable;
 		if (node.isIdentifier()) {
-			newVariable = new CSPOMVariable(DomainType.UNKNOWN);
+			newVariable = new CSPOMVariable(null);
 		} else if (node.isInteger()) {
 			newVariable = new CSPOMVariable(Integer
 					.parseInt(node.getOperator()));

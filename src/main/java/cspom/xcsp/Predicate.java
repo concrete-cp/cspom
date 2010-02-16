@@ -8,99 +8,114 @@ import java.util.Map;
 
 import cspom.compiler.PredicateScanner;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.DomainType;
 
 public final class Predicate {
 
-	private final Map<String, DomainType> types;
+    public static enum ValueType {
+        integer;
 
-	private final List<String> parameters;
+        static ValueType decl(String declaration) {
+            if ("int".equals(declaration)) {
+                return integer;
+            }
+            return valueOf(declaration);
+        }
 
-	private final String expression;
+    };
 
-	// private final static Logger logger = Logger.getLogger(Predicate.class
-	// .getSimpleName());
+    private final Map<String, ValueType> types;
 
-	public Predicate(final String parameters, final String expression) {
-		this.parameters = new ArrayList<String>();
-		types = new HashMap<String, DomainType>();
-		this.expression = expression.trim();
-		final String[] args = parameters.trim().split(" +");
-		for (int i = 0; i < args.length; i += 2) {
-			types.put(args[i + 1], Enum.valueOf(DomainType.class, args[i]));
-			this.parameters.add(args[i + 1]);
-		}
-	}
+    private final List<String> parameters;
 
-	public String toString() {
-		return super.toString() + " (" + types + "): " + expression;
-	}
+    private final String expression;
 
-	public final List<String> getParameters() {
-		return parameters;
-	}
+    // private final static Logger logger = Logger.getLogger(Predicate.class
+    // .getSimpleName());
 
-	public String getExpression() {
-		return expression;
-	}
+    public Predicate(final String parametersString,
+            final String expressionString) {
+        this.parameters = new ArrayList<String>();
+        types = new HashMap<String, ValueType>();
+        this.expression = expressionString.trim();
+        final String[] args = parametersString.trim().split(" +");
+        for (int i = 0; i < args.length; i += 2) {
+            types.put(args[i + 1], ValueType.decl(args[i]));
+            this.parameters.add(args[i + 1]);
+        }
+    }
 
-	public final Map<String, DomainType> getTypes() {
-		return types;
-	}
+    @Override
+    public String toString() {
+        return "(" + types + "): " + expression;
+    }
 
-	public boolean equals(final Object object) {
-		if (!(object instanceof Predicate)) {
-			return false;
-		}
-		final Predicate predicate = (Predicate) object;
-		return predicate.expression.equals(expression);
-	}
+    public final List<String> getParameters() {
+        return parameters;
+    }
 
-	public int hashCode() {
-		return expression.hashCode();
-	}
+    public String getExpression() {
+        return expression;
+    }
 
-	private static int seekVariable(String string, CSPOMVariable[] scope) {
-		for (int i = scope.length; --i >= 0;) {
-			if (string.equals(scope[i].getName())) {
-				return i;
-			}
-		}
-		return -1;
-	}
+    public final ValueType getTypes(String parameter) {
+        return types.get(parameter);
+    }
 
-	public String applyParameters(String parameters, CSPOMVariable[] scope)
-			throws ParseException {
-		final String[] stringParameters = parameters.trim().split(" +");
+    @Override
+    public boolean equals(final Object object) {
+        if (!(object instanceof Predicate)) {
+            return false;
+        }
+        final Predicate predicate = (Predicate) object;
+        return predicate.expression.equals(expression);
+    }
 
-		if (stringParameters.length != this.parameters.size()) {
-			throw new ParseException("Incorrect parameter count", 0);
-		}
+    @Override
+    public int hashCode() {
+        return expression.hashCode();
+    }
 
-		String applyied = expression;
+    private static int seekVariable(String string, CSPOMVariable[] scope) {
+        for (int i = scope.length; --i >= 0;) {
+            if (string.equals(scope[i].getName())) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
-		for (int i = 0; i < stringParameters.length; i++) {
-			controlParameter(stringParameters[i], scope);
-			applyied = applyied.replaceAll(this.parameters.get(i),
-					stringParameters[i]);
-		}
+    public String applyParameters(String parameters, CSPOMVariable[] scope)
+            throws ParseException {
+        final String[] stringParameters = parameters.trim().split(" +");
 
-		return applyied;
-	}
+        if (stringParameters.length != this.parameters.size()) {
+            throw new ParseException("Incorrect parameter count", 0);
+        }
 
-	private void controlParameter(String string, CSPOMVariable[] scope)
-			throws ParseException {
-		if (PredicateScanner.INTEGER.matcher(string).matches()) {
-			return;
-		}
-		if (PredicateScanner.IDENTIFIER.matcher(string).matches()) {
-			if (seekVariable(string, scope) < 0) {
-				throw new ParseException("Could not find variable " + string
-						+ " in " + scope, 0);
-			}
-			return;
-		}
-		throw new ParseException("Could not recognize " + string, 0);
+        String applyied = expression;
 
-	}
+        for (int i = 0; i < stringParameters.length; i++) {
+            controlParameter(stringParameters[i], scope);
+            applyied = applyied.replaceAll(this.parameters.get(i),
+                    stringParameters[i]);
+        }
+
+        return applyied;
+    }
+
+    private void controlParameter(String string, CSPOMVariable[] scope)
+            throws ParseException {
+        if (PredicateScanner.INTEGER.matcher(string).matches()) {
+            return;
+        }
+        if (PredicateScanner.IDENTIFIER.matcher(string).matches()) {
+            if (seekVariable(string, scope) < 0) {
+                throw new ParseException("Could not find variable " + string
+                        + " in " + scope, 0);
+            }
+            return;
+        }
+        throw new ParseException("Could not recognize " + string, 0);
+
+    }
 }

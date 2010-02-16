@@ -6,7 +6,7 @@ import cspom.CSPOM;
 import cspom.DuplicateVariableException;
 import cspom.variable.CSPOMVariable;
 
-public class Queens {
+public final class Queens {
 
 	private static final int SIZE = 8;
 

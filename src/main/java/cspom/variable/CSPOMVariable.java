@@ -7,91 +7,66 @@ import java.util.Set;
 import cspom.constraint.CSPOMConstraint;
 
 public final class CSPOMVariable {
-	private static int noname = 0;
-	private final String name;
-	private boolean root = false;
-	private final Set<CSPOMConstraint> constraints;
-	private DomainType domainType;
-	private Domain domain;
+    private static int noname = 0;
+    private final String name;
+    private final Set<CSPOMConstraint> constraints;
+    private Domain domain;
+    private boolean root;
 
-	public DomainType getDomainType() {
-		return domainType;
-	}
+    public CSPOMVariable(final String name, final Domain domain) {
+        this.name = name;
+        constraints = new HashSet<CSPOMConstraint>();
+    }
 
-	public void setDomainType(DomainType dt) {
-		this.domainType = dt;
-	}
+    public CSPOMVariable(final Domain domain) {
+        this(generateName(), domain);
+    }
 
-	public CSPOMVariable(final String name, final DomainType domainType) {
-		this.domainType = domainType;
-		this.name = name;
-		constraints = new HashSet<CSPOMConstraint>();
-	}
+    public CSPOMVariable(final String name, final Number lB, final Number uB) {
+        this(name, new Interval(lB, uB));
+    }
 
-	public CSPOMVariable(final DomainType domainType) {
-		this(generateName(), domainType);
-	}
+    public CSPOMVariable(final Number lB, final Number uB) {
+        this(generateName(), lB, uB);
+    }
 
-	public CSPOMVariable(final String name, final Interval interval) {
-		this(name, DomainType.INTERVAL_INT);
-		this.domain = interval;
-	}
+    public CSPOMVariable(final String name, final List<Number> values) {
+        this(name, new ExtensiveDomain(values));
+    }
 
-	public CSPOMVariable(final String name, final Number lB, final Number uB) {
-		this(name, new Interval(lB, uB));
-	}
+    public CSPOMVariable(final int constant) {
+        this(new Constant(constant));
+    }
 
-	public CSPOMVariable(final Number lB, final Number uB) {
-		this(generateName(), lB, uB);
-	}
+    public Domain getDomain() {
+        return domain;
+    }
 
-	public CSPOMVariable(final String name, final List<Number> values) {
-		this(name, DomainType.EXT_INT);
-		this.domain = new ExtensiveDomain(values);
-	}
+    public void setDomain(Domain domain) {
+        this.domain = domain;
+    }
 
-	public CSPOMVariable(final int constant) {
-		this(DomainType.CONSTANT);
-		this.domain = new Constant(constant);
-	}
+    public String getName() {
+        return name;
+    }
 
-	public Domain getDomain() {
-		return domain;
-	}
+    public String toString() {
+        return name;
+    }
 
-	public void setDomain(Domain domain) {
-		this.domain = domain;
-	}
+    public void registerConstraint(CSPOMConstraint constraint) {
+        constraints.add(constraint);
+    }
 
-	public String getName() {
-		return name;
-	}
+    public Set<CSPOMConstraint> getConstraints() {
+        return constraints;
+    }
 
-	public String toString() {
-		return name;
-	}
+    public void setRoot(boolean root) {
+        this.root = root;
+    }
 
-	public void setRoot() {
-		root = true;
-	}
-
-	public boolean isRoot() {
-		return root;
-	}
-
-	public void registerConstraint(CSPOMConstraint constraint) {
-		constraints.add(constraint);
-	}
-
-	// public boolean deregisterConstraint(CSPOMConstraint constraint) {
-	// return !constraints.remove(constraint);
-	// }
-
-	public Set<CSPOMConstraint> getConstraints() {
-		return constraints;
-	}
-
-	private static String generateName() {
-		return "Generated" + noname++;
-	}
+    private static String generateName() {
+        return "Generated" + noname++;
+    }
 }

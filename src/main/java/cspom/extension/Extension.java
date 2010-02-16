@@ -19,7 +19,6 @@
 
 package cspom.extension;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,42 +34,11 @@ public final class Extension {
 
 	private final Collection<Number[]> tuples;
 
-	private final String name;
-
-	public Extension(final String name, final int arity, final boolean init) {
+	public Extension(final int arity, final boolean init) {
 		super();
 		this.arity = arity;
 		this.init = init;
 		this.tuples = new ArrayList<Number[]>();
-		this.name = name;
-	}
-
-	public void parse(final int nbTuples, final String string)
-			throws ParseException {
-
-		final String[] tupleList = string.split("\\|");
-
-		if (tupleList.length != nbTuples) {
-			throw new ParseException("Inconsistent number of Tuples ("
-					+ tupleList.length + " /= " + nbTuples + ") in " + string,
-					0);
-		}
-
-		for (String parsedTuple : tupleList) {
-			final String[] valueList = parsedTuple.trim().split(" +");
-
-			if (valueList.length != arity) {
-				throw new ParseException("Incorrect arity (" + valueList.length
-						+ " /= " + arity + ") in " + parsedTuple.trim(), 0);
-			}
-
-			final Number[] tuple = new Number[arity];
-			for (int j = arity; --j >= 0;) {
-				tuple[j] = Integer.parseInt(valueList[j]);
-			}
-			addTuple(tuple);
-
-		}
 	}
 
 	public void addTuple(final Number[] tuple) {
@@ -103,8 +71,8 @@ public final class Extension {
 
 	public String toString() {
 
-		return super.toString() + ": " + arity + "-ary, " + tuples.size()
-				+ " tuples, " + (init ? "conflicts" : "supports");// + ": "
+		return arity + "-ary, " + tuples.size() + " tuples, "
+				+ (init ? "conflicts" : "supports");// + ": "
 		// +
 		// tupleString();
 
@@ -124,7 +92,7 @@ public final class Extension {
 	}
 
 	public Extension reverse(final int[] newOrder) {
-		final Extension reversed = new Extension("rev-" + name, arity, init);
+		final Extension reversed = new Extension(arity, init);
 
 		for (Number[] tuple : tuples) {
 			final Number[] reversedTuple = new Number[arity];
@@ -136,9 +104,5 @@ public final class Extension {
 
 		assert reversed.getNbTuples() == getNbTuples();
 		return reversed;
-	}
-
-	public String getName() {
-		return name;
 	}
 }
