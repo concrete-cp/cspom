@@ -3,22 +3,23 @@ package examples.file;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.text.ParseException;
 
 import cspom.CSPOM;
+import cspom.xcsp.XCSPParseException;
 
 public final class File {
     private File() {
     }
 
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException,
+            XCSPParseException {
         final CSPOM cspom;
         try {
             cspom = CSPOM.load(File.class.getResource("queens-12.xml"));
 
-        } catch (ParseException e) {
-            System.err.println(e.getMessage() + " at line "
-                    + e.getErrorOffset());
+        } catch (XCSPParseException e) {
+            System.err
+                    .println(e.getMessage() + " at line " + e.getLineNumber());
             throw e;
         }
         System.out.println(cspom);

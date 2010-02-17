@@ -15,29 +15,42 @@ public final class Constant implements Domain {
     /**
      * Map used to store singleton Constants.
      */
-    private final static Map<Number, Constant> constants = new HashMap<Number, Constant>();
+    private static final Map<Number, Constant> CONSTANTS = new HashMap<Number, Constant>();
 
     /**
      * @param value
      *            The value of the constant.
-     * @return A Constant instance representing the given numeric value.
+     * @return A (singleton) Constant instance representing the given numeric
+     *         value.
      */
     public static synchronized Constant valueOf(final Number value) {
-        final Constant constant = constants.get(value);
+        final Constant constant = CONSTANTS.get(value);
         if (constant == null) {
             final Constant newConstant = new Constant(value);
-            constants.put(value, newConstant);
+            CONSTANTS.put(value, newConstant);
             return newConstant;
         }
         return constant;
     }
 
+    /**
+     * Constant value.
+     */
     private final Number value;
 
+    /**
+     * Masked constructor.
+     * 
+     * @param value
+     *            Constant value
+     */
     private Constant(final Number value) {
         this.value = value;
     }
 
+    /**
+     * @return The constant value.
+     */
     public Number getValue() {
         return value;
     }

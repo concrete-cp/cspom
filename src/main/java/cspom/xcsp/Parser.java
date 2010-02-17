@@ -73,7 +73,8 @@ public final class Parser {
      * @throws IOException
      *             Thrown if the data could not be read
      */
-    public void parse(final InputStream is) throws ParseException, IOException {
+    public void parse(final InputStream is) throws XCSPParseException,
+            IOException {
         DocumentBuilder db;
         try {
             db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -85,10 +86,7 @@ public final class Parser {
         try {
             document = db.parse(is);
         } catch (SAXParseException e) {
-            final ParseException pExc = new ParseException(e.getMessage(), e
-                    .getLineNumber());
-            pExc.initCause(e);
-            throw pExc;
+            throw new XCSPParseException(e, e.getLineNumber());
         } catch (SAXException e) {
             throw new IllegalStateException(e);
         }
@@ -174,7 +172,7 @@ public final class Parser {
      * @throws ParseException
      */
     private void parseVariables(final Map<String, Domain> domains,
-            final Document doc) throws ParseException {
+            final Document doc) throws XCSPParseException {
         final NodeList variables = doc.getElementsByTagName("variable");
         for (int i = 0; i < variables.getLength(); i++) {
             final NamedNodeMap variableAttributes = variables.item(i)
@@ -186,17 +184,15 @@ public final class Parser {
                         .get(variableAttributes.getNamedItem("domain")
                                 .getTextContent())));
             } catch (DuplicateVariableException e) {
-                final ParseException exc = new ParseException("Variable "
-                        + name + " is defined twice", 0);
-                exc.initCause(e);
-                throw exc;
+                throw new XCSPParseException("Variable " + name
+                        + " is defined twice", e);
             }
 
         }
     }
 
     private static Map<String, Extension> parseRelations(final Document doc)
-            throws ParseException {
+            throws XCSPParseException {
         final Map<String, Extension> relationMap = new HashMap<String, Extension>();
         final NodeList relations = doc.getElementsByTagName("relation");
         for (int i = relations.getLength(); --i >= 0;) {
@@ -216,24 +212,24 @@ public final class Parser {
     }
 
     private static Extension parseRelation(final int arity, final boolean init,
-            final int nbTuples, final String string) throws ParseException {
+            final int nbTuples, final String string) throws XCSPParseException {
 
         final Extension extension = new Extension(arity, init);
 
         final String[] tupleList = string.split("\\|");
 
         if (tupleList.length != nbTuples) {
-            throw new ParseException("Inconsistent number of Tuples ("
-                    + tupleList.length + " /= " + nbTuples + ") in " + string,
-                    0);
+            throw new XCSPParseException("Inconsistent number of Tuples ("
+                    + tupleList.length + " /= " + nbTuples + ") in " + string);
         }
 
         for (String parsedTuple : tupleList) {
             final String[] valueList = parsedTuple.trim().split(" +");
 
             if (valueList.length != arity) {
-                throw new ParseException("Incorrect arity (" + valueList.length
-                        + " /= " + arity + ") in " + parsedTuple.trim(), 0);
+                throw new XCSPParseException("Incorrect arity ("
+                        + valueList.length + " /= " + arity + ") in "
+                        + parsedTuple.trim());
             }
 
             final Number[] tuple = new Number[arity];
@@ -247,7 +243,7 @@ public final class Parser {
     }
 
     private static Map<String, Predicate> parsePredicates(final Document doc)
-            throws ParseException {
+            throws XCSPParseException {
         final Map<String, Predicate> predicateMap = new HashMap<String, Predicate>();
         final NodeList predicates = doc.getElementsByTagName("predicate");
         for (int i = predicates.getLength(); --i >= 0;) {
@@ -260,7 +256,8 @@ public final class Parser {
                         .evaluate(predicateNode), FUNC_EXPR
                         .evaluate(predicateNode)));
             } catch (XPathExpressionException e) {
-                throw new ParseException("Could not read predicate " + name, 0);
+                throw new XCSPParseException(
+                        "Could not read predicate " + name, e);
             }
         }
 
@@ -269,7 +266,7 @@ public final class Parser {
 
     private void parseConstraints(final Map<String, Extension> relations,
             final Map<String, Predicate> predicates, final Document doc)
-            throws ParseException {
+            throws XCSPParseException {
         final NodeList constraints = doc.getElementsByTagName("constraint");
         for (int i = constraints.getLength(); --i >= 0;) {
             final Node constraintNode = constraints.item(i);
@@ -287,14 +284,14 @@ public final class Parser {
     private void addConstraint(final String name, final String varNames,
             final String parameters, final String reference,
             final Map<String, Predicate> predicates,
-            final Map<String, Extension> relations) throws ParseException {
+            final Map<String, Extension> relations) throws XCSPParseException {
         final String[] scopeList = varNames.split(" +");
         final CSPOMVariable[] scope = new CSPOMVariable[scopeList.length];
         for (int i = 0; i < scopeList.length; i++) {
             scope[i] = problem.getVariable(scopeList[i]);
             if (scope[i] == null) {
-                throw new ParseException("Could not find variable "
-                        + scopeList[i] + " from the scope of " + name, 0);
+                throw new XCSPParseException("Could not find variable "
+                        + scopeList[i] + " from the scope of " + name);
             }
         }
 
@@ -305,7 +302,12 @@ public final class Parser {
                 stb.append(", ").append(scope[i]);
             }
             stb.append(")");
-            problem.ctr(stb.toString());
+            try {
+                problem.ctr(stb.toString());
+            } catch (ParseException e) {
+                throw new XCSPParseException("Error parsing constraint "
+                        + stb.toString(), e);
+            }
             return;
         }
 
@@ -318,9 +320,14 @@ public final class Parser {
 
         final Predicate predicate = predicates.get(reference);
         if (predicate == null) {
-            throw new ParseException("Unknown reference " + reference, 0);
+            throw new XCSPParseException("Unknown reference " + reference);
         }
 
-        problem.ctr(predicate.applyParameters(parameters, scope));
+        try {
+            problem.ctr(predicate.applyParameters(parameters, scope));
+        } catch (ParseException e) {
+            throw new XCSPParseException("Error parsing predicate " + predicate
+                    + " with constraint parameters " + parameters, e);
+        }
     }
 }

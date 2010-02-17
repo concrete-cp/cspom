@@ -44,6 +44,7 @@ import cspom.compiler.ConstraintCompiler;
 import cspom.constraint.CSPOMConstraint;
 import cspom.variable.CSPOMVariable;
 import cspom.xcsp.Parser;
+import cspom.xcsp.XCSPParseException;
 
 /**
  * 
@@ -118,7 +119,7 @@ public final class CSPOM {
         return url.openStream();
     }
 
-    public static CSPOM load(final String string) throws ParseException,
+    public static CSPOM load(final String string) throws XCSPParseException,
             IOException {
         final URI uri;
         try {
@@ -134,7 +135,8 @@ public final class CSPOM {
         return load(uri.toURL());
     }
 
-    public static CSPOM load(final URL url) throws ParseException, IOException {
+    public static CSPOM load(final URL url) throws XCSPParseException,
+            IOException {
 
         final CSPOM problem = new CSPOM();
         final InputStream problemIS = problemInputStream(url);
@@ -151,7 +153,7 @@ public final class CSPOM {
     public void addVariable(CSPOMVariable variable)
             throws DuplicateVariableException {
         if (variableMap.put(variable.getName(), variable) != null) {
-            throw new DuplicateVariableException();
+            throw new DuplicateVariableException(variable.getName());
         }
         variableList.add(variable);
 
