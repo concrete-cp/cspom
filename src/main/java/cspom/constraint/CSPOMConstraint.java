@@ -1,9 +1,5 @@
 package cspom.constraint;
 
-import javax.management.relation.Relation;
-import javax.script.ScriptException;
-
-import cspom.CSPOM;
 import cspom.variable.CSPOMVariable;
 
 /**
@@ -50,13 +46,32 @@ public interface CSPOMConstraint {
      *            the instantiation to evaluate. For all i,
      *            getScope()[i].contains(numbers[i]).
      * @return true iff the constraint allows the instantiation
-     * @throws ScriptException
      */
-    boolean evaluate(Number[] numbers) throws ScriptException;
+    boolean evaluate(Number[] numbers);
 
+    /**
+     * Returns the position of the given variable in the constraint's scope.
+     * Returns null if the variable is not in the scope.
+     * 
+     * @param variable
+     *            The variable to seek.
+     * @return The position of the given variable, or null if could not be
+     *         found.
+     */
     Integer getPosition(CSPOMVariable variable);
 
+    /**
+     * Permutes the scope of the constraint according to the given array of
+     * variables.
+     * 
+     * @param scope
+     *            The new permutation of the scope of the constraint.
+     * @return A copy of the constraint with the permuted scope.
+     */
     CSPOMConstraint standardize(CSPOMVariable[] scope);
-    
+
+    /**
+     * @return The description of the constraint.
+     */
     String getDescription();
 }

@@ -16,7 +16,6 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -99,7 +98,6 @@ public final class Parser {
         final Map<String, Extension> relations = parseRelations(document);
         final Map<String, Predicate> predicates = parsePredicates(document);
         parseConstraints(relations, predicates, document);
-        System.out.println(problem);
     }
 
     /**
@@ -185,7 +183,8 @@ public final class Parser {
                     .getTextContent();
             try {
                 problem.addVariable(new CSPOMVariable(name, domains
-                        .get(variableAttributes.getNamedItem("domain"))));
+                        .get(variableAttributes.getNamedItem("domain")
+                                .getTextContent())));
             } catch (DuplicateVariableException e) {
                 final ParseException exc = new ParseException("Variable "
                         + name + " is defined twice", 0);

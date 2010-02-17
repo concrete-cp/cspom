@@ -2,6 +2,7 @@ package cspom.xcsp;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public final class Predicate {
         return "(" + types + "): " + expression;
     }
 
-    public final List<String> getParameters() {
+    public List<String> getParameters() {
         return parameters;
     }
 
@@ -57,7 +58,7 @@ public final class Predicate {
         return expression;
     }
 
-    public final ValueType getTypes(String parameter) {
+    public ValueType getTypes(String parameter) {
         return types.get(parameter);
     }
 
@@ -111,7 +112,7 @@ public final class Predicate {
         if (PredicateScanner.IDENTIFIER.matcher(string).matches()) {
             if (seekVariable(string, scope) < 0) {
                 throw new ParseException("Could not find variable " + string
-                        + " in " + scope, 0);
+                        + " in " + Arrays.toString(scope), 0);
             }
             return;
         }
