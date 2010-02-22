@@ -71,9 +71,15 @@ import cspom.xcsp.XCSPParseException;
  */
 public final class CSPOM {
 
+    /**
+     * Logger for this class.
+     */
     private static final Logger LOGGER = Logger.getLogger(CSPOM.class
             .getSimpleName());
 
+    /**
+     * Version obtained from SVN Info.
+     */
     public static final String VERSION;
 
     static {
