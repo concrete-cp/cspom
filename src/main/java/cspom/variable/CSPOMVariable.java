@@ -52,13 +52,13 @@ public final class CSPOMVariable {
      * 
      * @param name
      *            Name of the variable
-     * @param domain
+     * @param dom
      *            Domain of the variable. Null iff undefined.
      */
-    public CSPOMVariable(final String name, final Domain domain) {
+    public CSPOMVariable(final String name, final Domain dom) {
         this.name = name;
         constraints = new HashSet<CSPOMConstraint>();
-        this.domain = domain;
+        this.domain = dom;
     }
 
     /**
@@ -70,7 +70,8 @@ public final class CSPOMVariable {
      * @param uB
      *            Upper bound of the domain
      */
-    public CSPOMVariable(final Number lB, final Number uB) {
+    public <T extends Number & Comparable<T>> CSPOMVariable(final T lB,
+            final T uB) {
         this(generateName(), lB, uB);
     }
 
@@ -78,6 +79,8 @@ public final class CSPOMVariable {
      * Constructs a new variable with given name. Domain is defined by lower and
      * upper bounds.
      * 
+     * @param <T>
+     *            Type of the values in the domain
      * @param name
      *            Name of the variable
      * @param lB
@@ -85,8 +88,9 @@ public final class CSPOMVariable {
      * @param uB
      *            Upper bound of the domain
      */
-    public CSPOMVariable(final String name, final Number lB, final Number uB) {
-        this(name, new Interval(lB, uB));
+    public <T extends Number & Comparable<T>> CSPOMVariable(final String name,
+            final T lB, final T uB) {
+        this(name, new Interval<T>(lB, uB));
     }
 
     /**
@@ -105,11 +109,23 @@ public final class CSPOMVariable {
     /**
      * Constructs a new variable with singleton (constant) domain.
      * 
+     * @param <T>
+     *            The type of the constant (instance of Number).
      * @param constant
      *            The unique value of the domain.
      */
-    public CSPOMVariable(final Number constant) {
-        this(Constant.valueOf(constant));
+    public <T extends Number> CSPOMVariable(final T constant) {
+        this(new Constant<T>(constant));
+    }
+
+    /**
+     * Constructs a new variable with boolean singleton (constant) domain.
+     * 
+     * @param constant
+     *            The unique value of the domain.
+     */
+    public CSPOMVariable(final boolean constant) {
+        this(Boolean.valueOf(constant));
     }
 
     /**
@@ -120,11 +136,11 @@ public final class CSPOMVariable {
     }
 
     /**
-     * @param domain
+     * @param dom
      *            The new domain of the variable.
      */
-    public void setDomain(final Domain domain) {
-        this.domain = domain;
+    public void setDomain(final Domain dom) {
+        this.domain = dom;
     }
 
     /**

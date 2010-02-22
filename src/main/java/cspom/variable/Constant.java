@@ -1,6 +1,9 @@
 package cspom.variable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -10,33 +13,12 @@ import java.util.Map;
  * @author vion
  * 
  */
-public final class Constant implements Domain {
-
-    /**
-     * Map used to store singleton Constants.
-     */
-    private static final Map<Number, Constant> CONSTANTS = new HashMap<Number, Constant>();
-
-    /**
-     * @param value
-     *            The value of the constant.
-     * @return A (singleton) Constant instance representing the given numeric
-     *         value.
-     */
-    public static synchronized Constant valueOf(final Number value) {
-        final Constant constant = CONSTANTS.get(value);
-        if (constant == null) {
-            final Constant newConstant = new Constant(value);
-            CONSTANTS.put(value, newConstant);
-            return newConstant;
-        }
-        return constant;
-    }
+public final class Constant<T extends Number> implements Domain {
 
     /**
      * Constant value.
      */
-    private final Number value;
+    private final T value;
 
     /**
      * Masked constructor.
@@ -44,15 +26,28 @@ public final class Constant implements Domain {
      * @param value
      *            Constant value
      */
-    private Constant(final Number value) {
+    public Constant(final T value) {
         this.value = value;
     }
 
     /**
      * @return The constant value.
      */
-    public Number getValue() {
+    public T getValue() {
         return value;
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (!(obj instanceof Constant<?>)) {
+            return false;
+        }
+        return ((Constant<?>) obj).value.equals(value);
     }
 
     @Override
@@ -65,4 +60,10 @@ public final class Constant implements Domain {
         return value.toString();
     }
 
+    @Override
+    public List<T> getValues() {
+        final List<T> list = new ArrayList<T>(1);
+        list.add(value);
+        return list;
+    }
 }

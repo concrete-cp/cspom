@@ -4,25 +4,67 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public final class ExtensiveDomain implements Domain {
-    private static final int DISPLAYED_VALUES = 3;
-    private final List<Number> values;
+/**
+ * Implements domains given in extension, that is, a list of arbitrary objects.
+ * 
+ * @param <T>
+ *            Type of objects in the extension.
+ * @author vion
+ * 
+ */
+public class ExtensiveDomain<T> implements Domain {
 
-    public ExtensiveDomain(Number... values) {
+    /**
+     * Number of values displayed by the toString() method.
+     */
+    private static final int DISPLAYED_VALUES = 3;
+
+    /**
+     * List of values.
+     */
+    private final List<T> values;
+
+    /**
+     * Constructs a new domain containing the given values.
+     * 
+     * @param values
+     *            a set of values of the given type.
+     */
+    public ExtensiveDomain(T... values) {
         this(Arrays.asList(values));
     }
 
-    public ExtensiveDomain(List<Number> values) {
+    /**
+     * Constructs a new domain containing the given values.
+     * 
+     * @param values
+     *            a set of values of the given type.
+     */
+    public ExtensiveDomain(List<T> values) {
         this.values = values;
     }
 
-    public List<Number> getValues() {
+    @Override
+    public final List<T> getValues() {
         return values;
     }
 
     @Override
-    public String toString() {
-        final Iterator<Number> itr = values.iterator();
+    public final int hashCode() {
+        return values.hashCode();
+    }
+    
+    @Override
+    public final boolean equals(final Object obj) {
+        if (!(obj instanceof ExtensiveDomain<?>)) {
+            return false;
+        }
+        return values.equals(((ExtensiveDomain<?>) obj).getValues());
+    }
+
+    @Override
+    public final String toString() {
+        final Iterator<T> itr = values.iterator();
         if (!itr.hasNext()) {
             return "[]";
         }
