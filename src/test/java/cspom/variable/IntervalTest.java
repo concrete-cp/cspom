@@ -1,7 +1,6 @@
 package cspom.variable;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -30,8 +29,8 @@ public final class IntervalTest {
 
     @Test
     public void testInterval() {
-        assertEquals(10, intInterval.getLb());
-        assertEquals(15, intInterval.getUb());
+        assertEquals(Integer.valueOf(10), intInterval.getLb());
+        assertEquals(Integer.valueOf(15), intInterval.getUb());
     }
 
     @Test(expected = IllegalArgumentException.class)

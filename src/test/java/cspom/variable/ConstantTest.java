@@ -41,7 +41,8 @@ public final class ConstantTest {
 
     @Test
     public void testGetValue() {
-        assertEquals(intConstant.getValue(), TEST_CONSTANT_INT);
-        assertEquals(doubleConstant.getValue(), TEST_CONSTANT_DOUBLE);
+        assertEquals(intConstant.getValue(), Integer.valueOf(TEST_CONSTANT_INT));
+        assertEquals(doubleConstant.getValue(), Double
+                .valueOf(TEST_CONSTANT_DOUBLE));
     }
 }
