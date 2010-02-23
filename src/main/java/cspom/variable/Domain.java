@@ -5,14 +5,14 @@ import java.util.List;
 /**
  * All classes implementing some domain type should implement this interface.
  * 
+ * @param <T>
+ *            Type of the domain values.
  * @author vion
  * 
  */
-public interface Domain {
+public interface Domain<T> {
     /**
-     * @param <T>
-     *            Type of the domain values.
      * @return The list of potential values for this domain.
      */
-    <T> List<T> getValues();
+    List<T> getValues();
 }

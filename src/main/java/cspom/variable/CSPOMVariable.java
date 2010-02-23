@@ -28,13 +28,13 @@ public final class CSPOMVariable {
     /**
      * Domain of the variable. Null iff undefined.
      */
-    private Domain domain;
+    private Domain<?> domain;
 
     /**
      * Constructs a new variable with generated name and null domain.
      */
     public CSPOMVariable() {
-        this((Domain) null);
+        this((Domain<?>) null);
     }
 
     /**
@@ -43,7 +43,7 @@ public final class CSPOMVariable {
      * @param domain
      *            Domain of the variable. Null iff undefined.
      */
-    public CSPOMVariable(final Domain domain) {
+    public CSPOMVariable(final Domain<?> domain) {
         this(generateName(), domain);
     }
 
@@ -55,7 +55,7 @@ public final class CSPOMVariable {
      * @param dom
      *            Domain of the variable. Null iff undefined.
      */
-    public CSPOMVariable(final String name, final Domain dom) {
+    public CSPOMVariable(final String name, final Domain<?> dom) {
         this.name = name;
         constraints = new HashSet<CSPOMConstraint>();
         this.domain = dom;
@@ -65,13 +65,15 @@ public final class CSPOMVariable {
      * Constructs a new variable with generated name. Domain is defined by lower
      * and upper bounds.
      * 
+     * @param <E>
+     *            Type of bounds.
      * @param lB
      *            Lower bound of the domain
      * @param uB
      *            Upper bound of the domain
      */
-    public <T extends Number & Comparable<T>> CSPOMVariable(final T lB,
-            final T uB) {
+    public <E extends Number & Comparable<E>> CSPOMVariable(final E lB,
+            final E uB) {
         this(generateName(), lB, uB);
     }
 
@@ -79,7 +81,7 @@ public final class CSPOMVariable {
      * Constructs a new variable with given name. Domain is defined by lower and
      * upper bounds.
      * 
-     * @param <T>
+     * @param <E>
      *            Type of the values in the domain
      * @param name
      *            Name of the variable
@@ -88,33 +90,35 @@ public final class CSPOMVariable {
      * @param uB
      *            Upper bound of the domain
      */
-    public <T extends Number & Comparable<T>> CSPOMVariable(final String name,
-            final T lB, final T uB) {
-        this(name, new Interval<T>(lB, uB));
+    public <E extends Number & Comparable<E>> CSPOMVariable(final String name,
+            final E lB, final E uB) {
+        this(name, new Interval<E>(lB, uB));
     }
 
     /**
      * Constructs a new variable with given name. Domain is defined by a list of
-     * numeric values.
+     * values.
      * 
+     * @param <T>
+     *            Type of the values.
      * @param name
      *            Name of the variable.
      * @param values
      *            List of values defining the domain.
      */
-    public CSPOMVariable(final String name, final List<Number> values) {
-        this(name, new ExtensiveDomain(values));
+    public <T> CSPOMVariable(final String name, final List<T> values) {
+        this(name, new ExtensiveDomain<T>(values));
     }
 
     /**
      * Constructs a new variable with singleton (constant) domain.
      * 
      * @param <T>
-     *            The type of the constant (instance of Number).
+     *            The type of the constant.
      * @param constant
      *            The unique value of the domain.
      */
-    public <T extends Number> CSPOMVariable(final T constant) {
+    public <T> CSPOMVariable(final T constant) {
         this(new Constant<T>(constant));
     }
 
@@ -131,7 +135,7 @@ public final class CSPOMVariable {
     /**
      * @return The domain of the variable.
      */
-    public Domain getDomain() {
+    public Domain<?> getDomain() {
         return domain;
     }
 
@@ -139,7 +143,7 @@ public final class CSPOMVariable {
      * @param dom
      *            The new domain of the variable.
      */
-    public void setDomain(final Domain dom) {
+    public void setDomain(final Domain<?> dom) {
         this.domain = dom;
     }
 

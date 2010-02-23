@@ -1,19 +1,19 @@
 package cspom.variable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This class implements a constant domain. Obtain instances of Constant through
  * the static method valueOf().
  * 
+ * @param <T>
+ *            Constant type
+ * 
  * @author vion
  * 
  */
-public final class Constant<T extends Number> implements Domain {
+public final class Constant<T> implements Domain<T> {
 
     /**
      * Constant value.

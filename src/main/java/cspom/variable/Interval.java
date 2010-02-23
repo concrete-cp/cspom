@@ -12,7 +12,8 @@ import java.util.List;
  * 
  * @author vion
  */
-public final class Interval<T extends Number & Comparable<T>> implements Domain {
+public final class Interval<T extends Number & Comparable<T>> implements
+        Domain<T> {
 
     /**
      * Lower bound.
@@ -72,22 +73,22 @@ public final class Interval<T extends Number & Comparable<T>> implements Domain 
     @Override
     public List<T> getValues() {
         if (lb instanceof Integer) {
-            final List<Integer> list = new ArrayList<Integer>();
+            final List<T> list = new ArrayList<T>();
             final int intUb = (Integer) this.ub;
-            for (int i = (Integer) lb; i <= intUb; i++) {
-                list.add(i);
+            for (Integer i = (Integer) lb; i <= intUb; i++) {
+                list.add((T) i);
             }
 
-            return (List<T>) list;
+            return list;
         }
         if (lb instanceof Long) {
-            final List<Long> list = new ArrayList<Long>();
+            final List<T> list = new ArrayList<T>();
             final long longUb = (Long) this.ub;
-            for (long i = (Long) lb; i <= longUb; i++) {
-                list.add(i);
+            for (Long i = (Long) lb; i <= longUb; i++) {
+                list.add((T) i);
             }
 
-            return (List<T>) list;
+            return list;
         }
         throw new IllegalArgumentException(
                 "Cannot obtain list of values from an interval of "
