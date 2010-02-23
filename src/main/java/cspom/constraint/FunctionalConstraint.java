@@ -1,5 +1,7 @@
 package cspom.constraint;
 
+import java.util.List;
+
 import cspom.variable.CSPOMVariable;
 
 public final class FunctionalConstraint extends AbstractConstraint {
@@ -25,15 +27,8 @@ public final class FunctionalConstraint extends AbstractConstraint {
     }
 
     @Override
-    public boolean evaluate(Number[] numbers) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public CSPOMConstraint standardize(CSPOMVariable[] scope) {
-        // TODO Auto-generated method stub
-        return null;
+    public CSPOMConstraint standardize(final CSPOMVariable... scope) {
+        throw new UnsupportedOperationException();
     }
 
     public CSPOMVariable getResultVariable() {
