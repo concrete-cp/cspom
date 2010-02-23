@@ -129,7 +129,7 @@ public final class CSPOMVariable {
 	 *            The unique value of the domain.
 	 */
 	public CSPOMVariable(final boolean constant) {
-		this(Boolean.valueOf(constant));
+		this(BooleanDomain.valueOf(constant));
 	}
 
 	/**

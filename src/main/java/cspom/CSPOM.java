@@ -180,7 +180,8 @@ public final class CSPOM {
 		for (CSPOMConstraint c : constraints) {
 			final Number[] values = new Number[c.getArity()];
 			for (int i = c.getArity(); --i >= 0;) {
-				values[i] = solution.get(variableList.indexOf(c.getScope()[i]));
+				values[i] = solution.get(variableList.indexOf(c.getScope().get(
+						i)));
 			}
 			if (!c.evaluate(values)) {
 				falsified.add(c);
@@ -276,8 +277,10 @@ public final class CSPOM {
 				gen++;
 			} else if (c.getArity() == 2) {
 				stb.append("edge [\n");
-				stb.append("source \"").append(c.getScope()[0]).append("\"\n");
-				stb.append("target \"").append(c.getScope()[1]).append("\"\n");
+				stb.append("source \"").append(c.getScope().get(0)).append(
+						"\"\n");
+				stb.append("target \"").append(c.getScope().get(1)).append(
+						"\"\n");
 				stb.append("label \"").append(c.getDescription())
 						.append("\"\n");
 				stb.append("]\n");

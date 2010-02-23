@@ -10,7 +10,7 @@ import cspom.compiler.PredicateScanner.Node;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.Boolean;
+import cspom.variable.BooleanDomain;
 
 public final class ConstraintCompiler {
 
@@ -25,7 +25,7 @@ public final class ConstraintCompiler {
 		final CSPOM problem = new CSPOM();
 
 		CSPOMVariable result = addToProblem(root, problem);
-		result.setDomain(Boolean.TRUE);
+		result.setDomain(BooleanDomain.TRUE);
 
 		return problem;
 	}

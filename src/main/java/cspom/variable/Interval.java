@@ -1,6 +1,7 @@
 package cspom.variable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -68,6 +69,20 @@ public final class Interval<T extends Number & Comparable<T>> implements
 	@Override
 	public String toString() {
 		return "[" + lb + ".." + ub + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		return 961 + 31 * lb.hashCode() + ub.hashCode();
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (!(obj instanceof Interval<?>)) {
+			return false;
+		}
+		final Interval<?> itv = (Interval<?>) obj;
+		return lb.equals(itv.getLb()) && ub.equals(itv.getUb());
 	}
 
 	@Override

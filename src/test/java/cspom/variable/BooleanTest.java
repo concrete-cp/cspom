@@ -10,36 +10,36 @@ public final class BooleanTest {
 
     @Test
     public void testValueOf() {
-        assertSame(Boolean.TRUE, Boolean.valueOf(true));
-        assertSame(Boolean.FALSE, Boolean.valueOf(false));
+        assertSame(BooleanDomain.TRUE, BooleanDomain.valueOf(true));
+        assertSame(BooleanDomain.FALSE, BooleanDomain.valueOf(false));
     }
 
     @Test
     public void testIsConstant() {
-        assertTrue(Boolean.TRUE.isConstant());
-        assertTrue(Boolean.FALSE.isConstant());
-        assertFalse(Boolean.DOMAIN.isConstant());
+        assertTrue(BooleanDomain.TRUE.isConstant());
+        assertTrue(BooleanDomain.FALSE.isConstant());
+        assertFalse(BooleanDomain.DOMAIN.isConstant());
     }
 
     @Test
     public void testToString() {
-        assertEquals("true", Boolean.TRUE.toString());
+        assertEquals("true", BooleanDomain.TRUE.toString());
     }
 
     @Test
     public void testGetBoolean() {
-        assertSame(Boolean.TRUE.getBoolean(), true);
-        assertSame(Boolean.FALSE.getBoolean(), false);
+        assertSame(BooleanDomain.TRUE.getBoolean(), true);
+        assertSame(BooleanDomain.FALSE.getBoolean(), false);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testGetBooleanDomain() {
-        Boolean.DOMAIN.getBoolean();
+        BooleanDomain.DOMAIN.getBoolean();
     }
 
     @Test
     public void testGetValues() {
-        assertEquals(Boolean.DOMAIN.getValues(), Arrays.asList(false, true));
+        assertEquals(BooleanDomain.DOMAIN.getValues(), Arrays.asList(false, true));
     }
 
 }

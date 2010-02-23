@@ -47,17 +47,17 @@ public final class ExtensiveDomain<T> implements Domain<T> {
 	}
 
 	@Override
-	public final List<T> getValues() {
+	public List<T> getValues() {
 		return values;
 	}
 
 	@Override
-	public final int hashCode() {
+	public int hashCode() {
 		return values.hashCode();
 	}
 
 	@Override
-	public final boolean equals(final Object obj) {
+	public boolean equals(final Object obj) {
 		if (!(obj instanceof ExtensiveDomain<?>)) {
 			return false;
 		}
@@ -65,7 +65,7 @@ public final class ExtensiveDomain<T> implements Domain<T> {
 	}
 
 	@Override
-	public final String toString() {
+	public String toString() {
 		final Iterator<T> itr = values.iterator();
 		if (!itr.hasNext()) {
 			return "[]";

@@ -1,7 +1,9 @@
 package cspom.constraint;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import cspom.variable.CSPOMVariable;
@@ -10,7 +12,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 
 	private final String name;
 
-	private final CSPOMVariable[] scope;
+	private final List<CSPOMVariable> scope;
 
 	private final int arity;
 
@@ -25,7 +27,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 
 	public AbstractConstraint(final String name, final String description,
 			final CSPOMVariable... scope) {
-		this.scope = scope;
+		this.scope = Collections.unmodifiableList(Arrays.asList(scope));
 		this.name = name;
 		this.description = description;
 		arity = scope.length;
@@ -36,13 +38,13 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 		}
 	}
 
-	public final CSPOMVariable[] getScope() {
+	public final List<CSPOMVariable> getScope() {
 		return scope;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + Arrays.toString(scope) + ")";
+		return "(" + scope + ")";
 	}
 
 	public final int getArity() {
@@ -54,7 +56,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 	}
 
 	public int hashCode() {
-		return Arrays.hashCode(scope) * getDescription().hashCode();
+		return scope.hashCode() + 31 * getDescription().hashCode();
 	}
 
 	public final String getDescription() {
@@ -71,7 +73,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 			return false;
 		}
 		final AbstractConstraint constraint = (AbstractConstraint) object;
-		return Arrays.equals(getScope(), constraint.getScope())
+		return scope.equals(constraint.getScope())
 				&& description.equals(constraint.description);
 	}
 }
