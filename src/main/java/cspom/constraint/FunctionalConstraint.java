@@ -1,7 +1,5 @@
 package cspom.constraint;
 
-import java.util.Arrays;
-
 import cspom.variable.CSPOMVariable;
 
 public final class FunctionalConstraint extends AbstractConstraint {

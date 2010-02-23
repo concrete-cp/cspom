@@ -1,6 +1,5 @@
 package cspom.compiler;
 
-import java.text.ParseException;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -16,7 +15,7 @@ public final class PredicateScanner {
 
 	}
 
-	public static Node scan(String expression) throws ParseException {
+	public static Node scan(String expression) throws PredicateParseException {
 		final StringTokenizer st = new StringTokenizer(expression, " (),", true);
 		final Deque<Node> stack = new LinkedList<Node>();
 		Node currentNode = new Node();
@@ -26,7 +25,7 @@ public final class PredicateScanner {
 				continue;
 			} else if ("(".equals(token)) {
 				if (currentNode.operator == null) {
-					throw new ParseException("Empty operator", 0);
+					throw new PredicateParseException("Empty operator");
 				}
 				final Node newNode = new Node();
 				currentNode.child = newNode;
@@ -34,20 +33,21 @@ public final class PredicateScanner {
 				currentNode = newNode;
 			} else if (")".equals(token)) {
 				if (stack.isEmpty()) {
-					throw new ParseException("Too many )s", 0);
+					throw new PredicateParseException("Too many )s");
 				}
 				currentNode = stack.pop();
 
 			} else if (",".equals(token)) {
 				if (currentNode.operator == null) {
-					throw new ParseException("Empty argument", 0);
+					throw new PredicateParseException("Empty argument");
 				}
 				final Node newNode = new Node();
 				currentNode.sibling = newNode;
 				currentNode = newNode;
 			} else {
 				if (currentNode.operator != null) {
-					throw new ParseException("Delimiter expected", 0);
+					throw new PredicateParseException("Delimiter expected in "
+							+ currentNode + " (" + expression + ")");
 				}
 				currentNode.operator = token;
 			}
@@ -92,11 +92,11 @@ public final class PredicateScanner {
 			return IDENTIFIER.matcher(operator).matches();
 		}
 
-		public boolean isLeaf() throws ParseException {
+		public boolean isLeaf() throws PredicateParseException {
 			if (child == null) {
 				if (!isInteger() && !isIdentifier()) {
-					throw new ParseException(
-							"Leaves should be variables or constants", 0);
+					throw new PredicateParseException(
+							"Leaves should be variables or constants");
 				}
 				return true;
 			}

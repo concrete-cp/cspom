@@ -1,9 +1,8 @@
 package examples.queens;
 
-import java.text.ParseException;
-
 import cspom.CSPOM;
 import cspom.DuplicateVariableException;
+import cspom.compiler.PredicateParseException;
 import cspom.variable.CSPOMVariable;
 
 public final class Queens {
@@ -13,11 +12,11 @@ public final class Queens {
 	private Queens() {
 	}
 
-	public static CSPOM queens(int nbQueens) throws ParseException {
+	public static CSPOM queens(int nbQueens) throws PredicateParseException {
 
-		CSPOM problem = new CSPOM();
+		final CSPOM problem = new CSPOM();
 
-		CSPOMVariable[] queens = new CSPOMVariable[nbQueens];
+		final CSPOMVariable[] queens = new CSPOMVariable[nbQueens];
 
 		for (int i = nbQueens; --i >= 0;) {
 			try {
@@ -38,7 +37,7 @@ public final class Queens {
 		return problem;
 	}
 
-	public static void main(String[] args) throws ParseException {
+	public static void main(String[] args) throws PredicateParseException {
 		System.out.println(queens(SIZE).toGML());
 	}
 }

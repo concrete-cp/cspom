@@ -10,31 +10,31 @@ import org.junit.Test;
 
 public final class EnumDomainTest {
 
-    private static enum EnumTest {
-        A, B, C
-    }
+	private static enum EnumTest {
+		A, B, C
+	}
 
-    private EnumDomain<EnumTest> domain;
+	private EnumDomain<EnumTest> domain;
 
-    @Before
-    public void setUp() {
-        domain = EnumDomain.getEnumDomain(EnumTest.class);
-    }
+	@Before
+	public void setUp() {
+		domain = EnumDomain.getEnumDomain(EnumTest.class);
+	}
 
-    @Test
-    public void testGetEnumDomain() {
-        assertEquals(domain, EnumDomain.getEnumDomain(EnumTest.class));
-        assertSame(domain, EnumDomain.getEnumDomain(EnumTest.class));
-    }
+	@Test
+	public void testGetEnumDomain() {
+		assertEquals(domain, EnumDomain.getEnumDomain(EnumTest.class));
+		assertSame(domain, EnumDomain.getEnumDomain(EnumTest.class));
+	}
 
-    @Test
-    public void testGetEnumConstants() {
-        assertEquals(domain.getValues(), Arrays.asList(EnumTest.A, EnumTest.B,
-                EnumTest.C));
-    }
+	@Test
+	public void testGetEnumConstants() {
+		assertEquals(domain.getValues(), Arrays.asList(EnumTest.A, EnumTest.B,
+				EnumTest.C));
+	}
 
-    @Test
-    public void testToString() {
-        assertEquals(domain.toString(), "[A, B, C]");
-    }
+	@Test
+	public void testToString() {
+		assertEquals("[A, B, C]", domain.toString());
+	}
 }

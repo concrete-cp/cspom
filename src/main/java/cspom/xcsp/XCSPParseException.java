@@ -1,6 +1,5 @@
 package cspom.xcsp;
 
-import org.xml.sax.SAXParseException;
 
 public final class XCSPParseException extends Exception {
 
