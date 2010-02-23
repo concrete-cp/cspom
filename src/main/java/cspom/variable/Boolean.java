@@ -39,7 +39,7 @@ public final class Boolean implements Domain {
 
     /**
      * @param constant
-     *            à truth value
+     *            a truth value
      * @return a constant Boolean instance according to the given truth value.
      */
     public static Boolean valueOf(final boolean constant) {
