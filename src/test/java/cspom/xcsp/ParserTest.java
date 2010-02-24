@@ -8,14 +8,15 @@ import cspom.CSPOM;
 
 public class ParserTest {
 
-	private static final String FILENAME = "crossword-m1-debug-05-01.xml";
+    private static final String FILENAME = "crossword-m1-debug-05-01.xml";
 
-	@Test
-	public void test() throws XCSPParseException, IOException {
-		final CSPOM cspom = new CSPOM();
-		final Parser parser = new Parser(cspom);
-		parser.parse(ParserTest.class.getResource(FILENAME).openStream());
+    @Test
+    public void test() throws XCSPParseException, IOException {
+        final CSPOM cspom = new CSPOM();
+        final Parser parser = new Parser(cspom);
+        parser.parse(ParserTest.class.getResource(FILENAME).openStream());
 
-	}
+    }
+
 
 }

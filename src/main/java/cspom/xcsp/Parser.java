@@ -146,35 +146,39 @@ public final class Parser {
         final String[] listOfValues = domain.trim().split(" +");
 
         if (listOfValues.length == 1 && listOfValues[0].contains("..")) {
-            final String[] fromto = listOfValues[0].trim().split("\\.\\.");
-
-            final int start = Integer.parseInt(fromto[0]);
-            final int end = Integer.parseInt(fromto[1]);
-            return new Interval<Integer>(start, end);
-
+            return interval(listOfValues[0]);
         }
+
+        return extensiveDomain(listOfValues);
+    }
+
+    /**
+     * Parses a single interval given in form "a..b".
+     * 
+     * @param interval
+     *            interval to be parsed
+     * @return an Interval object corresponding to the given interval
+     */
+    private static Interval<Integer> interval(final String interval) {
+        final String[] fromto = interval.trim().split("\\.\\.");
+        return new Interval<Integer>(Integer.parseInt(fromto[0]), Integer
+                .parseInt(fromto[1]));
+    }
+
+    private static ExtensiveDomain<?> extensiveDomain(
+            final String[] listOfValues) {
 
         final List<Integer> values = new ArrayList<Integer>();
 
         for (String currentValue : listOfValues) {
             if (currentValue.contains("..")) {
-
-                final String[] fromto = currentValue.split("\\.\\.");
-                final int start = Integer.parseInt(fromto[0]);
-                final int end = Integer.parseInt(fromto[1]);
-                for (int i = 0; i <= end - start; i++) {
-                    values.add(i + start);
-                }
-
+                values.addAll(interval(currentValue).getValues());
             } else {
-
                 values.add(Integer.parseInt(currentValue.trim()));
-
             }
         }
 
         return new ExtensiveDomain<Integer>(values);
-
     }
 
     /**
