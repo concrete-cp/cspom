@@ -61,10 +61,13 @@ public final class IntervalTest {
 
     @Test
     public void testValueOf() {
-        final Interval<Integer> itvInt = Interval.valueOf("5..15");
+        final Interval<Number> itvInt = Interval.valueOf("5..15");
         assertEquals(new Interval<Integer>(5, 15), itvInt);
+        
+        final Interval<Number> itvLng = Interval.valueOf("5l..15l");
+        assertEquals(new Interval<Long>(5l, 15l), itvLng);
 
-        final Interval<Double> itvDbl = Interval.valueOf("5d..15d");
-        assertEquals(new Interval<Double>(5d, 15d), itvDbl);
+        final Interval<Number> itvFlt = Interval.valueOf("5f..15f");
+        assertEquals(new Interval<Float>(5f, 15f), itvFlt);
     }
 }

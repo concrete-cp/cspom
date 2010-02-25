@@ -12,8 +12,7 @@ import java.util.List;
  * 
  * @author vion
  */
-public final class Interval<T extends Number & Comparable<T>> implements
-        Domain<T> {
+public final class Interval<T extends Number> implements Domain<T> {
 
     /**
      * Lower bound.
@@ -42,7 +41,11 @@ public final class Interval<T extends Number & Comparable<T>> implements
             throw new IllegalArgumentException(
                     "Both bounds must be of the same type");
         }
-        if (lb.compareTo(ub) > 0) {
+        if (!(lb instanceof Comparable<?>)) {
+            throw new IllegalArgumentException(
+                    "Bounds must implement Comparable");
+        }
+        if (((Comparable<T>) lb).compareTo(ub) > 0) {
             throw new IllegalArgumentException(
                     "Lower bound must be inferior or equal to upper bound");
         }
@@ -51,32 +54,31 @@ public final class Interval<T extends Number & Comparable<T>> implements
 
     }
 
-    public static <E extends Number & Comparable<E>> Interval<E> valueOf(
-            String interval) {
+    public static Interval<Number> valueOf(String interval) {
         final String[] fromto = interval.trim().split("\\.\\.");
-        final E lb = numValueOf(fromto[0]);
-        final E ub = numValueOf(fromto[1]);
-        return new Interval<E>(lb, ub);
+        final Number lb = numValueOf(fromto[0]);
+        final Number ub = numValueOf(fromto[1]);
+        return new Interval<Number>(lb, ub);
     }
 
-    public static <E extends Number & Comparable<E>> E numValueOf(String value) {
+    public static Number numValueOf(String value) {
         try {
-            return (E) Integer.valueOf(value);
+            return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             //
         }
         try {
-            return (E) Long.valueOf(value);
+            return Long.parseLong(value);
         } catch (NumberFormatException e) {
             //
         }
         try {
-            return (E) Float.valueOf(value);
+            return Float.parseFloat(value);
         } catch (NumberFormatException e) {
             //
         }
 
-        return (E) Double.valueOf(value);
+        return Double.parseDouble(value);
     }
 
     /**
@@ -115,21 +117,22 @@ public final class Interval<T extends Number & Comparable<T>> implements
     @Override
     public List<T> getValues() {
         if (Integer.class.isInstance(lb)) {
-            final List<Integer> list = new ArrayList<Integer>();
+            final List<T> list = new ArrayList<T>();
             final int intUb = this.ub.intValue();
-            for (int i = lb.intValue(); i <= intUb; i++) {
-                list.add(i);
+            for (Integer i = lb.intValue(); i <= intUb; i++) {
+                list.add((T) i);
             }
 
-            return List.class.cast(list);
+            return list;
         }
         if (Long.class.isInstance(lb)) {
-            final List<Long> list = new ArrayList<Long>();
+            final List<T> list = new ArrayList<T>();
             final long longUb = this.ub.longValue();
-            for (long i = lb.longValue(); i <= longUb; i++) {
-                list.add(i);
+            for (Long i = lb.longValue(); i <= longUb; i++) {
+                list.add((T) i);
             }
-            return List.class.cast(list);
+
+            return list;
         }
         throw new IllegalArgumentException(
                 "Cannot obtain list of values from an interval of "
