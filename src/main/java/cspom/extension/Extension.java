@@ -14,7 +14,8 @@
  * 
  * You should have received a copy of the GNU General Public
  * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * MA  02110-1301  USA
  */
 
 package cspom.extension;
@@ -23,22 +24,41 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-public final class Extension {
+/**
+ * This class is used to represent extensions, that is list of tuples allowed or
+ * forbidden by a constraint.
+ * 
+ * @param <T>
+ *            Type of recorded tuples.
+ * 
+ * @author vion
+ * 
+ */
+public final class Extension<T> {
 
+    /**
+     * Arity of the extension.
+     */
     private final int arity;
 
+    /**
+     * Whether tuples are initially set to true (allowed) or false (forbidden).
+     */
     private final boolean init;
 
-    private final Collection<Number[]> tuples;
+    /**
+     * The actual allowed or forbidden tuples.
+     */
+    private final Collection<T[]> tuples;
 
     public Extension(final int arity, final boolean init) {
         super();
         this.arity = arity;
         this.init = init;
-        this.tuples = new ArrayList<Number[]>();
+        this.tuples = new ArrayList<T[]>();
     }
 
-    public void addTuple(final Number[] tuple) {
+    public void addTuple(final T[] tuple) {
         assert tuple.length == arity;
         tuples.add(tuple.clone());
     }
@@ -51,14 +71,14 @@ public final class Extension {
         return init;
     }
 
-    public Collection<Number[]> getTuples() {
+    public Collection<T[]> getTuples() {
         return tuples;
     }
 
     public String tupleString() {
         final StringBuilder stb = new StringBuilder();
-        for (Number[] tuple : tuples) {
-            for (Number value : tuple) {
+        for (T[] tuple : tuples) {
+            for (T value : tuple) {
                 stb.append(value).append(' ');
             }
             stb.delete(stb.length() - 1, stb.length()).append('|');
@@ -69,15 +89,15 @@ public final class Extension {
     @Override
     public String toString() {
         return arity + "-ary, " + tuples.size() + " tuples, "
-                + (init ? "conflicts" : "supports");// + ": "
+                + (init ? "conflicts" : "supports");
     }
 
     public int getNbTuples() {
         return tuples.size();
     }
 
-    public boolean evaluate(final Number[] values) {
-        for (Number[] tuple : tuples) {
+    public boolean evaluate(final T[] values) {
+        for (T[] tuple : tuples) {
             if (Arrays.equals(tuple, values)) {
                 return !init;
             }
@@ -85,11 +105,11 @@ public final class Extension {
         return init;
     }
 
-    public Extension reverse(final int[] newOrder) {
-        final Extension reversed = new Extension(arity, init);
+    public Extension<T> reverse(final int[] newOrder) {
+        final Extension<T> reversed = new Extension<T>(arity, init);
 
-        for (Number[] tuple : tuples) {
-            final Number[] reversedTuple = new Number[arity];
+        for (T[] tuple : tuples) {
+            final T[] reversedTuple = tuple.clone();
             for (int j = arity; --j >= 0;) {
                 reversedTuple[j] = tuple[newOrder[j]];
             }

@@ -105,7 +105,7 @@ public final class Parser {
 
         final Map<String, Domain<?>> domains = parseDomains(document);
         parseVariables(domains, document);
-        final Map<String, Extension> relations = parseRelations(document);
+        final Map<String, Extension<?>> relations = parseRelations(document);
         final Map<String, Predicate> predicates = parsePredicates(document);
         parseConstraints(relations, predicates, document);
     }
@@ -221,9 +221,9 @@ public final class Parser {
      * @throws XCSPParseException
      *             If there was an error parsing a relation.
      */
-    private static Map<String, Extension> parseRelations(final Document doc)
+    private static Map<String, Extension<?>> parseRelations(final Document doc)
             throws XCSPParseException {
-        final Map<String, Extension> relationMap = new HashMap<String, Extension>();
+        final Map<String, Extension<?>> relationMap = new HashMap<String, Extension<?>>();
         final NodeList relations = doc.getElementsByTagName("relation");
         for (int i = relations.getLength(); --i >= 0;) {
             final Node relationNode = relations.item(i);
@@ -258,10 +258,11 @@ public final class Parser {
      *             If the relation could not be read or is inconsistent with
      *             given arity or nbTuples.
      */
-    private static Extension parseRelation(final int arity, final boolean init,
-            final int nbTuples, final String string) throws XCSPParseException {
+    private static Extension<Number> parseRelation(final int arity,
+            final boolean init, final int nbTuples, final String string)
+            throws XCSPParseException {
 
-        final Extension extension = new Extension(arity, init);
+        final Extension<Number> extension = new Extension<Number>(arity, init);
 
         final String[] tupleList = string.split("\\|");
 
@@ -335,7 +336,7 @@ public final class Parser {
      * @throws XCSPParseException
      *             If a relation or predicate could not be found or applied.
      */
-    private void parseConstraints(final Map<String, Extension> relations,
+    private void parseConstraints(final Map<String, Extension<?>> relations,
             final Map<String, Predicate> predicates, final Document doc)
             throws XCSPParseException {
         final NodeList constraints = doc.getElementsByTagName("constraint");
@@ -374,7 +375,8 @@ public final class Parser {
     private void addConstraint(final String name, final String varNames,
             final String parameters, final String reference,
             final Map<String, Predicate> predicates,
-            final Map<String, Extension> relations) throws XCSPParseException {
+            final Map<String, Extension<?>> relations)
+            throws XCSPParseException {
         final String[] scopeList = varNames.split(" +");
         final CSPOMVariable[] scope = new CSPOMVariable[scopeList.length];
         for (int i = 0; i < scopeList.length; i++) {
@@ -401,7 +403,7 @@ public final class Parser {
             return;
         }
 
-        final Extension extension = relations.get(reference);
+        final Extension<?> extension = relations.get(reference);
         if (extension != null) {
             problem.addConstraint(new ExtensionConstraint(name, extension,
                     scope));

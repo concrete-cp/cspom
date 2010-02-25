@@ -26,7 +26,8 @@ public final class Interval<T extends Number> implements Domain<T> {
     /**
      * Constructs a new interval domain according to given lower and upper
      * bounds. Both bound must be of the same type, and lower bound must be <=
-     * to upper bound.
+     * to upper bound (bounds types must thus implement the Comparable
+     * interface).
      * 
      * @throws IllegalArgumentException
      *             if given bounds are not legal.
@@ -54,31 +55,38 @@ public final class Interval<T extends Number> implements Domain<T> {
 
     }
 
-    public static Interval<Number> valueOf(String interval) {
+    /**
+     * @param interval
+     *            a String containing the interval representation to be parsed.
+     *            The format of the interval is "a..b".
+     * @return an Interval instance corresponding to the parsed interval.
+     *         Currently returns either an Interval of Integers or Doubles.
+     * 
+     * @throws NumberFormatException
+     *             if the interval could not be parsed.
+     */
+    public static Interval<Number> valueOf(final String interval) {
         final String[] fromto = interval.trim().split("\\.\\.");
+        if (fromto.length != 2) {
+            throw new NumberFormatException("Interval format must be a..b");
+        }
         final Number lb = numValueOf(fromto[0]);
         final Number ub = numValueOf(fromto[1]);
         return new Interval<Number>(lb, ub);
     }
 
-    public static Number numValueOf(String value) {
+    /**
+     * @param value
+     *            a String containing the number representation to be parsed.
+     * @return a Number instance corresponding to the parsed value. Currently
+     *         returns either an Integer or Double.
+     */
+    private static Number numValueOf(final String value) {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            //
+            return Double.parseDouble(value);
         }
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            //
-        }
-        try {
-            return Float.parseFloat(value);
-        } catch (NumberFormatException e) {
-            //
-        }
-
-        return Double.parseDouble(value);
     }
 
     /**
