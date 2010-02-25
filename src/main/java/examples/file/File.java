@@ -8,6 +8,8 @@ import cspom.CSPOM;
 import cspom.xcsp.XCSPParseException;
 
 public final class File {
+    private static final String FILENAME = "crossword-m1-debug-05-01.xml";
+
     private File() {
     }
 
@@ -15,7 +17,7 @@ public final class File {
             XCSPParseException {
         final CSPOM cspom;
         try {
-            cspom = CSPOM.load(File.class.getResource("queens-12.xml"));
+            cspom = CSPOM.load(File.class.getResource(FILENAME));
 
         } catch (XCSPParseException e) {
             System.err

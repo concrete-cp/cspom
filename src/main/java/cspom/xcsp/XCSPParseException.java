@@ -56,19 +56,39 @@ public final class XCSPParseException extends Exception {
      * @param message
      *            a message to be attached to the exception.
      * @param lineNumber
-     *            a line number in the parsed file where the exception occured.
+     *            a line number in the parsed file where the exception occurred.
      */
     public XCSPParseException(final String message, final int lineNumber) {
         super(message);
         this.lineNumber = lineNumber;
     }
 
-    public XCSPParseException(Throwable cause, int lineNumber) {
+    /**
+     * Standard constructor with attached Throwable cause and line number.
+     * 
+     * @param cause
+     *            the Throwable that caused this exception to be thrown.
+     * @param lineNumber
+     *            a line number in the parsed file where the exception occurred.
+     */
+    public XCSPParseException(final Throwable cause, final int lineNumber) {
         super(cause);
         this.lineNumber = lineNumber;
     }
 
-    public XCSPParseException(String message, Throwable cause, int lineNumber) {
+    /**
+     * Standard constructor with both attached message, a Throwable cause and
+     * line number.
+     * 
+     * @param message
+     *            a message to be attached to the exception.
+     * @param cause
+     *            the Throwable that caused this exception to be thrown.
+     * @param lineNumber
+     *            a line number in the parsed file where the exception occurred.
+     */
+    public XCSPParseException(final String message, final Throwable cause,
+            final int lineNumber) {
         super(message, cause);
         this.lineNumber = lineNumber;
     }
