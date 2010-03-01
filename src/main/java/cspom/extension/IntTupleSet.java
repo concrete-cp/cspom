@@ -12,10 +12,9 @@ import java.util.NoSuchElementException;
  * 
  * @author vion
  * 
- * @param <T>
- *            type of tuples
+ *         type of tuples
  */
-public final class TupleSet<T> extends AbstractSet<T[]> {
+public final class IntTupleSet extends AbstractSet<int[]> {
 
     private static final int DEFAULT_HASHTABLE_SIZE = 32;
 
@@ -23,13 +22,13 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
 
     private int treshold;
 
-    private Entry<T>[] hashTable;
+    private Entry[] hashTable;
 
     private int size;
 
     private int hashTableSize;
 
-    public TupleSet(final int nbTuples) {
+    public IntTupleSet(final int nbTuples) {
         super();
         this.size = 0;
         hashTableSize = 1;
@@ -37,14 +36,14 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
             hashTableSize <<= 1;
         }
         treshold = (int) (hashTableSize * LOAD_FACTOR);
-        hashTable = (Entry<T>[]) new Entry<?>[hashTableSize];
+        hashTable = new Entry[hashTableSize];
     }
 
-    public TupleSet() {
+    public IntTupleSet() {
         this(DEFAULT_HASHTABLE_SIZE);
     }
 
-    public TupleSet(final Collection<T[]> collection) {
+    public IntTupleSet(final Collection<int[]> collection) {
         this(collection.size());
         addAll(collection);
     }
@@ -62,16 +61,16 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
 
     @Override
     public boolean contains(final Object obj) {
-        return containsTuple((T[]) obj);
+        return containsTuple((int[]) obj);
     }
 
-    public boolean containsTuple(final T[] tuple) {
+    public boolean containsTuple(final int[] tuple) {
         return containsTuple(hashTable[indexFor(Arrays.hashCode(tuple),
                 hashTableSize)], tuple);
     }
 
     @Override
-    public boolean add(final T[] tuple) {
+    public boolean add(final int[] tuple) {
         final int hash = Arrays.hashCode(tuple);
         final int index = indexFor(hash, hashTableSize);
 
@@ -79,7 +78,7 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
             return false;
         }
 
-        hashTable[index] = new Entry<T>(tuple, hash, hashTable[index]);
+        hashTable[index] = new Entry(tuple, hash, hashTable[index]);
         if (size++ >= treshold) {
             resize(hashTable.length * 2);
         }
@@ -87,7 +86,7 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
     }
 
     private void resize(final int newTableSize) {
-        final Entry<T>[] newTable = (Entry<T>[]) new Entry<?>[newTableSize];
+        final Entry[] newTable = new Entry[newTableSize];
 
         transfer(newTable);
         hashTable = newTable;
@@ -98,15 +97,15 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
     /**
      * Transfers all entries from current table to newTable.
      */
-    private void transfer(final Entry<T>[] newTable) {
-        final Entry<T>[] src = hashTable;
+    private void transfer(final Entry[] newTable) {
+        final Entry[] src = hashTable;
         final int newCapacity = newTable.length;
         for (int j = src.length; --j >= 0;) {
-            Entry<T> e = src[j];
+            Entry e = src[j];
             if (e != null) {
                 src[j] = null;
                 do {
-                    final Entry<T> next = e.next;
+                    final Entry next = e.next;
                     final int i = indexFor(e.hash, newCapacity);
                     e.next = newTable[i];
                     newTable[i] = e;
@@ -117,29 +116,29 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
     }
 
     @Override
-    public Iterator<T[]> iterator() {
+    public Iterator<int[]> iterator() {
         return new HashSetIterator();
     }
 
-    public static <T> boolean containsTuple(Entry<T> list, T[] tuple) {
-        for (Entry<T> e = list; e != null; e = e.next) {
+    private static boolean containsTuple(Entry list, int[] tuple) {
+        for (Entry e = list; e != null; e = e.next) {
             if (Arrays.equals(e.entry, tuple)) {
                 return true;
             }
         }
         return false;
     }
-
-    private class HashSetIterator implements Iterator<T[]> {
+    
+    private class HashSetIterator implements Iterator<int[]> {
 
         private int index;
 
-        private Entry<T> next;
-        private Entry<T> current;
+        private Entry next;
+        private Entry current;
 
         public HashSetIterator() {
             if (size > 0) { // advance to first entry
-                final Entry<T>[] t = hashTable;
+                final Entry[] t = hashTable;
                 while (index < t.length && (next = t[index++]) == null)
                     ;
             }
@@ -151,14 +150,14 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
         }
 
         @Override
-        public T[] next() {
-            Entry<T> e = next;
+        public int[] next() {
+            Entry e = next;
             if (e == null) {
                 throw new NoSuchElementException();
             }
 
             if ((next = e.next) == null) {
-                Entry<T>[] t = hashTable;
+                Entry[] t = hashTable;
                 while (index < t.length && (next = t[index++]) == null)
                     ;
             }
@@ -184,16 +183,16 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
         size = 0;
     }
 
-    private static class Entry<T> {
-        final T[] entry;
-        Entry<T> next;
+
+    private static class Entry {
+        final int[] entry;
+        Entry next;
         final int hash;
 
-        public Entry(final T[] entry, final int hash, final Entry<T> next) {
+        public Entry(final int[] entry, final int hash, final Entry next) {
             this.entry = entry;
             this.hash = hash;
             this.next = next;
         }
-
     }
 }
