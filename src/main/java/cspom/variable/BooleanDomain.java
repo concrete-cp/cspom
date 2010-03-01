@@ -9,7 +9,7 @@ import java.util.List;
  * @author vion
  * 
  */
-public final class BooleanDomain implements Domain<Boolean> {
+public final class BooleanDomain implements CSPOMDomain<Boolean> {
 
 	/**
 	 * True constant.

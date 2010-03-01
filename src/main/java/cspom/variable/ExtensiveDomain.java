@@ -14,7 +14,7 @@ import java.util.List;
  * @author vion
  * 
  */
-public final class ExtensiveDomain<T> implements Domain<T> {
+public final class ExtensiveDomain<T> implements CSPOMDomain<T> {
 
 	/**
 	 * Number of values displayed by the toString() method.

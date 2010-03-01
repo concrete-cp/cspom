@@ -12,7 +12,7 @@ import java.util.List;
  * 
  * @author vion
  */
-public final class Interval<T extends Number> implements Domain<T> {
+public final class Interval<T extends Number> implements CSPOMDomain<T> {
 
     /**
      * Lower bound.

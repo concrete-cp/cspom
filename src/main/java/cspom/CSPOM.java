@@ -40,7 +40,7 @@ import cspom.compiler.ConstraintCompiler;
 import cspom.compiler.PredicateParseException;
 import cspom.constraint.CSPOMConstraint;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.Domain;
+import cspom.variable.CSPOMDomain;
 import cspom.xcsp.Parser;
 import cspom.xcsp.XCSPParseException;
 
@@ -326,7 +326,7 @@ public final class CSPOM {
         final StringBuilder stb = new StringBuilder();
         for (CSPOMVariable v : variableList) {
             stb.append(v).append(" = ");
-            final Domain<?> d = v.getDomain();
+            final CSPOMDomain<?> d = v.getDomain();
             if (d == null) {
                 stb.append('?');
             } else {

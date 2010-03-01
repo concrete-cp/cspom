@@ -14,7 +14,7 @@ import java.util.Map;
  * @author vion
  * 
  */
-public final class EnumDomain<T extends Enum<T>> implements Domain<T> {
+public final class EnumDomain<T extends Enum<T>> implements CSPOMDomain<T> {
 
 	/**
 	 * Map used to retrieve singleton instances of EnumDomain.

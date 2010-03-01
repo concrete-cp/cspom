@@ -13,7 +13,7 @@ import java.util.List;
  * @author vion
  * 
  */
-public final class Constant<T> implements Domain<T> {
+public final class Constant<T> implements CSPOMDomain<T> {
 
     /**
      * Constant value.

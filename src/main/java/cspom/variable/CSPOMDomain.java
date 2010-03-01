@@ -10,7 +10,7 @@ import java.util.List;
  * @author vion
  * 
  */
-public interface Domain<T> {
+public interface CSPOMDomain<T> {
     /**
      * @return The list of potential values for this domain.
      */

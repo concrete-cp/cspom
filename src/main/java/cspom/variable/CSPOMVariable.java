@@ -28,13 +28,13 @@ public final class CSPOMVariable {
 	/**
 	 * Domain of the variable. Null iff undefined.
 	 */
-	private Domain<?> domain;
+	private CSPOMDomain<?> domain;
 
 	/**
 	 * Constructs a new variable with generated name and null domain.
 	 */
 	public CSPOMVariable() {
-		this((Domain<?>) null);
+		this((CSPOMDomain<?>) null);
 	}
 
 	/**
@@ -43,7 +43,7 @@ public final class CSPOMVariable {
 	 * @param domain
 	 *            Domain of the variable. Null iff undefined.
 	 */
-	public CSPOMVariable(final Domain<?> domain) {
+	public CSPOMVariable(final CSPOMDomain<?> domain) {
 		this(generateName(), domain);
 	}
 
@@ -55,7 +55,7 @@ public final class CSPOMVariable {
 	 * @param dom
 	 *            Domain of the variable. Null iff undefined.
 	 */
-	public CSPOMVariable(final String name, final Domain<?> dom) {
+	public CSPOMVariable(final String name, final CSPOMDomain<?> dom) {
 		this.name = name;
 		constraints = new HashSet<CSPOMConstraint>();
 		this.domain = dom;
@@ -135,7 +135,7 @@ public final class CSPOMVariable {
 	/**
 	 * @return The domain of the variable.
 	 */
-	public Domain<?> getDomain() {
+	public CSPOMDomain<?> getDomain() {
 		return domain;
 	}
 
@@ -143,7 +143,7 @@ public final class CSPOMVariable {
 	 * @param dom
 	 *            The new domain of the variable.
 	 */
-	public void setDomain(final Domain<?> dom) {
+	public void setDomain(final CSPOMDomain<?> dom) {
 		this.domain = dom;
 	}
 

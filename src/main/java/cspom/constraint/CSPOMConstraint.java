@@ -52,14 +52,6 @@ public interface CSPOMConstraint {
      */
     Integer getPosition(CSPOMVariable variable);
 
-    /**
-     * Permutes the scope of the constraint according to the given variables.
-     * 
-     * @param scope
-     *            The new permutation of the scope of the constraint.
-     * @return A copy of the constraint with the permuted scope.
-     */
-    CSPOMConstraint standardize(CSPOMVariable... scope);
 
     /**
      * @return The description of the constraint.
