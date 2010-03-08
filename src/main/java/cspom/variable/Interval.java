@@ -15,6 +15,11 @@ import java.util.List;
 public final class Interval<T extends Number> implements CSPOMDomain<T> {
 
     /**
+     * Base number used to compute hash codes.
+     */
+    private static final int HASH_BASE = 31;
+
+    /**
      * Lower bound.
      */
     private final T lb;
@@ -110,7 +115,7 @@ public final class Interval<T extends Number> implements CSPOMDomain<T> {
 
     @Override
     public int hashCode() {
-        return 961 + 31 * lb.hashCode() + ub.hashCode();
+        return HASH_BASE * lb.hashCode() + ub.hashCode();
     }
 
     @Override
