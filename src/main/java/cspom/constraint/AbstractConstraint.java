@@ -72,12 +72,19 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 		return scope.hashCode() + 31 * getDescription().hashCode();
 	}
 
+	@Override
 	public final String getDescription() {
 		return description;
 	}
 
+	@Override
 	public final String getName() {
 		return name;
+	}
+
+	@Override
+	public final CSPOMVariable getVariable(final int position) {
+		return scope.get(position);
 	}
 
 	@Override

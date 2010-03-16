@@ -34,6 +34,8 @@ public interface CSPOMConstraint {
      * @return the scope of the constraint
      */
     List<CSPOMVariable> getScope();
+    
+    CSPOMVariable getVariable(int position);
 
     /**
      * @return the arity of the constraint. Defined as arity ==
@@ -57,4 +59,6 @@ public interface CSPOMConstraint {
      * @return The description of the constraint.
      */
     String getDescription();
+
+	String getName();
 }
