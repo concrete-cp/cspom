@@ -39,8 +39,10 @@ import org.apache.tools.bzip2.CBZip2InputStream;
 import cspom.compiler.ConstraintCompiler;
 import cspom.compiler.PredicateParseException;
 import cspom.constraint.CSPOMConstraint;
-import cspom.variable.CSPOMVariable;
+import cspom.constraint.FunctionalConstraint;
+import cspom.variable.BooleanDomain;
 import cspom.variable.CSPOMDomain;
+import cspom.variable.CSPOMVariable;
 import cspom.xcsp.Parser;
 import cspom.xcsp.XCSPParseException;
 
@@ -184,8 +186,65 @@ public final class CSPOM {
         final InputStream problemIS = problemInputStream(url);
 
         new Parser(problem).parse(problemIS);
-
+        //problem.compile();
         return problem;
+    }
+
+    public void compile() {
+        final Collection<CSPOMConstraint> toRemove = new ArrayList<CSPOMConstraint>();
+
+        for (CSPOMVariable v : getVariables()) {
+            if (BooleanDomain.TRUE.equals(v.getDomain())) {
+                for (CSPOMConstraint c : v.getConstraints()) {
+                    if (!(c instanceof FunctionalConstraint)
+                            || !"and".equals(c.getDescription())) {
+                        continue;
+                    }
+                    final FunctionalConstraint fc = (FunctionalConstraint) c;
+                    if (fc.getResultVariable() == v) {
+                        for (CSPOMVariable a : fc.getArguments()) {
+                            a.setDomain(BooleanDomain.TRUE);
+                        }
+                        toRemove.add(c);
+                    }
+                }
+            }
+        }
+
+        for (CSPOMConstraint c : toRemove) {
+            removeConstraint(c);
+        }
+
+        final Collection<CSPOMVariable> varToRemove = new ArrayList<CSPOMVariable>();
+
+        for (CSPOMVariable v : variableList) {
+            if (v.getConstraints().isEmpty()) {
+                varToRemove.add(v);
+            }
+        }
+
+        for (CSPOMVariable v : varToRemove) {
+            removeVariable(v);
+        }
+    }
+
+    private void removeConstraint(final CSPOMConstraint c) {
+        for (CSPOMVariable v : c.getScope()) {
+            v.removeConstraint(c);
+        }
+        constraints.remove(c);
+
+    }
+
+    private void removeVariable(final CSPOMVariable v) {
+        if (v.getConstraints().isEmpty()) {
+            variableList.remove(v);
+            variableMap.remove(v.getName());
+        } else {
+            throw new IllegalArgumentException(v
+                    + " is still implied by constraints");
+        }
+
     }
 
     /**
