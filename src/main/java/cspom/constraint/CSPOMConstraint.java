@@ -28,13 +28,13 @@ import cspom.variable.CSPOMVariable;
  * @see CSPOMVariable
  * @see CSPOM
  */
-public interface CSPOMConstraint {
+public interface CSPOMConstraint extends Iterable<CSPOMVariable> {
 
     /**
      * @return the scope of the constraint
      */
     List<CSPOMVariable> getScope();
-    
+
     CSPOMVariable getVariable(int position);
 
     /**
@@ -54,11 +54,12 @@ public interface CSPOMConstraint {
      */
     Integer getPosition(CSPOMVariable variable);
 
-
     /**
      * @return The description of the constraint.
      */
     String getDescription();
 
-	String getName();
+    String getName();
+
+    void replaceVar(CSPOMVariable merged, CSPOMVariable variable);
 }

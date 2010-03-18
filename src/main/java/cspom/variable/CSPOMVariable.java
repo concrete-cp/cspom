@@ -30,6 +30,8 @@ public final class CSPOMVariable {
      */
     private CSPOMDomain<?> domain;
 
+    private boolean auxiliary = false;
+
     /**
      * Constructs a new variable with generated name and null domain.
      */
@@ -156,6 +158,9 @@ public final class CSPOMVariable {
 
     @Override
     public String toString() {
+        if (domain instanceof Constant<?>) {
+            return domain.toString();
+        }
         return name;
     }
 
@@ -195,6 +200,14 @@ public final class CSPOMVariable {
      */
     private static String generateName() {
         return "_" + unnamed++;
+    }
+
+    public boolean isAuxiliary() {
+        return auxiliary;
+    }
+
+    public void setAuxiliary(boolean auxiliary) {
+        this.auxiliary = auxiliary;
     }
 
 }
