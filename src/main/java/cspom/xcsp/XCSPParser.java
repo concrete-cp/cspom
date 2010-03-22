@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import cspom.CSPOM;
+import cspom.CSPParseException;
 import cspom.DuplicateVariableException;
 import cspom.compiler.PredicateParseException;
 import cspom.extension.Extension;
@@ -37,7 +38,7 @@ import cspom.variable.Interval;
  * 
  * @author vion
  */
-public final class Parser {
+public final class XCSPParser {
 
     /**
      * XPath expression to retrieve predicate parameters.
@@ -70,7 +71,7 @@ public final class Parser {
      *            The problem to which every parsed variable or constraint will
      *            be added.
      */
-    public Parser(final CSPOM problem) {
+    public XCSPParser(final CSPOM problem) {
         this.problem = problem;
     }
 
@@ -80,12 +81,12 @@ public final class Parser {
      * 
      * @param is
      *            The source of the XCSP data
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             Thrown if is contains invalid data
      * @throws IOException
      *             Thrown if the data could not be read
      */
-    public void parse(final InputStream is) throws XCSPParseException,
+    public void parse(final InputStream is) throws CSPParseException,
             IOException {
         DocumentBuilder db;
         try {
@@ -98,7 +99,7 @@ public final class Parser {
         try {
             document = db.parse(is);
         } catch (SAXParseException e) {
-            throw new XCSPParseException(e, e.getLineNumber());
+            throw new CSPParseException(e, e.getLineNumber());
         } catch (SAXException e) {
             throw new IllegalStateException(e);
         }
@@ -188,11 +189,11 @@ public final class Parser {
      *            Domains to use for variables.
      * @param doc
      *            XCSP document
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             If two variables have the same name.
      */
     private void parseVariables(final Map<String, CSPOMDomain<?>> domains,
-            final Document doc) throws XCSPParseException {
+            final Document doc) throws CSPParseException {
         final NodeList variables = doc.getElementsByTagName("variable");
         for (int i = 0; i < variables.getLength(); i++) {
             final NamedNodeMap variableAttributes = variables.item(i)
@@ -204,7 +205,7 @@ public final class Parser {
                         .get(variableAttributes.getNamedItem("domain")
                                 .getTextContent())));
             } catch (DuplicateVariableException e) {
-                throw new XCSPParseException("Variable " + name
+                throw new CSPParseException("Variable " + name
                         + " is defined twice", e);
             }
 
@@ -218,11 +219,11 @@ public final class Parser {
      * @param doc
      *            XCSP document
      * @return The relations.
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             If there was an error parsing a relation.
      */
     private static Map<String, Extension<?>> parseRelations(final Document doc)
-            throws XCSPParseException {
+            throws CSPParseException {
         final Map<String, Extension<?>> relationMap = new HashMap<String, Extension<?>>();
         final NodeList relations = doc.getElementsByTagName("relation");
         for (int i = relations.getLength(); --i >= 0;) {
@@ -254,13 +255,13 @@ public final class Parser {
      * @param string
      *            The relation to parse. Format is "a b c...|d e f...|..."
      * @return The parsed extension
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             If the relation could not be read or is inconsistent with
      *             given arity or nbTuples.
      */
     private static Extension<Number> parseRelation(final int arity,
             final boolean init, final int nbTuples, final String string)
-            throws XCSPParseException {
+            throws CSPParseException {
 
         final Extension<Number> extension = new Extension<Number>(arity, init);
         final String[] tupleList;
@@ -271,7 +272,7 @@ public final class Parser {
         }
 
         if (tupleList.length != nbTuples) {
-            throw new XCSPParseException("Inconsistent number of Tuples ("
+            throw new CSPParseException("Inconsistent number of Tuples ("
                     + tupleList.length + " /= " + nbTuples + ") in " + string);
         }
 
@@ -279,7 +280,7 @@ public final class Parser {
             final String[] valueList = parsedTuple.trim().split(" +");
 
             if (valueList.length != arity) {
-                throw new XCSPParseException("Incorrect arity ("
+                throw new CSPParseException("Incorrect arity ("
                         + valueList.length + " /= " + arity + ") in "
                         + parsedTuple.trim());
             }
@@ -301,12 +302,12 @@ public final class Parser {
      * @param doc
      *            XCSP document
      * @return A map containing parsed predicates.
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             If a predicates does not contains both <parameters> and
      *             <functional> parts.
      */
     private static Map<String, Predicate> parsePredicates(final Document doc)
-            throws XCSPParseException {
+            throws CSPParseException {
         final Map<String, Predicate> predicateMap = new HashMap<String, Predicate>();
         final NodeList predicates = doc.getElementsByTagName("predicate");
         for (int i = predicates.getLength(); --i >= 0;) {
@@ -319,7 +320,7 @@ public final class Parser {
                         .evaluate(predicateNode), FUNC_EXPR
                         .evaluate(predicateNode)));
             } catch (XPathExpressionException e) {
-                throw new XCSPParseException(
+                throw new CSPParseException(
                         "Could not read predicate " + name, e);
             }
         }
@@ -337,12 +338,12 @@ public final class Parser {
      *            Predicates constraints may use.
      * @param doc
      *            XCSP document.
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             If a relation or predicate could not be found or applied.
      */
     private void parseConstraints(final Map<String, Extension<?>> relations,
             final Map<String, Predicate> predicates, final Document doc)
-            throws XCSPParseException {
+            throws CSPParseException {
         final NodeList constraints = doc.getElementsByTagName("constraint");
         for (int i = constraints.getLength(); --i >= 0;) {
             final Node constraintNode = constraints.item(i);
@@ -372,7 +373,7 @@ public final class Parser {
      *            Map of predicates
      * @param relations
      *            Map of relations
-     * @throws XCSPParseException
+     * @throws CSPParseException
      *             If a variable, relation or predicate could not be found or
      *             applied.
      */
@@ -380,13 +381,13 @@ public final class Parser {
             final String parameters, final String reference,
             final Map<String, Predicate> predicates,
             final Map<String, Extension<?>> relations)
-            throws XCSPParseException {
+            throws CSPParseException {
         final String[] scopeList = varNames.split(" +");
         final CSPOMVariable[] scope = new CSPOMVariable[scopeList.length];
         for (int i = 0; i < scopeList.length; i++) {
             scope[i] = problem.getVariable(scopeList[i]);
             if (scope[i] == null) {
-                throw new XCSPParseException("Could not find variable "
+                throw new CSPParseException("Could not find variable "
                         + scopeList[i] + " from the scope of " + name);
             }
         }
@@ -401,7 +402,7 @@ public final class Parser {
             try {
                 problem.ctr(stb.toString());
             } catch (PredicateParseException e) {
-                throw new XCSPParseException("Error parsing constraint "
+                throw new CSPParseException("Error parsing constraint "
                         + stb.toString(), e);
             }
             return;
@@ -416,13 +417,13 @@ public final class Parser {
 
         final Predicate predicate = predicates.get(reference);
         if (predicate == null) {
-            throw new XCSPParseException("Unknown reference " + reference);
+            throw new CSPParseException("Unknown reference " + reference);
         }
 
         try {
             problem.ctr(predicate.applyParameters(parameters, scope));
         } catch (PredicateParseException e) {
-            throw new XCSPParseException("Error parsing predicate " + predicate
+            throw new CSPParseException("Error parsing predicate " + predicate
                     + " with constraint parameters " + parameters, e);
         }
     }

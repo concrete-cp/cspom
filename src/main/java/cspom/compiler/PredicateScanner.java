@@ -96,7 +96,8 @@ public final class PredicateScanner {
 			if (child == null) {
 				if (!isInteger() && !isIdentifier()) {
 					throw new PredicateParseException(
-							"Leaves should be variables or constants");
+							"Leaves should be variables or constants, was "
+									+ this);
 				}
 				return true;
 			}

@@ -1,4 +1,4 @@
-package cspom.xcsp;
+package cspom;
 
 /**
  * Exception used to report an error while parsing an XCSP file.
@@ -6,7 +6,7 @@ package cspom.xcsp;
  * @author vion
  * 
  */
-public final class XCSPParseException extends Exception {
+public final class CSPParseException extends Exception {
 
     /**
      * 
@@ -24,7 +24,7 @@ public final class XCSPParseException extends Exception {
      * @param message
      *            a message to be attached to the exception.
      */
-    public XCSPParseException(final String message) {
+    public CSPParseException(final String message) {
         this(message, -1);
     }
 
@@ -34,7 +34,7 @@ public final class XCSPParseException extends Exception {
      * @param cause
      *            the Throwable that caused this exception to be thrown.
      */
-    public XCSPParseException(final Throwable cause) {
+    public CSPParseException(final Throwable cause) {
         this(cause, -1);
     }
 
@@ -46,7 +46,7 @@ public final class XCSPParseException extends Exception {
      * @param cause
      *            the Throwable that caused this exception to be thrown.
      */
-    public XCSPParseException(final String message, final Throwable cause) {
+    public CSPParseException(final String message, final Throwable cause) {
         this(message, cause, -1);
     }
 
@@ -58,7 +58,7 @@ public final class XCSPParseException extends Exception {
      * @param lineNumber
      *            a line number in the parsed file where the exception occurred.
      */
-    public XCSPParseException(final String message, final int lineNumber) {
+    public CSPParseException(final String message, final int lineNumber) {
         super(message);
         this.lineNumber = lineNumber;
     }
@@ -71,7 +71,7 @@ public final class XCSPParseException extends Exception {
      * @param lineNumber
      *            a line number in the parsed file where the exception occurred.
      */
-    public XCSPParseException(final Throwable cause, final int lineNumber) {
+    public CSPParseException(final Throwable cause, final int lineNumber) {
         super(cause);
         this.lineNumber = lineNumber;
     }
@@ -87,7 +87,7 @@ public final class XCSPParseException extends Exception {
      * @param lineNumber
      *            a line number in the parsed file where the exception occurred.
      */
-    public XCSPParseException(final String message, final Throwable cause,
+    public CSPParseException(final String message, final Throwable cause,
             final int lineNumber) {
         super(message, cause);
         this.lineNumber = lineNumber;
