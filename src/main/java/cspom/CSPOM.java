@@ -185,9 +185,9 @@ public final class CSPOM {
 		final CSPOM problem = new CSPOM();
 		final InputStream problemIS = problemInputStream(url);
 
-		if (url.getFile().endsWith(".xml")) {
+		if (url.getFile().contains(".xml")) {
 			new XCSPParser(problem).parse(problemIS);
-		} else if (url.getFile().endsWith(".cnf")) {
+		} else if (url.getFile().contains(".cnf")) {
 			new CNFParser(problem).parse(problemIS);
 		} else {
 			throw new IllegalArgumentException("Unhandled file format");
