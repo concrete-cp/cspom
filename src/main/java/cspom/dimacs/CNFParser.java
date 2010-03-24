@@ -78,24 +78,29 @@ public class CNFParser {
 		}
 	}
 
-	private String clause(List<Integer> currentClause) {
-		final StringBuilder clause = new StringBuilder();
-		clause.append("or(");
+	private String clause(final List<Integer> currentClause) {
 
-		Iterator<Integer> i = currentClause.iterator();
+		final StringBuilder clause = new StringBuilder();
+		final StringBuilder parameters = new StringBuilder();
+		parameters.append("or{");
+
+		final Iterator<Integer> i = currentClause.iterator();
 
 		for (;;) {
 			int v = i.next();
+			clause.append('V').append(Math.abs(v));
 			if (v > 0) {
-				clause.append('V').append(v);
+				parameters.append('0');
 			} else {
-				clause.append("not(V").append(-v).append(')');
+				parameters.append('1');
 			}
 
 			if (!i.hasNext()) {
-				return clause.append(')').toString();
+				return parameters.append("}(").append(clause.toString())
+						.append(')').toString();
 			}
 			clause.append(", ");
+			parameters.append(", ");
 		}
 
 	}

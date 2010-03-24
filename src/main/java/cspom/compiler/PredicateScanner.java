@@ -15,14 +15,27 @@ public final class PredicateScanner {
 
 	}
 
-	public static Node scan(String expression) throws PredicateParseException {
-		final StringTokenizer st = new StringTokenizer(expression, " (),", true);
+	public static Node scan(final String expression)
+			throws PredicateParseException {
+		final StringTokenizer st = new StringTokenizer(expression, " {}(),",
+				true);
 		final Deque<Node> stack = new LinkedList<Node>();
 		Node currentNode = new Node();
+		StringBuilder parameters = null;
 		while (st.hasMoreElements()) {
 			final String token = st.nextToken();
-			if (" ".equals(token)) {
+			if ("}".equals(token)) {
+				currentNode.parameters = parameters.toString();
+				parameters = null;
+			} else if (parameters != null) {
+				parameters.append(token);
+			} else if (" ".equals(token)) {
 				continue;
+			} else if ("{".equals(token)) {
+				if (currentNode.operator == null) {
+					throw new PredicateParseException("Empty operator");
+				}
+				parameters = new StringBuilder();
 			} else if ("(".equals(token)) {
 				if (currentNode.operator == null) {
 					throw new PredicateParseException("Empty operator");
@@ -36,7 +49,6 @@ public final class PredicateScanner {
 					throw new PredicateParseException("Too many )s");
 				}
 				currentNode = stack.pop();
-
 			} else if (",".equals(token)) {
 				if (currentNode.operator == null) {
 					throw new PredicateParseException("Empty argument");
@@ -59,6 +71,7 @@ public final class PredicateScanner {
 		private Node sibling;
 		private Node child;
 		private String operator;
+		private String parameters;
 
 		public Node getSibling() {
 			return sibling;
@@ -70,6 +83,10 @@ public final class PredicateScanner {
 
 		public String getOperator() {
 			return operator;
+		}
+
+		public String getParameters() {
+			return parameters;
 		}
 
 		public String toString() {
@@ -104,11 +121,15 @@ public final class PredicateScanner {
 			return false;
 		}
 
-		private void tree(StringBuilder stb, int level) {
+		private void tree(final StringBuilder stb, final int level) {
 			for (int i = level; --i >= 0;) {
 				stb.append("-");
 			}
-			stb.append(operator).append("\n");
+			stb.append(operator);
+			if (parameters != null) {
+				stb.append('{').append(parameters).append('}');
+			}
+			stb.append('\n');
 			if (child != null) {
 				child.tree(stb, level + 1);
 			}

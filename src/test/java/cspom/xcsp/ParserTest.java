@@ -16,7 +16,7 @@ public class ParserTest {
         final CSPOM cspom = new CSPOM();
         final XCSPParser parser = new XCSPParser(cspom);
         parser.parse(ParserTest.class.getResource(FILENAME).openStream());
-
+        System.out.println(cspom);
     }
 
 

@@ -2,7 +2,7 @@ package cspom.constraint;
 
 import cspom.variable.CSPOMVariable;
 
-public interface PermutableConstraint extends CSPOMConstraint {
+public interface PermutableConstraint<T> extends CSPOMConstraint<T> {
 	/**
 	 * Permutes the scope of the constraint according to the given variables.
 	 * 
@@ -10,6 +10,6 @@ public interface PermutableConstraint extends CSPOMConstraint {
 	 *            The new permutation of the scope of the constraint.
 	 * @return A copy of the constraint with the permuted scope.
 	 */
-	PermutableConstraint standardize(CSPOMVariable... scope);
+	PermutableConstraint<T> standardize(CSPOMVariable... scope);
 
 }

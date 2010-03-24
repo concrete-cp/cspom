@@ -22,93 +22,101 @@ import cspom.variable.CSPOMVariable;
  * @author vion
  * 
  */
-public abstract class AbstractConstraint implements CSPOMConstraint {
+public abstract class AbstractConstraint<T> implements CSPOMConstraint<T> {
 
-    private final String name;
+	private final String name;
 
-    private final List<CSPOMVariable> scope;
+	private final List<CSPOMVariable> scope;
 
-    private final int arity;
+	private final int arity;
 
-    private final Map<CSPOMVariable, Integer> positions;
+	private final Map<CSPOMVariable, Integer> positions;
 
-    private final String description;
+	private final String description;
 
-    public AbstractConstraint(final String description,
-            final CSPOMVariable... scope) {
-        this(null, description, scope);
-    }
+	private final Object parameters;
 
-    public AbstractConstraint(final String name, final String description,
-            final CSPOMVariable... scope) {
-        this.scope = Arrays.asList(scope);
-        this.name = name;
-        this.description = description;
-        arity = scope.length;
-        positions = new HashMap<CSPOMVariable, Integer>(arity);
-        for (int i = arity; --i >= 0;) {
-            positions.put(scope[i], i);
-            scope[i].registerConstraint(this);
-        }
-    }
+	public AbstractConstraint(final String description,
+			final Object parameters, final CSPOMVariable... scope) {
+		this(null, description, parameters, scope);
+	}
 
-    public final List<CSPOMVariable> getScope() {
-        return scope;
-    }
+	public AbstractConstraint(final String name, final String description,
+			final Object parameters, final CSPOMVariable... scope) {
+		this.scope = Arrays.asList(scope);
+		this.name = name;
+		this.description = description;
+		this.parameters = parameters;
+		arity = scope.length;
+		positions = new HashMap<CSPOMVariable, Integer>(arity);
+		for (int i = arity; --i >= 0;) {
+			positions.put(scope[i], i);
+			scope[i].registerConstraint(this);
+		}
+	}
 
-    public final int getArity() {
-        return arity;
-    }
+	public final List<CSPOMVariable> getScope() {
+		return scope;
+	}
 
-    public final Integer getPosition(final CSPOMVariable variable) {
-        return positions.get(variable);
-    }
+	public final int getArity() {
+		return arity;
+	}
 
-    public int hashCode() {
-        return scope.hashCode() + 31 * getDescription().hashCode();
-    }
+	public final Integer getPosition(final CSPOMVariable variable) {
+		return positions.get(variable);
+	}
 
-    @Override
-    public final String getDescription() {
-        return description;
-    }
+	@Override
+	public int hashCode() {
+		return scope.hashCode() + 31 * getDescription().hashCode();
+	}
 
-    @Override
-    public final String getName() {
-        return name;
-    }
+	@Override
+	public final String getDescription() {
+		return description;
+	}
 
-    @Override
-    public final CSPOMVariable getVariable(final int position) {
-        return scope.get(position);
-    }
+	@Override
+	public final String getName() {
+		return name;
+	}
 
-    @Override
-    public boolean equals(final Object object) {
-        if (!(object instanceof AbstractConstraint)) {
-            return false;
-        }
-        final AbstractConstraint constraint = (AbstractConstraint) object;
-        return scope.equals(constraint.scope)
-                && description.equals(constraint.description);
-    }
+	@Override
+	public final CSPOMVariable getVariable(final int position) {
+		return scope.get(position);
+	}
 
-    @Override
-    public final Iterator<CSPOMVariable> iterator() {
-        return scope.iterator();
-    }
+	@Override
+	public boolean equals(final Object object) {
+		if (!(object instanceof AbstractConstraint<?>)) {
+			return false;
+		}
+		final AbstractConstraint<?> constraint = (AbstractConstraint<?>) object;
+		return scope.equals(constraint.scope)
+				&& description.equals(constraint.description);
+	}
 
-    @Override
-    public void replaceVar(CSPOMVariable merged, CSPOMVariable var) {
-        int pos = scope.indexOf(merged);
-        if (pos < 0) {
-            throw new IllegalArgumentException(merged + " not in scope");
-        }
-        do {
-            scope.set(pos, var);
-            positions.remove(merged);
-            positions.put(var, pos);
-            pos = scope.indexOf(merged);
-        } while (pos >= 0);
-    }
+	@Override
+	public final Iterator<CSPOMVariable> iterator() {
+		return scope.iterator();
+	}
+
+	@Override
+	public void replaceVar(final CSPOMVariable merged, final CSPOMVariable var) {
+		int pos = scope.indexOf(merged);
+		if (pos < 0) {
+			throw new IllegalArgumentException(merged + " not in scope");
+		}
+		do {
+			scope.set(pos, var);
+			positions.remove(merged);
+			positions.put(var, pos);
+			pos = scope.indexOf(merged);
+		} while (pos >= 0);
+	}
+	
+	public final Object getParameters() {
+		return parameters;
+	}
 }
