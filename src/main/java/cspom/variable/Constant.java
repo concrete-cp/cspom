@@ -51,11 +51,6 @@ public final class Constant<T> implements CSPOMDomain<T> {
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException();
-    }
-
-    @Override
     public String toString() {
         return value.toString();
     }

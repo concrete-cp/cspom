@@ -90,11 +90,6 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 	}
 
 	@Override
-	public Object clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException();
-	}
-
-	@Override
 	public String toString() {
 		if (constant) {
 			if (truthValue) {

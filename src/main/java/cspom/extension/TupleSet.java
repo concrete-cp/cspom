@@ -196,7 +196,7 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
      * @author vion
      * 
      */
-    private class HashSetIterator implements Iterator<T[]> {
+    private final class HashSetIterator implements Iterator<T[]> {
 
         /**
          * The current index in the hash table.
@@ -211,11 +211,13 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
         /**
          * Constructs an iterator over the enclosing set.
          */
-        public HashSetIterator() {
+        private HashSetIterator() {
             if (size > 0) { // advance to first entry
                 final Entry<T>[] t = hashTable;
-                while (index < t.length && (next = t[index++]) == null)
-                    ;
+                while (index < t.length && (next = t[index++]) == null) {
+                    //
+                }
+
             }
         }
 
@@ -234,9 +236,10 @@ public final class TupleSet<T> extends AbstractSet<T[]> {
             next = e.next;
 
             if (next == null) {
-                Entry<T>[] t = hashTable;
-                while (index < t.length && (next = t[index++]) == null)
-                    ;
+                final Entry<T>[] t = hashTable;
+                while (index < t.length && (next = t[index++]) == null) {
+                    //
+                }
             }
             return e.entry;
         }
