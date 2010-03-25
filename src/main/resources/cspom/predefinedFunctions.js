@@ -15,7 +15,7 @@ function div(x,y) { return Math.floor(x/y); }
 
 function mod(x,y) { return x%y; }
 
-function pow(x,y) { return Math.pow(x,y);}s
+function pow(x,y) { return Math.pow(x, y); }
 
 function min(x,y) { 
 	return x<y?x:y;
@@ -32,12 +32,21 @@ function not(x) { return !x; }
 
 function and(x,y) { return Boolean(x) && Boolean(y); }
 
+function p_or() { 
+  var a = arguments.length/2;
+  for (var i = a; --i >= 0;) {
+  	if (arguments[i+a] ^ arguments[i]) { return true; }
+  } 
+  return false
+}
+
 function or() { 
   for (var i = arguments.length; --i >= 0;) {
   	if (arguments[i]) { return true; }
   } 
   return false
 }
+
 
 function xor(x,y) { return x&&!y || !x&&y; }
  

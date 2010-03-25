@@ -65,5 +65,5 @@ public interface CSPOMConstraint<T> extends Iterable<CSPOMVariable> {
 
 	boolean evaluate(final T[] tuple);
 
-	Object getParameters();
+	String getParameters();
 }

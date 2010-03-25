@@ -1,89 +1,93 @@
 package cspom.compiler;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 
 import cspom.CSPOM;
 import cspom.DuplicateVariableException;
 import cspom.compiler.PredicateScanner.Node;
-import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
-import cspom.variable.BooleanDomain;
+import cspom.constraint.GeneralConstraint;
 import cspom.variable.CSPOMVariable;
 
 public final class ConstraintCompiler {
 
-	private final CSPOM mainProblem;
+    private final CSPOM problem;
 
-	public ConstraintCompiler(final CSPOM mainProblem) {
-		this.mainProblem = mainProblem;
-	}
+    public ConstraintCompiler(final CSPOM problem) {
+        this.problem = problem;
+    }
 
-	public CSPOM split(final String expression) throws PredicateParseException {
-		final Node root = PredicateScanner.scan(expression);
-		final CSPOM problem = new CSPOM();
+    public void split(final String expression) throws PredicateParseException {
+        final Node root = PredicateScanner.scan(expression);
 
-		CSPOMVariable result = addToProblem(root, problem);
-		result.setDomain(BooleanDomain.TRUE);
+        if (root.isLeaf()) {
+            throw new IllegalArgumentException("Constraint expected");
+        }
+        final Collection<CSPOMVariable> operands = new LinkedList<CSPOMVariable>();
+        for (Node n = root.getChild(); n != null; n = n.getSibling()) {
+            operands.add(addToProblem(n));
+        }
+        problem.addConstraint(new GeneralConstraint(root.getOperator(), root
+                .getParameters(), operands.toArray(new CSPOMVariable[operands
+                .size()])));
+    }
 
-		return problem;
-	}
+    private CSPOMVariable addToProblem(final Node node)
+            throws PredicateParseException {
+        if (node.isLeaf()) {
+            return addVariable(node, problem);
+        }
 
-	private CSPOMVariable addToProblem(final Node node, final CSPOM problem)
-			throws PredicateParseException {
-		if (node.isLeaf()) {
-			return addVariable(node, problem);
-		}
-		final CSPOMVariable result = new CSPOMVariable();
-		result.setAuxiliary(true);
-		try {
-			problem.addVariable(result);
-		} catch (DuplicateVariableException e) {
-			throw new IllegalStateException(e);
-		}
-		Collection<CSPOMVariable> operands = new ArrayList<CSPOMVariable>();
-		for (Node n = node.getChild(); n != null; n = n.getSibling()) {
-			operands.add(addToProblem(n, problem));
-		}
-		CSPOMConstraint<?> constraint = new FunctionalConstraint(result, node
-				.getOperator(), null, operands
-				.toArray(new CSPOMVariable[operands.size()]));
-		problem.addConstraint(constraint);
-		return result;
-	}
+        final CSPOMVariable result = new CSPOMVariable();
+        result.setAuxiliary(true);
+        try {
+            problem.addVariable(result);
+        } catch (DuplicateVariableException e) {
+            throw new IllegalStateException(e);
+        }
+        final Collection<CSPOMVariable> operands = new LinkedList<CSPOMVariable>();
+        for (Node n = node.getChild(); n != null; n = n.getSibling()) {
+            operands.add(addToProblem(n));
+        }
+        problem.addConstraint(new FunctionalConstraint(result, node
+                .getOperator(), node.getParameters(), operands
+                .toArray(new CSPOMVariable[operands.size()])));
+        return result;
+    }
 
-	private CSPOMVariable addVariable(final Node node, final CSPOM problem) {
-		CSPOMVariable existing = problem.getVariable(node.getOperator());
-		if (existing != null) {
-			return existing;
-		}
+    private CSPOMVariable addVariable(final Node node, final CSPOM problem) {
+        CSPOMVariable existing = problem.getVariable(node.getOperator());
+        if (existing != null) {
+            return existing;
+        }
 
-		existing = mainProblem.getVariable(node.getOperator());
-		if (existing != null) {
-			try {
-				problem.addVariable(existing);
-			} catch (DuplicateVariableException e) {
-				throw new IllegalStateException(e);
-			}
-			return existing;
-		}
+        existing = problem.getVariable(node.getOperator());
+        if (existing != null) {
+            try {
+                problem.addVariable(existing);
+            } catch (DuplicateVariableException e) {
+                throw new IllegalStateException(e);
+            }
+            return existing;
+        }
 
-		final CSPOMVariable newVariable;
-		if (node.isIdentifier()) {
-			newVariable = new CSPOMVariable();
-		} else if (node.isInteger()) {
-			newVariable = new CSPOMVariable(Integer
-					.parseInt(node.getOperator()));
-		} else {
-			throw new IllegalStateException();
-		}
-		try {
-			problem.addVariable(newVariable);
-		} catch (DuplicateVariableException e) {
-			System.err.println(problem);
-			System.err.println(newVariable);
-			throw new IllegalStateException(e);
-		}
-		return newVariable;
-	}
+        final CSPOMVariable newVariable;
+        if (node.isIdentifier()) {
+            newVariable = new CSPOMVariable();
+        } else if (node.isInteger()) {
+            newVariable = new CSPOMVariable(Integer
+                    .parseInt(node.getOperator()));
+        } else {
+            throw new IllegalStateException();
+        }
+        try {
+            problem.addVariable(newVariable);
+        } catch (DuplicateVariableException e) {
+            System.err.println(problem);
+            System.err.println(newVariable);
+            throw new IllegalStateException(e);
+        }
+        return newVariable;
+    }
 }

@@ -34,15 +34,15 @@ public abstract class AbstractConstraint<T> implements CSPOMConstraint<T> {
 
 	private final String description;
 
-	private final Object parameters;
+	private final String parameters;
 
 	public AbstractConstraint(final String description,
-			final Object parameters, final CSPOMVariable... scope) {
+			final String parameters, final CSPOMVariable... scope) {
 		this(null, description, parameters, scope);
 	}
 
 	public AbstractConstraint(final String name, final String description,
-			final Object parameters, final CSPOMVariable... scope) {
+			final String parameters, final CSPOMVariable... scope) {
 		this.scope = Arrays.asList(scope);
 		this.name = name;
 		this.description = description;
@@ -116,7 +116,7 @@ public abstract class AbstractConstraint<T> implements CSPOMConstraint<T> {
 		} while (pos >= 0);
 	}
 	
-	public final Object getParameters() {
+	public final String getParameters() {
 		return parameters;
 	}
 }
