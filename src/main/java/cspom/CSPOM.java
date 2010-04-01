@@ -92,7 +92,7 @@ public final class CSPOM {
     /**
      * Collection of all constraints of the problem.
      */
-    private final Collection<CSPOMConstraint<?>> constraints;
+    private final Collection<CSPOMConstraint> constraints;
 
     /**
      * The constraint compiler used by this CSPOM instance.
@@ -105,7 +105,7 @@ public final class CSPOM {
     public CSPOM() {
         variableList = new LinkedList<CSPOMVariable>();
         variableMap = new HashMap<String, CSPOMVariable>();
-        constraints = new ArrayList<CSPOMConstraint<?>>();
+        constraints = new ArrayList<CSPOMConstraint>();
     }
 
     /**
@@ -195,7 +195,7 @@ public final class CSPOM {
         return problem;
     }
 
-    public void removeConstraint(final CSPOMConstraint<?> c) {
+    public void removeConstraint(final CSPOMConstraint c) {
         for (CSPOMVariable v : c) {
             v.removeConstraint(c);
         }
@@ -244,14 +244,14 @@ public final class CSPOM {
      * @param constraint
      *            The constraint to add.
      */
-    public void addConstraint(final CSPOMConstraint<?> constraint) {
+    public void addConstraint(final CSPOMConstraint constraint) {
         constraints.add(constraint);
     }
 
     /**
      * @return The constraints of this problem.
      */
-    public Collection<CSPOMConstraint<?>> getConstraints() {
+    public Collection<CSPOMConstraint> getConstraints() {
         return constraints;
     }
 
@@ -335,7 +335,7 @@ public final class CSPOM {
             }
             stb.append('\n');
         }
-        for (CSPOMConstraint<?> c : constraints) {
+        for (CSPOMConstraint c : constraints) {
             stb.append(c).append('\n');
         }
         return stb.toString();
@@ -360,7 +360,7 @@ public final class CSPOM {
         }
 
         int gen = 0;
-        for (CSPOMConstraint<?> c : constraints) {
+        for (CSPOMConstraint c : constraints) {
             if (c.getArity() > 2) {
                 stb.append("node [\n");
                 stb.append("id \"cons").append(gen).append("\"\n");
@@ -394,15 +394,15 @@ public final class CSPOM {
         return stb.toString();
     }
 
-    public Collection<CSPOMConstraint<?>> control(
+    public Collection<CSPOMConstraint> control(
             final Map<String, Number> solution) {
-        final Collection<CSPOMConstraint<?>> failed = new ArrayList<CSPOMConstraint<?>>();
-        for (CSPOMConstraint<?> c : constraints) {
+        final Collection<CSPOMConstraint> failed = new ArrayList<CSPOMConstraint>();
+        for (CSPOMConstraint c : constraints) {
             final Number[] tuple = new Number[c.getArity()];
             for (int i = c.getArity(); --i >= 0;) {
                 tuple[i] = solution.get(c.getVariable(i).getName());
             }
-            if (!((CSPOMConstraint<Number>) c).evaluate(tuple)) {
+            if (!c.evaluate(tuple)) {
                 failed.add(c);
             }
         }

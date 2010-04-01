@@ -28,42 +28,42 @@ import cspom.variable.CSPOMVariable;
  * @see CSPOMVariable
  * @see CSPOM
  */
-public interface CSPOMConstraint<T> extends Iterable<CSPOMVariable> {
+public interface CSPOMConstraint extends Iterable<CSPOMVariable> {
 
-	/**
-	 * @return the scope of the constraint
-	 */
-	List<CSPOMVariable> getScope();
+    /**
+     * @return the scope of the constraint
+     */
+    List<CSPOMVariable> getScope();
 
-	CSPOMVariable getVariable(int position);
+    CSPOMVariable getVariable(int position);
 
-	/**
-	 * @return the arity of the constraint. Defined as arity ==
-	 *         getScope().size()
-	 */
-	int getArity();
+    /**
+     * @return the arity of the constraint. Defined as arity ==
+     *         getScope().size()
+     */
+    int getArity();
 
-	/**
-	 * Returns the position of the given variable in the constraint's scope.
-	 * Returns null if the variable is not in the scope.
-	 * 
-	 * @param variable
-	 *            The variable to seek.
-	 * @return The position of the given variable, or null if could not be
-	 *         found.
-	 */
-	Integer getPosition(CSPOMVariable variable);
+    /**
+     * Returns the position of the given variable in the constraint's scope.
+     * Returns null if the variable is not in the scope.
+     * 
+     * @param variable
+     *            The variable to seek.
+     * @return The position of the given variable, or null if could not be
+     *         found.
+     */
+    Integer getPosition(CSPOMVariable variable);
 
-	/**
-	 * @return The description of the constraint.
-	 */
-	String getDescription();
+    /**
+     * @return The description of the constraint.
+     */
+    String getDescription();
 
-	String getName();
+    String getName();
 
-	void replaceVar(CSPOMVariable merged, CSPOMVariable variable);
+    void replaceVar(CSPOMVariable merged, CSPOMVariable variable);
 
-	boolean evaluate(final T[] tuple);
+    boolean evaluate(final Object[] tuple);
 
-	String getParameters();
+    String getParameters();
 }

@@ -5,7 +5,7 @@ import javax.script.ScriptException;
 import cspom.Evaluator;
 import cspom.variable.CSPOMVariable;
 
-public final class GeneralConstraint<T> extends AbstractConstraint<T> {
+public final class GeneralConstraint extends AbstractConstraint {
 
     public GeneralConstraint(final String name, final String description,
             final String parameters, final CSPOMVariable[] scope) {
@@ -23,8 +23,10 @@ public final class GeneralConstraint<T> extends AbstractConstraint<T> {
 
     public String toString() {
         final StringBuilder stb = new StringBuilder();
-        stb.append(getDescription()).append('{').append(getParameters())
-                .append('}');
+        stb.append(getDescription());
+        if (getParameters() != null) {
+            stb.append('{').append(getParameters()).append('}');
+        }
 
         int iMax = getScope().size() - 1;
         stb.append('(');
@@ -38,7 +40,7 @@ public final class GeneralConstraint<T> extends AbstractConstraint<T> {
     }
 
     @Override
-    public boolean evaluate(final T[] tuple) {
+    public boolean evaluate(final Object[] tuple) {
         final StringBuilder stb = new StringBuilder();
         if (getParameters() != null) {
             stb.append("p_");

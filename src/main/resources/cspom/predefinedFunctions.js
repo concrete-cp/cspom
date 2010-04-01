@@ -78,3 +78,5 @@ function allDifferent() {
 	}
 	return true;
 }
+
+function absdiff(x,y) { return Math.abs(x-y) ; }

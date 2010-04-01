@@ -5,7 +5,7 @@ import javax.script.ScriptException;
 import cspom.Evaluator;
 import cspom.variable.CSPOMVariable;
 
-public final class FunctionalConstraint<T> extends AbstractConstraint<T> {
+public final class FunctionalConstraint extends AbstractConstraint {
 
     private CSPOMVariable result;
 
@@ -43,8 +43,10 @@ public final class FunctionalConstraint<T> extends AbstractConstraint<T> {
     @Override
     public String toString() {
         final StringBuilder stb = new StringBuilder();
-        stb.append(result).append(" = ").append(getDescription()).append('{')
-                .append(getParameters()).append('}');
+        stb.append(result).append(" = ").append(getDescription());
+        if (getParameters() != null) {
+            stb.append('{').append(getParameters()).append('}');
+        }
 
         int iMax = arguments.length - 1;
 
@@ -72,7 +74,7 @@ public final class FunctionalConstraint<T> extends AbstractConstraint<T> {
     }
 
     @Override
-    public boolean evaluate(final T[] tuple) {
+    public boolean evaluate(final Object[] tuple) {
         final StringBuilder stb = new StringBuilder();
         stb.append(tuple[0]).append(" == ").append(getDescription())
                 .append('(').append(Evaluator.commas(tuple, 1));

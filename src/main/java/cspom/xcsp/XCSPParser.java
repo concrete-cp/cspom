@@ -104,9 +104,9 @@ public final class XCSPParser {
             throw new IllegalStateException(e);
         }
 
-        final Map<String, CSPOMDomain<?>> domains = parseDomains(document);
+        final Map<String, CSPOMDomain<Integer>> domains = parseDomains(document);
         parseVariables(domains, document);
-        final Map<String, Extension<?>> relations = parseRelations(document);
+        final Map<String, Extension<Integer>> relations = parseRelations(document);
         final Map<String, Predicate> predicates = parsePredicates(document);
         parseConstraints(relations, predicates, document);
     }
@@ -118,8 +118,9 @@ public final class XCSPParser {
      *            The document
      * @return A map of all domains described in the document
      */
-    private static Map<String, CSPOMDomain<?>> parseDomains(final Document doc) {
-        final Map<String, CSPOMDomain<?>> domainMap = new HashMap<String, CSPOMDomain<?>>();
+    private static Map<String, CSPOMDomain<Integer>> parseDomains(
+            final Document doc) {
+        final Map<String, CSPOMDomain<Integer>> domainMap = new HashMap<String, CSPOMDomain<Integer>>();
         final NodeList domains = doc.getElementsByTagName("domain");
         for (int i = domains.getLength(); --i >= 0;) {
             final Node domainNode = domains.item(i);
@@ -143,7 +144,7 @@ public final class XCSPParser {
      *            The String domain to parse
      * @return The resulting Domain object
      */
-    private static CSPOMDomain<?> parseDomain(final String domain) {
+    private static CSPOMDomain<Integer> parseDomain(final String domain) {
         final String[] listOfValues = domain.trim().split(" +");
 
         if (listOfValues.length == 1 && listOfValues[0].contains("..")) {
@@ -166,7 +167,7 @@ public final class XCSPParser {
                 .parseInt(fromto[1]));
     }
 
-    private static ExtensiveDomain<?> extensiveDomain(
+    private static ExtensiveDomain<Integer> extensiveDomain(
             final String[] listOfValues) {
 
         final List<Integer> values = new ArrayList<Integer>();
@@ -192,8 +193,9 @@ public final class XCSPParser {
      * @throws CSPParseException
      *             If two variables have the same name.
      */
-    private void parseVariables(final Map<String, CSPOMDomain<?>> domains,
-            final Document doc) throws CSPParseException {
+    private void parseVariables(
+            final Map<String, CSPOMDomain<Integer>> domains, final Document doc)
+            throws CSPParseException {
         final NodeList variables = doc.getElementsByTagName("variable");
         for (int i = 0; i < variables.getLength(); i++) {
             final NamedNodeMap variableAttributes = variables.item(i)
@@ -222,9 +224,9 @@ public final class XCSPParser {
      * @throws CSPParseException
      *             If there was an error parsing a relation.
      */
-    private static Map<String, Extension<?>> parseRelations(final Document doc)
-            throws CSPParseException {
-        final Map<String, Extension<?>> relationMap = new HashMap<String, Extension<?>>();
+    private static Map<String, Extension<Integer>> parseRelations(
+            final Document doc) throws CSPParseException {
+        final Map<String, Extension<Integer>> relationMap = new HashMap<String, Extension<Integer>>();
         final NodeList relations = doc.getElementsByTagName("relation");
         for (int i = relations.getLength(); --i >= 0;) {
             final Node relationNode = relations.item(i);
@@ -259,11 +261,11 @@ public final class XCSPParser {
      *             If the relation could not be read or is inconsistent with
      *             given arity or nbTuples.
      */
-    private static Extension<Number> parseRelation(final int arity,
+    private static Extension<Integer> parseRelation(final int arity,
             final boolean init, final int nbTuples, final String string)
             throws CSPParseException {
 
-        final Extension<Number> extension = new Extension<Number>(arity, init);
+        final Extension<Integer> extension = new Extension<Integer>(arity, init);
         final String[] tupleList;
         if ("".equals(string.trim())) {
             tupleList = new String[0];
@@ -285,7 +287,7 @@ public final class XCSPParser {
                         + parsedTuple.trim());
             }
 
-            final Number[] tuple = new Number[arity];
+            final Integer[] tuple = new Integer[arity];
             for (int j = arity; --j >= 0;) {
                 tuple[j] = Integer.parseInt(valueList[j]);
             }
@@ -320,8 +322,8 @@ public final class XCSPParser {
                         .evaluate(predicateNode), FUNC_EXPR
                         .evaluate(predicateNode)));
             } catch (XPathExpressionException e) {
-                throw new CSPParseException(
-                        "Could not read predicate " + name, e);
+                throw new CSPParseException("Could not read predicate " + name,
+                        e);
             }
         }
 
@@ -341,7 +343,7 @@ public final class XCSPParser {
      * @throws CSPParseException
      *             If a relation or predicate could not be found or applied.
      */
-    private void parseConstraints(final Map<String, Extension<?>> relations,
+    private void parseConstraints(final Map<String, Extension<Integer>> relations,
             final Map<String, Predicate> predicates, final Document doc)
             throws CSPParseException {
         final NodeList constraints = doc.getElementsByTagName("constraint");
@@ -380,7 +382,7 @@ public final class XCSPParser {
     private void addConstraint(final String name, final String varNames,
             final String parameters, final String reference,
             final Map<String, Predicate> predicates,
-            final Map<String, Extension<?>> relations)
+            final Map<String, Extension<Integer>> relations)
             throws CSPParseException {
         final String[] scopeList = varNames.split(" +");
         final CSPOMVariable[] scope = new CSPOMVariable[scopeList.length];
@@ -408,10 +410,10 @@ public final class XCSPParser {
             return;
         }
 
-        final Extension<?> extension = relations.get(reference);
+        final Extension<Integer> extension = relations.get(reference);
         if (extension != null) {
-            problem.addConstraint(new ExtensionConstraint(name, extension,
-                    scope));
+            problem.addConstraint(new ExtensionConstraint<Integer>(name,
+                    extension, scope));
             return;
         }
 
