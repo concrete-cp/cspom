@@ -246,6 +246,9 @@ public final class CSPOM {
      */
     public void addConstraint(final CSPOMConstraint constraint) {
         constraints.add(constraint);
+        for (CSPOMVariable v : constraint) {
+            v.registerConstraint(constraint);
+        }
     }
 
     /**

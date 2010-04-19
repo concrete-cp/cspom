@@ -51,7 +51,6 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
         positions = new HashMap<CSPOMVariable, Integer>(arity);
         for (int i = arity; --i >= 0;) {
             positions.put(scope[i], i);
-            scope[i].registerConstraint(this);
         }
     }
 
