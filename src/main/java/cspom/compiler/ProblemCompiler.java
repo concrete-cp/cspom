@@ -26,326 +26,337 @@ import cspom.variable.CSPOMVariable;
  */
 public final class ProblemCompiler {
 
-    private static final ConstraintSelector DIFF_CONSTRAINT = new ConstraintSelector() {
-        @Override
-        public boolean is(final CSPOMConstraint constraint) {
-            return constraint instanceof GeneralConstraint
-                    && "ne".equals(constraint.getDescription())
-                    || "gt".equals(constraint.getDescription())
-                    || "lt".equals(constraint.getDescription())
-                    || "allDifferent".equals(constraint.getDescription());
-        }
-    };
+	private static final ConstraintSelector DIFF_CONSTRAINT = new ConstraintSelector() {
+		@Override
+		public boolean is(final CSPOMConstraint constraint) {
+			return constraint instanceof GeneralConstraint
+					&& "ne".equals(constraint.getDescription())
+					|| "gt".equals(constraint.getDescription())
+					|| "lt".equals(constraint.getDescription())
+					|| "allDifferent".equals(constraint.getDescription());
+		}
+	};
 
-    private static final ConstraintSelector ALLDIFF_CONSTRAINT = new ConstraintSelector() {
-        @Override
-        public boolean is(final CSPOMConstraint constraint) {
-            return constraint instanceof GeneralConstraint
-                    && "ne".equals(constraint.getDescription())
-                    || "allDifferent".equals(constraint.getDescription());
-        }
-    };
+	private static final ConstraintSelector ALLDIFF_CONSTRAINT = new ConstraintSelector() {
+		@Override
+		public boolean is(final CSPOMConstraint constraint) {
+			return constraint instanceof GeneralConstraint
+					&& "ne".equals(constraint.getDescription())
+					|| "allDifferent".equals(constraint.getDescription());
+		}
+	};
 
-    private final CSPOM problem;
-    private final Deque<CSPOMVariable> variables;
-    private final Deque<CSPOMConstraint> constraints;
+	private final CSPOM problem;
+	private final Deque<CSPOMVariable> variables;
+	private final Deque<CSPOMConstraint> constraints;
 
-    private ProblemCompiler(final CSPOM problem) {
-        this.problem = problem;
-        variables = new LinkedList<CSPOMVariable>();
-        constraints = new LinkedList<CSPOMConstraint>();
-    }
+	private ProblemCompiler(final CSPOM problem) {
+		this.problem = problem;
+		variables = new LinkedList<CSPOMVariable>();
+		constraints = new LinkedList<CSPOMConstraint>();
+	}
 
-    public static void compile(final CSPOM problem) {
-        new ProblemCompiler(problem).compile();
-    }
+	public static void compile(final CSPOM problem) {
+		new ProblemCompiler(problem).compile();
+	}
 
-    private void compile() {
-        variables.addAll(problem.getVariables());
-        constraints.addAll(problem.getConstraints());
+	private void compile() {
+		variables.addAll(problem.getVariables());
+		constraints.addAll(problem.getConstraints());
 
-        while (!variables.isEmpty() || !constraints.isEmpty()) {
-            while (!variables.isEmpty()) {
-                compileVariable(variables.poll());
-            }
+		while (!variables.isEmpty() || !constraints.isEmpty()) {
+			while (!variables.isEmpty()) {
+				compileVariable(variables.poll());
+			}
 
-            while (!constraints.isEmpty()) {
-                compileConstraint(constraints.poll());
-            }
-        }
+			while (!constraints.isEmpty()) {
+				compileConstraint(constraints.poll());
+			}
+		}
 
-    }
+	}
 
-    private void compileVariable(final CSPOMVariable var) {
-        deReify(var);
-        removeSingle(var);
-    }
+	public static void compileAllDiffs(final CSPOM problem) {
+		new ProblemCompiler(problem).compileAllDiffs();
+	}
 
-    private void deReify(final CSPOMVariable v) {
-        if (BooleanDomain.TRUE.equals(v.getDomain())) {
-            for (CSPOMConstraint c : v.getConstraints()) {
-                if (!(c instanceof FunctionalConstraint)) {
-                    continue;
-                }
-                final FunctionalConstraint fc = (FunctionalConstraint) c;
-                if (fc.getResultVariable() == v) {
-                    deReify(v, fc);
-                }
-            }
-        }
-    }
+	private void compileAllDiffs() {
+		constraints.addAll(problem.getConstraints());
 
-    private void deReify(final CSPOMVariable trueVariable,
-            final FunctionalConstraint constraint) {
-        problem.removeConstraint(constraint);
-        constraints.remove(constraint);
-        final CSPOMConstraint newConstraint = new GeneralConstraint(constraint
-                .getDescription(), constraint.getParameters(), constraint
-                .getArguments());
-        problem.addConstraint(newConstraint);
-        constraints.add(newConstraint);
-        variables.addAll(constraint.getScope());
-    }
+		while (!constraints.isEmpty()) {
+			alldiff(constraints.poll());
+		}
 
-    private void removeSingle(final CSPOMVariable var) {
-        if (var.isAuxiliary() && var.getConstraints().isEmpty()) {
-            problem.removeVariable(var);
-        }
-    }
+	}
 
-    private void compileConstraint(final CSPOMConstraint constraint) {
-        removeAnd(constraint);
-        mergeEq(constraint);
-        absdiff(constraint);
-        dropSubsumedDiff(constraint);
-        alldiff(constraint);
-    }
+	private void compileVariable(final CSPOMVariable var) {
+		deReify(var);
+		removeSingle(var);
+	}
 
-    private void removeAnd(final CSPOMConstraint constraint) {
-        if ("and".equals(constraint.getDescription())
-                && constraint instanceof GeneralConstraint) {
-            for (CSPOMVariable v : constraint) {
-                v.setDomain(BooleanDomain.TRUE);
-                variables.add(v);
-            }
-            problem.removeConstraint(constraint);
-        }
-    }
+	private void deReify(final CSPOMVariable v) {
+		if (BooleanDomain.TRUE.equals(v.getDomain())) {
+			for (CSPOMConstraint c : v.getConstraints()) {
+				if (!(c instanceof FunctionalConstraint)) {
+					continue;
+				}
+				final FunctionalConstraint fc = (FunctionalConstraint) c;
+				if (fc.getResultVariable() == v) {
+					deReify(v, fc);
+				}
+			}
+		}
+	}
 
-    /**
-     * If given constraint is an all-equal constraint, merges and removes all
-     * auxiliary variables.
-     * 
-     * @param constraint
-     */
-    private void mergeEq(final CSPOMConstraint constraint) {
-        if ("eq".equals(constraint.getDescription())
-                && constraint instanceof GeneralConstraint) {
+	private void deReify(final CSPOMVariable trueVariable,
+			final FunctionalConstraint constraint) {
+		problem.removeConstraint(constraint);
+		constraints.remove(constraint);
+		final CSPOMConstraint newConstraint = new GeneralConstraint(constraint
+				.getDescription(), constraint.getParameters(), constraint
+				.getArguments());
+		problem.addConstraint(newConstraint);
+		constraints.add(newConstraint);
+		variables.addAll(constraint.getScope());
+	}
 
-            final LinkedList<CSPOMVariable> scope = new LinkedList<CSPOMVariable>(
-                    constraint.getScope());
+	private void removeSingle(final CSPOMVariable var) {
+		if (var.isAuxiliary() && var.getConstraints().isEmpty()) {
+			problem.removeVariable(var);
+		}
+	}
 
-            final Collection<CSPOMVariable> auxVars = new ArrayList<CSPOMVariable>();
+	private void compileConstraint(final CSPOMConstraint constraint) {
+		removeAnd(constraint);
+		mergeEq(constraint);
+		absdiff(constraint);
+		dropSubsumedDiff(constraint);
+		alldiff(constraint);
+	}
 
-            /*
-             * Find auxiliary variables in the scope of the constraint.
-             */
-            for (final Iterator<CSPOMVariable> itr = scope.iterator(); itr
-                    .hasNext();) {
-                final CSPOMVariable var = itr.next();
-                if (var.isAuxiliary()) {
-                    auxVars.add(var);
-                    itr.remove();
-                }
-            }
+	private void removeAnd(final CSPOMConstraint constraint) {
+		if ("and".equals(constraint.getDescription())
+				&& constraint instanceof GeneralConstraint) {
+			for (CSPOMVariable v : constraint) {
+				v.setDomain(BooleanDomain.TRUE);
+				variables.add(v);
+			}
+			problem.removeConstraint(constraint);
+		}
+	}
 
-            /*
-             * Do not merge original variables.
-             */
-            if (auxVars.isEmpty()) {
-                return;
-            }
-            problem.removeConstraint(constraint);
+	/**
+	 * If given constraint is an all-equal constraint, merges and removes all
+	 * auxiliary variables.
+	 * 
+	 * @param constraint
+	 */
+	private void mergeEq(final CSPOMConstraint constraint) {
+		if ("eq".equals(constraint.getDescription())
+				&& constraint instanceof GeneralConstraint) {
 
-            /*
-             * Generate a new all-equal constraint if more than one variable
-             * remains.
-             */
-            if (scope.size() <= 1) {
-                return;
-            }
-            final CSPOMVariable refVar;
-            if (scope.isEmpty()) {
-                refVar = auxVars.iterator().next();
-            } else {
-                refVar = scope.getFirst();
-            }
+			final LinkedList<CSPOMVariable> scope = new LinkedList<CSPOMVariable>(
+					constraint.getScope());
 
-            final CSPOMConstraint newConstraint = new GeneralConstraint("eq",
-                    null, scope.toArray(new CSPOMVariable[scope.size()]));
-            constraints.add(newConstraint);
-            problem.addConstraint(newConstraint);
+			final Collection<CSPOMVariable> auxVars = new ArrayList<CSPOMVariable>();
 
-            for (CSPOMVariable aux : auxVars) {
-                if (aux != refVar) {
-                    merge(aux, refVar);
-                }
-            }
-        }
-    }
+			/*
+			 * Find auxiliary variables in the scope of the constraint.
+			 */
+			for (final Iterator<CSPOMVariable> itr = scope.iterator(); itr
+					.hasNext();) {
+				final CSPOMVariable var = itr.next();
+				if (var.isAuxiliary()) {
+					auxVars.add(var);
+					itr.remove();
+				}
+			}
 
-    private void merge(final CSPOMVariable merged, final CSPOMVariable variable) {
-        if (merged == variable) {
-            throw new IllegalArgumentException();
-        }
-        for (CSPOMConstraint c : merged.getConstraints()) {
-            merged.removeConstraint(c);
-            c.replaceVar(merged, variable);
-            variable.registerConstraint(c);
-        }
-        problem.removeVariable(merged);
-    }
+			/*
+			 * Do not merge original variables.
+			 */
+			if (auxVars.isEmpty()) {
+				return;
+			}
+			problem.removeConstraint(constraint);
 
-    /**
-     * If constraint is the sub() constraint, converts a=sub(y,z), x=abs(a) to
-     * x=absdiff(y,z). No other constraint may imply the auxiliary constraint a.
-     * 
-     * @param constraint
-     */
-    private void absdiff(final CSPOMConstraint constraint) {
-        if (!("sub".equals(constraint.getDescription()) && constraint instanceof FunctionalConstraint)) {
-            return;
-        }
-        final FunctionalConstraint subConstraint = (FunctionalConstraint) constraint;
-        final CSPOMVariable result = subConstraint.getResultVariable();
-        if (!result.isAuxiliary() || result.getConstraints().size() != 2) {
-            return;
-        }
-        final FunctionalConstraint absConstraint = absConstraint(result);
-        if (absConstraint == null) {
-            return;
-        }
-        problem.removeConstraint(subConstraint);
-        problem.removeConstraint(absConstraint);
-        constraints.remove(absConstraint);
-        problem.addConstraint(new FunctionalConstraint(absConstraint
-                .getResultVariable(), "absdiff", null, subConstraint
-                .getArguments()));
-        variables.add(absConstraint.getResultVariable());
-        for (CSPOMVariable v : subConstraint.getScope()) {
-            variables.add(v);
-        }
-    }
+			/*
+			 * Generate a new all-equal constraint if more than one variable
+			 * remains.
+			 */
+			if (scope.size() <= 1) {
+				return;
+			}
+			final CSPOMVariable refVar;
+			if (scope.isEmpty()) {
+				refVar = auxVars.iterator().next();
+			} else {
+				refVar = scope.getFirst();
+			}
 
-    private static FunctionalConstraint absConstraint(
-            final CSPOMVariable variable) {
-        for (CSPOMConstraint c : variable.getConstraints()) {
-            if ("abs".equals(c.getDescription())
-                    && c instanceof FunctionalConstraint) {
-                final FunctionalConstraint fConstraint = (FunctionalConstraint) c;
-                final CSPOMVariable[] arguments = fConstraint.getArguments();
-                if (arguments.length == 1 && arguments[0] == variable) {
-                    return fConstraint;
-                }
-            }
-        }
-        return null;
-    }
+			final CSPOMConstraint newConstraint = new GeneralConstraint("eq",
+					null, scope.toArray(new CSPOMVariable[scope.size()]));
+			constraints.add(newConstraint);
+			problem.addConstraint(newConstraint);
 
-    /**
-     * If constraint is part of a larger clique of inequalities, replace it by a
-     * larger all-diff constraint.
-     * 
-     * @param constraint
-     */
-    private void alldiff(final CSPOMConstraint constraint) {
-        if (!DIFF_CONSTRAINT.is(constraint)) {
-            return;
-        }
-        final SortedSet<CSPOMVariable> clique = new TreeSet<CSPOMVariable>(
-                new Comparator<CSPOMVariable>() {
-                    @Override
-                    public int compare(final CSPOMVariable o1,
-                            final CSPOMVariable o2) {
-                        final int arityComp = o1.getConstraints().size()
-                                - o2.getConstraints().size();
-                        if (arityComp == 0) {
-                            return o1.getName().compareTo(o2.getName());
-                        }
-                        return arityComp;
-                    }
-                });
+			for (CSPOMVariable aux : auxVars) {
+				if (aux != refVar) {
+					merge(aux, refVar);
+				}
+			}
+		}
+	}
 
-        clique.addAll(constraint.getScope());
+	private void merge(final CSPOMVariable merged, final CSPOMVariable variable) {
+		if (merged == variable) {
+			throw new IllegalArgumentException();
+		}
+		for (CSPOMConstraint c : merged.getConstraints()) {
+			merged.removeConstraint(c);
+			c.replaceVar(merged, variable);
+			variable.registerConstraint(c);
+		}
+		problem.removeVariable(merged);
+	}
 
-        final Set<CSPOMVariable> expand = new HashSet<CSPOMVariable>();
-        for (CSPOMConstraint c : clique.first().getConstraints()) {
-            if (c == constraint) {
-                continue;
-            }
-            for (CSPOMVariable v : c.getScope()) {
-                if (!clique.contains(v)
-                        && CliqueDetector.allEdges(v, clique, DIFF_CONSTRAINT)) {
-                    expand.add(v);
-                }
-            }
-        }
+	/**
+	 * If constraint is the sub() constraint, converts a=sub(y,z), x=abs(a) to
+	 * x=absdiff(y,z). No other constraint may imply the auxiliary constraint a.
+	 * 
+	 * @param constraint
+	 */
+	private void absdiff(final CSPOMConstraint constraint) {
+		if (!("sub".equals(constraint.getDescription()) && constraint instanceof FunctionalConstraint)) {
+			return;
+		}
+		final FunctionalConstraint subConstraint = (FunctionalConstraint) constraint;
+		final CSPOMVariable result = subConstraint.getResultVariable();
+		if (!result.isAuxiliary() || result.getConstraints().size() != 2) {
+			return;
+		}
+		final FunctionalConstraint absConstraint = absConstraint(result);
+		if (absConstraint == null) {
+			return;
+		}
+		problem.removeConstraint(subConstraint);
+		problem.removeConstraint(absConstraint);
+		constraints.remove(absConstraint);
+		problem.addConstraint(new FunctionalConstraint(absConstraint
+				.getResultVariable(), "absdiff", null, subConstraint
+				.getArguments()));
+		variables.add(absConstraint.getResultVariable());
+		for (CSPOMVariable v : subConstraint.getScope()) {
+			variables.add(v);
+		}
+	}
 
-        if (!expand.isEmpty()) {
-            expand.addAll(clique);
-            newAllDiff(expand);
-        }
-    }
+	private static FunctionalConstraint absConstraint(
+			final CSPOMVariable variable) {
+		for (CSPOMConstraint c : variable.getConstraints()) {
+			if ("abs".equals(c.getDescription())
+					&& c instanceof FunctionalConstraint) {
+				final FunctionalConstraint fConstraint = (FunctionalConstraint) c;
+				final CSPOMVariable[] arguments = fConstraint.getArguments();
+				if (arguments.length == 1 && arguments[0] == variable) {
+					return fConstraint;
+				}
+			}
+		}
+		return null;
+	}
 
-    /**
-     * Adds a new all-diff constraint of the specified scope. Any newly subsumed
-     * neq/all-diff constraints are removed.
-     * 
-     * @param scope
-     */
-    private void newAllDiff(final Collection<CSPOMVariable> scope) {
-        final CSPOMConstraint allDiff = new GeneralConstraint("allDifferent",
-                null, scope.toArray(new CSPOMVariable[scope.size()]));
-        problem.addConstraint(allDiff);
-        constraints.add(allDiff);
-        variables.addAll(scope);
+	/**
+	 * If constraint is part of a larger clique of inequalities, replace it by a
+	 * larger all-diff constraint.
+	 * 
+	 * @param constraint
+	 */
+	private void alldiff(final CSPOMConstraint constraint) {
+		if (!DIFF_CONSTRAINT.is(constraint)) {
+			return;
+		}
+		final SortedSet<CSPOMVariable> clique = new TreeSet<CSPOMVariable>(
+				new Comparator<CSPOMVariable>() {
+					@Override
+					public int compare(final CSPOMVariable o1,
+							final CSPOMVariable o2) {
+						final int arityComp = o1.getConstraints().size()
+								- o2.getConstraints().size();
+						if (arityComp == 0) {
+							return o1.getName().compareTo(o2.getName());
+						}
+						return arityComp;
+					}
+				});
 
-        /*
-         * Remove newly subsumed neq/alldiff constraints.
-         */
-        final Set<CSPOMConstraint> subsumed = new HashSet<CSPOMConstraint>();
-        for (CSPOMVariable v : scope) {
-            for (CSPOMConstraint c : v.getConstraints()) {
-                if (c != allDiff && ALLDIFF_CONSTRAINT.is(c)
-                        && CliqueDetector.subsumes(allDiff, c)) {
-                    subsumed.add(c);
-                }
-            }
-        }
-        for (CSPOMConstraint c : subsumed) {
-            constraints.remove(c);
-            problem.removeConstraint(c);
-            for (CSPOMVariable v : c.getScope()) {
-                if (!scope.contains(v)) {
-                    variables.add(v);
-                }
-            }
-        }
-    }
+		clique.addAll(constraint.getScope());
 
-    /**
-     * If the given constraint is an all-different or neq constraint, remove it
-     * if it is subsumed by another difference constraint.
-     * 
-     * @param constraint
-     */
-    private void dropSubsumedDiff(final CSPOMConstraint constraint) {
-        if (ALLDIFF_CONSTRAINT.is(constraint)
-                && CliqueDetector.haveSubsumingConstraint(constraint,
-                        DIFF_CONSTRAINT)) {
-            variables.addAll(constraint.getScope());
-            problem.removeConstraint(constraint);
-        }
-    }
+		for (CSPOMConstraint c : clique.first().getConstraints()) {
+			if (c == constraint) {
+				continue;
+			}
+			for (CSPOMVariable v : c.getScope()) {
+				if (!clique.contains(v)
+						&& CliqueDetector.allEdges(v, clique, DIFF_CONSTRAINT)) {
+					clique.add(v);
+				}
+			}
+		}
+
+		if (clique.size() > constraint.getScope().size()) {
+			newAllDiff(clique);
+		}
+	}
+
+	/**
+	 * Adds a new all-diff constraint of the specified scope. Any newly subsumed
+	 * neq/all-diff constraints are removed.
+	 * 
+	 * @param scope
+	 */
+	private void newAllDiff(final Collection<CSPOMVariable> scope) {
+		final CSPOMConstraint allDiff = new GeneralConstraint("allDifferent",
+				null, scope.toArray(new CSPOMVariable[scope.size()]));
+		problem.addConstraint(allDiff);
+		constraints.add(allDiff);
+		variables.addAll(scope);
+
+		/*
+		 * Remove newly subsumed neq/alldiff constraints.
+		 */
+		final Set<CSPOMConstraint> subsumed = new HashSet<CSPOMConstraint>();
+		for (CSPOMVariable v : scope) {
+			for (CSPOMConstraint c : v.getConstraints()) {
+				if (c != allDiff && ALLDIFF_CONSTRAINT.is(c)
+						&& CliqueDetector.subsumes(allDiff, c)) {
+					subsumed.add(c);
+				}
+			}
+		}
+		for (CSPOMConstraint c : subsumed) {
+			constraints.remove(c);
+			problem.removeConstraint(c);
+			for (CSPOMVariable v : c.getScope()) {
+				if (!scope.contains(v)) {
+					variables.add(v);
+				}
+			}
+		}
+	}
+
+	/**
+	 * If the given constraint is an all-different or neq constraint, remove it
+	 * if it is subsumed by another difference constraint.
+	 * 
+	 * @param constraint
+	 */
+	private void dropSubsumedDiff(final CSPOMConstraint constraint) {
+		if (ALLDIFF_CONSTRAINT.is(constraint)
+				&& CliqueDetector.haveSubsumingConstraint(constraint,
+						DIFF_CONSTRAINT)) {
+			variables.addAll(constraint.getScope());
+			problem.removeConstraint(constraint);
+		}
+	}
 
 }
