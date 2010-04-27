@@ -24,7 +24,7 @@ public final class CliqueDetector {
 
     public static boolean subsumes(final CSPOMConstraint allDiff,
             final CSPOMConstraint constraint) {
-        return allDiff.getScope().containsAll(constraint.getScope());
+        return allDiff.involvesAll(constraint.getScope());
     }
 
     public static boolean allEdges(final CSPOMVariable var,

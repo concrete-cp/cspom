@@ -1,7 +1,7 @@
 package cspom.constraint;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,16 +54,29 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
         }
     }
 
+    @Override
     public final List<CSPOMVariable> getScope() {
         return scope;
     }
 
+    @Override
     public final int getArity() {
         return arity;
     }
 
+    @Override
     public final Integer getPosition(final CSPOMVariable variable) {
         return positions.get(variable);
+    }
+
+    @Override
+    public final boolean involves(final CSPOMVariable variable) {
+        return positions.containsKey(variable);
+    }
+
+    @Override
+    public final boolean involvesAll(final Collection<CSPOMVariable> variables) {
+        return positions.keySet().containsAll(variables);
     }
 
     @Override

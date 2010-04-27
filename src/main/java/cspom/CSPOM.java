@@ -27,6 +27,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +106,7 @@ public final class CSPOM {
     public CSPOM() {
         variableList = new LinkedList<CSPOMVariable>();
         variableMap = new HashMap<String, CSPOMVariable>();
-        constraints = new ArrayList<CSPOMConstraint>();
+        constraints = new HashSet<CSPOMConstraint>();
     }
 
     /**
@@ -245,7 +246,10 @@ public final class CSPOM {
      *            The constraint to add.
      */
     public void addConstraint(final CSPOMConstraint constraint) {
-        constraints.add(constraint);
+        if (!constraints.add(constraint)) {
+            throw new IllegalArgumentException(
+                    "This constraint already belongs to the problem");
+        }
         for (CSPOMVariable v : constraint) {
             v.registerConstraint(constraint);
         }

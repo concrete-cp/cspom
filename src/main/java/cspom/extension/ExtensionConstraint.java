@@ -49,6 +49,20 @@ public final class ExtensionConstraint<T> extends AbstractConstraint implements
     }
 
     @Override
+    public int hashCode() {
+        return getScope().hashCode() + 31 * relation.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        if (!(object instanceof ExtensionConstraint<?>)) {
+            return false;
+        }
+        final ExtensionConstraint<?> ec = (ExtensionConstraint<?>) object;
+        return getScope().equals(ec.getScope()) && relation.equals(ec.relation);
+    }
+
+    @Override
     public ExtensionConstraint<T> standardize(final CSPOMVariable... scope) {
         assert scope.length == getArity();
         final int[] newPosition = new int[getArity()];

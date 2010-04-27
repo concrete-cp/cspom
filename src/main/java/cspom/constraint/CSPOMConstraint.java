@@ -1,5 +1,6 @@
 package cspom.constraint;
 
+import java.util.Collection;
 import java.util.List;
 
 import cspom.variable.CSPOMVariable;
@@ -66,4 +67,8 @@ public interface CSPOMConstraint extends Iterable<CSPOMVariable> {
     boolean evaluate(final Object[] tuple);
 
     String getParameters();
+
+    boolean involves(CSPOMVariable variable);
+
+    boolean involvesAll(Collection<CSPOMVariable> variables);
 }
