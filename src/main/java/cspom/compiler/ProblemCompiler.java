@@ -2,16 +2,9 @@ package cspom.compiler;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import cspom.CSPOM;
 import cspom.constraint.CSPOMConstraint;
@@ -28,34 +21,16 @@ import cspom.variable.CSPOMVariable;
  */
 public final class ProblemCompiler {
 
-	private static final ConstraintSelector DIFF_CONSTRAINT = new ConstraintSelector() {
-		@Override
-		public boolean is(final CSPOMConstraint constraint) {
-			return constraint instanceof GeneralConstraint
-					&& "ne".equals(constraint.getDescription())
-					|| "gt".equals(constraint.getDescription())
-					|| "lt".equals(constraint.getDescription())
-					|| "allDifferent".equals(constraint.getDescription());
-		}
-	};
-
-	private static final ConstraintSelector ALLDIFF_CONSTRAINT = new ConstraintSelector() {
-		@Override
-		public boolean is(final CSPOMConstraint constraint) {
-			return constraint instanceof GeneralConstraint
-					&& "ne".equals(constraint.getDescription())
-					|| "allDifferent".equals(constraint.getDescription());
-		}
-	};
-
 	private final CSPOM problem;
 	private final Deque<CSPOMVariable> variables;
 	private final Deque<CSPOMConstraint> constraints;
+	private final AllDiffDetector allDiffDetector;
 
 	private ProblemCompiler(final CSPOM problem) {
 		this.problem = problem;
 		variables = new LinkedList<CSPOMVariable>();
 		constraints = new LinkedList<CSPOMConstraint>();
+		allDiffDetector = new AllDiffDetector(problem);
 	}
 
 	public static void compile(final CSPOM problem) {
@@ -90,7 +65,7 @@ public final class ProblemCompiler {
 			if (!problem.getConstraints().contains(constraint)) {
 				continue;
 			}
-			alldiff(constraint);
+			allDiffDetector.alldiff(constraint);
 		}
 
 	}
@@ -147,11 +122,17 @@ public final class ProblemCompiler {
 		if (!problem.getConstraints().contains(constraint)) {
 			return;
 		}
-		dropSubsumedDiff(constraint);
+		if (allDiffDetector.dropSubsumedDiff(constraint)) {
+			variables.addAll(constraint.getScope());
+		}
 		if (!problem.getConstraints().contains(constraint)) {
 			return;
 		}
-		alldiff(constraint);
+		final Collection<CSPOMVariable> changed = allDiffDetector
+				.alldiff(constraint);
+		if (changed != null) {
+			variables.addAll(changed);
+		}
 	}
 
 	private void removeAnd(final CSPOMConstraint constraint) {
@@ -282,128 +263,6 @@ public final class ProblemCompiler {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * If constraint is part of a larger clique of inequalities, replace it by a
-	 * larger all-diff constraint.
-	 * 
-	 * @param constraint
-	 */
-	private void alldiff(final CSPOMConstraint constraint) {
-		if (!DIFF_CONSTRAINT.is(constraint)) {
-			return;
-		}
-		System.out.print(constraint);
-		// Lowest degree first (fewer variables to try)
-		final SortedSet<CSPOMVariable> clique = new TreeSet<CSPOMVariable>(
-				new Comparator<CSPOMVariable>() {
-					@Override
-					public int compare(final CSPOMVariable o1,
-							final CSPOMVariable o2) {
-						final int degreeComp = o1.getConstraints().size()
-								- o2.getConstraints().size();
-						if (degreeComp == 0) {
-							return o1.getName().compareTo(o2.getName());
-						}
-						return degreeComp;
-					}
-				});
-
-		clique.addAll(constraint.getScope());
-
-		// Highest degree first (likely to obtain a larger clique)
-		final SortedSet<CSPOMVariable> candidates = new TreeSet<CSPOMVariable>(
-				new Comparator<CSPOMVariable>() {
-					@Override
-					public int compare(final CSPOMVariable o1,
-							final CSPOMVariable o2) {
-						final int degreeComp = o2.getConstraints().size()
-								- o1.getConstraints().size();
-						if (degreeComp == 0) {
-							return o1.getName().compareTo(o2.getName());
-						}
-						return degreeComp;
-					}
-				});
-		for (CSPOMConstraint c : clique.first().getConstraints()) {
-			for (CSPOMVariable v : c.getScope()) {
-				if (!clique.contains(v)) {
-					candidates.add(v);
-				}
-			}
-		}
-
-		for (CSPOMVariable v : candidates) {
-			if (CliqueDetector.allEdges(v, clique, DIFF_CONSTRAINT)) {
-				clique.add(v);
-			}
-		}
-
-		if (clique.size() > constraint.getScope().size()) {
-			System.out.print(" -> " + clique);
-			int rem = newAllDiff(clique);
-			System.out.print(", " + rem + " constraints removed, "
-					+ problem.getConstraints().size() + " remaining");
-		}
-		System.out.println();
-	}
-
-	/**
-	 * Adds a new all-diff constraint of the specified scope. Any newly subsumed
-	 * neq/all-diff constraints are removed.
-	 * 
-	 * @param scope
-	 */
-	private int newAllDiff(final Collection<CSPOMVariable> scope) {
-		final CSPOMConstraint allDiff = new GeneralConstraint("allDifferent",
-				null, scope.toArray(new CSPOMVariable[scope.size()]));
-		problem.addConstraint(allDiff);
-		// constraints.add(allDiff);
-		variables.addAll(scope);
-
-		/*
-		 * Remove newly subsumed neq/alldiff constraints.
-		 */
-		final Set<CSPOMConstraint> subsumed = new HashSet<CSPOMConstraint>();
-		for (CSPOMVariable v : scope) {
-			for (CSPOMConstraint c : v.getConstraints()) {
-				if (c != allDiff && ALLDIFF_CONSTRAINT.is(c)) {
-					subsumed.add(c);
-				}
-			}
-		}
-
-		for (Iterator<CSPOMConstraint> itr = subsumed.iterator(); itr.hasNext();) {
-			final CSPOMConstraint candidate = itr.next();
-			if (!CliqueDetector.subsumes(allDiff, candidate)) {
-				itr.remove();
-			}
-		}
-		for (CSPOMConstraint c : subsumed) {
-			problem.removeConstraint(c);
-			for (CSPOMVariable v : c.getScope()) {
-				if (!scope.contains(v)) {
-					variables.add(v);
-				}
-			}
-		}
-		return subsumed.size();
-	}
-
-	/**
-	 * If the given constraint is an all-different or neq constraint, remove it
-	 * if it is subsumed by another difference constraint.
-	 * 
-	 * @param constraint
-	 */
-	private void dropSubsumedDiff(final CSPOMConstraint constraint) {
-		if (ALLDIFF_CONSTRAINT.is(constraint)
-				&& CliqueDetector.haveSubsumingConstraint(constraint,
-						DIFF_CONSTRAINT)) {
-			variables.addAll(constraint.getScope());
-			problem.removeConstraint(constraint);
-		}
 	}
 
 }

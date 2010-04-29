@@ -1,6 +1,8 @@
 package cspom.compiler;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import cspom.constraint.CSPOMConstraint;
@@ -8,7 +10,28 @@ import cspom.variable.CSPOMVariable;
 
 public final class CliqueDetector {
 
-	private CliqueDetector() {
+	private static final class Pair {
+		private final CSPOMVariable v1, v2;
+
+		private Pair(final CSPOMVariable v1, final CSPOMVariable v2) {
+			this.v1 = v1;
+			this.v2 = v2;
+		}
+
+		public int hashCode() {
+			return v1.hashCode() + v2.hashCode();
+		}
+
+		public boolean equals(final Object obj) {
+			final Pair p2 = (Pair) obj;
+			return (p2.v1 == v1 && p2.v2 == v2) || (p2.v2 == v1 && p2.v1 == v2);
+		}
+	}
+
+	private final Map<Pair, Boolean> haveEdge;
+
+	public CliqueDetector() {
+		haveEdge = new HashMap<Pair, Boolean>();
 	}
 
 	public static boolean haveSubsumingConstraint(
@@ -21,12 +44,12 @@ public final class CliqueDetector {
 		return false;
 	}
 
-	public static boolean subsumes(final CSPOMConstraint allDiff,
-			final CSPOMConstraint constraint) {
-		return allDiff.involvesAll(constraint.getScope());
+	public static boolean subsumes(final CSPOMConstraint constraint,
+			final CSPOMConstraint subsumed) {
+		return constraint.involvesAll(subsumed.getScope());
 	}
 
-	public static boolean allEdges(final CSPOMVariable var,
+	public boolean allEdges(final CSPOMVariable var,
 			final Collection<CSPOMVariable> vars,
 			final ConstraintSelector validator) {
 		for (CSPOMVariable v : vars) {
@@ -37,27 +60,25 @@ public final class CliqueDetector {
 		return true;
 	}
 
-	private static boolean edge(final CSPOMVariable var1,
-			final CSPOMVariable var2, final ConstraintSelector validator) {
-		if (var2.getConstraints().size() < var1.getConstraints().size()) {
-			final Set<CSPOMConstraint> constraints = var1.getConstraints();
+	public boolean edge(final CSPOMVariable var1, final CSPOMVariable var2,
+			final ConstraintSelector validator) {
+		final Pair pair = new Pair(var1, var2);
+		final Boolean edge = haveEdge.get(pair);
 
-			for (CSPOMConstraint c : var2.getConstraints()) {
-				if (validator.is(c) && constraints.contains(c)) {
-					return true;
-				}
-			}
-		} else {
+		if (edge == null) {
 			final Set<CSPOMConstraint> constraints = var2.getConstraints();
 
 			for (CSPOMConstraint c : var1.getConstraints()) {
 				if (validator.is(c) && constraints.contains(c)) {
+					haveEdge.put(pair, true);
 					return true;
 				}
 			}
-		}
 
-		return false;
+			haveEdge.put(pair, false);
+			return false;
+		}
+		return edge;
 	}
 
 }

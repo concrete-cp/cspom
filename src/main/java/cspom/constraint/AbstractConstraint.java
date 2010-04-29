@@ -36,6 +36,8 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 
 	private final String parameters;
 
+	private int hashCode = 0;
+
 	public AbstractConstraint(final String description,
 			final String parameters, final CSPOMVariable... scope) {
 		this(null, description, parameters, scope);
@@ -52,6 +54,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 		for (int i = arity; --i >= 0;) {
 			positions.put(scope[i], i);
 		}
+		computeHashCode();
 	}
 
 	@Override
@@ -79,16 +82,6 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 		return positions.keySet().containsAll(variables);
 	}
 
-	private int hashCode = 0;
-
-	@Override
-	public int hashCode() {
-		if (hashCode == 0) {
-			hashCode = scope.hashCode() + 31 * getDescription().hashCode();
-		}
-		return hashCode;
-	}
-
 	@Override
 	public final String getDescription() {
 		return description;
@@ -102,6 +95,15 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 	@Override
 	public final CSPOMVariable getVariable(final int position) {
 		return scope.get(position);
+	}
+
+	@Override
+	public int hashCode() {
+		return hashCode;
+	}
+
+	private void computeHashCode() {
+		hashCode = scope.hashCode() + 31 * getDescription().hashCode();
 	}
 
 	@Override
@@ -131,7 +133,7 @@ public abstract class AbstractConstraint implements CSPOMConstraint {
 			positions.put(var, pos);
 			pos = scope.indexOf(merged);
 		} while (pos >= 0);
-		hashCode = 0;
+		computeHashCode();
 	}
 
 	public final String getParameters() {
