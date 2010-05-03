@@ -57,8 +57,7 @@ public final class AllDiffDetector {
         }
         System.out.print(constraint);
 
-        final Set<CSPOMVariable> pool = new HashSet<CSPOMVariable>(constraint
-                .getScope());
+        final Set<CSPOMVariable> pool = new HashSet<CSPOMVariable>();
         final Set<CSPOMVariable> clique = new HashSet<CSPOMVariable>(constraint
                 .getScope());
         populate(pool, clique);

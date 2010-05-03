@@ -83,7 +83,7 @@ public final class FunctionalConstraint extends AbstractConstraint {
         }
 
         try {
-            return Evaluator.evaluate(stb.append(')').toString());
+            return Evaluator.evaluate(stb.append(")").toString());
         } catch (ScriptException e) {
             System.err.println(stb.toString());
             throw new IllegalStateException(e);
