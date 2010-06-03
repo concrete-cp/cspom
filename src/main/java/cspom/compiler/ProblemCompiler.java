@@ -72,7 +72,13 @@ public final class ProblemCompiler {
     }
 
     private void compileVariable(final CSPOMVariable var) {
+        if (!problem.getVariables().contains(var)) {
+            return;
+        }
         deReify(var);
+        if (!problem.getVariables().contains(var)) {
+            return;
+        }
         removeSingle(var);
     }
 
@@ -284,33 +290,48 @@ public final class ProblemCompiler {
         if (!result.isAuxiliary() || result.getConstraints().size() != 2) {
             return;
         }
-        final FunctionalConstraint geConstraint = geConstraint(result);
+        final CSPOMConstraint geConstraint = geConstraint(result);
         if (geConstraint == null) {
             return;
         }
         problem.removeConstraint(subConstraint);
         problem.removeConstraint(geConstraint);
-        final CSPOMVariable[] scope = new CSPOMVariable[] {
-                subConstraint.getVariable(1), subConstraint.getVariable(2),
-                geConstraint.getVariable(2) };
 
-        problem.addConstraint(new FunctionalConstraint(geConstraint
-                .getResultVariable(), "diffGe", null, scope));
-        variables.add(geConstraint.getResultVariable());
+        if (geConstraint instanceof FunctionalConstraint) {
+            final CSPOMVariable[] scope = new CSPOMVariable[] {
+                    subConstraint.getVariable(1), subConstraint.getVariable(2),
+                    geConstraint.getVariable(2) };
+            problem.addConstraint(new FunctionalConstraint(geConstraint
+                    .getVariable(0), "diffGe", null, scope));
+        } else {
+            final CSPOMVariable[] scope = new CSPOMVariable[] {
+                    subConstraint.getVariable(1), subConstraint.getVariable(2),
+                    geConstraint.getVariable(1) };
+            problem.addConstraint(new GeneralConstraint("diffGe", null, scope));
+        }
+
+        for (CSPOMVariable v : geConstraint.getScope()) {
+            variables.add(v);
+        }
         for (CSPOMVariable v : subConstraint.getScope()) {
             variables.add(v);
         }
     }
 
-    private static FunctionalConstraint geConstraint(
-            final CSPOMVariable variable) {
+    private static CSPOMConstraint geConstraint(final CSPOMVariable variable) {
         for (CSPOMConstraint c : variable.getConstraints()) {
-            if ("ge".equals(c.getDescription())
-                    && c instanceof FunctionalConstraint) {
-                final FunctionalConstraint geConstraint = (FunctionalConstraint) c;
-                final CSPOMVariable[] scope = geConstraint.getArguments();
-                if (scope.length == 2 && scope[0] == variable) {
-                    return geConstraint;
+            if ("ge".equals(c.getDescription())) {
+                if (c instanceof FunctionalConstraint) {
+                    final FunctionalConstraint geConstraint = (FunctionalConstraint) c;
+                    final CSPOMVariable[] scope = geConstraint.getArguments();
+                    if (scope.length == 2 && scope[0] == variable) {
+                        return geConstraint;
+                    }
+                } else {
+                    final List<CSPOMVariable> scope = c.getScope();
+                    if (scope.size() == 2 && scope.get(0) == variable) {
+                        return c;
+                    }
                 }
             }
         }

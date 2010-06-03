@@ -78,6 +78,7 @@ public final class ConstraintCompiler {
         } else if (node.isInteger()) {
             newVariable = new CSPOMVariable(Integer
                     .parseInt(node.getOperator()));
+            newVariable.setAuxiliary(true);
         } else {
             throw new IllegalStateException();
         }

@@ -80,3 +80,5 @@ function allDifferent() {
 }
 
 function absdiff(x,y) { return Math.abs(x-y) ; }
+
+function diffGe(x,y,z) { return x-y >= z ; }
