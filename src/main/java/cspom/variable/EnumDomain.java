@@ -68,7 +68,7 @@ public final class EnumDomain<T extends Enum<T>> implements CSPOMDomain<T> {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (!(obj instanceof EnumDomain<?>)) {
 			return false;
 		}
@@ -78,5 +78,10 @@ public final class EnumDomain<T extends Enum<T>> implements CSPOMDomain<T> {
 	@Override
 	public String toString() {
 		return underlying.toString();
+	}
+
+	@Override
+	public int getSize() {
+		return underlying.getSize();
 	}
 }

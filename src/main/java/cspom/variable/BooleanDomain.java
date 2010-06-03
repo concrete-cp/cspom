@@ -108,4 +108,12 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 
 		return Arrays.asList(false, true);
 	}
+
+	@Override
+	public int getSize() {
+		if (constant) {
+			return 1;
+		}
+		return 2;
+	}
 }

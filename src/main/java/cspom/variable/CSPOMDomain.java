@@ -15,4 +15,6 @@ public interface CSPOMDomain<T> {
      * @return The list of potential values for this domain.
      */
     List<T> getValues();
+    
+    int getSize();
 }
