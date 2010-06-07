@@ -10,11 +10,11 @@ import cspom.constraint.FunctionalConstraint;
 import cspom.constraint.GeneralConstraint;
 import cspom.variable.CSPOMVariable;
 
-public final class ConstraintCompiler {
+public final class ConstraintParser {
 
     private final CSPOM problem;
 
-    public ConstraintCompiler(final CSPOM problem) {
+    public ConstraintParser(final CSPOM problem) {
         this.problem = problem;
     }
 

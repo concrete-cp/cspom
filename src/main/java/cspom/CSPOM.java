@@ -35,7 +35,7 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.tools.bzip2.CBZip2InputStream;
 
-import cspom.compiler.ConstraintCompiler;
+import cspom.compiler.ConstraintParser;
 import cspom.compiler.PredicateParseException;
 import cspom.constraint.CSPOMConstraint;
 import cspom.dimacs.CNFParser;
@@ -91,7 +91,7 @@ public final class CSPOM {
     /**
      * The constraint compiler used by this CSPOM instance.
      */
-    private ConstraintCompiler constraintCompiler;
+    private ConstraintParser constraintCompiler;
 
     /**
      * Creates an empty problem, without any initial variables nor constraints.
@@ -305,7 +305,7 @@ public final class CSPOM {
      */
     public void ctr(final String string) throws PredicateParseException {
         if (constraintCompiler == null) {
-            constraintCompiler = new ConstraintCompiler(this);
+            constraintCompiler = new ConstraintParser(this);
         }
         constraintCompiler.split(string);
     }

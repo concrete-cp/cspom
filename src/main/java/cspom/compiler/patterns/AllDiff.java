@@ -1,4 +1,4 @@
-package cspom.compiler;
+package cspom.compiler.patterns;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,11 +9,12 @@ import java.util.Random;
 import java.util.Set;
 
 import cspom.CSPOM;
+import cspom.compiler.ConstraintSelector;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.GeneralConstraint;
 import cspom.variable.CSPOMVariable;
 
-public final class AllDiffDetector {
+public final class AllDiff implements ConstraintCompiler {
 
     private static final ConstraintSelector DIFF_CONSTRAINT = new ConstraintSelector() {
         @Override
@@ -41,7 +42,7 @@ public final class AllDiffDetector {
     private final CSPOM problem;
     private final CliqueDetector cliqueDetector;
 
-    public AllDiffDetector(final CSPOM problem) {
+    public AllDiff(final CSPOM problem) {
         this.problem = problem;
         this.cliqueDetector = new CliqueDetector();
     }
@@ -52,9 +53,9 @@ public final class AllDiffDetector {
      * 
      * @param constraint
      */
-    public Set<CSPOMVariable> alldiff(final CSPOMConstraint constraint) {
+    public void alldiff(final CSPOMConstraint constraint) {
         if (!DIFF_CONSTRAINT.is(constraint)) {
-            return null;
+            return;
         }
         // System.out.print(constraint);
 
@@ -64,20 +65,15 @@ public final class AllDiffDetector {
         populate(pool, clique);
         expand(clique, pool);
 
-        final Set<CSPOMVariable> changed = new HashSet<CSPOMVariable>();
         if (clique.size() > constraint.getScope().size()) {
             // System.out.print(" -> " + clique.size() + "-clique");
-            final Collection<CSPOMConstraint> rem = newAllDiff(clique);
+            newAllDiff(clique);
             // System.out.print(", " + (rem.size() - 1) +
             // " constraints removed, "
             // + problem.getConstraints().size() + " remaining");
-            for (CSPOMConstraint c : rem) {
-                changed.addAll(c.getScope());
-            }
         }
         // System.out.println();
 
-        return changed;
     }
 
     private void populate(final Set<CSPOMVariable> pool,
@@ -180,8 +176,7 @@ public final class AllDiffDetector {
      * 
      * @param scope
      */
-    public Collection<CSPOMConstraint> newAllDiff(
-            final Collection<CSPOMVariable> scope) {
+    public void newAllDiff(final Collection<CSPOMVariable> scope) {
         final CSPOMConstraint allDiff = new GeneralConstraint("allDifferent",
                 null, scope.toArray(new CSPOMVariable[scope.size()]));
         problem.addConstraint(allDiff);
@@ -207,9 +202,6 @@ public final class AllDiffDetector {
         for (CSPOMConstraint c : subsumed) {
             problem.removeConstraint(c);
         }
-
-        subsumed.add(allDiff);
-        return subsumed;
     }
 
     /**
@@ -226,6 +218,14 @@ public final class AllDiffDetector {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void compile(final CSPOMConstraint constraint) {
+        if (!dropSubsumedDiff(constraint)) {
+            alldiff(constraint);
+        }
+
     }
 
 }
