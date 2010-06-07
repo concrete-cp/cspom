@@ -66,4 +66,12 @@ public final class Constant<T> implements CSPOMDomain<T> {
 	public int getSize() {
 		return 1;
 	}
+
+	@Override
+	public CSPOMDomain<T> merge(final CSPOMDomain<T> merged) {
+		if (merged.getValues().contains(value)) {
+			return this;
+		}
+		throw new IllegalArgumentException("Inconsistent merge");
+	}
 }

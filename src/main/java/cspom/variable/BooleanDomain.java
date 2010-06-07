@@ -26,16 +26,14 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 	 */
 	public static final BooleanDomain DOMAIN = new BooleanDomain();
 
+	private static enum BooleanValue {
+		UNKNOWN, TRUE, FALSE
+	};
+
 	/**
 	 * Truth value of this instance of Boolean.
 	 */
-	private final boolean truthValue;
-
-	/**
-	 * Whether this instance is a constant (true or false) or a standard boolean
-	 * domain.
-	 */
-	private final boolean constant;
+	private final BooleanValue value;
 
 	/**
 	 * @param constant
@@ -56,16 +54,18 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 	 *            Truth value of this instance.
 	 */
 	private BooleanDomain(final boolean value) {
-		this.truthValue = value;
-		this.constant = true;
+		if (value) {
+			this.value = BooleanValue.TRUE;
+		} else {
+			this.value = BooleanValue.FALSE;
+		}
 	}
 
 	/**
 	 * Manual instances of True are not allowed by the Singleton design pattern.
 	 */
 	private BooleanDomain() {
-		this.constant = false;
-		this.truthValue = false;
+		this.value = BooleanValue.UNKNOWN;
 	}
 
 	/**
@@ -75,45 +75,86 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 	 *             if this instance is not a constant.
 	 */
 	public boolean getBoolean() {
-		if (!constant) {
+		switch (value) {
+		case TRUE:
+			return true;
+		case FALSE:
+			return false;
+		default:
 			throw new IllegalStateException(
 					"only legal on non-constant Boolean instances");
 		}
-		return truthValue;
 	}
 
 	/**
 	 * @return Whether this instance of Boolean represents a constant.
 	 */
 	public boolean isConstant() {
-		return constant;
+		switch (value) {
+		case TRUE:
+		case FALSE:
+			return true;
+		default:
+			return false;
+		}
 	}
 
 	@Override
 	public String toString() {
-		if (constant) {
-			if (truthValue) {
-				return "true";
-			}
+		switch (value) {
+		case TRUE:
+			return "true";
+		case FALSE:
 			return "false";
+		default:
+			return "[false, true]";
 		}
-		return "[false, true]";
 	}
 
 	@Override
 	public List<Boolean> getValues() {
-		if (constant) {
-			return Arrays.asList(truthValue);
+		switch (value) {
+		case TRUE:
+			return Arrays.asList(true);
+		case FALSE:
+			return Arrays.asList(false);
+		case UNKNOWN:
+			return Arrays.asList(false, true);
+		default:
+			throw new IllegalStateException();
 		}
-
-		return Arrays.asList(false, true);
 	}
 
 	@Override
 	public int getSize() {
-		if (constant) {
+		switch (value) {
+		case TRUE:
+		case FALSE:
 			return 1;
+		case UNKNOWN:
+			return 2;
+		default:
+			throw new IllegalStateException();
 		}
-		return 2;
+	}
+
+	@Override
+	public CSPOMDomain<Boolean> merge(final CSPOMDomain<Boolean> merged) {
+		switch (value) {
+		case TRUE:
+			if (!FALSE.equals(merged)) {
+				return TRUE;
+			}
+			throw new IllegalArgumentException("Inconsistent merge");
+		case FALSE:
+			if (!TRUE.equals(merged)) {
+				return FALSE;
+			}
+			throw new IllegalArgumentException("Inconsistent merge");
+		case UNKNOWN:
+			return merged;
+		default:
+			throw new IllegalStateException();
+		}
 	}
 }

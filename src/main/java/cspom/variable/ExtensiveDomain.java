@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Implements domains given in extension, that is, a list of arbitrary objects.
@@ -90,5 +92,12 @@ public final class ExtensiveDomain<T> implements CSPOMDomain<T> {
 	@Override
 	public int getSize() {
 		return values.size();
+	}
+
+	@Override
+	public CSPOMDomain<T> merge(final CSPOMDomain<T> merged) {
+		final Set<T> mergedValues = new LinkedHashSet<T>(this.values);
+		mergedValues.retainAll(merged.getValues());
+		return new ExtensiveDomain<T>(new ArrayList<T>(mergedValues));
 	}
 }

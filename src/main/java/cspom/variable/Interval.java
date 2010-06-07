@@ -160,4 +160,23 @@ public final class Interval<T extends Number> implements CSPOMDomain<T> {
 		throw new UnsupportedOperationException(
 				"Cannot compute size of non-integer intervals");
 	}
+
+	@Override
+	public CSPOMDomain<T> merge(final CSPOMDomain<T> merged) {
+		if (merged instanceof Interval<?>) {
+			final Interval<T> mergeInt = (Interval<T>) merged;
+			final T newlb;
+			final T newub;
+			if (Integer.class.isInstance(lb)
+					&& Integer.class.isInstance(mergeInt.getLb())) {
+				newlb = (T) (Number) Math.max(lb.intValue(), mergeInt.getLb()
+						.intValue());
+			}
+
+			return new Interval<T>(newlb, newub);
+
+		}
+
+		return merged.merge(this);
+	}
 }

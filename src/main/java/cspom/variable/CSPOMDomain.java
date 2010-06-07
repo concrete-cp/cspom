@@ -11,10 +11,12 @@ import java.util.List;
  * 
  */
 public interface CSPOMDomain<T> {
-    /**
-     * @return The list of potential values for this domain.
-     */
-    List<T> getValues();
-    
-    int getSize();
+	/**
+	 * @return The list of potential values for this domain.
+	 */
+	List<T> getValues();
+
+	int getSize();
+
+	CSPOMDomain<T> merge(CSPOMDomain<T> merged);
 }
