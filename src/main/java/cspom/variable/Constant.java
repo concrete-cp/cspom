@@ -68,7 +68,7 @@ public final class Constant<T> implements CSPOMDomain<T> {
 	}
 
 	@Override
-	public CSPOMDomain<T> merge(final CSPOMDomain<T> merged) {
+	public CSPOMDomain<T> merge(final CSPOMDomain<?> merged) {
 		if (merged.getValues().contains(value)) {
 			return this;
 		}

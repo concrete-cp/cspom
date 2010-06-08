@@ -95,7 +95,7 @@ public final class ExtensiveDomain<T> implements CSPOMDomain<T> {
 	}
 
 	@Override
-	public CSPOMDomain<T> merge(final CSPOMDomain<T> merged) {
+	public CSPOMDomain<T> merge(final CSPOMDomain<?> merged) {
 		final Set<T> mergedValues = new LinkedHashSet<T>(this.values);
 		mergedValues.retainAll(merged.getValues());
 		return new ExtensiveDomain<T>(new ArrayList<T>(mergedValues));

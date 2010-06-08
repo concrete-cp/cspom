@@ -18,5 +18,5 @@ public interface CSPOMDomain<T> {
 
 	int getSize();
 
-	CSPOMDomain<T> merge(CSPOMDomain<T> merged);
+	CSPOMDomain<T> merge(CSPOMDomain<?> merged);
 }

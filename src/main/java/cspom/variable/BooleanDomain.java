@@ -139,7 +139,7 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 	}
 
 	@Override
-	public CSPOMDomain<Boolean> merge(final CSPOMDomain<Boolean> merged) {
+	public CSPOMDomain<Boolean> merge(final CSPOMDomain<?> merged) {
 		switch (value) {
 		case TRUE:
 			if (!FALSE.equals(merged)) {
@@ -152,9 +152,9 @@ public final class BooleanDomain implements CSPOMDomain<Boolean> {
 			}
 			throw new IllegalArgumentException("Inconsistent merge");
 		case UNKNOWN:
-			return merged;
+			return DOMAIN;
 		default:
-			throw new IllegalStateException();
+			throw new IllegalArgumentException();
 		}
 	}
 }

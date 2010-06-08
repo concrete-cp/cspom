@@ -83,14 +83,15 @@ public final class MergeEq implements ConstraintCompiler {
 		}
 	}
 
-	private <T> CSPOMDomain<T> mergeDomain(final CSPOMDomain<T> d0,
-			final CSPOMDomain<T> d1) {
+	private CSPOMDomain<?> mergeDomain(final CSPOMDomain<?> d0,
+			final CSPOMDomain<?> d1) {
 		if (d0 == null) {
 			return d1;
 		}
 		if (d1 == null) {
 			return d0;
 		}
+		return d0.merge(d1);
 	}
 
 	private void merge(final CSPOMVariable merged, final CSPOMVariable variable) {
@@ -98,11 +99,8 @@ public final class MergeEq implements ConstraintCompiler {
 			throw new IllegalArgumentException();
 		}
 
-		if (variable.getDomain() == null) {
-			variable.setDomain(merged.getDomain());
-		} else {
-			mergeDomains(merged.getDomain(), variable.getDomain());
-		}
+		variable
+				.setDomain(mergeDomain(merged.getDomain(), variable.getDomain()));
 
 		for (CSPOMConstraint c : merged.getConstraints().toArray(
 				new CSPOMConstraint[merged.getConstraints().size()])) {
