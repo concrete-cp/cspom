@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -266,7 +267,7 @@ public final class CSPOM {
         try {
             addVariable(variable);
         } catch (DuplicateVariableException e) {
-            throw new IllegalStateException();
+            throw new IllegalStateException(e);
         }
         return variable;
     }
@@ -287,6 +288,23 @@ public final class CSPOM {
     public CSPOMVariable var(final String name, final int lb, final int ub)
             throws DuplicateVariableException {
         final CSPOMVariable variable = new CSPOMVariable(name, lb, ub);
+        addVariable(variable);
+        return variable;
+    }
+
+    public CSPOMVariable var(final List<Integer> values) {
+        final CSPOMVariable variable = new CSPOMVariable(values);
+        try {
+            addVariable(variable);
+        } catch (DuplicateVariableException e) {
+            throw new IllegalStateException(e);
+        }
+        return variable;
+    }
+
+    public CSPOMVariable var(final String name, final List<Integer> values)
+            throws DuplicateVariableException {
+        final CSPOMVariable variable = new CSPOMVariable(name, values);
         addVariable(variable);
         return variable;
     }
