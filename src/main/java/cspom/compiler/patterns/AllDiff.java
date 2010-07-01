@@ -179,6 +179,9 @@ public final class AllDiff implements ConstraintCompiler {
     public void newAllDiff(final Collection<CSPOMVariable> scope) {
         final CSPOMConstraint allDiff = new GeneralConstraint("allDifferent",
                 null, scope.toArray(new CSPOMVariable[scope.size()]));
+        if (problem.getConstraints().contains(allDiff)) {
+            return;
+        }
         problem.addConstraint(allDiff);
 
         /*
