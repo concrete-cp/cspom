@@ -68,6 +68,17 @@ function iff(x,y) {
 	return x==y;
 }
 
+function allDifferent() {
+	for (var i = arguments.length; --i >= 0;) {
+	  for (var j = i; --j >= 0;) {
+	    if (arguments[i] == arguments[j]) {
+	      return false;
+	    }
+	  }
+	}
+	return true;
+}
+
 function alldifferent() {
 	for (var i = arguments.length; --i >= 0;) {
 	  for (var j = i; --j >= 0;) {
