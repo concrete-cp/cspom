@@ -48,7 +48,7 @@ public final class Extension<T> {
     /**
      * The actual allowed or forbidden tuples.
      */
-    private final Set<T[]> tuples;
+    private final TupleSet<T> tuples;
 
     /**
      * Constructs an empty (universal or empty) extension.
@@ -65,6 +65,13 @@ public final class Extension<T> {
         this.tuples = new TupleSet<T>();
     }
 
+    public Extension(final int arity, final boolean init, final Set<T[]> tuples) {
+        super();
+        this.arity = arity;
+        this.init = init;
+        this.tuples = new TupleSet<T>(tuples);
+    }
+
     /**
      * Adds an allowed or forbidden tuple to the extension.
      * 
@@ -75,8 +82,6 @@ public final class Extension<T> {
         assert tuple.length == arity;
         tuples.add(tuple.clone());
     }
-    
-    
 
     /**
      * @return the arity of the extension.
@@ -95,7 +100,7 @@ public final class Extension<T> {
     /**
      * @return all forbidden or allowed tuples.
      */
-    public Set<T[]> getTuples() {
+    public TupleSet<T> getTuples() {
         return tuples;
     }
 
@@ -193,4 +198,5 @@ public final class Extension<T> {
         assert reversed.getNbTuples() == getNbTuples();
         return reversed;
     }
+
 }
