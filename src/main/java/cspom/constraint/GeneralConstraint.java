@@ -8,7 +8,7 @@ import cspom.variable.CSPOMVariable;
 public final class GeneralConstraint extends AbstractConstraint {
 
     public GeneralConstraint(final String name, final String description,
-            final String parameters, final CSPOMVariable[] scope) {
+            final String parameters, final CSPOMVariable... scope) {
         super(name, description, parameters, scope);
         if (scope.length == 0) {
             throw new IllegalArgumentException(
@@ -17,7 +17,7 @@ public final class GeneralConstraint extends AbstractConstraint {
     }
 
     public GeneralConstraint(final String description, final String parameters,
-            final CSPOMVariable[] scope) {
+            final CSPOMVariable... scope) {
         super(description, parameters, scope);
     }
 
@@ -45,8 +45,8 @@ public final class GeneralConstraint extends AbstractConstraint {
         if (getParameters() != null) {
             stb.append("p_");
         }
-        stb.append(getDescription()).append('(').append(
-                Evaluator.commas(tuple, 0));
+        stb.append(getDescription()).append('(')
+                .append(Evaluator.commas(tuple, 0));
         if (getParameters() != null) {
             stb.append(", ").append(getParameters());
         }

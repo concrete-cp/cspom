@@ -39,6 +39,7 @@ import org.apache.tools.bzip2.CBZip2InputStream;
 import cspom.compiler.ConstraintParser;
 import cspom.compiler.PredicateParseException;
 import cspom.constraint.CSPOMConstraint;
+import cspom.constraint.GeneralConstraint;
 import cspom.dimacs.CNFParser;
 import cspom.variable.BooleanDomain;
 import cspom.variable.CSPOMDomain;
@@ -345,6 +346,12 @@ public final class CSPOM {
 			constraintCompiler = new ConstraintParser(this);
 		}
 		constraintCompiler.split(string);
+	}
+	
+	public CSPOMConstraint le(final CSPOMVariable v0, final CSPOMVariable v1) {
+	    final CSPOMConstraint constraint = new GeneralConstraint("le", null, v0, v1);
+	    addConstraint(constraint);
+	    return constraint;
 	}
 
 	/**
