@@ -3,7 +3,7 @@
 	<groupId>cspfj</groupId>
 	<artifactId>cspom</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.5-SNAPSHOT</version>
+	<version>1.0.5</version>
 	<name>CSP Object Model</name>
 	<url>http://cspfj.sourceforge.net/</url>
 	<repositories>
@@ -40,8 +40,8 @@
 		<url>http://scand1sk.shacknet.nu/hudson/job/CSPOM/</url>
 	</ciManagement>
 	<scm>
-		<developerConnection>scm:svn:https://cspfj.svn.sourceforge.net/svnroot/cspfj/trunk/cspom</developerConnection>
-		<url>https://cspfj.svn.sourceforge.net/svnroot/cspfj/trunk/cspom</url>
+		<developerConnection>scm:svn:https://cspfj.svn.sourceforge.net/svnroot/cspfj/tags/cspom-1.0.5</developerConnection>
+		<url>https://cspfj.svn.sourceforge.net/svnroot/cspfj/tags/cspom-1.0.5</url>
 	</scm>
 	<build>
 		<plugins>
