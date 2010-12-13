@@ -18,7 +18,7 @@
 		<repository>
 			<id>net.sourceforge.cspfj</id>
 			<name>CSP4J repository</name>
-			<url>scp://web.sourceforge.net/home/groups/c/cs/cspfj/htdocs/repository</url>
+			<url>sftp://web.sourceforge.net/home/groups/c/cs/cspfj/htdocs/repository</url>
 		</repository>
 
 	</distributionManagement>
