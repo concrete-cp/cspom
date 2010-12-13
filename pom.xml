@@ -28,6 +28,9 @@
 			<version>1.0</version>
 		</dependency>
 	</dependencies>
+	<scm>
+		<url>https://cspfj.svn.sourceforge.net/svnroot/cspfj/trunk/cspom</url>
+	</scm>
 	<build>
 		<plugins>
 			<plugin>
