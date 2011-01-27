@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import cspom.CSPOM;
-import cspom.DuplicateVariableException;
 import cspom.compiler.PredicateScanner.Node;
 import cspom.constraint.FunctionalConstraint;
 import cspom.constraint.GeneralConstraint;
@@ -41,11 +40,8 @@ public final class ConstraintParser {
 
         final CSPOMVariable result = new CSPOMVariable();
         result.setAuxiliary(true);
-        try {
-            problem.addVariable(result);
-        } catch (DuplicateVariableException e) {
-            throw new IllegalStateException(e);
-        }
+        problem.addVariable(result);
+
         final Collection<CSPOMVariable> operands = new LinkedList<CSPOMVariable>();
         for (Node n = node.getChild(); n != null; n = n.getSibling()) {
             operands.add(addToProblem(n));
@@ -64,11 +60,7 @@ public final class ConstraintParser {
 
         existing = problem.getVariable(node.getOperator());
         if (existing != null) {
-            try {
-                problem.addVariable(existing);
-            } catch (DuplicateVariableException e) {
-                throw new IllegalStateException(e);
-            }
+            problem.addVariable(existing);
             return existing;
         }
 
@@ -76,19 +68,13 @@ public final class ConstraintParser {
         if (node.isIdentifier()) {
             newVariable = new CSPOMVariable();
         } else if (node.isInteger()) {
-            newVariable = new CSPOMVariable(Integer
-                    .parseInt(node.getOperator()));
+            newVariable = new CSPOMVariable(
+                    Integer.parseInt(node.getOperator()));
             newVariable.setAuxiliary(true);
         } else {
             throw new IllegalStateException();
         }
-        try {
-            problem.addVariable(newVariable);
-        } catch (DuplicateVariableException e) {
-            System.err.println(problem);
-            System.err.println(newVariable);
-            throw new IllegalStateException(e);
-        }
+        problem.addVariable(newVariable);
         return newVariable;
     }
 }

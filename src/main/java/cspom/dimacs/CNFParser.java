@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 import cspom.CSPOM;
 import cspom.CSPParseException;
-import cspom.DuplicateVariableException;
 import cspom.compiler.PredicateParseException;
 import cspom.variable.BooleanDomain;
 import cspom.variable.CSPOMVariable;
@@ -46,12 +45,8 @@ public final class CNFParser {
                     parameter = true;
                     final int nbVars = Integer.valueOf(matcher.group(1));
                     for (int i = 1; i <= nbVars; i++) {
-                        try {
-                            problem.addVariable(new CSPOMVariable("V" + i,
-                                    BooleanDomain.DOMAIN));
-                        } catch (DuplicateVariableException e) {
-                            throw new IllegalStateException(e);
-                        }
+                        problem.addVariable(new CSPOMVariable("V" + i,
+                                BooleanDomain.DOMAIN));
                     }
                     continue;
                 }
