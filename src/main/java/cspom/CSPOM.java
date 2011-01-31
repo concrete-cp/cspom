@@ -36,6 +36,9 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.tools.bzip2.CBZip2InputStream;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+
 import cspom.compiler.ConstraintParser;
 import cspom.compiler.PredicateParseException;
 import cspom.constraint.CSPOMConstraint;
@@ -425,10 +428,14 @@ public final class CSPOM {
             final Map<String, Number> solution) {
         final Collection<CSPOMConstraint> failed = new ArrayList<CSPOMConstraint>();
         for (CSPOMConstraint c : constraints) {
-            final Number[] tuple = new Number[c.getArity()];
-            for (int i = c.getArity(); --i >= 0;) {
-                tuple[i] = solution.get(c.getVariable(i).getName());
-            }
+            final Number[] tuple = Lists.transform(c.getScope(),
+                    new Function<CSPOMVariable, Number>() {
+                        @Override
+                        public Number apply(final CSPOMVariable input) {
+                            return solution.get(input.getName());
+                        }
+                    }).toArray(new Number[c.getArity()]);
+
             if (!c.evaluate(tuple)) {
                 failed.add(c);
             }

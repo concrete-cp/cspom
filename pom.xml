@@ -34,6 +34,13 @@
 			<artifactId>bzip2</artifactId>
 			<version>1.0</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>r08</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 	<ciManagement>
 		<system>Hudson</system>

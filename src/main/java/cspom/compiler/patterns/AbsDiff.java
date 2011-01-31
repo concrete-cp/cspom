@@ -1,6 +1,14 @@
 package cspom.compiler.patterns;
 
+import java.util.List;
+import java.util.NoSuchElementException;
+
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
+
 import cspom.CSPOM;
+import cspom.constraint.AbstractConstraint;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.variable.CSPOMVariable;
@@ -44,15 +52,17 @@ public final class AbsDiff implements ConstraintCompiler {
 
     private static FunctionalConstraint absConstraint(
             final CSPOMVariable variable) {
-        for (CSPOMConstraint c : variable.getConstraints()) {
-            if ("abs".equals(c.getDescription())
-                    && c instanceof FunctionalConstraint) {
-                final FunctionalConstraint fConstraint = (FunctionalConstraint) c;
-                final CSPOMVariable[] arguments = fConstraint.getArguments();
-                if (arguments.length == 1 && arguments[0] == variable) {
-                    return fConstraint;
-                }
-            }
+        
+        final FunctionalConstraint fConstraint;
+        try {
+            fConstraint = (FunctionalConstraint) Iterables.find(
+                    variable.getConstraints(),
+                    FunctionalConstraint.matchesDescription("abs"));
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+        if (Iterables.getOnlyElement(fConstraint.getArguments()) == variable) {
+            return fConstraint;
         }
         return null;
     }

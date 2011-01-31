@@ -2,10 +2,14 @@ package cspom;
 
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Arrays;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 
 public final class Evaluator {
 
@@ -39,19 +43,6 @@ public final class Evaluator {
     public static boolean evaluate(final String expression)
             throws ScriptException {
         return (Boolean) ENGINE.eval(transform(expression));
-    }
-
-    public static String commas(final Object[] array, final int start) {
-        final StringBuilder stb = new StringBuilder();
-        int iMax = array.length - 1;
-
-        for (int i = start;; i++) {
-            stb.append(array[i]);
-            if (i == iMax) {
-                return stb.toString();
-            }
-            stb.append(", ");
-        }
     }
 
     private static String transform(final String expr) {

@@ -1,8 +1,12 @@
 package cspom.compiler.patterns;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+
+import com.google.common.collect.Iterables;
 
 import cspom.CSPOM;
+import cspom.constraint.AbstractConstraint;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.constraint.GeneralConstraint;
@@ -51,21 +55,21 @@ public final class DiffGe implements ConstraintCompiler {
     }
 
     private static CSPOMConstraint geConstraint(final CSPOMVariable variable) {
-        for (CSPOMConstraint c : variable.getConstraints()) {
-            if ("ge".equals(c.getDescription())) {
-                if (c instanceof FunctionalConstraint) {
-                    final FunctionalConstraint geConstraint = (FunctionalConstraint) c;
-                    final CSPOMVariable[] scope = geConstraint.getArguments();
-                    if (scope.length == 2 && scope[0] == variable) {
-                        return geConstraint;
-                    }
-                } else {
-                    final List<CSPOMVariable> scope = c.getScope();
-                    if (scope.size() == 2 && scope.get(0) == variable) {
-                        return c;
-                    }
-                }
-            }
+        final CSPOMConstraint geConstraint;
+        try {
+            geConstraint = Iterables.find(variable.getConstraints(),
+                    AbstractConstraint.matchesDescription("ge"));
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+        final List<CSPOMVariable> scope;
+        if (geConstraint instanceof FunctionalConstraint) {
+            scope = ((FunctionalConstraint) geConstraint).getArguments();
+        } else {
+            scope = geConstraint.getScope();
+        }
+        if (scope.size() == 2 && scope.get(0) == variable) {
+            return geConstraint;
         }
         return null;
     }

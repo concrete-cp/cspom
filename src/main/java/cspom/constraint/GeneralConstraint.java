@@ -1,6 +1,11 @@
 package cspom.constraint;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.script.ScriptException;
+
+import com.google.common.base.Joiner;
 
 import cspom.Evaluator;
 import cspom.variable.CSPOMVariable;
@@ -10,14 +15,15 @@ public final class GeneralConstraint extends AbstractConstraint {
     public GeneralConstraint(final String name, final String description,
             final String parameters, final CSPOMVariable... scope) {
         super(name, description, parameters, scope);
-        if (scope.length == 0) {
-            throw new IllegalArgumentException(
-                    "A constraint must imply at least one variable");
-        }
     }
 
     public GeneralConstraint(final String description, final String parameters,
             final CSPOMVariable... scope) {
+        super(description, parameters, scope);
+    }
+
+    public GeneralConstraint(final String description, final String parameters,
+            final List<CSPOMVariable> scope) {
         super(description, parameters, scope);
     }
 
@@ -45,8 +51,9 @@ public final class GeneralConstraint extends AbstractConstraint {
         if (getParameters() != null) {
             stb.append("p_");
         }
-        stb.append(getDescription()).append('(')
-                .append(Evaluator.commas(tuple, 0));
+        stb.append(getDescription()).append('(');
+        Joiner.on(", ").appendTo(stb, Arrays.asList(tuple));
+
         if (getParameters() != null) {
             stb.append(", ").append(getParameters());
         }

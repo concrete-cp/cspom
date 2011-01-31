@@ -20,8 +20,8 @@ public final class File {
 			cspom = CSPOM.load(File.class.getResource(FILENAME));
 
 		} catch (CSPParseException e) {
-			System.err
-					.println(e.getMessage() + " at line " + e.getLineNumber());
+            System.err
+                    .println(e.getMessage() + " at line " + e.getLineNumber());
 			throw e;
 		}
 		System.out.println(cspom);

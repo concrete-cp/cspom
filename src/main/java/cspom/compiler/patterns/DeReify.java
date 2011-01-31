@@ -30,9 +30,9 @@ public final class DeReify implements ConstraintCompiler {
 
     private void deReify(final FunctionalConstraint constraint) {
         problem.removeConstraint(constraint);
-        final CSPOMConstraint newConstraint = new GeneralConstraint(constraint
-                .getDescription(), constraint.getParameters(), constraint
-                .getArguments());
+        final CSPOMConstraint newConstraint = new GeneralConstraint(
+                constraint.getDescription(), constraint.getParameters(),
+                constraint.getArguments());
         problem.addConstraint(newConstraint);
         constraints.add(newConstraint);
     }
