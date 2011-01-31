@@ -13,7 +13,7 @@ public final class File {
 	private File() {
 	}
 
-	public static void main(String[] args) throws IOException,
+	public static void main(final String[] args) throws IOException,
 			CSPParseException {
 		final CSPOM cspom;
 		try {

@@ -11,7 +11,7 @@ public final class Queens {
     private Queens() {
     }
 
-    public static CSPOM queens(int nbQueens) throws PredicateParseException {
+    public static CSPOM queens(final int nbQueens) throws PredicateParseException {
 
         final CSPOM problem = new CSPOM();
 
@@ -32,7 +32,7 @@ public final class Queens {
         return problem;
     }
 
-    public static void main(String[] args) throws PredicateParseException {
+    public static void main(final String[] args) throws PredicateParseException {
         System.out.println(queens(SIZE).toGML());
     }
 }

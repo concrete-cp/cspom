@@ -52,7 +52,7 @@ public final class ConstraintParser {
         return result;
     }
 
-    private CSPOMVariable addVariable(final Node node, final CSPOM problem) {
+    private static CSPOMVariable addVariable(final Node node, final CSPOM problem) {
         CSPOMVariable existing = problem.getVariable(node.getOperator());
         if (existing != null) {
             return existing;
