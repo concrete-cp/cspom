@@ -2,14 +2,10 @@ package cspom;
 
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.Arrays;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 
 public final class Evaluator {
 
