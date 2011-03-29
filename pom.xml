@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>cspfj</groupId>
 	<artifactId>cspom</artifactId>
@@ -12,7 +13,19 @@
 			<name>CSP4J repository</name>
 			<url>http://cspfj.sourceforge.net/repository</url>
 		</repository>
+		<repository>
+			<id>scala-tools.org</id>
+			<name>Scala-tools Maven2 Repository</name>
+			<url>http://scala-tools.org/repo-releases</url>
+		</repository>
 	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>scala-tools.org</id>
+			<name>Scala-tools Maven2 Repository</name>
+			<url>http://scala-tools.org/repo-releases</url>
+		</pluginRepository>
+	</pluginRepositories>
 	<distributionManagement>
 		<!-- use the following if you're not using a snapshot version. -->
 		<repository>
@@ -20,7 +33,6 @@
 			<name>CSP4J repository</name>
 			<url>sftp://web.sourceforge.net/home/groups/c/cs/cspfj/htdocs/repository</url>
 		</repository>
-
 	</distributionManagement>
 	<dependencies>
 		<dependency>
@@ -41,20 +53,56 @@
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>2.8.1</version>
+		</dependency>
 	</dependencies>
 	<ciManagement>
-		<system>Hudson</system>
-		<url>http://scand1sk.shacknet.nu/hudson/job/CSPOM/</url>
+		<system>Jenkins</system>
+		<url>http://scand1sk.shacknet.nu/jenkins/job/CSPOM/</url>
 	</ciManagement>
 	<scm>
 		<developerConnection>scm:svn:https://cspfj.svn.sourceforge.net/svnroot/cspfj/trunk/cspom</developerConnection>
 		<url>https://cspfj.svn.sourceforge.net/svnroot/cspfj/trunk/cspom</url>
 	</scm>
 	<build>
+
 		<plugins>
+			<plugin>
+				<groupId>org.scala-tools</groupId>
+				<artifactId>maven-scala-plugin</artifactId>
+				<version>2.14.1</version>
+				<configuration>
+					<sourceDir>src/main/scala</sourceDir>
+					<jvmArgs>
+						<jvmArg>-Xms64m</jvmArg>
+						<jvmArg>-Xmx1024m</jvmArg>
+					</jvmArgs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>scala-compile-first</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>add-source</goal>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>scala-test-compile</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>testCompile</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
@@ -63,10 +111,48 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.4.3</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--TODO TEXT. This plugin's configuration is used in m2e only.-->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.scala-tools
+										</groupId>
+										<artifactId>
+											maven-scala-plugin
+										</artifactId>
+										<versionRange>
+											[2.14.1,)
+										</versionRange>
+										<goals>
+											<goal>compile</goal>
+											<goal>add-source</goal>
+											<goal>testCompile</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 </project>
