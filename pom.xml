@@ -73,7 +73,6 @@
 			<plugin>
 				<groupId>org.scala-tools</groupId>
 				<artifactId>maven-scala-plugin</artifactId>
-				<version>2.14.1</version>
 				<configuration>
 					<sourceDir>src/main/scala</sourceDir>
 					<jvmArgs>
@@ -81,6 +80,7 @@
 						<jvmArg>-Xmx1024m</jvmArg>
 					</jvmArgs>
 				</configuration>
+				<version>2.15.2</version>
 				<executions>
 					<execution>
 						<id>scala-compile-first</id>
@@ -111,7 +111,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.4.3</version>
+				<version>2.5</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
 				</configuration>

@@ -31,7 +31,7 @@ class ConstantTest() {
 
   @Test
   def testGetValue() {
-    assertEquals(intConstant.getValue, TEST_CONSTANT_INT);
-    assertEquals(doubleConstant.getValue, TEST_CONSTANT_DOUBLE, 0.0);
+    assertEquals(intConstant.value, TEST_CONSTANT_INT);
+    assertEquals(doubleConstant.value, TEST_CONSTANT_DOUBLE, 0.0);
   }
 }
