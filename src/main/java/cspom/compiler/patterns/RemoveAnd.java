@@ -5,8 +5,8 @@ import java.util.Deque;
 import cspom.CSPOM;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.GeneralConstraint;
-import cspom.variable.BooleanDomain;
 import cspom.variable.CSPOMVariable;
+import cspom.variable.TrueDomain$;
 
 public final class RemoveAnd implements ConstraintCompiler {
 
@@ -24,7 +24,7 @@ public final class RemoveAnd implements ConstraintCompiler {
         if ("and".equals(constraint.getDescription())
                 && constraint instanceof GeneralConstraint) {
             for (CSPOMVariable v : constraint) {
-                v.setDomain(BooleanDomain.TRUE);
+                v.setDomain(TrueDomain$.MODULE$);
                 for (CSPOMConstraint c : v.getConstraints()) {
                     if (c != constraint) {
                         constraints.add(c);

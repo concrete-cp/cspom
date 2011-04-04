@@ -44,9 +44,9 @@ import cspom.compiler.PredicateParseException;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.GeneralConstraint;
 import cspom.dimacs.CNFParser;
-import cspom.variable.BooleanDomain;
 import cspom.variable.CSPOMDomain;
 import cspom.variable.CSPOMVariable;
+import cspom.variable.UnknownBooleanDomain$;
 import cspom.xcsp.XCSPParser;
 
 /**
@@ -306,13 +306,14 @@ public final class CSPOM {
 
     public CSPOMVariable boolVar(final String name) {
         final CSPOMVariable variable = new CSPOMVariable(name,
-                BooleanDomain.DOMAIN);
+                UnknownBooleanDomain$.MODULE$);
         addVariable(variable);
         return variable;
     }
 
     public CSPOMVariable boolVar() {
-        final CSPOMVariable variable = new CSPOMVariable(BooleanDomain.DOMAIN);
+        final CSPOMVariable variable = new CSPOMVariable(
+                UnknownBooleanDomain$.MODULE$);
         addVariable(variable);
         return variable;
     }

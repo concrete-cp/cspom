@@ -6,7 +6,7 @@ import cspom.CSPOM;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.constraint.GeneralConstraint;
-import cspom.variable.BooleanDomain;
+import cspom.variable.TrueDomain$;
 
 public final class DeReify implements ConstraintCompiler {
 
@@ -22,7 +22,7 @@ public final class DeReify implements ConstraintCompiler {
     public void compile(final CSPOMConstraint c) {
         if (c instanceof FunctionalConstraint) {
             final FunctionalConstraint fc = (FunctionalConstraint) c;
-            if (BooleanDomain.TRUE.equals(fc.getResultVariable().getDomain())) {
+            if (TrueDomain$.MODULE$ == fc.getResultVariable().getDomain()) {
                 deReify(fc);
             }
         }

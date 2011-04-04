@@ -29,14 +29,14 @@ import cspom.variable.CSPOMVariable;
  * @see CSPOMVariable
  * @see CSPOM
  */
-public interface CSPOMConstraint extends Iterable<CSPOMVariable> {
+public interface CSPOMConstraint extends Iterable<CSPOMVariable<?>> {
 
     /**
      * @return the scope of the constraint
      */
-    List<CSPOMVariable> getScope();
+    List<CSPOMVariable<?>> getScope();
 
-    CSPOMVariable getVariable(int position);
+    CSPOMVariable<?> getVariable(int position);
 
     /**
      * @return the arity of the constraint. Defined as arity ==
@@ -53,7 +53,7 @@ public interface CSPOMConstraint extends Iterable<CSPOMVariable> {
      * @return The position of the given variable, or null if could not be
      *         found.
      */
-    Integer getPosition(CSPOMVariable variable);
+    int getPosition(CSPOMVariable<?> variable);
 
     /**
      * @return The description of the constraint.
@@ -62,13 +62,13 @@ public interface CSPOMConstraint extends Iterable<CSPOMVariable> {
 
     String getName();
 
-    void replaceVar(CSPOMVariable merged, CSPOMVariable variable);
+    void replaceVar(CSPOMVariable<?> merged, CSPOMVariable<?> variable);
 
     boolean evaluate(final Object[] tuple);
 
     String getParameters();
 
-    boolean involves(CSPOMVariable variable);
+    boolean involves(CSPOMVariable<?> variable);
 
-    boolean involvesAll(Collection<CSPOMVariable> variables);
+    boolean involvesAll(Collection<CSPOMVariable<?>> variables);
 }

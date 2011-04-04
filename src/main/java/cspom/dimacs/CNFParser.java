@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
 import cspom.CSPOM;
 import cspom.CSPParseException;
 import cspom.compiler.PredicateParseException;
-import cspom.variable.BooleanDomain;
 import cspom.variable.CSPOMVariable;
+import cspom.variable.UnknownBooleanDomain$;
 
 public final class CNFParser {
     private final CSPOM problem;
@@ -46,7 +46,7 @@ public final class CNFParser {
                     final int nbVars = Integer.valueOf(matcher.group(1));
                     for (int i = 1; i <= nbVars; i++) {
                         problem.addVariable(new CSPOMVariable("V" + i,
-                                BooleanDomain.DOMAIN));
+                                UnknownBooleanDomain$.MODULE$));
                     }
                     continue;
                 }
