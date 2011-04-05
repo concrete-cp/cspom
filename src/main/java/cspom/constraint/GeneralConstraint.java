@@ -10,7 +10,7 @@ import com.google.common.base.Joiner;
 import cspom.Evaluator;
 import cspom.variable.CSPOMVariable;
 
-public final class GeneralConstraint extends AbstractConstraint {
+public final class GeneralConstraint implements CSPOMConstraint {
 
     public GeneralConstraint(final String name, final String description,
             final String parameters, final CSPOMVariable... scope) {
