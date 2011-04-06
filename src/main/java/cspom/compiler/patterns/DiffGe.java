@@ -25,12 +25,12 @@ public final class DiffGe implements ConstraintCompiler {
 
     @Override
     public void compile(final CSPOMConstraint constraint) {
-        if (!("sub".equals(constraint.getDescription()) && constraint instanceof FunctionalConstraint)) {
+        if (!("sub".equals(constraint.description()) && constraint instanceof FunctionalConstraint)) {
             return;
         }
         final FunctionalConstraint subConstraint = (FunctionalConstraint) constraint;
-        final CSPOMVariable result = subConstraint.getResultVariable();
-        if (!result.isAuxiliary() || result.getConstraints().size() != 2) {
+        final CSPOMVariable<?> result = subConstraint.result();
+        if (!result.auxiliary() || result.constraints().size() != 2) {
             return;
         }
         final CSPOMConstraint geConstraint = geConstraint(result);
@@ -58,7 +58,7 @@ public final class DiffGe implements ConstraintCompiler {
         final CSPOMConstraint geConstraint;
         try {
             geConstraint = Iterables.find(variable.getConstraints(),
-                    AbstractConstraint.matchesDescription("ge"));
+                    CSPOMConstraint.matchesDescription("ge"));
         } catch (NoSuchElementException e) {
             return null;
         }

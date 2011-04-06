@@ -3,7 +3,7 @@ package cspom.variable
 class ExtensiveDomain[T](val values: Set[T]) extends CSPOMDomain[T] {
   override val hashCode = values.hashCode
 
-  override def equals(obj: Object) = obj match {
+  override def equals(obj: Any) = obj match {
     case ed: ExtensiveDomain[T] => ed.values == values
     case _ => false
   }

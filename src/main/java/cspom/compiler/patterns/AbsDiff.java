@@ -1,14 +1,10 @@
 package cspom.compiler.patterns;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 
 import cspom.CSPOM;
-import cspom.constraint.AbstractConstraint;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.variable.CSPOMVariable;
@@ -31,12 +27,12 @@ public final class AbsDiff implements ConstraintCompiler {
 
     @Override
     public void compile(final CSPOMConstraint constraint) {
-        if (!("sub".equals(constraint.getDescription()) && constraint instanceof FunctionalConstraint)) {
+        if (!("sub".equals(constraint.description()) && constraint instanceof FunctionalConstraint)) {
             return;
         }
         final FunctionalConstraint subConstraint = (FunctionalConstraint) constraint;
-        final CSPOMVariable result = subConstraint.getResultVariable();
-        if (!result.isAuxiliary() || result.getConstraints().size() != 2) {
+        final CSPOMVariable result = subConstraint.resultVariable();
+        if (!result.auxiliary() || result.constraints().size() != 2) {
             return;
         }
         final FunctionalConstraint absConstraint = absConstraint(result);
@@ -46,12 +42,12 @@ public final class AbsDiff implements ConstraintCompiler {
         problem.removeConstraint(subConstraint);
         problem.removeConstraint(absConstraint);
         problem.addConstraint(new FunctionalConstraint(absConstraint
-                .getResultVariable(), "absdiff", null, subConstraint
-                .getArguments()));
+                .resultVariable(), "absdiff", null, subConstraint
+                .arguments()));
     }
 
     private static FunctionalConstraint absConstraint(
-            final CSPOMVariable variable) {
+            final CSPOMVariable<?> variable) {
         
         final FunctionalConstraint fConstraint;
         try {
@@ -61,7 +57,7 @@ public final class AbsDiff implements ConstraintCompiler {
         } catch (NoSuchElementException e) {
             return null;
         }
-        if (Iterables.getOnlyElement(fConstraint.getArguments()) == variable) {
+        if (Iterables.getOnlyElement(fConstraint.arguments()) == variable) {
             return fConstraint;
         }
         return null;

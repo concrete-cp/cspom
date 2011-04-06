@@ -45,7 +45,7 @@ public final class CNFParser {
                     parameter = true;
                     final int nbVars = Integer.valueOf(matcher.group(1));
                     for (int i = 1; i <= nbVars; i++) {
-                        problem.addVariable(new CSPOMVariable("V" + i,
+                        problem.addVariable(CSPOMVariable.ofBool("V" + i,
                                 UnknownBooleanDomain$.MODULE$));
                     }
                     continue;
@@ -75,9 +75,8 @@ public final class CNFParser {
         final StringBuilder parameters = new StringBuilder();
         parameters.append("or{");
 
-        final Iterator<Integer> i = currentClause.iterator();
-
-        for (;;) {
+    
+        for (final Iterator<Integer> i = currentClause.iterator();;) {
             int v = i.next();
             clause.append('V').append(Math.abs(v));
             if (v > 0) {

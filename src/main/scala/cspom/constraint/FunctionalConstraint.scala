@@ -2,13 +2,16 @@ package cspom.constraint
 
 import cspom.variable.CSPOMVariable
 
-class FunctionalConstraint(val result: CSPOMVariable,
-  function: String, parameters: String, val arguments: List[CSPOMVariable])
-  extends CSPOMConstraint(function, parameters, result :: arguments) {
+class FunctionalConstraint(val result: CSPOMVariable[_],
+  function: String, parameters: String, val arguments: List[CSPOMVariable[_]])
+  extends CSPOMConstraint(description = function, parameters = parameters, scope = result :: arguments) {
   require(!arguments.isEmpty, "Must have at least one argument")
 
-  def this(result: CSPOMVariable, function: String, parameters: String,
-    arguments: CSPOMVariable*) = this(result, function, parameters,
+  def this(result: CSPOMVariable[_], function: String, parameters: String, arguments: Array[CSPOMVariable[_]]) =
+    this(result, function, parameters, arguments.toList)
+
+  def this(result: CSPOMVariable[_], function: String, parameters: String,
+    arguments: CSPOMVariable[_]*) = this(result, function, parameters,
     arguments.toList)
 
   override def toString = {
@@ -20,13 +23,13 @@ class FunctionalConstraint(val result: CSPOMVariable,
     arguments.addString(stb, "(", ", ", ")").toString
   }
 
-  override def replaceVar(which: CSPOMVariable, by: CSPOMVariable) = {
+  override def replaceVar(which: CSPOMVariable[_], by: CSPOMVariable[_]) = {
     if (which == result) {
       new FunctionalConstraint(by,
         function, parameters, arguments)
     } else {
       new FunctionalConstraint(result,
-        function, parameters, arguments.map { case which => by; case x => x })
+        function, parameters, arguments.map((v: CSPOMVariable[_]) => v match { case x if x == which => by; case _ => v }))
     }
   }
   //

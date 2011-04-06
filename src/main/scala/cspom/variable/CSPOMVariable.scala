@@ -100,4 +100,6 @@ object CSPOMVariable {
   def ofBool(boolean: Boolean) =
     new CSPOMVariable[Boolean](domain = BooleanDomain.valueOf(boolean));
 
+  def ofBool(name: String, boolean: Boolean) = 
+      new CSPOMVariable[Boolean](name = name, domain = BooleanDomain.valueOf(boolean));
 }

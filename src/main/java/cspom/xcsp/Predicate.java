@@ -148,9 +148,9 @@ public final class Predicate {
      *         scope.
      */
     private static int seekVariable(final String name,
-            final CSPOMVariable[] scope) {
+            final CSPOMVariable<?>[] scope) {
         for (int i = scope.length; --i >= 0;) {
-            if (name.equals(scope[i].getName())) {
+            if (name.equals(scope[i].name())) {
                 return i;
             }
         }
@@ -204,7 +204,7 @@ public final class Predicate {
      *             If the given parameter is invalid.
      */
     private void controlParameter(final String parameter,
-            final CSPOMVariable[] scope) throws PredicateParseException {
+            final CSPOMVariable<?>[] scope) throws PredicateParseException {
         if (PredicateScanner.INTEGER.matcher(parameter).matches()) {
             return;
         }

@@ -22,6 +22,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import scala.collection.JavaConversions;
+import scala.collection.immutable.Set;
+
 import cspom.CSPOM;
 import cspom.CSPParseException;
 import cspom.compiler.PredicateParseException;
@@ -160,13 +163,15 @@ public final class XCSPParser {
 
         for (String currentValue : listOfValues) {
             if (currentValue.contains("..")) {
-                values.addAll(IntInterval.valueOf(currentValue).getValues());
+                values.addAll(JavaConversions
+                        .asJavaCollection((Set<Integer>) IntInterval.valueOf(
+                                currentValue).getValues()));
             } else {
                 values.add(Integer.parseInt(currentValue.trim()));
             }
         }
 
-        return new ExtensiveDomain<Integer>(values);
+        return ExtensiveDomain.of(JavaConversions.asScalaBuffer(values));
     }
 
     /**
@@ -189,9 +194,9 @@ public final class XCSPParser {
             final String name = variableAttributes.getNamedItem("name")
                     .getTextContent();
             try {
-                problem.addVariable(new CSPOMVariable(name, domains
+                problem.addVariable(new CSPOMVariable<Integer>(name, domains
                         .get(variableAttributes.getNamedItem("domain")
-                                .getTextContent())));
+                                .getTextContent()), false));
             } catch (IllegalStateException e) {
                 throw new CSPParseException("Could not add variable " + name, e);
             }
