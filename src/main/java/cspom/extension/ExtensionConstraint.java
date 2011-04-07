@@ -3,7 +3,7 @@ package cspom.extension;
 import java.util.HashMap;
 import java.util.Map;
 
-import cspom.constraint.AbstractConstraint;
+import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.PermutableConstraint;
 import cspom.variable.CSPOMVariable;
 

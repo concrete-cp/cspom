@@ -9,6 +9,7 @@ abstract class CSPOMConstraint(
   val scope: List[CSPOMVariable[_]]) extends Iterable[CSPOMVariable[_]] {
 
   require(!scope.isEmpty)
+
   val arity = scope.size
   override val hashCode = 961 * parameters.hashCode + 31 * scope.hashCode + description.hashCode
   val scopeSet = scope.toSet
@@ -19,11 +20,6 @@ abstract class CSPOMConstraint(
 
   def this(desc: String, params: String, scp: CSPOMVariable[_]*) =
     this(description = desc, parameters = params, scope = scp.toList);
-
-  //    @Override
-  //    public final Integer getPosition(final CSPOMVariable[_] variable) {
-  //        return positions.get(variable);
-  //    }
 
   def involves(variable: CSPOMVariable[_]) = scopeSet.contains(variable)
 
@@ -52,18 +48,6 @@ abstract class CSPOMConstraint(
   //        } while (pos >= 0);
   //        computeHashCode();
   //    }
-  //
-  //    public final String getParameters() {
-  //        return parameters;
-  //    }
-  //
-  //    public static final Function<CSPOMConstraint, String> CONSTRAINT_DESCRIPTION = new Function<CSPOMConstraint, String>() {
-  //        @Override
-  //        public String apply(final CSPOMConstraint input) {
-  //            return input.toString();
-  //        }
-  //    };
-  //
 }
 
 object CSPOMConstraint {
@@ -71,7 +55,7 @@ object CSPOMConstraint {
     override def apply(input: CSPOMConstraint) = input.toString;
   }
 
-  def matchesDescription(description: String) = Predicates.compose(Predicates.equalTo(description),
+  def matchesDescription(description: String) = Predicates.compose(Predicates equalTo description,
     CONSTRAINT_DESCRIPTION);
 
 }

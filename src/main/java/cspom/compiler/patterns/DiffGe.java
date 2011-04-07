@@ -6,7 +6,6 @@ import java.util.NoSuchElementException;
 import com.google.common.collect.Iterables;
 
 import cspom.CSPOM;
-import cspom.constraint.AbstractConstraint;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.FunctionalConstraint;
 import cspom.constraint.GeneralConstraint;

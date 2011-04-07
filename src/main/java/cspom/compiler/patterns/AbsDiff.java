@@ -31,7 +31,7 @@ public final class AbsDiff implements ConstraintCompiler {
             return;
         }
         final FunctionalConstraint subConstraint = (FunctionalConstraint) constraint;
-        final CSPOMVariable result = subConstraint.resultVariable();
+        final CSPOMVariable result = subConstraint.result();
         if (!result.auxiliary() || result.constraints().size() != 2) {
             return;
         }
@@ -42,7 +42,7 @@ public final class AbsDiff implements ConstraintCompiler {
         problem.removeConstraint(subConstraint);
         problem.removeConstraint(absConstraint);
         problem.addConstraint(new FunctionalConstraint(absConstraint
-                .resultVariable(), "absdiff", null, subConstraint
+                .result(), "absdiff", null, subConstraint
                 .arguments()));
     }
 
@@ -52,8 +52,8 @@ public final class AbsDiff implements ConstraintCompiler {
         final FunctionalConstraint fConstraint;
         try {
             fConstraint = (FunctionalConstraint) Iterables.find(
-                    variable.getConstraints(),
-                    FunctionalConstraint.matchesDescription("abs"));
+								JavaConversions.asJavaCollection(variable.constraints()),
+                    CSPOMConstraint.matchesDescription("abs"));
         } catch (NoSuchElementException e) {
             return null;
         }
