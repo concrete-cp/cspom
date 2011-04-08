@@ -2,10 +2,10 @@ package cspom.variable
 
 import scala.collection.immutable.List
 import scala.math.{ max, min }
-class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
+class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[java.lang.Integer] {
   require(ub > lb);
 
-  val getValues = List.range(lb, ub, 1).toSet
+  val getValues = List.range(lb, ub, 1) map { (x: Int) => Int.box(x) }
 
   def intersect(domain: CSPOMDomain[_]): CSPOMDomain[_] = domain match {
     case m: IntInterval =>

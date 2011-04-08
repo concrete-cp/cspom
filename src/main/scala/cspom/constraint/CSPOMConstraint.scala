@@ -33,21 +33,9 @@ abstract class CSPOMConstraint(
 
   override def iterator = scope.iterator
 
-  def replaceVar(which: CSPOMVariable[_], by: CSPOMVariable[_]);
-  //    @Override
-  //    public void replaceVar(final CSPOMVariable merged, final CSPOMVariable var) {
-  //        int pos = scope.indexOf(merged);
-  //        if (pos < 0) {
-  //            throw new IllegalArgumentException(merged + " not in scope");
-  //        }
-  //        do {
-  //            scope.set(pos, var);
-  //            positions.remove(merged);
-  //            positions.put(var, pos);
-  //            pos = scope.indexOf(merged);
-  //        } while (pos >= 0);
-  //        computeHashCode();
-  //    }
+  def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]);
+  
+  def evaluate(t: Any*): Boolean;
 }
 
 object CSPOMConstraint {
@@ -60,6 +48,4 @@ object CSPOMConstraint {
 
 }
 
-trait PermutableConstraint extends CSPOMConstraint {
-  def standardize(scope: CSPOMVariable[_]*): PermutableConstraint
-}
+

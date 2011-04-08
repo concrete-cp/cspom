@@ -1,6 +1,6 @@
 package cspom.variable
 
-class ExtensiveDomain[T](val values: Set[T]) extends CSPOMDomain[T] {
+class ExtensiveDomain[T](val values: List[T]) extends CSPOMDomain[T] {
   override val hashCode = values.hashCode
 
   override def equals(obj: Any) = obj match {
@@ -19,5 +19,5 @@ class ExtensiveDomain[T](val values: Set[T]) extends CSPOMDomain[T] {
 }
 
 object ExtensiveDomain {
-  def of[T](values: T*) = new ExtensiveDomain(values.toSet)
+  def of[T](values: T*) = new ExtensiveDomain(values.toList)
 }

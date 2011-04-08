@@ -1,10 +1,14 @@
 package cspom.constraint
 
+import com.google.common.base.Predicates
 import cspom.variable.CSPOMVariable
+import cspom.{ Evaluator, Loggable }
+import javax.script.ScriptException
 
 class FunctionalConstraint(val result: CSPOMVariable[_],
   function: String, parameters: String, val arguments: List[CSPOMVariable[_]])
-  extends CSPOMConstraint(description = function, parameters = parameters, scope = result :: arguments) {
+  extends CSPOMConstraint(description = function, parameters = parameters, scope = result :: arguments)
+  with Loggable {
   require(!arguments.isEmpty, "Must have at least one argument")
 
   def this(result: CSPOMVariable[_], function: String, parameters: String, arguments: Array[CSPOMVariable[_]]) =
@@ -23,56 +27,39 @@ class FunctionalConstraint(val result: CSPOMVariable[_],
     arguments.addString(stb, "(", ", ", ")").toString
   }
 
-  override def replaceVar(which: CSPOMVariable[_], by: CSPOMVariable[_]) = {
+  override def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
     if (which == result) {
-      new FunctionalConstraint(by,
-        function, parameters, arguments)
+      new FunctionalConstraint(by, function, parameters, arguments)
     } else {
-      new FunctionalConstraint(result,
-        function, parameters, arguments.map((v: CSPOMVariable[_]) => v match { case x if x == which => by; case _ => v }))
+      new FunctionalConstraint(result, function, parameters,
+        arguments.map((v: CSPOMVariable[_]) => if (v == which) by else v))
     }
   }
-  //
-  //    @Override
-  //    public void replaceVar(final CSPOMVariable merged, final CSPOMVariable var) {
-  //        super.replaceVar(merged, var);
-  //        if (result == merged) {
-  //            result = var;
-  //        }
-  //        for (final ListIterator<CSPOMVariable> itr = arguments.listIterator(); itr
-  //                .hasNext();) {
-  //            if (itr.next() == merged) {
-  //                itr.set(var);
-  //            }
-  //        }
-  //    }
-  //
-  //    @Override
-  //    public boolean evaluate(final Object[] tuple) {
-  //        final StringBuilder stb = new StringBuilder();
-  //        stb.append(tuple[0]).append(" == ").append(getDescription())
-  //                .append('(');
-  //        Joiner.on(", ").appendTo(stb, Iterables.skip(Arrays.asList(tuple), 1));
-  //
-  //        if (getParameters() != null) {
-  //            stb.append(", ").append(getParameters());
-  //        }
-  //
-  //        try {
-  //            return Evaluator.evaluate(stb.append(")").toString());
-  //        } catch (ScriptException e) {
-  //            LOGGER.throwing(FunctionalConstraint.class.getName(), "evaluate", e);
-  //            throw new IllegalStateException(e);
-  //        }
-  //
-  //    }
-  //
-  //    public static Predicate<CSPOMConstraint> matchesDescription(
-  //            final String description) {
-  //        return Predicates.and(
-  //                AbstractConstraint.matchesDescription(description),
-  //                Predicates.instanceOf(FunctionalConstraint.class));
-  //    }
-  //}
+
+  override def evaluate(tuple: Any*): Boolean = {
+    val stb = new StringBuilder();
+    stb.append(tuple(0)).append(" == ").append(description)
+      .append('(');
+    tuple.tail.addString(stb, ", ");
+
+    if (parameters != null) {
+      stb.append(", ").append(parameters);
+    }
+
+    try {
+      Evaluator.evaluate(stb.append(")").toString());
+    } catch {
+      case e: ScriptException => 
+        throwing(classOf[Evaluator].getName, "evaluate", e);
+	throw new IllegalStateException(e);
+    }
+
+  }
 
 }
+
+// object FunctionalConstraint {
+//   def matchesDescription(description: String) = Predicates.and(
+//     CSPOMConstraint.matchesDescription(description),
+//     Predicates.instanceOf(classOf[FunctionalConstraint]));
+// }

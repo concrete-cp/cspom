@@ -5,7 +5,7 @@ final class Constant[T](val value: T) extends CSPOMDomain[T] {
 
   override def toString = value.toString
 
-  def getValues = Set(value)
+  def getValues = List(value)
 
   override def getSize = 1
 

@@ -3,7 +3,6 @@ package cspom.variable;
 import cspom.constraint.CSPOMConstraint
 import scala.collection.mutable.HashSet
 
-
 /**
  * This class defines and implements CSP variables.
  *
@@ -81,7 +80,7 @@ object CSPOMVariable {
    *            Upper bound of the domain
    */
   def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int) =
-    new CSPOMVariable[Int](name, new IntInterval(lb, ub));
+    new CSPOMVariable(name, new IntInterval(lb, ub));
 
   /**
    * Constructs a new variable with given name. Domain is defined by a list of
@@ -94,12 +93,24 @@ object CSPOMVariable {
    * @param values
    *            List of values defining the domain.
    */
-  def of[T](values: T*) =
-    new CSPOMVariable[T](domain = new ExtensiveDomain[T](values.toSet))
+  def of[T](values: T*) = ofList(values.toList)
+
+  def of[T](name: String, values: T*) = ofList(values.toList)
+
+  def ofList[T](values: List[T]) =
+    new CSPOMVariable[T](domain = new ExtensiveDomain[T](values.toList))
+
+  def ofList[T](name: String, values: List[T]) =
+    new CSPOMVariable[T](name = name, domain = new ExtensiveDomain[T](values.toList))
 
   def ofBool(boolean: Boolean) =
     new CSPOMVariable[Boolean](domain = BooleanDomain.valueOf(boolean));
 
-  def ofBool(name: String, boolean: Boolean) = 
-      new CSPOMVariable[Boolean](name = name, domain = BooleanDomain.valueOf(boolean));
+  def ofBool(name: String, boolean: Boolean) =
+    new CSPOMVariable[Boolean](name = name, domain = BooleanDomain.valueOf(boolean));
+
+  def bool() = new CSPOMVariable[Boolean](domain = UnknownBooleanDomain)
+
+  def bool(name: String) =
+    new CSPOMVariable[Boolean](name = name, domain = UnknownBooleanDomain)
 }
