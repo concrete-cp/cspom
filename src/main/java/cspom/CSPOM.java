@@ -34,6 +34,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import scala.collection.JavaConversions;
+
 import org.apache.tools.bzip2.CBZip2InputStream;
 
 import com.google.common.base.Function;
@@ -195,7 +197,7 @@ public final class CSPOM {
     }
 
     public void removeConstraint(final CSPOMConstraint c) {
-        for (CSPOMVariable v : c) {
+        for (CSPOMVariable v : JavaConversions.asJavaIterable(c)) {
             v.removeConstraint(c);
         }
         constraints.remove(c);
@@ -203,8 +205,8 @@ public final class CSPOM {
     }
 
     public void removeVariable(final CSPOMVariable v) {
-        if (v.getConstraints().isEmpty()) {
-            variables.remove(v.getName());
+        if (v.constraints().isEmpty()) {
+            variables.remove(v.name());
         } else {
             throw new IllegalArgumentException(v
                     + " is still implied by constraints");
@@ -228,8 +230,8 @@ public final class CSPOM {
      *             If a variable with the same name already exists.
      */
     public void addVariable(final CSPOMVariable variable) {
-        if (variables.put(variable.getName(), variable) != null) {
-            throw new IllegalArgumentException(variable.getName()
+        if (variables.put(variable.name(), variable) != null) {
+            throw new IllegalArgumentException(variable.name()
                     + ": a variable of the same name already exists");
         }
 
@@ -246,7 +248,7 @@ public final class CSPOM {
             throw new IllegalArgumentException(
                     "This constraint already belongs to the problem");
         }
-        for (CSPOMVariable v : constraint) {
+        for (CSPOMVariable v : JavaConversions.asJavaIterable(constraint)) {
             v.registerConstraint(constraint);
         }
     }
@@ -268,9 +270,7 @@ public final class CSPOM {
      * @return The added variable.
      */
     public CSPOMVariable var(final int lb, final int ub) {
-        final CSPOMVariable variable = new CSPOMVariable(lb, ub);
-        addVariable(variable);
-        return variable;
+        return var(VariableNameGenerator.generate(), lb, ub);
     }
 
     /**
@@ -287,32 +287,30 @@ public final class CSPOM {
      *             if a variable of the same name already exists
      */
     public CSPOMVariable var(final String name, final int lb, final int ub) {
-        final CSPOMVariable variable = new CSPOMVariable(name, lb, ub);
+        final CSPOMVariable variable = CSPOMVariable.ofInterval(name, lb, ub);
         addVariable(variable);
         return variable;
     }
 
     public CSPOMVariable var(final List<Integer> values) {
-        final CSPOMVariable variable = new CSPOMVariable(values);
-        addVariable(variable);
-        return variable;
+        return var(VariableNameGenerator.generate(), values);
     }
 
     public CSPOMVariable var(final String name, final List<Integer> values) {
-        final CSPOMVariable variable = new CSPOMVariable(name, values);
+        final CSPOMVariable variable = CSPOMVariable.of(name, JavaConversions.asScalaIterable(values));
         addVariable(variable);
         return variable;
     }
 
     public CSPOMVariable boolVar(final String name) {
-        final CSPOMVariable variable = new CSPOMVariable(name,
+        final CSPOMVariable variable = CSPOMVariable.ofBool(name,
                 UnknownBooleanDomain$.MODULE$);
         addVariable(variable);
         return variable;
     }
 
     public CSPOMVariable boolVar() {
-        final CSPOMVariable variable = new CSPOMVariable(
+        final CSPOMVariable variable = CSPOMVariable.ofBool(
                 UnknownBooleanDomain$.MODULE$);
         addVariable(variable);
         return variable;
@@ -411,9 +409,9 @@ public final class CSPOM {
                 gen++;
             } else if (c.getArity() == 2) {
                 stb.append("edge [\n");
-                stb.append("source \"").append(c.getScope().get(0))
+                stb.append("source \"").append(c.scope().get(0))
                         .append("\"\n");
-                stb.append("target \"").append(c.getScope().get(1))
+                stb.append("target \"").append(c.scope().get(1))
                         .append("\"\n");
                 stb.append("label \"").append(c.getDescription())
                         .append("\"\n");
@@ -429,7 +427,7 @@ public final class CSPOM {
             final Map<String, Number> solution) {
         final Collection<CSPOMConstraint> failed = new ArrayList<CSPOMConstraint>();
         for (CSPOMConstraint c : constraints) {
-            final Number[] tuple = Lists.transform(c.getScope(),
+            final Number[] tuple = Lists.transform(JavaConversions.asJavaList(c.scope()),
                     new Function<CSPOMVariable, Number>() {
                         @Override
                         public Number apply(final CSPOMVariable input) {

@@ -1,6 +1,7 @@
 package cspom.compiler.patterns;
 
 import java.util.NoSuchElementException;
+import scala.collection.JavaConversions;
 
 import com.google.common.collect.Iterables;
 
@@ -26,7 +27,7 @@ public final class AbsDiff implements ConstraintCompiler {
     }
 
     @Override
-    public void compile(final CSPOMConstraint constraint) {
+	public void compile(final CSPOMConstraint constraint) {
         if (!("sub".equals(constraint.description()) && constraint instanceof FunctionalConstraint)) {
             return;
         }
@@ -42,22 +43,22 @@ public final class AbsDiff implements ConstraintCompiler {
         problem.removeConstraint(subConstraint);
         problem.removeConstraint(absConstraint);
         problem.addConstraint(new FunctionalConstraint(absConstraint
-                .result(), "absdiff", null, subConstraint
-                .arguments()));
+						       .result(), "absdiff", null, subConstraint
+						       .arguments()));
     }
 
     private static FunctionalConstraint absConstraint(
-            final CSPOMVariable<?> variable) {
+						      final CSPOMVariable<?> variable) {
         
         final FunctionalConstraint fConstraint;
         try {
             fConstraint = (FunctionalConstraint) Iterables.find(
-								JavaConversions.asJavaCollection(variable.constraints()),
-                    CSPOMConstraint.matchesDescription("abs"));
+								JavaConversions.asJavaIterable(variable.constraints()),
+								CSPOMConstraint.matchesDescription("abs"));
         } catch (NoSuchElementException e) {
             return null;
         }
-        if (Iterables.getOnlyElement(fConstraint.arguments()) == variable) {
+        if (Iterables.getOnlyElement(JavaConversions.asJavaIterable(fConstraint.arguments())) == variable) {
             return fConstraint;
         }
         return null;
