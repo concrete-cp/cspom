@@ -173,7 +173,7 @@ public final class Predicate {
      * 
      */
     public String applyParameters(final String constraintParameters,
-            final CSPOMVariable[] scope) throws PredicateParseException {
+            final CSPOMVariable<?>[] scope) throws PredicateParseException {
         final String[] stringParameters = constraintParameters.trim().split(
                 " +");
 

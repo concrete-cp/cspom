@@ -28,7 +28,7 @@ final class BooleanTest {
     assertSame(FalseDomain.getBoolean, false);
   }
 
-  @Test(expected = classOf[IllegalStateException])
+  @Test(expected = classOf[UnsupportedOperationException])
   def testGetBooleanDomain() {
     UnknownBooleanDomain.getBoolean;
   }

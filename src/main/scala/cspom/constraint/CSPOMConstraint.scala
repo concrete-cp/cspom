@@ -1,25 +1,26 @@
 package cspom.constraint
 
+import com.google.common.base.Predicate
 import com.google.common.base.Predicates
 import cspom.variable.CSPOMVariable
 abstract class CSPOMConstraint(
   val name: String = null,
   val description: String,
-  val parameters: String,
-  val scope: List[CSPOMVariable[_]]) extends Iterable[CSPOMVariable[_]] {
+  val parameters: String) extends Iterable[CSPOMVariable[_]] {
 
-  require(!scope.isEmpty)
-
+  def scope: List[CSPOMVariable[_]]
   val arity = scope.size
-  override val hashCode = 961 * parameters.hashCode + 31 * scope.hashCode + description.hashCode
+  override val hashCode = {
+    var hash = 31 * scope.hashCode + description.hashCode
+    if (parameters != null) {
+      hash *= 31
+      hash += parameters.hashCode
+    }
+    hash
+  }
+  
   val scopeSet = scope.toSet
   //TODO: val positions
-
-  def this(name: String, description: String, parameters: String, scope: CSPOMVariable[_]*) =
-    this(name, description, parameters, scope.toList);
-
-  def this(desc: String, params: String, scp: CSPOMVariable[_]*) =
-    this(description = desc, parameters = params, scope = scp.toList);
 
   def involves(variable: CSPOMVariable[_]) = scopeSet.contains(variable)
 
@@ -34,18 +35,18 @@ abstract class CSPOMConstraint(
   override def iterator = scope.iterator
 
   def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]);
-  
+
   def evaluate(t: Any*): Boolean;
 }
-
-object CSPOMConstraint {
-  val CONSTRAINT_DESCRIPTION = new com.google.common.base.Function[CSPOMConstraint, String] {
-    override def apply(input: CSPOMConstraint) = input.toString;
-  }
-
-  def matchesDescription(description: String) = Predicates.compose(Predicates equalTo description,
-    CONSTRAINT_DESCRIPTION);
-
-}
-
+//
+//object CSPOMConstraint {
+//  val CONSTRAINT_DESCRIPTION = new com.google.common.base.Function[CSPOMConstraint, String] {
+//    override def apply(input: CSPOMConstraint) = input.toString;
+//  }
+//
+//  def matchesDescription(description: String): Predicate[CSPOMConstraint] =
+//    Predicates.compose(Predicates.equalTo(description),
+//      CONSTRAINT_DESCRIPTION);
+//
+//}
 

@@ -41,7 +41,7 @@ class CSPOMVariable[T](
    *            The constraint involving the variable.
    */
   def registerConstraint(constraint: CSPOMConstraint) {
-    assume(constraint.involves(this));
+    assume(constraint.involves(this), constraint + " does not involve " + this);
     constraints.add(constraint);
   }
 
