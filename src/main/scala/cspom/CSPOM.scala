@@ -1,5 +1,6 @@
 package cspom
 
+import scala.collection.JavaConversions
 import constraint.CSPOMConstraint
 import cspom.compiler.{ PredicateParseException, ConstraintParser }
 import cspom.constraint.GeneralConstraint
@@ -44,7 +45,7 @@ final class CSPOM {
   /**
    * @return The variables of this problem.
    */
-  val variables = variableMap.values;
+  val variables = JavaConversions.asJavaIterable(variableMap.values);
 
   /**
    * @param variableName
@@ -52,12 +53,14 @@ final class CSPOM {
    * @return The variable with the corresponding name.
    */
   def variable(name: String) = variableMap(name);
-  
+
   /**
    * Collection of all constraints of the problem.
    */
-  val constraints = new LinkedHashSet[CSPOMConstraint]
+  private val _constraints = new LinkedHashSet[CSPOMConstraint]
 
+  val constraints = JavaConversions.asJavaSet(_constraints)
+  
   /**
    * The constraint compiler used by this CSPOM instance.
    */
@@ -95,12 +98,12 @@ final class CSPOM {
     assume(constraints.add(constraint),
       "This constraint already belongs to the problem");
 
-    constraint foreach { _.registerConstraint(constraint) }
+    for (v <- constraint) { v.registerConstraint(constraint) }
     constraint
   }
 
   def removeConstraint(c: CSPOMConstraint): Unit = {
-    c foreach { _.removeConstraint(c) }
+    for (v <- c) { v.removeConstraint(c) }
     constraints.remove(c)
   }
 
@@ -163,17 +166,17 @@ final class CSPOM {
   def le(v0: CSPOMVariable[Int], v1: CSPOMVariable[Int]) =
     addConstraint(new GeneralConstraint("le", v0, v1));
 
-
-
   override def toString = {
     val stb = new StringBuilder
 
-    variableMap.values foreach { v =>
+    for (v <- variableMap.values) {
       stb append v append " = " append
         { if (v.domain == null) '?' else v.domain } append '\n'
     }
 
-    constraints foreach { stb append _ append '\n' }
+    for (c <- _constraints) {
+      stb append c append '\n'
+    }
     stb.toString
   }
 
@@ -189,7 +192,7 @@ final class CSPOM {
     stb.append("graph [\n");
     stb.append("directed 0\n");
 
-    variableMap.values foreach { v =>
+    for (v <- variableMap.values) {
       stb.append("node [\n");
       stb.append("id \"").append(v.name).append("\"\n");
       stb.append("label \"").append(v.name).append("\"\n");
@@ -197,7 +200,7 @@ final class CSPOM {
     }
 
     var gen = 0;
-    constraints foreach { c =>
+    for (c <- _constraints) {
       if (c.arity > 2) {
         stb.append("node [\n");
         stb.append("id \"cons").append(gen).append("\"\n");
@@ -207,7 +210,7 @@ final class CSPOM {
         stb.append("]\n");
         stb.append("]\n");
 
-        c foreach { v =>
+        for (v <- c) {
           stb.append("edge [\n");
           stb.append("source \"cons").append(gen).append("\"\n");
           stb.append("target \"").append(v.name).append("\"\n");
@@ -226,13 +229,13 @@ final class CSPOM {
   }
 
   def control(solution: Map[String, Number]) = {
-    constraints filter { c =>
+    _constraints filter { c =>
       !c.evaluate(c.scope map { v => solution.get(v.name) })
     }
   }
 
   def controlInt(solution: Map[String, Int]) = {
-    constraints filter { c =>
+    _constraints filter { c =>
       !c.evaluate(c.scope map { v => solution.get(v.name) })
     }
   }
