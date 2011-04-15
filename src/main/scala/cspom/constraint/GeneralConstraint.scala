@@ -5,18 +5,17 @@ import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
 
 class GeneralConstraint(
-  name: String = null,
   description: String,
   parameters: String = null,
-  val scope: List[CSPOMVariable[_]])
-  extends CSPOMConstraint(name, description, parameters) {
+  val scope: Seq[CSPOMVariable[_]])
+  extends CSPOMConstraint(description, parameters) {
 
-  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
-    this(description = description, parameters = parameters,
-      scope = scope.toList)
+  //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
+  //    this(description = description, parameters = parameters,
+  //      scope = scope.toList)
 
-  def this(description: String, scope: CSPOMVariable[_]*) =
-    this(description = description, scope = scope.toList)
+//  def this(description: String, scope: CSPOMVariable[_]*) =
+//    this(description = description, scope = scope.toList)
 
   override def toString = {
     val stb = new StringBuilder
@@ -53,7 +52,7 @@ class GeneralConstraint(
   }
 
   override def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
-    new GeneralConstraint(name, description, parameters,
+    new GeneralConstraint(description, parameters,
       scope map { v => if (v == which) by else v })
   }
 

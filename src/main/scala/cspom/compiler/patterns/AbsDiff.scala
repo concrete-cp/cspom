@@ -1,14 +1,8 @@
 package cspom.compiler.patterns
 
+import _root_.cspom.constraint.{ CSPOMConstraint, FunctionalConstraint }
 import _root_.cspom.variable.CSPOMVariable
-import _root_.cspom.constraint.FunctionalConstraint
-import _root_.cspom.constraint.CSPOMConstraint
 import _root_.cspom.CSPOM
-import java.util.NoSuchElementException;
-
-import scala.collection.JavaConversions;
-
-import com.google.common.collect.Iterables;
 
 /**
  * If constraint is the sub() constraint, converts a=sub(y,z), x=abs(a) to
@@ -30,15 +24,15 @@ class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
 
               problem.removeConstraint(subConstraint);
               problem.removeConstraint(c);
-              problem.addConstraint(new FunctionalConstraint(null, fc.result, "absdiff", null, subConstraint.arguments));
+              problem.addConstraint(new FunctionalConstraint(
+                result = fc.result,
+                function = "absdiff",
+                arguments = subConstraint.arguments));
 
             }
-
           }
         }
-
       }
-
     }
   }
 }

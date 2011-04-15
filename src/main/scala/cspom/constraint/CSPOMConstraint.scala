@@ -4,11 +4,10 @@ import com.google.common.base.Predicate
 import com.google.common.base.Predicates
 import cspom.variable.CSPOMVariable
 abstract class CSPOMConstraint(
-  val name: String = null,
   val description: String,
   val parameters: String) extends Iterable[CSPOMVariable[_]] {
 
-  def scope: List[CSPOMVariable[_]]
+  def scope: Seq[CSPOMVariable[_]]
   val arity = scope.size
   override val hashCode = {
     var hash = 31 * scope.hashCode + description.hashCode

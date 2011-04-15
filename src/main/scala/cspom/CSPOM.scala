@@ -60,7 +60,7 @@ final class CSPOM {
   private val _constraints = new LinkedHashSet[CSPOMConstraint]
 
   val constraints = JavaConversions.asJavaSet(_constraints)
-  
+
   /**
    * The constraint compiler used by this CSPOM instance.
    */
@@ -164,7 +164,9 @@ final class CSPOM {
   }
 
   def le(v0: CSPOMVariable[Int], v1: CSPOMVariable[Int]) =
-    addConstraint(new GeneralConstraint("le", v0, v1));
+    addConstraint(new GeneralConstraint(
+        description = "le", 
+        scope = List(v0, v1)));
 
   override def toString = {
     val stb = new StringBuilder

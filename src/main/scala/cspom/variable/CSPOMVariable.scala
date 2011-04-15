@@ -9,7 +9,7 @@ import scala.collection.mutable.HashSet
  * @author vion
  *
  */
-class CSPOMVariable[T](
+final class CSPOMVariable[T](
   val name: String = VariableNameGenerator.generate,
   var domain: CSPOMDomain[T] = null,
   val auxiliary: Boolean = false) {
@@ -113,4 +113,6 @@ object CSPOMVariable {
 
   def bool(name: String) =
     new CSPOMVariable[Boolean](name = name, domain = UnknownBooleanDomain)
+
+  def constant[T](value: T, aux: Boolean = false) = new CSPOMVariable[T](domain = new Constant(value), auxiliary = aux)
 }

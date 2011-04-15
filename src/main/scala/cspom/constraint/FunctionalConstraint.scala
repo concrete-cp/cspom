@@ -6,15 +6,11 @@ import cspom.{ Evaluator, Loggable }
 import javax.script.ScriptException
 
 class FunctionalConstraint(
-  name: String = null,
   val result: CSPOMVariable[_],
   val function: String,
-  parameters: String,
+  parameters: String = null,
   val arguments: List[CSPOMVariable[_]])
-  extends CSPOMConstraint(
-    name = name,
-    description = function,
-    parameters = parameters)
+  extends CSPOMConstraint(function, parameters)
   with Loggable {
   require(!arguments.isEmpty, "Must have at least one argument")
 
@@ -36,7 +32,7 @@ class FunctionalConstraint(
 
   override def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
 
-    new FunctionalConstraint(name, { if (which == result) by else result },
+    new FunctionalConstraint({ if (which == result) by else result },
       function, parameters,
       arguments map { v => if (v == which) by else v })
 
