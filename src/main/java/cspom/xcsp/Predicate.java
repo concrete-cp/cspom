@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.ListIterator;
 import cspom.compiler.PredicateParseException;
 import cspom.compiler.PredicateScanner;
 import cspom.variable.CSPOMVariable;
@@ -148,9 +148,11 @@ public final class Predicate {
      *         scope.
      */
     private static int seekVariable(final String name,
-            final CSPOMVariable<?>[] scope) {
-        for (int i = scope.length; --i >= 0;) {
-            if (name.equals(scope[i].name())) {
+            final List<CSPOMVariable<?>> scope) {
+        for (ListIterator<CSPOMVariable<?>> itr = scope.listIterator(); itr.hasNext();) {
+            final int i = itr.nextIndex();
+
+            if (name.equals(itr.next().name())) {
                 return i;
             }
         }
@@ -173,7 +175,7 @@ public final class Predicate {
      * 
      */
     public String applyParameters(final String constraintParameters,
-            final CSPOMVariable<?>[] scope) throws PredicateParseException {
+            final List<CSPOMVariable<?>> scope) throws PredicateParseException {
         final String[] stringParameters = constraintParameters.trim().split(
                 " +");
 
@@ -204,14 +206,14 @@ public final class Predicate {
      *             If the given parameter is invalid.
      */
     private void controlParameter(final String parameter,
-            final CSPOMVariable<?>[] scope) throws PredicateParseException {
+            final List<CSPOMVariable<?>> scope) throws PredicateParseException {
         if (PredicateScanner.INTEGER.matcher(parameter).matches()) {
             return;
         }
         if (PredicateScanner.IDENTIFIER.matcher(parameter).matches()) {
             if (seekVariable(parameter, scope) < 0) {
                 throw new PredicateParseException("Could not find variable "
-                        + parameter + " in " + Arrays.toString(scope));
+                        + parameter + " in " + scope);
             }
             return;
         }

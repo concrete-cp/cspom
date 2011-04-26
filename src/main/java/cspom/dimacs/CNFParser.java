@@ -14,7 +14,7 @@ import cspom.CSPOM;
 import cspom.CSPParseException;
 import cspom.compiler.PredicateParseException;
 import cspom.variable.CSPOMVariable;
-import cspom.variable.UnknownBooleanDomain$;
+
 
 public final class CNFParser {
     private final CSPOM problem;
@@ -45,8 +45,7 @@ public final class CNFParser {
                     parameter = true;
                     final int nbVars = Integer.valueOf(matcher.group(1));
                     for (int i = 1; i <= nbVars; i++) {
-                        problem.addVariable(CSPOMVariable.ofBool("V" + i,
-                                UnknownBooleanDomain$.MODULE$));
+                        problem.addVariable(CSPOMVariable.bool("V" + i));
                     }
                     continue;
                 }

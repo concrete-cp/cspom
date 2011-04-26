@@ -13,7 +13,7 @@ final class BooleanTest {
   def testIsConstant() {
     assertTrue(TrueDomain.isConstant);
     assertTrue(FalseDomain.isConstant);
-    assertFalse(UnknownBooleanDomain.isConstant);
+    assertFalse(BooleanDomain.isConstant);
   }
 
   @Test
@@ -30,12 +30,12 @@ final class BooleanTest {
 
   @Test(expected = classOf[UnsupportedOperationException])
   def testGetBooleanDomain() {
-    UnknownBooleanDomain.getBoolean;
+    BooleanDomain.getBoolean;
   }
 
   @Test
   def testGetValues() {
-    assertEquals(UnknownBooleanDomain.getValues, List(false, true));
+    assertEquals(BooleanDomain.getValues, List(false, true));
   }
 
 }

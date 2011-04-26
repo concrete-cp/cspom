@@ -2,6 +2,8 @@ package cspom.compiler.patterns;
 
 import java.util.Deque;
 
+import scala.collection.JavaConversions;
+
 import cspom.CSPOM;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.GeneralConstraint;
@@ -21,11 +23,11 @@ public final class RemoveAnd implements ConstraintCompiler {
 
     @Override
     public void compile(final CSPOMConstraint constraint) {
-        if ("and".equals(constraint.getDescription())
+        if ("and".equals(constraint.description())
                 && constraint instanceof GeneralConstraint) {
-            for (CSPOMVariable v : constraint) {
-                v.setDomain(TrueDomain$.MODULE$);
-                for (CSPOMConstraint c : v.getConstraints()) {
+            for (CSPOMVariable<?> v : JavaConversions.asJavaIterable(constraint.scope())) {
+                v.domain_$eq(TrueDomain$.MODULE$);
+                for (CSPOMConstraint c : JavaConversions.asJavaIterable(v.constraints())) {
                     if (c != constraint) {
                         constraints.add(c);
                     }

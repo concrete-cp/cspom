@@ -1,21 +1,21 @@
 package cspom.constraint
 
-import cspom.Evaluator
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
+import cspom.Evaluator
 
 class GeneralConstraint(
   description: String,
   parameters: String = null,
-  val scope: Seq[CSPOMVariable[_]])
-  extends CSPOMConstraint(description, parameters) {
+  scope: Seq[CSPOMVariable[_]])
+  extends CSPOMConstraint(description, parameters, scope) {
 
   //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
   //    this(description = description, parameters = parameters,
   //      scope = scope.toList)
 
-//  def this(description: String, scope: CSPOMVariable[_]*) =
-//    this(description = description, scope = scope.toList)
+  def this(description: String, scope: CSPOMVariable[_]*) =
+    this(description = description, scope = scope)
 
   override def toString = {
     val stb = new StringBuilder
@@ -29,7 +29,7 @@ class GeneralConstraint(
 
   }
 
-  override def evaluate(tuple: Any*): Boolean = {
+  override def evaluate(tuple: Seq[_]): Boolean = {
     val stb = new StringBuilder();
     if (parameters != null) {
       stb append "p_"
@@ -51,7 +51,7 @@ class GeneralConstraint(
 
   }
 
-  override def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
+  override def replacedVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
     new GeneralConstraint(description, parameters,
       scope map { v => if (v == which) by else v })
   }

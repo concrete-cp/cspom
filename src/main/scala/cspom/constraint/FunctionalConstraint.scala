@@ -1,25 +1,22 @@
 package cspom.constraint
 
-import com.google.common.base.{ Predicate, Predicates }
-import cspom.variable.CSPOMVariable
 import cspom.{ Evaluator, Loggable }
+import cspom.variable.CSPOMVariable
 import javax.script.ScriptException
 
 class FunctionalConstraint(
   val result: CSPOMVariable[_],
   val function: String,
   parameters: String = null,
-  val arguments: List[CSPOMVariable[_]])
-  extends CSPOMConstraint(function, parameters)
+  val arguments: Seq[CSPOMVariable[_]])
+  extends CSPOMConstraint(function, parameters, result +: arguments)
   with Loggable {
+  require(result != null)
+  require(arguments != null)
   require(!arguments.isEmpty, "Must have at least one argument")
 
-  def this(result: CSPOMVariable[_], function: String, parameters: String,
-    arguments: CSPOMVariable[_]*) =
-    this(result = result, function = function, parameters = parameters,
-      arguments = arguments.toList)
-
-  override val scope = result :: arguments
+  def this(result: CSPOMVariable[_], function: String, arguments: CSPOMVariable[_]*) =
+    this(result = result, function = function, arguments = arguments.toList)
 
   override def toString = {
     val stb = new StringBuilder
@@ -30,7 +27,7 @@ class FunctionalConstraint(
     arguments.addString(stb, "(", ", ", ")").toString
   }
 
-  override def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
+  override def replacedVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
 
     new FunctionalConstraint({ if (which == result) by else result },
       function, parameters,
@@ -38,7 +35,7 @@ class FunctionalConstraint(
 
   }
 
-  override def evaluate(tuple: Any*): Boolean = {
+  override def evaluate(tuple: Seq[_]): Boolean = {
     val stb = new StringBuilder
     stb append tuple(0) append " == " append description append '('
 
@@ -52,16 +49,10 @@ class FunctionalConstraint(
       Evaluator.evaluate((stb append ")").toString());
     } catch {
       case e: ScriptException =>
-        throwing(classOf[Evaluator].getName, "evaluate", e);
+        throwing(Evaluator.getClass.getName, "evaluate", e);
         throw new IllegalStateException(e);
     }
 
   }
 
 }
-//
-//object FunctionalConstraint {
-//  def matchesDescription(description: String): Predicate[_ >: CSPOMConstraint] =
-//    Predicates.and(Predicates.instanceOf(classOf[FunctionalConstraint]),
-//      CSPOMConstraint.matchesDescription(description))
-//}

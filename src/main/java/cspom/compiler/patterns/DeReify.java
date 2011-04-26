@@ -22,7 +22,7 @@ public final class DeReify implements ConstraintCompiler {
     public void compile(final CSPOMConstraint c) {
         if (c instanceof FunctionalConstraint) {
             final FunctionalConstraint fc = (FunctionalConstraint) c;
-            if (TrueDomain$.MODULE$ == fc.getResultVariable().getDomain()) {
+            if (TrueDomain$.MODULE$ == fc.result().domain()) {
                 deReify(fc);
             }
         }
@@ -31,8 +31,8 @@ public final class DeReify implements ConstraintCompiler {
     private void deReify(final FunctionalConstraint constraint) {
         problem.removeConstraint(constraint);
         final CSPOMConstraint newConstraint = new GeneralConstraint(
-                constraint.getDescription(), constraint.getParameters(),
-                constraint.getArguments());
+                constraint.description(), constraint.parameters(),
+                constraint.arguments());
         problem.addConstraint(newConstraint);
         constraints.add(newConstraint);
     }

@@ -22,14 +22,16 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import com.google.common.base.Joiner;
+
 import scala.collection.JavaConversions;
 import scala.collection.immutable.Set;
 
 import cspom.CSPOM;
 import cspom.CSPParseException;
 import cspom.compiler.PredicateParseException;
-import cspom.extension.Extension;
 import cspom.extension.ExtensionConstraint;
+import cspom.extension.Relation;
 import cspom.variable.CSPOMDomain;
 import cspom.variable.CSPOMVariable;
 import cspom.variable.ExtensiveDomain;
@@ -108,7 +110,7 @@ public final class XCSPParser {
 
         final Map<String, CSPOMDomain<Integer>> domains = parseDomains(document);
         parseVariables(domains, document);
-        final Map<String, Extension<Integer>> relations = parseRelations(document);
+        final Map<String, Extension> relations = parseRelations(document);
         final Map<String, Predicate> predicates = parsePredicates(document);
         parseConstraints(relations, predicates, document);
     }
@@ -163,9 +165,8 @@ public final class XCSPParser {
 
         for (String currentValue : listOfValues) {
             if (currentValue.contains("..")) {
-                values.addAll(JavaConversions
-                        .asJavaCollection((Set<Integer>) IntInterval.valueOf(
-                                currentValue).getValues()));
+                values.addAll(JavaConversions.asJavaCollection(IntInterval
+                        .valueOf(currentValue).getValues()));
             } else {
                 values.add(Integer.parseInt(currentValue.trim()));
             }
@@ -214,9 +215,9 @@ public final class XCSPParser {
      * @throws CSPParseException
      *             If there was an error parsing a relation.
      */
-    private static Map<String, Extension<Integer>> parseRelations(
-            final Document doc) throws CSPParseException {
-        final Map<String, Extension<Integer>> relationMap = new HashMap<String, Extension<Integer>>();
+    private static Map<String, Extension> parseRelations(final Document doc)
+            throws CSPParseException {
+        final Map<String, Extension> relationMap = new HashMap<String, Extension>();
         final NodeList relations = doc.getElementsByTagName("relation");
         for (int i = relations.getLength(); --i >= 0;) {
             final Node relationNode = relations.item(i);
@@ -252,11 +253,10 @@ public final class XCSPParser {
      *             If the relation could not be read or is inconsistent with
      *             given arity or nbTuples.
      */
-    private static Extension<Integer> parseRelation(final int arity,
-            final boolean init, final int nbTuples, final String string)
-            throws CSPParseException {
+    private static Extension parseRelation(final int arity, final boolean init,
+            final int nbTuples, final String string) throws CSPParseException {
 
-        final Extension<Integer> extension = new Extension<Integer>(arity, init);
+        final Extension extension = new Extension(init, new Relation(arity));
         final String[] tupleList;
         if ("".equals(string.trim())) {
             tupleList = new String[0];
@@ -278,11 +278,11 @@ public final class XCSPParser {
                         + parsedTuple.trim());
             }
 
-            final Integer[] tuple = new Integer[arity];
+            final int[] tuple = new int[arity];
             for (int j = arity; --j >= 0;) {
                 tuple[j] = Integer.parseInt(valueList[j]);
             }
-            extension.addTuple(tuple);
+            extension.relation.addTuple(tuple);
 
         }
         return extension;
@@ -334,8 +334,7 @@ public final class XCSPParser {
      * @throws CSPParseException
      *             If a relation or predicate could not be found or applied.
      */
-    private void parseConstraints(
-            final Map<String, Extension<Integer>> relations,
+    private void parseConstraints(final Map<String, Extension> relations,
             final Map<String, Predicate> predicates, final Document doc)
             throws CSPParseException {
         final NodeList constraints = doc.getElementsByTagName("constraint");
@@ -374,24 +373,21 @@ public final class XCSPParser {
     private void addConstraint(final String name, final String varNames,
             final String parameters, final String reference,
             final Map<String, Predicate> predicates,
-            final Map<String, Extension<Integer>> relations)
-            throws CSPParseException {
-        final String[] scopeList = varNames.split(" +");
-        final CSPOMVariable[] scope = new CSPOMVariable[scopeList.length];
-        for (int i = 0; i < scopeList.length; i++) {
-            scope[i] = problem.getVariable(scopeList[i]);
-            if (scope[i] == null) {
-                throw new CSPParseException("Could not find variable "
-                        + scopeList[i] + " from the scope of " + name);
+            final Map<String, Extension> relations) throws CSPParseException {
+        final List<CSPOMVariable<?>> scope = new ArrayList<CSPOMVariable<?>>();
+        for (String s : varNames.split(" +")) {
+            final CSPOMVariable<?> variable = problem.variable(s);
+            if (variable == null) {
+                throw new CSPParseException("Could not find variable " + s
+                        + " from the scope of " + name);
             }
+            scope.add(variable);
         }
 
         if (reference.startsWith("global:")) {
             final StringBuilder stb = new StringBuilder(reference.substring(7));
-            stb.append("(").append(scope[0]);
-            for (int i = 1; i < scope.length; i++) {
-                stb.append(", ").append(scope[i]);
-            }
+            stb.append("(");
+            Joiner.on(", ").appendTo(stb, scope);
             stb.append(")");
             try {
                 problem.ctr(stb.toString());
@@ -402,10 +398,10 @@ public final class XCSPParser {
             return;
         }
 
-        final Extension<Integer> extension = relations.get(reference);
+        final Extension extension = relations.get(reference);
         if (extension != null) {
-            problem.addConstraint(new ExtensionConstraint<Integer>(name,
-                    extension, scope));
+            problem.addConstraint(new ExtensionConstraint(extension.relation,
+                    extension.init, JavaConversions.asScalaBuffer(scope)));
             return;
         }
 
@@ -419,6 +415,16 @@ public final class XCSPParser {
         } catch (PredicateParseException e) {
             throw new CSPParseException("Error parsing predicate " + predicate
                     + " with constraint parameters " + parameters, e);
+        }
+    }
+
+    private static class Extension {
+        final boolean init;
+        final Relation relation;
+
+        public Extension(final boolean init, final Relation relation) {
+            this.init = init;
+            this.relation = relation;
         }
     }
 }

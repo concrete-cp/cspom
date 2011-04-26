@@ -1,15 +1,14 @@
 package cspom.compiler;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import scala.collection.JavaConversions;
-import cspom.CSPOM;
 import cspom.compiler.PredicateScanner.Node;
 import cspom.constraint.FunctionalConstraint;
 import cspom.constraint.GeneralConstraint;
 import cspom.variable.CSPOMVariable;
+import cspom.CSPOM;
 
 public final class ConstraintParser {
 
@@ -39,7 +38,7 @@ public final class ConstraintParser {
 			return addVariable(node, problem);
 		}
 
-		final CSPOMVariable<?> result = new CSPOMVariable<?>(null, null, true);
+		final CSPOMVariable<?> result = new CSPOMVariable<Object>(null, null, true);
 		problem.addVariable(result);
 
 		final List<CSPOMVariable<?>> operands = new LinkedList<CSPOMVariable<?>>();
@@ -54,20 +53,14 @@ public final class ConstraintParser {
 
 	private static CSPOMVariable<?> addVariable(final Node node,
 			final CSPOM problem) {
-		CSPOMVariable<?> existing = problem.getVariable(node.getOperator());
+		final CSPOMVariable<?> existing = problem.variable(node.getOperator());
 		if (existing != null) {
-			return existing;
-		}
-
-		existing = problem.getVariable(node.getOperator());
-		if (existing != null) {
-			problem.addVariable(existing);
 			return existing;
 		}
 
 		final CSPOMVariable<?> newVariable;
 		if (node.isIdentifier()) {
-			newVariable = new CSPOMVariable<?>(null, null, false);
+			newVariable = new CSPOMVariable<Object>(null, null, false);
 		} else if (node.isInteger()) {
 			newVariable = CSPOMVariable.constant(
 					Integer.parseInt(node.getOperator()), true);

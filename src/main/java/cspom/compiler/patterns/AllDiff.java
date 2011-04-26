@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import cspom.CSPOM;
 import cspom.compiler.ConstraintSelector;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.GeneralConstraint;
+import cspom.CSPOM;
 import cspom.variable.CSPOMVariable;
 
 public final class AllDiff implements ConstraintCompiler {
@@ -20,10 +20,10 @@ public final class AllDiff implements ConstraintCompiler {
         @Override
         public boolean is(final CSPOMConstraint constraint) {
             return constraint instanceof GeneralConstraint
-                    && "ne".equals(constraint.getDescription())
-                    || "gt".equals(constraint.getDescription())
-                    || "lt".equals(constraint.getDescription())
-                    || "allDifferent".equals(constraint.getDescription());
+                    && "ne".equals(constraint.description())
+                    || "gt".equals(constraint.description())
+                    || "lt".equals(constraint.description())
+                    || "allDifferent".equals(constraint.description());
         }
     };
 
@@ -31,8 +31,8 @@ public final class AllDiff implements ConstraintCompiler {
         @Override
         public boolean is(final CSPOMConstraint constraint) {
             return constraint instanceof GeneralConstraint
-                    && "ne".equals(constraint.getDescription())
-                    || "allDifferent".equals(constraint.getDescription());
+                    && "ne".equals(constraint.description())
+                    || "allDifferent".equals(constraint.description());
         }
     };
 
@@ -59,13 +59,13 @@ public final class AllDiff implements ConstraintCompiler {
         }
         // System.out.print(constraint);
 
-        final Set<CSPOMVariable> pool = new HashSet<CSPOMVariable>();
-        final Set<CSPOMVariable> clique = new HashSet<CSPOMVariable>(constraint
-                .getScope());
+        final Set<CSPOMVariable<?>> pool = new HashSet<CSPOMVariable<?>>();
+        final Set<CSPOMVariable<?>> clique = new HashSet<CSPOMVariable<?>>(
+                JavaCollections.asJavaList(constraint.scope()));
         populate(pool, clique);
         expand(clique, pool);
 
-        if (clique.size() > constraint.getScope().size()) {
+        if (clique.size() > constraint.scope().size()) {
             // System.out.print(" -> " + clique.size() + "-clique");
             newAllDiff(clique);
             // System.out.print(", " + (rem.size() - 1) +
@@ -76,8 +76,8 @@ public final class AllDiff implements ConstraintCompiler {
 
     }
 
-    private void populate(final Set<CSPOMVariable> pool,
-            final Collection<CSPOMVariable> base) {
+    private void populate(final Set<CSPOMVariable<?>> pool,
+            final Collection<CSPOMVariable<?>> base) {
         final Iterator<CSPOMVariable> baseItr = base.iterator();
         if (!baseItr.hasNext()) {
             return;
@@ -107,8 +107,8 @@ public final class AllDiff implements ConstraintCompiler {
 
     private static final int TABU_SIZE = 15;
 
-    private static CSPOMVariable pick(final Set<CSPOMVariable> pool,
-            final Map<CSPOMVariable, Integer> tabu, final int iteration) {
+    private static CSPOMVariable<?> pick(final Set<CSPOMVariable<?>> pool,
+            final Map<CSPOMVariable<?>, Integer> tabu, final int iteration) {
         int tie = 1;
         CSPOMVariable returned = null;
         for (CSPOMVariable v : pool) {
@@ -126,8 +126,8 @@ public final class AllDiff implements ConstraintCompiler {
         return returned;
     }
 
-    private void expand(final Set<CSPOMVariable> clique,
-            final Set<CSPOMVariable> pool) {
+    private void expand(final Set<CSPOMVariable<?>> clique,
+            final Set<CSPOMVariable<?>> pool) {
         final Set<CSPOMVariable> largest = new HashSet<CSPOMVariable>(clique);
         final Set<CSPOMVariable> base = new HashSet<CSPOMVariable>(clique);
         final Map<CSPOMVariable, Integer> tabu = new HashMap<CSPOMVariable, Integer>();
@@ -176,7 +176,7 @@ public final class AllDiff implements ConstraintCompiler {
      * 
      * @param scope
      */
-    public void newAllDiff(final Collection<CSPOMVariable> scope) {
+    public void newAllDiff(final Collection<CSPOMVariable<?>> scope) {
         final CSPOMConstraint allDiff = new GeneralConstraint("allDifferent",
                 null, scope.toArray(new CSPOMVariable[scope.size()]));
         if (problem.getConstraints().contains(allDiff)) {

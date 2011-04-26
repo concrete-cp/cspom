@@ -1,6 +1,7 @@
 package cspom
 
 import cspom.constraint.GeneralConstraint
+import scala.collection.JavaConversions
 import cspom.constraint.FunctionalConstraint
 import org.junit.Assert._
 import org.junit.Test
@@ -16,9 +17,9 @@ class CSPOMTest {
       CSPOMVariable.ofInterval("test3", 20, 30),
       CSPOMVariable.ofInterval("test4", 30, 40))
 
-    vars foreach { v => cspom.addVariable(v) }
+    vars foreach { cspom.addVariable(_) }
 
-    assert(vars sameElements cspom.variables)
+    assert(vars sameElements JavaConversions.asScalaIterable(cspom.variables))
     assertEquals(vars(0), cspom.variable("test1"))
   }
 
@@ -45,7 +46,7 @@ class CSPOMTest {
 
     v foreach { cspom.addVariable(_) }
 
-    val leq = new GeneralConstraint("leq", "", v(0), v(1))
+    val leq = new GeneralConstraint("leq", v(0), v(1))
     cspom.addConstraint(leq);
 
     assertTrue(v(0).constraints contains leq)
@@ -68,7 +69,7 @@ class CSPOMTest {
 
     v foreach { cspom.addVariable(_) }
 
-    val leq = new GeneralConstraint("leq", "", v(0), v(1))
+    val leq = new GeneralConstraint("leq", v(0), v(1))
     cspom.addConstraint(leq);
     cspom.removeVariable(v(1))
   }

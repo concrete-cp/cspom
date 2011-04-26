@@ -1,6 +1,6 @@
 package cspom.variable;
 
-import cspom.constraint.CSPOMConstraint
+import _root_.cspom.constraint.CSPOMConstraint
 import scala.collection.mutable.HashSet
 
 /**
@@ -109,10 +109,11 @@ object CSPOMVariable {
   def ofBool(name: String, boolean: Boolean) =
     new CSPOMVariable[Boolean](name = name, domain = BooleanDomain.valueOf(boolean));
 
-  def bool() = new CSPOMVariable[Boolean](domain = UnknownBooleanDomain)
+  def bool() = new CSPOMVariable[Boolean](domain = BooleanDomain)
 
   def bool(name: String) =
-    new CSPOMVariable[Boolean](name = name, domain = UnknownBooleanDomain)
+    new CSPOMVariable[Boolean](name = name, domain = BooleanDomain)
 
-  def constant[T](value: T, aux: Boolean = false) = new CSPOMVariable[T](domain = new Constant(value), auxiliary = aux)
+  def constant[T](value: T, aux: Boolean = false) = 
+    new CSPOMVariable[T](domain = new Constant(value), auxiliary = aux)
 }

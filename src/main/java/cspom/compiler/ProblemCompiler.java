@@ -70,20 +70,20 @@ public final class ProblemCompiler {
 	}
 
 	private void compile() {
-		constraints.addAll(problem.getConstraints());
+		constraints.addAll(problem.constraints());
 
 		while (!constraints.isEmpty()) {
 			compileConstraint(constraints.poll());
 		}
 
-		final Collection<CSPOMVariable> singletons = new ArrayList<CSPOMVariable>();
-		for (CSPOMVariable v : problem.getVariables()) {
-			if (v.isAuxiliary() && v.getConstraints().isEmpty()) {
+		final Collection<CSPOMVariable<?>> singletons = new ArrayList<CSPOMVariable<?>>();
+		for (CSPOMVariable<?> v : problem.variables()) {
+			if (v.auxiliary() && v.constraints().isEmpty()) {
 				singletons.add(v);
 			}
 		}
 
-		for (CSPOMVariable v : singletons) {
+		for (CSPOMVariable<?> v : singletons) {
 			problem.removeVariable(v);
 		}
 
@@ -91,7 +91,7 @@ public final class ProblemCompiler {
 
 	private void compileConstraint(final CSPOMConstraint constraint) {
 		for (ConstraintCompiler cc : constraintCompilers) {
-			if (!problem.getConstraints().contains(constraint)) {
+			if (!problem.constraints().contains(constraint)) {
 				return;
 			}
 			cc.compile(constraint);

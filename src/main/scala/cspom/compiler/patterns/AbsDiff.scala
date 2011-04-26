@@ -16,22 +16,19 @@ class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
         subConstraint.result.auxiliary &&
         subConstraint.result.constraints.size == 2) => {
 
-        for (
-          c <- subConstraint.result.constraints; if (c.description == "abs")
-        ) {
-          c match {
-            case fc: FunctionalConstraint if (fc.arguments == List(subConstraint.result)) => {
-
+        subConstraint.result.constraints.iterator
+          .filter { c => c.description == "abs" && c.isInstanceOf[FunctionalConstraint] }
+          .map { _.asInstanceOf[FunctionalConstraint] }
+          .find { _.arguments == List(subConstraint.result) } match {
+            case Some(fc) =>
               problem.removeConstraint(subConstraint);
-              problem.removeConstraint(c);
+              problem.removeConstraint(fc);
               problem.addConstraint(new FunctionalConstraint(
                 result = fc.result,
                 function = "absdiff",
                 arguments = subConstraint.arguments));
-
-            }
+            case None =>
           }
-        }
       }
     }
   }

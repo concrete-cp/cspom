@@ -3,9 +3,17 @@ package cspom.variable;
 trait BooleanDomain extends CSPOMDomain[Boolean] {
   def getBoolean: Boolean;
   def isConstant: Boolean;
+
 }
 
-object BooleanDomain {
+object BooleanDomain extends BooleanDomain {
+  override def getBoolean = throw new UnsupportedOperationException("only legal on non-constant Boolean instances");
+  override def isConstant = false;
+  override def toString = "(false, true)"
+  override val getValues = List(false, true)
+  override def getSize = 2
+  override def intersect(domain: CSPOMDomain[_]) = this
+
   def valueOf(constant: Boolean): BooleanDomain = constant match {
     case true => TrueDomain;
     case false => FalseDomain;
@@ -22,7 +30,7 @@ object TrueDomain extends BooleanDomain {
     if (domain == this) {
       this
     } else {
-      UnknownBooleanDomain
+      BooleanDomain
     }
   }
 }
@@ -37,16 +45,6 @@ object FalseDomain extends BooleanDomain {
     if (domain == this)
       this
     else
-      UnknownBooleanDomain
+      BooleanDomain
   }
-}
-
-object UnknownBooleanDomain extends BooleanDomain {
-  override def getBoolean = throw new UnsupportedOperationException("only legal on non-constant Boolean instances");
-  override def isConstant = false;
-  override def toString = "unknown"
-  override val getValues = List(false, true)
-  override def getSize = 2
-  override def intersect(domain: CSPOMDomain[_]) = this
-
 }

@@ -1,15 +1,13 @@
 package cspom.constraint
 
-import com.google.common.base.Predicate
-import com.google.common.base.Predicates
-import cspom.variable.CSPOMVariable
+import _root_.cspom.variable.CSPOMVariable
 abstract class CSPOMConstraint(
   val description: String,
-  val parameters: String) extends Iterable[CSPOMVariable[_]] {
+  val parameters: String,
+  val scope: Seq[CSPOMVariable[_]]) {
 
-  def scope: Seq[CSPOMVariable[_]]
   val arity = scope.size
-  override val hashCode = {
+  override def hashCode = {
     var hash = 31 * scope.hashCode + description.hashCode
     if (parameters != null) {
       hash *= 31
@@ -17,7 +15,7 @@ abstract class CSPOMConstraint(
     }
     hash
   }
-  
+
   val scopeSet = scope.toSet
   //TODO: val positions
 
@@ -31,13 +29,10 @@ abstract class CSPOMConstraint(
     case _ => false
   }
 
-  override def iterator = scope.iterator
+  def replacedVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]): CSPOMConstraint;
 
-  def replaceVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]);
-
-  def evaluate(t: Any*): Boolean;
+  def evaluate(t: Seq[_]): Boolean;
 }
-//
 //object CSPOMConstraint {
 //  val CONSTRAINT_DESCRIPTION = new com.google.common.base.Function[CSPOMConstraint, String] {
 //    override def apply(input: CSPOMConstraint) = input.toString;

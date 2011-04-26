@@ -1,18 +1,18 @@
 package cspom
 
-import scala.collection.JavaConversions
-import constraint.CSPOMConstraint
-import cspom.compiler.{ PredicateParseException, ConstraintParser }
-import cspom.constraint.GeneralConstraint
-import dimacs.CNFParser
+import cspom.constraint.{GeneralConstraint, CSPOMConstraint}
 import java.io.IOException
-import java.net.{ URL, URI, URISyntaxException }
+import java.net.{URL, URI, URISyntaxException}
 import java.util.zip.GZIPInputStream
 import org.apache.tools.bzip2.CBZip2InputStream
-import scala.collection.mutable.{ LinkedHashMap, LinkedHashSet }
+import scala.collection.JavaConversions
+import scala.collection.mutable.{LinkedHashMap, LinkedHashSet}
 import scala.util.matching.Regex
-import variable.CSPOMVariable
-import xcsp.XCSPParser
+import cspom.variable.CSPOMVariable
+import cspom.compiler.ConstraintParser
+import cspom.compiler.PredicateParseException
+import cspom.xcsp.XCSPParser
+import cspom.dimacs.CNFParser
 
 /**
  *
@@ -45,7 +45,7 @@ final class CSPOM {
   /**
    * @return The variables of this problem.
    */
-  val variables = JavaConversions.asJavaIterable(variableMap.values);
+  val variables = JavaConversions.asJavaCollection(variableMap.values);
 
   /**
    * @param variableName
@@ -98,12 +98,12 @@ final class CSPOM {
     assume(constraints.add(constraint),
       "This constraint already belongs to the problem");
 
-    for (v <- constraint) { v.registerConstraint(constraint) }
+    for (v <- constraint.scope) { v.registerConstraint(constraint) }
     constraint
   }
 
   def removeConstraint(c: CSPOMConstraint): Unit = {
-    for (v <- c) { v.removeConstraint(c) }
+    for (v <- c.scope) { v.removeConstraint(c) }
     constraints.remove(c)
   }
 
@@ -165,8 +165,8 @@ final class CSPOM {
 
   def le(v0: CSPOMVariable[Int], v1: CSPOMVariable[Int]) =
     addConstraint(new GeneralConstraint(
-        description = "le", 
-        scope = List(v0, v1)));
+      description = "le",
+      scope = Vector(v0, v1)));
 
   override def toString = {
     val stb = new StringBuilder
@@ -212,7 +212,7 @@ final class CSPOM {
         stb.append("]\n");
         stb.append("]\n");
 
-        for (v <- c) {
+        for (v <- c.scope) {
           stb.append("edge [\n");
           stb.append("source \"cons").append(gen).append("\"\n");
           stb.append("target \"").append(v.name).append("\"\n");
