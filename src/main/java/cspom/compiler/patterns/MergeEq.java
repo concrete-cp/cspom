@@ -6,6 +6,10 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import com.google.common.collect.Iterables;
+
+import scala.collection.JavaConversions;
+
 import cspom.CSPOM;
 import cspom.constraint.CSPOMConstraint;
 import cspom.constraint.GeneralConstraint;
@@ -18,96 +22,106 @@ import cspom.variable.CSPOMVariable;
  */
 public final class MergeEq implements ConstraintCompiler {
 
-    private final CSPOM problem;
-    private final Deque<CSPOMConstraint> constraints;
+	private final CSPOM problem;
+	private final Deque<CSPOMConstraint> constraints;
 
-    public MergeEq(final CSPOM problem, final Deque<CSPOMConstraint> constraints) {
-        this.problem = problem;
-        this.constraints = constraints;
+	public MergeEq(final CSPOM problem, final Deque<CSPOMConstraint> constraints) {
+		this.problem = problem;
+		this.constraints = constraints;
 
-    }
+	}
 
-    @Override
-    public void compile(final CSPOMConstraint constraint) {
-        if ("eq".equals(constraint.description())
-                && constraint instanceof GeneralConstraint) {
+	@Override
+	public void compile(final CSPOMConstraint constraint) {
+		if ("eq".equals(constraint.description())
+				&& constraint instanceof GeneralConstraint) {
 
-            final LinkedList<CSPOMVariable<?>> scope = new LinkedList<CSPOMVariable<?>>(
-                    constraint.scope());
+		}
 
-            final Collection<CSPOMVariable<?>> auxVars = new ArrayList<CSPOMVariable>();
+		compileT(constraint);
 
-            /*
-             * Find auxiliary variables in the scope of the constraint.
-             */
-            for (final Iterator<CSPOMVariable<?>> itr = scope.iterator(); itr
-                    .hasNext();) {
-                final CSPOMVariable<?> var = itr.next();
-                if (var.auxiliary()) {
-                    auxVars.add(var);
-                    itr.remove();
-                }
-            }
+	}
 
-            /*
-             * Do not merge original variables.
-             */
-            if (auxVars.isEmpty()) {
-                return;
-            }
-            problem.removeConstraint(constraint);
+	private <T> void compileT(final CSPOMConstraint constraint) {
 
-            /*
-             * Generate a new all-equal constraint if more than one variable
-             * remains.
-             */
-            if (scope.size() > 1) {
-                final CSPOMConstraint newConstraint = new GeneralConstraint(
-                        "eq", null, scope.toArray(new CSPOMVariable[scope
-                                .size()]));
-                constraints.add(newConstraint);
-                problem.addConstraint(newConstraint);
-            }
-            final CSPOMVariable refVar;
-            if (scope.isEmpty()) {
-                refVar = auxVars.iterator().next();
-            } else {
-                refVar = scope.getFirst();
-            }
+		final LinkedList<CSPOMVariable<T>> scope = new LinkedList<CSPOMVariable<T>>(
+				JavaConversions.asJavaCollection(constraint.scope()));
 
-            for (CSPOMVariable aux : auxVars) {
-                if (aux != refVar) {
-                    merge(aux, refVar);
-                }
-            }
-        }
-    }
+		final Collection<CSPOMVariable<T>> auxVars = new ArrayList<CSPOMVariable<T>>();
 
-    private CSPOMDomain<?> mergeDomain(final CSPOMDomain<?> d0,
-            final CSPOMDomain<?> d1) {
-        if (d0 == null) {
-            return d1;
-        }
-        if (d1 == null) {
-            return d0;
-        }
-        return d0.intersect(d1);
-    }
+		/*
+		 * Find auxiliary variables in the scope of the constraint.
+		 */
+		for (final Iterator<CSPOMVariable<T>> itr = scope.iterator(); itr
+				.hasNext();) {
+			final CSPOMVariable<T> var = itr.next();
+			if (var.auxiliary()) {
+				auxVars.add(var);
+				itr.remove();
+			}
+		}
 
-    private void merge(final CSPOMVariable<?> merged,
-            final CSPOMVariable<?> variable) {
-        if (merged == variable) {
-            throw new IllegalArgumentException();
-        }
+		/*
+		 * Do not merge original variables.
+		 */
+		if (auxVars.isEmpty()) {
+			return;
+		}
+		problem.removeConstraint(constraint);
 
-        variable.setDomain(mergeDomain(merged.domain(), variable.domain()));
+		/*
+		 * Generate a new all-equal constraint if more than one variable
+		 * remains.
+		 */
+		if (scope.size() > 1) {
+			final CSPOMConstraint newConstraint = new GeneralConstraint("eq",
+					null, scope);
+			constraints.add(newConstraint);
+			problem.addConstraint(newConstraint);
+		}
 
-        for (CSPOMConstraint c : new ArrayList<CSPOMConstraint>(merged.constraints())) {
-            merged.removeConstraint(c);
-            c.replaceVar(merged, variable);
-            variable.registerConstraint(c);
-        }
-        problem.removeVariable(merged);
-    }
+		/*
+		 * Update the constraints of the problem
+		 */
+		final CSPOMVariable<T> refVar;
+		if (scope.isEmpty()) {
+			refVar = Iterables.getFirst(auxVars, null);
+		} else {
+			refVar = scope.getFirst();
+		}
+
+		for (CSPOMVariable<T> aux : auxVars) {
+			if (aux != refVar) {
+				merge(aux, refVar);
+			}
+		}
+	}
+
+	private <T> CSPOMDomain<T> mergeDomain(final CSPOMDomain<T> d0,
+			final CSPOMDomain<T> d1) {
+		if (d0 == null) {
+			return d1;
+		}
+		if (d1 == null) {
+			return d0;
+		}
+		return d0.intersect(d1);
+	}
+
+	private <T> void merge(final CSPOMVariable<T> merged,
+			final CSPOMVariable<T> variable) {
+		if (merged == variable) {
+			throw new IllegalArgumentException();
+		}
+
+		variable.domain_$eq(mergeDomain(merged.domain(), variable.domain()));
+
+		for (CSPOMConstraint c : new ArrayList<CSPOMConstraint>(
+				JavaConversions.asJavaCollection(merged.constraints()))) {
+			problem.removeConstraint(c);
+			problem.addConstraint(c.replacedVar(merged, variable));
+		}
+		problem.removeVariable(merged);
+	}
 
 }

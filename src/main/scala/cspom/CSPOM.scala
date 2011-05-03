@@ -1,5 +1,6 @@
 package cspom
 
+import java.io.InputStream
 import cspom.constraint.{GeneralConstraint, CSPOMConstraint}
 import java.io.IOException
 import java.net.{URL, URI, URISyntaxException}
@@ -171,6 +172,8 @@ final class CSPOM {
   override def toString = {
     val stb = new StringBuilder
 
+    
+    
     for (v <- variableMap.values) {
       stb append v append " = " append
         { if (v.domain == null) '?' else v.domain } append '\n'
@@ -261,7 +264,7 @@ object CSPOM {
    *             If the InputStream could not be opened
    */
   @throws(classOf[IOException])
-  def problemInputStream(url: URL) = {
+  def problemInputStream(url: URL): InputStream = {
 
     val path = url.getPath();
 
@@ -323,9 +326,9 @@ object CSPOM {
     val problem = new CSPOM();
     val problemIS = problemInputStream(url);
 
-    if (url.getFile().contains(".xml")) {
+    if (url.getFile() contains ".xml") {
       new XCSPParser(problem).parse(problemIS);
-    } else if (url.getFile().contains(".cnf")) {
+    } else if (url.getFile() contains ".cnf") {
       new CNFParser(problem).parse(problemIS);
     } else {
       throw new IllegalArgumentException("Unhandled file format");

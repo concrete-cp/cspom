@@ -39,7 +39,8 @@ public final class CliqueDetector {
 
 	public static boolean haveSubsumingConstraint(
 			final CSPOMConstraint constraint, final ConstraintSelector validator) {
-		for (CSPOMConstraint c : constraint.scope().apply(0).getConstraints()) {
+		for (CSPOMConstraint c : JavaConversions.asJavaIterable(constraint
+				.scope().apply(0).constraints())) {
 			if (c != constraint && validator.is(c) && subsumes(c, constraint)) {
 				return true;
 			}
@@ -49,18 +50,19 @@ public final class CliqueDetector {
 
 	public static boolean subsumes(final CSPOMConstraint constraint,
 			final CSPOMConstraint subsumed) {
-	    for(CSPOMVariable<?> v : JavaConversions.asJavaIterable(subsumed.scope())) {
-	        if (!constraint.involves(v)) {
-	            return false;
-	        }
-	    }
+		for (CSPOMVariable<?> v : JavaConversions.asJavaIterable(subsumed
+				.scope())) {
+			if (!constraint.involves(v)) {
+				return false;
+			}
+		}
 		return true;
 	}
 
 	public boolean allEdges(final CSPOMVariable<?> var,
 			final Collection<CSPOMVariable<?>> vars,
 			final ConstraintSelector validator) {
-		for (CSPOMVariable v : vars) {
+		for (CSPOMVariable<?> v : vars) {
 			if (!edge(v, var, validator)) {
 				return false;
 			}
@@ -68,15 +70,17 @@ public final class CliqueDetector {
 		return true;
 	}
 
-	public boolean edge(final CSPOMVariable<?> var1, final CSPOMVariable<?> var2,
-			final ConstraintSelector validator) {
+	public boolean edge(final CSPOMVariable<?> var1,
+			final CSPOMVariable<?> var2, final ConstraintSelector validator) {
 		final Pair pair = new Pair(var1, var2);
 		final Boolean edge = haveEdge.get(pair);
 
 		if (edge == null) {
-			final Set<CSPOMConstraint> constraints = var2.constraints();
+			final Set<CSPOMConstraint> constraints = JavaConversions
+					.setAsJavaSet(var2.constraints());
 
-			for (CSPOMConstraint c : var1.constraints()) {
+			for (CSPOMConstraint c : JavaConversions.asJavaIterable(var1
+					.constraints())) {
 				if (validator.is(c) && constraints.contains(c)) {
 					haveEdge.put(pair, true);
 					return true;
@@ -88,5 +92,4 @@ public final class CliqueDetector {
 		}
 		return edge;
 	}
-
 }

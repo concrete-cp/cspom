@@ -14,7 +14,7 @@ class ExtensiveDomain[T](val values: List[T]) extends CSPOMDomain[T] {
     else
       values.toString
 
-  def intersect(domain: CSPOMDomain[_]) = domain.intersect(this)
+  def intersect(domain: CSPOMDomain[T]) = domain.intersect(this)
   def getValues = values
 }
 

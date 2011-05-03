@@ -7,7 +7,7 @@ class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[java.lang.Intege
 
   val getValues = List.range(lb, ub, 1) map { (x: Int) => Int.box(x) }
 
-  def intersect(domain: CSPOMDomain[_]): CSPOMDomain[_] = domain match {
+  def intersect(domain: CSPOMDomain[java.lang.Integer]): CSPOMDomain[java.lang.Integer] = domain match {
     case m: IntInterval =>
       new IntInterval(max(lb, m.lb), min(ub, m.ub));
     case _ => domain.intersect(this)

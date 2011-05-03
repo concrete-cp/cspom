@@ -12,7 +12,7 @@ object BooleanDomain extends BooleanDomain {
   override def toString = "(false, true)"
   override val getValues = List(false, true)
   override def getSize = 2
-  override def intersect(domain: CSPOMDomain[_]) = this
+  override def intersect(domain: CSPOMDomain[Boolean]) = this
 
   def valueOf(constant: Boolean): BooleanDomain = constant match {
     case true => TrueDomain;
@@ -26,7 +26,7 @@ object TrueDomain extends BooleanDomain {
   override def toString = "true";
   override val getValues = List(true);
   override def getSize = 1
-  def intersect(domain: CSPOMDomain[_]) = {
+  def intersect(domain: CSPOMDomain[Boolean]) = {
     if (domain == this) {
       this
     } else {
@@ -41,7 +41,7 @@ object FalseDomain extends BooleanDomain {
   override def toString = "false"
   override val getValues = List(false);
   override def getSize = 1
-  override def intersect(domain: CSPOMDomain[_]) = {
+  override def intersect(domain: CSPOMDomain[Boolean]) = {
     if (domain == this)
       this
     else
