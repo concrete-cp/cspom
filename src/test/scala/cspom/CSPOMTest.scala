@@ -9,7 +9,7 @@ import variable.CSPOMVariable
 class CSPOMTest {
 
   @Test
-  def variables = {
+  def variables {
     val cspom = new CSPOM
     val vars = List(
       CSPOMVariable.ofInterval("test1", 0, 10),
@@ -19,19 +19,19 @@ class CSPOMTest {
 
     vars foreach { cspom.addVariable(_) }
 
-    assert(vars sameElements JavaConversions.asScalaIterable(cspom.variables))
+    assert(vars sameElements JavaConversions.collectionAsScalaIterable(cspom.variables))
     assertEquals(vars(0), cspom.variable("test1"))
   }
 
   @Test(expected = classOf[AssertionError])
-  def duplicateVariable = {
+  def duplicateVariable {
     val cspom = new CSPOM
     cspom.addVariable(CSPOMVariable.ofInterval("Test", 0, 10))
     cspom.addVariable(CSPOMVariable.ofInterval("Test", 0, 10))
   }
 
   @Test
-  def boolVariables = {
+  def boolVariables {
     val cspom = new CSPOM
     cspom.addVariable(CSPOMVariable.ofBool(true))
     cspom.addVariable(CSPOMVariable.ofBool(true))
@@ -39,7 +39,7 @@ class CSPOMTest {
   }
 
   @Test
-  def constraints = {
+  def constraints {
     val cspom = new CSPOM
     val v = List(CSPOMVariable.ofInterval("test1", 0, 10),
       CSPOMVariable.ofInterval("test2", 0, 10));
@@ -62,7 +62,7 @@ class CSPOMTest {
   }
 
   @Test(expected = classOf[AssertionError])
-  def protectedVariable = {
+  def protectedVariable {
     val cspom = new CSPOM
     val v = List(CSPOMVariable.ofInterval("test1", 0, 10),
       CSPOMVariable.ofInterval("test2", 0, 10));

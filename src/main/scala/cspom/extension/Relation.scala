@@ -35,7 +35,9 @@ final class Relation(val arity: Int) extends HashSet[Seq[_]] {
 
   override def toString = arity + "-ary, " + size + " tuples"
 
-  def addTuple(tuple: Array[Int]): Boolean = add(tuple.toSeq)
+  def addTuple(tuple: Int*): Boolean = { assume(tuple.size == arity); add(tuple) }
+  def containsTuple(tuple: Int*) = contains(tuple)
+  
   /**
    * This method returns a copy of this extension with permuted tuples. New
    * order of tuples is given as an argument.

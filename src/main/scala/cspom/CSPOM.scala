@@ -60,7 +60,7 @@ final class CSPOM {
    */
   private val _constraints = new LinkedHashSet[CSPOMConstraint]
 
-  val constraints = JavaConversions.asJavaSet(_constraints)
+  val constraints = JavaConversions.mutableSetAsJavaSet(_constraints)
 
   /**
    * The constraint compiler used by this CSPOM instance.

@@ -5,7 +5,7 @@ import scala.math.{ max, min }
 class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[java.lang.Integer] {
   require(ub > lb);
 
-  val getValues = List.range(lb, ub, 1) map { (x: Int) => Int.box(x) }
+  val getValues = (lb to ub) map { (x: Int) => Int.box(x) } toList
 
   def intersect(domain: CSPOMDomain[java.lang.Integer]): CSPOMDomain[java.lang.Integer] = domain match {
     case m: IntInterval =>
@@ -16,6 +16,11 @@ class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[java.lang.Intege
   override def toString = "[" + lb + ".." + ub + "]";
   override val hashCode = 31 * lb + ub;
   override val getSize = 1 + ub - lb
+  override def equals(obj: Any) = obj match {
+    case i: IntInterval => lb == i.lb && ub == i.ub
+    case d: CSPOMDomain[_] => getValues == d.getValues
+    case _ => false
+  }
 
 }
 

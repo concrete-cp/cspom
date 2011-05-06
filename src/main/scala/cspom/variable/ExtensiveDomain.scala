@@ -10,9 +10,9 @@ class ExtensiveDomain[T](val values: List[T]) extends CSPOMDomain[T] {
 
   override def toString =
     if (getSize > 5)
-      values.take(5).mkString("(", ", ", "...)")
+      values.take(5).mkString("{", ", ", "...}")
     else
-      values.toString
+      values.mkString("{", ", ", "}")
 
   def intersect(domain: CSPOMDomain[T]) = domain.intersect(this)
   def getValues = values
