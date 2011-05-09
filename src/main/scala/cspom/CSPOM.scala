@@ -1,13 +1,13 @@
 package cspom
 
 import java.io.InputStream
-import cspom.constraint.{GeneralConstraint, CSPOMConstraint}
+import cspom.constraint.{ GeneralConstraint, CSPOMConstraint }
 import java.io.IOException
-import java.net.{URL, URI, URISyntaxException}
+import java.net.{ URL, URI, URISyntaxException }
 import java.util.zip.GZIPInputStream
 import org.apache.tools.bzip2.CBZip2InputStream
 import scala.collection.JavaConversions
-import scala.collection.mutable.{LinkedHashMap, LinkedHashSet}
+import scala.collection.mutable.{ LinkedHashMap, LinkedHashSet }
 import scala.util.matching.Regex
 import cspom.variable.CSPOMVariable
 import cspom.compiler.ConstraintParser
@@ -136,9 +136,9 @@ final class CSPOM {
   def interVar(name: String, lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(name, lb, ub))
 
-  def addVar[T](values: T*) = addVariable(CSPOMVariable.of(values))
+  def varOf[T](values: T*) = addVariable(CSPOMVariable.ofSeq(values))
 
-  def addVar[T](name: String, values: T*) = addVariable(CSPOMVariable.of(name, values))
+  def varOf[T](name: String, values: T*) = addVariable(CSPOMVariable.ofSeq(name = name, values = values))
 
   def boolVar() = addVariable(CSPOMVariable.bool)
 
@@ -172,8 +172,6 @@ final class CSPOM {
   override def toString = {
     val stb = new StringBuilder
 
-    
-    
     for (v <- variableMap.values) {
       stb append v append " = " append
         { if (v.domain == null) '?' else v.domain } append '\n'

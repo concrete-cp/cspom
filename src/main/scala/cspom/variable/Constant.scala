@@ -5,9 +5,9 @@ final class Constant[T](val value: T) extends CSPOMDomain[T] {
 
   override def toString = value.toString
 
-  def getValues = List(value)
+  def values = List(value)
 
-  override def getSize = 1
+  override val size = 1
 
   override def equals(that: Any) = that match {
     case other: Constant[T] => other.value == value
@@ -17,7 +17,7 @@ final class Constant[T](val value: T) extends CSPOMDomain[T] {
   def intersect(domain: CSPOMDomain[T]): CSPOMDomain[T] = {
     domain match {
       case dT: CSPOMDomain[T] =>
-        if (dT.getValues.contains(value)) this;
+        if (dT.values.contains(value)) this;
     }
     throw new IllegalArgumentException("Empty intersection");
   }

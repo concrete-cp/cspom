@@ -16,18 +16,6 @@ final class CSPOMVariable[T](
 
   val constraints = new HashSet[CSPOMConstraint]
 
-  /**
-   * Constructs a new variable with singleton (constant) domain.
-   *
-   * @param <T>
-   *            The type of the constant.
-   * @param constant
-   *            The unique value of the domain.
-   */
-  def this(constant: T) {
-    this(domain = new Constant[T](constant));
-  }
-
   override def toString = domain match {
     case c: Constant[_] => c.toString
     case _ => name
@@ -67,6 +55,16 @@ object VariableNameGenerator {
 }
 
 object CSPOMVariable {
+  /**
+   * Constructs a new variable with singleton (constant) domain.
+   *
+   * @param <T>
+   *            The type of the constant.
+   * @param constant
+   *            The unique value of the domain.
+   */
+  def const[T](name: String = VariableNameGenerator.generate, constant: T) =
+    new CSPOMVariable[T](name, new Constant[T](constant))
 
   /**
    * Constructs a new variable with a domain defined by lower
@@ -93,15 +91,15 @@ object CSPOMVariable {
    * @param values
    *            List of values defining the domain.
    */
-  def of[T](values: T*) = ofList(values.toList)
+  def of[T](values: T*) = ofSeq(values)
 
-  def of[T](name: String, values: T*) = ofList(values.toList)
+  def of[T](name: String, values: T*) = ofSeq(name = name, values = values)
 
-  def ofList[T](values: List[T]) =
-    new CSPOMVariable[T](domain = new ExtensiveDomain[T](values.toList))
+  def ofSeq[T](values: Seq[T]) =
+    new CSPOMVariable[T](domain = new ExtensiveDomain[T](values))
 
-  def ofList[T](name: String, values: List[T]) =
-    new CSPOMVariable[T](name = name, domain = new ExtensiveDomain[T](values.toList))
+  def ofSeq[T](name: String, aux: Boolean = false, values: Seq[T]) =
+    new CSPOMVariable[T](name = name, auxiliary = aux, domain = new ExtensiveDomain[T](values))
 
   def ofBool(boolean: Boolean) =
     new CSPOMVariable[Boolean](domain = BooleanDomain.valueOf(boolean));
@@ -114,6 +112,6 @@ object CSPOMVariable {
   def bool(name: String) =
     new CSPOMVariable[Boolean](name = name, domain = BooleanDomain)
 
-  def constant[T](value: T, aux: Boolean = false) = 
+  def constant[T](value: T, aux: Boolean = false) =
     new CSPOMVariable[T](domain = new Constant(value), auxiliary = aux)
 }

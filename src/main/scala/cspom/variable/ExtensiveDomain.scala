@@ -1,6 +1,6 @@
 package cspom.variable
 
-class ExtensiveDomain[T](val values: List[T]) extends CSPOMDomain[T] {
+class ExtensiveDomain[T](val values: Seq[T]) extends CSPOMDomain[T] {
   override val hashCode = values.hashCode
 
   override def equals(obj: Any) = obj match {
@@ -9,13 +9,12 @@ class ExtensiveDomain[T](val values: List[T]) extends CSPOMDomain[T] {
   }
 
   override def toString =
-    if (getSize > 5)
+    if (size > 5)
       values.take(5).mkString("{", ", ", "...}")
     else
       values.mkString("{", ", ", "}")
 
-  def intersect(domain: CSPOMDomain[T]) = domain.intersect(this)
-  def getValues = values
+  def intersect(domain: CSPOMDomain[T]) = new ExtensiveDomain[T](this.values.intersect(domain.values))
 }
 
 object ExtensiveDomain {

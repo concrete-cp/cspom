@@ -94,7 +94,8 @@ final class Predicate(parametersString: String, expressionString: String) {
       return ;
     }
     if (PredicateScanner.IDENTIFIER.matcher(parameter).matches()) {
-      if (!scope.exists { _.name == parameter }) {
+      println (scope.map { v => v.name })
+      if (!scope.map { v => v.name }.contains(parameter)) {
         throw new PredicateParseException("Could not find variable "
           + parameter + " in " + scope);
       }

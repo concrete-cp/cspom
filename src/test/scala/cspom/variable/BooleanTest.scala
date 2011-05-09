@@ -35,7 +35,7 @@ final class BooleanTest {
 
   @Test
   def testGetValues() {
-    assertEquals(BooleanDomain.getValues, List(false, true));
+    assertEquals(BooleanDomain.values, List(false, true));
   }
 
 }
