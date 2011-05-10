@@ -10,8 +10,8 @@ import org.junit.Test;
 
 class ConstantTest() {
 
-  val TEST_CONSTANT_INT = Random.nextInt();
-  val TEST_CONSTANT_DOUBLE = Random.nextDouble();
+  val TEST_CONSTANT_INT = Random.nextInt;
+  val TEST_CONSTANT_DOUBLE = Random.nextDouble;
   val intConstant: Constant[Int] = new Constant(TEST_CONSTANT_INT);
   val doubleConstant: Constant[Double] = new Constant(TEST_CONSTANT_DOUBLE);
 
@@ -23,10 +23,8 @@ class ConstantTest() {
 
   @Test
   def testHashCode = {
-    assertEquals(intConstant.hashCode(), new Constant(
-      TEST_CONSTANT_INT).hashCode());
-    assertEquals(doubleConstant.hashCode(), new Constant(
-      TEST_CONSTANT_DOUBLE).hashCode());
+    assertEquals(intConstant.hashCode, new Constant(TEST_CONSTANT_INT).hashCode);
+    assertEquals(doubleConstant.hashCode, new Constant(TEST_CONSTANT_DOUBLE).hashCode);
   }
 
   @Test

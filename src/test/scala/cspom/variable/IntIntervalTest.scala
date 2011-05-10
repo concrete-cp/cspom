@@ -31,18 +31,16 @@ final class IntIntervalTest {
 
 	@Test
 	def testToString() {
-		assertEquals("[10..15]", intInterval.toString());
+		assertEquals("[10..15]", intInterval.toString);
 	}
 
 	@Test
 	def testGetValues() {
-		assertEquals(List(10, 11, 12, 13, 14, 15), intInterval
-				.getValues);
+		assertEquals(List(10, 11, 12, 13, 14, 15), intInterval.values);
 	}
 
 	@Test
 	def testValueOf() {
-		val itvInt = IntInterval.valueOf("10..15");
-		assertEquals(intInterval, itvInt);
+		assertEquals(intInterval, IntInterval.valueOf("10..15"));
 	}
 }

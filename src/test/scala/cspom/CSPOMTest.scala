@@ -33,8 +33,8 @@ class CSPOMTest {
   @Test
   def boolVariables {
     val cspom = new CSPOM
-    cspom.addVariable(CSPOMVariable.ofBool(true))
-    cspom.addVariable(CSPOMVariable.ofBool(true))
+    cspom.addVariable(CSPOMVariable.ofBool(value = true))
+    cspom.addVariable(CSPOMVariable.ofBool(value = true))
     assertEquals(2, cspom.variables.size)
   }
 

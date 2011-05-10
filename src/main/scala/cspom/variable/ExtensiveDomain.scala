@@ -18,5 +18,5 @@ class ExtensiveDomain[T](val values: Seq[T]) extends CSPOMDomain[T] {
 }
 
 object ExtensiveDomain {
-  def of[T](values: T*) = new ExtensiveDomain(values.toList)
+  def of[T](values: T*) = new ExtensiveDomain(values)
 }

@@ -25,7 +25,7 @@ final class Predicate(parametersString: String, expressionString: String) {
   val types = parametersString.trim.split(" +").grouped(2).map { p => p(1) -> p(0) } toMap
 
   /**
-   * List of parameters.
+   * Ordered list of parameters.
    */
   val parameters = parametersString.trim.split(" +").grouped(2).map { p => p(1) } toSeq
 
@@ -61,15 +61,14 @@ final class Predicate(parametersString: String, expressionString: String) {
   @throws(classOf[PredicateParseException])
   def applyParameters(constraintParameters: String,
     scope: Seq[CSPOMVariable[_]]) = {
-    val stringParameters = constraintParameters.trim.split(
-      " +");
+    val stringParameters = constraintParameters.trim.split(" +");
 
     if (stringParameters.length != this.parameters.size) {
       throw new PredicateParseException("Incorrect parameter count");
     }
 
     var applyied = expression;
-    stringParameters.zip(this.parameters).foreach { p =>
+    for (p <- stringParameters.zip(this.parameters)) {
       controlParameter(p._1, scope);
       applyied = applyied.replaceAll(p._2, p._1);
     }
@@ -88,13 +87,11 @@ final class Predicate(parametersString: String, expressionString: String) {
    * @throws PredicateParseException
    *             If the given parameter is invalid.
    */
-  private def controlParameter(parameter: String,
-    scope: Seq[CSPOMVariable[_]]) {
+  private def controlParameter(parameter: String, scope: Seq[CSPOMVariable[_]]) {
     if (PredicateScanner.INTEGER.matcher(parameter).matches()) {
       return ;
     }
     if (PredicateScanner.IDENTIFIER.matcher(parameter).matches()) {
-      println (scope.map { v => v.name })
       if (!scope.map { v => v.name }.contains(parameter)) {
         throw new PredicateParseException("Could not find variable "
           + parameter + " in " + scope);

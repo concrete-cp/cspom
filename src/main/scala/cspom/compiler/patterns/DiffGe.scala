@@ -16,18 +16,20 @@ final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
         subConstraint.result.constraints.size == 2) => {
 
         subConstraint.result.constraints
-          .iterator.filter { _.description == "ge " }
           .find { c: CSPOMConstraint =>
-            val scope = c match {
-              case fc: FunctionalConstraint => fc.arguments
-              case ge: GeneralConstraint => ge.scope
+            c.description == "ge" && {
+              val scope = c match {
+                case fGe: FunctionalConstraint => fGe.arguments
+                case gGe: GeneralConstraint => gGe.scope
+              }
+              scope.size == 2 && scope(0) == subConstraint.result
             }
-            scope.size == 2 && scope(0) == subConstraint.result
           } match {
             case Some(geConstraint) => {
 
               problem.removeConstraint(subConstraint);
               problem.removeConstraint(geConstraint);
+              problem.removeVariable(subConstraint.result)
 
               geConstraint match {
                 case fc: FunctionalConstraint =>

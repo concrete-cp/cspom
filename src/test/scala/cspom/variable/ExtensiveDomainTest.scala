@@ -17,7 +17,7 @@ final class ExtensiveDomainTest {
 
     @Test
     def testGetValues() {
-        assertEquals(intDomain.getValues, List(1, 7, 9));
+        assertEquals(intDomain.values, List(1, 7, 9));
     }
 
     @Test

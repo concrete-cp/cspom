@@ -20,9 +20,9 @@ final class PredicateTest {
       "X3" -> "int"), predicate.types)
 
     val variables = Seq(
-      new CSPOMVariable("V0"),
-      new CSPOMVariable("V1"),
-      new CSPOMVariable("V2"))
+      CSPOMVariable.of("V0", 0),
+      CSPOMVariable.of("V1", 1),
+      CSPOMVariable.of("V2", 2))
 
     assertEquals("or(ne(V0,V1),or(ne(V2,5)))", predicate.applyParameters("V0 V1 V2 5", variables))
   }

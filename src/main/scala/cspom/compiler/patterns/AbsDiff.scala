@@ -27,6 +27,7 @@ class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
                 result = fc.result,
                 function = "absdiff",
                 arguments = subConstraint.arguments));
+              problem.removeVariable(subConstraint.result)
             case None =>
           }
       }

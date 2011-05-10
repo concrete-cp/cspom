@@ -136,11 +136,11 @@ final class CSPOM {
   def interVar(name: String, lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(name, lb, ub))
 
-  def varOf[T](values: T*) = addVariable(CSPOMVariable.ofSeq(values))
+  def varOf[T](values: T*) = addVariable(CSPOMVariable.ofSeq(values = values))
 
   def varOf[T](name: String, values: T*) = addVariable(CSPOMVariable.ofSeq(name = name, values = values))
 
-  def boolVar() = addVariable(CSPOMVariable.bool)
+  def boolVar() = addVariable(CSPOMVariable.bool())
 
   def boolVar(name: String) = addVariable(CSPOMVariable.bool(name))
 
