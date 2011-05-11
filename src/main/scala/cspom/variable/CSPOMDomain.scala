@@ -18,22 +18,23 @@ object CSPOMDomain {
    * @return The resulting Domain object
    */
   def valueOf(desc: String) = {
-    val listOfValues = desc.trim.split(" +")
-
-    if (listOfValues.size == 1 && listOfValues(0).contains("..")) {
-      IntInterval.valueOf(listOfValues(0));
-    } else {
-      var values: List[java.lang.Integer] = Nil
-
-      for (currentValue <- listOfValues) {
-        if (currentValue.contains("..")) {
-          values ++= IntInterval.valueOf(currentValue).values;
+    desc.trim.split(" +") match {
+      case Array(single) if single contains ".." =>
+        IntInterval.valueOf(single)
+      case listOfValues =>
+        val values = (listOfValues.iterator.map { v =>
+          if (v.contains("..")) {
+            IntInterval.valueOf(v).values;
+          } else {
+            List(java.lang.Integer.valueOf(v.trim));
+          }
+        }).flatten.toSeq
+        if (values == (Int.unbox(values.head) to values.last)) {
+          new IntInterval(values.head, values.last)
         } else {
-          values :+= java.lang.Integer.valueOf(currentValue.trim);
+          new ExtensiveDomain(values)
         }
-      }
 
-      new ExtensiveDomain(values)
     }
 
   }
