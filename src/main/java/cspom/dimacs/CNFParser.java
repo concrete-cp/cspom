@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 import cspom.CSPOM;
 import cspom.CSPParseException;
-import cspom.compiler.PredicateParseException;
 import cspom.variable.CSPOMVariable;
 
 
@@ -55,11 +54,7 @@ public final class CNFParser {
             while (varMatcher.find()) {
                 final int var = Integer.valueOf(varMatcher.group(1));
                 if (var == 0) {
-                    try {
-                        problem.ctr(clause(currentClause));
-                    } catch (PredicateParseException e) {
-                        throw new IllegalStateException(e);
-                    }
+                    problem.ctr(clause(currentClause));
                     currentClause.clear();
                 } else {
                     currentClause.add(var);

@@ -1,14 +1,7 @@
 package cspom.xcsp;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ListIterator;
-import cspom.compiler.PredicateParseException;
-import cspom.compiler.PredicateScanner;
-import cspom.variable.CSPOMVariable;
+import cspom.compiler.PredicateScanner
+import cspom.variable.CSPOMVariable
 
 /**
  * This class is used to represent XCSP predicates.
@@ -58,14 +51,11 @@ final class Predicate(parametersString: String, expressionString: String) {
    *             predicate parameters.
    *
    */
-  @throws(classOf[PredicateParseException])
   def applyParameters(constraintParameters: String,
     scope: Seq[CSPOMVariable[_]]) = {
     val stringParameters = constraintParameters.trim.split(" +");
 
-    if (stringParameters.length != this.parameters.size) {
-      throw new PredicateParseException("Incorrect parameter count");
-    }
+    assume(stringParameters.length == this.parameters.size, "Incorrect parameter count");
 
     var applyied = expression;
     for (p <- stringParameters.zip(this.parameters)) {
@@ -93,12 +83,12 @@ final class Predicate(parametersString: String, expressionString: String) {
     }
     if (PredicateScanner.IDENTIFIER.matcher(parameter).matches()) {
       if (!scope.map { v => v.name }.contains(parameter)) {
-        throw new PredicateParseException("Could not find variable "
+        throw new AssertionError("Could not find variable "
           + parameter + " in " + scope);
       }
       return ;
     }
-    throw new PredicateParseException("Could not recognize " + parameter);
+    throw new AssertionError("Could not recognize " + parameter);
 
   }
 }

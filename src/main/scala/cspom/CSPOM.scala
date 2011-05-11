@@ -11,7 +11,6 @@ import scala.collection.mutable.{ LinkedHashMap, LinkedHashSet }
 import scala.util.matching.Regex
 import cspom.variable.CSPOMVariable
 import cspom.compiler.ConstraintParser
-import cspom.compiler.PredicateParseException
 import cspom.xcsp.XCSPParser
 import cspom.dimacs.CNFParser
 
@@ -97,7 +96,7 @@ final class CSPOM {
    */
   def addConstraint(constraint: CSPOMConstraint) = {
     assume(constraints.add(constraint),
-      "This constraint already belongs to the problem");
+      "The constraint " + constraint + " already belongs to the problem");
 
     for (v <- constraint.scope) { v.registerConstraint(constraint) }
     constraint
@@ -153,10 +152,7 @@ final class CSPOM {
    *
    * @param string
    *            A predicate.
-   * @throws PredicateParseException
-   *             If an error was encountered parsing the predicate.
    */
-  @throws(classOf[PredicateParseException])
   def ctr(string: String) {
     if (constraintParser == null) {
       constraintParser = new ConstraintParser(this);
