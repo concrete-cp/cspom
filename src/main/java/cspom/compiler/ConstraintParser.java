@@ -38,8 +38,7 @@ public final class ConstraintParser {
             return addVariable(node, problem);
         }
 
-        final CSPOMVariable<?> result = new CSPOMVariable<Object>(null, null,
-                true);
+        final CSPOMVariable<?> result = CSPOMVariable.aux();
         problem.addVariable(result);
 
         final List<CSPOMVariable<?>> operands = new LinkedList<CSPOMVariable<?>>();
@@ -60,9 +59,7 @@ public final class ConstraintParser {
         }
 
         final CSPOMVariable<?> newVariable;
-        if (node.isIdentifier()) {
-            newVariable = new CSPOMVariable<Object>(null, null, false);
-        } else if (node.isInteger()) {
+        if (node.isInteger()) {
             newVariable = CSPOMVariable.constant(Integer.parseInt(node
                     .getOperator()));
         } else {

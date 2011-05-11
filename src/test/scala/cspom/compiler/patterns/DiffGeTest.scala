@@ -20,7 +20,7 @@ class DiffGeTest {
     cspom.addConstraint(new GeneralConstraint("ge", r, cspom.interVar(0, 5)))
 
     new DiffGe(cspom).compile(sub)
-    println(cspom)
+    //println(cspom)
     assertEquals(3, cspom.variables.size)
     assertEquals(1, cspom.constraints.size)
     assertEquals("diffGe", cspom.constraints.iterator.next.description)
@@ -37,7 +37,7 @@ class DiffGeTest {
     cspom.addConstraint(new FunctionalConstraint(cspom.boolVar, "ge", r, cspom.interVar(0, 5)))
 
     new DiffGe(cspom).compile(sub)
-    println(cspom)
+    //println(cspom)
     assertEquals(4, cspom.variables.size)
     assertEquals(1, cspom.constraints.size)
     assertEquals("diffGe", cspom.constraints.iterator.next.description)

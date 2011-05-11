@@ -49,7 +49,7 @@ public final class CNFParser {
                     }
                     continue;
                 }
-                throw new CSPParseException("Parameter line not found");
+                throw new CSPParseException("Parameter line not found", null, -1);
             }
             final Matcher varMatcher = VAR.matcher(line);
             while (varMatcher.find()) {

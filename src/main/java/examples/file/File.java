@@ -21,7 +21,7 @@ public final class File {
 
 		} catch (CSPParseException e) {
             System.err
-                    .println(e.getMessage() + " at line " + e.getLineNumber());
+                    .println(e.getMessage() + " at line " + e.lineNumber());
 			throw e;
 		}
 		System.out.println(cspom);

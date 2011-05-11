@@ -23,7 +23,7 @@ class AbsDiffTest {
     cspom.addConstraint(new FunctionalConstraint(v2, "abs", r))
     
     new AbsDiff(cspom).compile(sub)
-    println(cspom)
+    //println(cspom)
     assertEquals(3, cspom.variables.size)
     assertEquals(1, cspom.constraints.size)
     assertEquals("absdiff", cspom.constraints.iterator.next.description)

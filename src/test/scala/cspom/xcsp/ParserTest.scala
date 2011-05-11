@@ -1,5 +1,6 @@
 package cspom.xcsp;
 
+import scala.collection.JavaConversions
 import cspom.CSPOM
 import org.junit.Assert._
 import org.junit.Test
@@ -10,11 +11,10 @@ final class ParserTest {
   @Test
   def test() {
     val cspom = new CSPOM();
-    val parser = new XCSPParser(cspom);
-    parser.parse(classOf[ParserTest].getResourceAsStream(FILENAME));
-    assertEquals(25, cspom.variables.size)
-    assertEquals(55, cspom.constraints.size)
-    //System.out.println(cspom);
+    new XCSPParser(cspom).parse(classOf[ParserTest].getResourceAsStream(FILENAME));
+    //println(cspom);
+    assertEquals(25, JavaConversions.collectionAsScalaIterable(cspom.variables).filter(!_.auxiliary).size)
+    assertTrue(cspom.constraints.size >= 55)
   }
 
 }
