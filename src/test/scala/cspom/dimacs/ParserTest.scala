@@ -15,6 +15,7 @@ final class ParserTest {
 		parser.parse(classOf[ParserTest].getResourceAsStream(FILENAME));
 		assertEquals(90, cspom.variables.size)
 		assertEquals(300, cspom.constraints.size)
+		//println(cspom)
 	}
 
 }
