@@ -2,15 +2,15 @@ package cspom.variable
 
 import scala.collection.immutable.List
 import scala.math.{ max, min }
-class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[java.lang.Integer] {
+class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
   require(ub > lb);
 
-  val values = (lb to ub) map { (x: Int) => Int.box(x) } toList
+  val values = (lb to ub) toList
 
-  def intersect(domain: CSPOMDomain[java.lang.Integer]): CSPOMDomain[java.lang.Integer] = domain match {
+  def intersect[Int](domain: CSPOMDomain[Int]): CSPOMDomain[Int] = domain match {
     case m: IntInterval =>
-      new IntInterval(max(lb, m.lb), min(ub, m.ub));
-    case _ => domain.intersect(this)
+      new IntInterval(max(lb, m.lb), min(ub, m.ub)).asInstanceOf[CSPOMDomain[Int]];
+    case _ => domain.intersect(this.asInstanceOf[CSPOMDomain[Int]])
   }
 
   override def toString = "[" + lb + ".." + ub + "]";

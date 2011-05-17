@@ -40,14 +40,14 @@ final class CSPOM {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private val variableMap = new LinkedHashMap[String, CSPOMVariable[Any]]
+  private val variableMap = new LinkedHashMap[String, CSPOMVariable]
 
   /**
    * @return The variables of this problem.
    */
   val variables = variableMap.values;
 
-  val getVariables = JavaConversions.asJavaIterable(variables)
+  val getVariables = JavaConversions.asJavaCollection(variables)
 
   /**
    * @param variableName
@@ -76,7 +76,7 @@ final class CSPOM {
    * @throws DuplicateVariableException
    *             If a variable with the same name already exists.
    */
-  def addVariable[T >: Any](variable: CSPOMVariable[T]): CSPOMVariable[T] = {
+  def addVariable[T >: Any](variable: CSPOMVariable): CSPOMVariable = {
 
     assume(variableMap.put(variable.name, variable) == None, variable.name
       + ": a variable of the same name already exists");
@@ -84,7 +84,7 @@ final class CSPOM {
 
   }
 
-  def removeVariable(v: CSPOMVariable[_]) {
+  def removeVariable(v: CSPOMVariable) {
     assume(v.constraints.isEmpty, v + " is still implied by constraints")
 
     variableMap.remove(v.name);
@@ -162,7 +162,7 @@ final class CSPOM {
     constraintParser.split(string);
   }
 
-  def le(v0: CSPOMVariable[java.lang.Integer], v1: CSPOMVariable[java.lang.Integer]) =
+  def le(v0: CSPOMVariable, v1: CSPOMVariable) =
     addConstraint(new GeneralConstraint("le", v0, v1));
 
   override def toString = {

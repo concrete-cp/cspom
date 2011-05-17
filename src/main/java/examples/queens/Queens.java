@@ -17,7 +17,7 @@ public final class Queens {
 
 		final CSPOM problem = new CSPOM();
 
-		final List<CSPOMVariable<Integer>> queens = new ArrayList<CSPOMVariable<Integer>>(
+		final List<CSPOMVariable> queens = new ArrayList<CSPOMVariable>(
 				nbQueens);
 
 		for (int i = 0; i < nbQueens; i++) {

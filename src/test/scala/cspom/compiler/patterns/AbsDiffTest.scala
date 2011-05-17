@@ -26,8 +26,8 @@ class AbsDiffTest {
     //println(cspom)
     assertEquals(3, cspom.variables.size)
     assertEquals(1, cspom.constraints.size)
-    assertEquals("absdiff", cspom.constraints.iterator.next.description)
-    assertTrue(cspom.constraints.iterator.next.isInstanceOf[FunctionalConstraint])
+    assertEquals("absdiff", cspom.constraints.head.description)
+    assertTrue(cspom.constraints.head.isInstanceOf[FunctionalConstraint])
   }
   
 }

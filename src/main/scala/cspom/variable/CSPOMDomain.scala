@@ -1,7 +1,7 @@
 package cspom.variable
 import scala.collection.JavaConversions
 
-trait CSPOMDomain[+T <: Any] {
+trait CSPOMDomain[+T] {
   def values: Seq[T]
   def getValues = JavaConversions.asJavaCollection(values.asInstanceOf[Seq[_]])
   def size: Int = values.size
@@ -28,10 +28,10 @@ object CSPOMDomain {
           if (v.contains("..")) {
             IntInterval.valueOf(v).values;
           } else {
-            List(java.lang.Integer.valueOf(v.trim));
+            List(v.trim.toInt);
           }
         }).flatten.toSeq
-        if (values == (Int.unbox(values.head) to values.last)) {
+        if (values == (values.head to values.last)) {
           new IntInterval(values.head, values.last)
         } else {
           new ExtensiveDomain(values)

@@ -19,8 +19,8 @@ class CSPOMTest {
 
     vars foreach { cspom.addVariable(_) }
 
-    assert(vars sameElements cspom.variables)
-    assertEquals(vars(0), cspom.variable("test1"))
+    assertTrue(vars sameElements cspom.variables)
+    assertEquals(Some(vars(0)), cspom.variable("test1"))
   }
 
   @Test(expected = classOf[AssertionError])

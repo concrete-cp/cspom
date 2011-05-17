@@ -5,7 +5,7 @@ import scala.collection.JavaConversions
 abstract class CSPOMConstraint(
   val description: String,
   val parameters: String,
-  val scope: Seq[CSPOMVariable[Any]]) {
+  val scope: Seq[CSPOMVariable]) {
 
   val arity = scope.size
   override def hashCode = {
@@ -22,7 +22,7 @@ abstract class CSPOMConstraint(
   val getScope = JavaConversions.seqAsJavaList(scope)
   //TODO: val positions
 
-  def involves(variable: CSPOMVariable[Any]) = scopeSet.contains(variable)
+  def involves(variable: CSPOMVariable) = scopeSet.contains(variable)
 
   final def getVariable(position: Int) = scope(position)
 
@@ -32,9 +32,9 @@ abstract class CSPOMConstraint(
     case _ => false
   }
 
-  def replacedVar[T >: Any](which: CSPOMVariable[T], by: CSPOMVariable[T]): CSPOMConstraint;
+  def replacedVar(which: CSPOMVariable, by: CSPOMVariable): CSPOMConstraint;
 
-  def evaluate(t: Seq[_]): Boolean;
+  def evaluate(t: Seq[Any]): Boolean;
 }
 //object CSPOMConstraint {
 //  val CONSTRAINT_DESCRIPTION = new com.google.common.base.Function[CSPOMConstraint, String] {

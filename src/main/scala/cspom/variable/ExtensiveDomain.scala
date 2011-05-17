@@ -14,7 +14,8 @@ class ExtensiveDomain[T](val values: Seq[T]) extends CSPOMDomain[T] {
     else
       values.mkString("{", ", ", "}")
 
-  def intersect(domain: CSPOMDomain[T]) = new ExtensiveDomain[T](this.values.intersect(domain.values))
+  def intersect[S >: T](domain: CSPOMDomain[S]) = 
+    new ExtensiveDomain[S](this.values.intersect(domain.values))
 }
 
 object ExtensiveDomain {

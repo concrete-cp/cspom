@@ -6,17 +6,17 @@ import javax.script.ScriptException
 import scala.collection.JavaConversions
 
 class FunctionalConstraint(
-  val result: CSPOMVariable[Any],
+  val result: CSPOMVariable,
   val function: String,
   parameters: String = null,
-  val arguments: Seq[CSPOMVariable[Any]])
+  val arguments: Seq[CSPOMVariable])
   extends CSPOMConstraint(function, parameters, result +: arguments)
   with Loggable {
   require(result != null)
   require(arguments != null)
   require(!arguments.isEmpty, "Must have at least one argument")
 
-  def this(result: CSPOMVariable[Any], function: String, arguments: CSPOMVariable[Any]*) =
+  def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
     this(result = result, function = function, arguments = arguments.toList)
 
   val getArguments = JavaConversions.seqAsJavaList(arguments)
@@ -30,15 +30,13 @@ class FunctionalConstraint(
     arguments.addString(stb, "(", ", ", ")").toString
   }
 
-  override def replacedVar[T >: Any](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
-
+  override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = 
     new FunctionalConstraint({ if (which == result) by else result },
       function, parameters,
       arguments map { v => if (v == which) by else v })
+  
 
-  }
-
-  override def evaluate(tuple: Seq[_]): Boolean = {
+  override def evaluate(tuple: Seq[Any]): Boolean = {
     val stb = new StringBuilder
     stb append tuple(0) append " == " append description append '('
 

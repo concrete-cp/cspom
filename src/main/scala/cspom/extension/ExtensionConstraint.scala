@@ -13,7 +13,7 @@ import cspom.constraint.{ PermutableConstraint, CSPOMConstraint }
 final class ExtensionConstraint(
   val relation: Relation,
   val init: Boolean,
-  scope: Seq[CSPOMVariable[Any]]) extends CSPOMConstraint("ext", null, scope) with PermutableConstraint {
+  scope: Seq[CSPOMVariable]) extends CSPOMConstraint("ext", null, scope) with PermutableConstraint {
 
   override def toString = super.toString + ": " + relation;
 
@@ -26,12 +26,12 @@ final class ExtensionConstraint(
     case _ => false
   }
 
-  def standardize(newScope: Seq[CSPOMVariable[Any]]) = {
+  def standardize(newScope: Seq[CSPOMVariable]) = {
     assert(newScope.size == arity)
     new ExtensionConstraint(relation.permute(scope.map(v => newScope.indexOf(v))), init, newScope)
   }
 
-  override def replacedVar[T >: Any](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
+  override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {
     new ExtensionConstraint(relation, init,
       scope map { v => if (v == which) by else v })
   }

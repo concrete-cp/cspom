@@ -10,7 +10,7 @@ class RemoveAnd(val problem: CSPOM, val constraints: Queue[CSPOMConstraint]) ext
     constraint match {
       case andConstraint: GeneralConstraint if constraint.description == "and" => {
         for (v <- constraint.scope) {
-          v.asInstanceOf[CSPOMVariable[Boolean]].domain = TrueDomain
+          v.asInstanceOf[CSPOMVariable].domain = TrueDomain
           for (c <- v.constraints if c != constraint)
             constraints.enqueue(c)
         }

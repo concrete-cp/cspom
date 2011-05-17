@@ -52,7 +52,7 @@ final class Predicate(parametersString: String, expressionString: String) {
    *
    */
   def applyParameters(constraintParameters: String,
-    scope: Seq[CSPOMVariable[_]]) = {
+    scope: Seq[CSPOMVariable]) = {
     val stringParameters = constraintParameters.trim.split(" +");
 
     assume(stringParameters.length == this.parameters.size, "Incorrect parameter count");
@@ -77,7 +77,7 @@ final class Predicate(parametersString: String, expressionString: String) {
    * @throws PredicateParseException
    *             If the given parameter is invalid.
    */
-  private def controlParameter(parameter: String, scope: Seq[CSPOMVariable[_]]) {
+  private def controlParameter(parameter: String, scope: Seq[CSPOMVariable]) {
     if (PredicateScanner.INTEGER.matcher(parameter).matches()) {
       return ;
     }
@@ -95,8 +95,7 @@ final class Predicate(parametersString: String, expressionString: String) {
 
 /**
  * An enumeration to represent various native types for CSP. For now, only
- * integers are supported. Use the static decl(String) method to avoid Java
- * reserved keywords.
+ * integers are supported.
  *
  * @author vion
  *
@@ -107,31 +106,4 @@ object ValueType extends Enumeration {
    * Standard integer (int) type.
    */
   val integer = Value("int");
-
-  //        /**
-  //         * Registers the value type with its XCSP declaration.
-  //         * 
-  //         * @param declaration
-  //         *            XCSP declaration of the value type
-  //         */
-  //        def this(final String declaration) {
-  //            DECLARATIONS.put(declaration, this);
-  //        }
-  //
-  //        /**
-  //         * Obtain types through this method to avoid Java reserved keywords such
-  //         * as "int".
-  //         * 
-  //         * @param declaration
-  //         *            The XCSP type declaration
-  //         * @return The corresponding ValueType enum element
-  //         */
-  //        public static ValueType decl(final String declaration) {
-  //            final ValueType type = DECLARATIONS.get(declaration);
-  //            if (type == null) {
-  //                return valueOf(declaration);
-  //            }
-  //            return type;
-  //        }
-
 }

@@ -1,7 +1,7 @@
 package cspom.variable;
 
-import _root_.cspom.constraint.CSPOMConstraint
-import scala.collection.mutable.HashSet
+import cspom.constraint.CSPOMConstraint
+
 
 /**
  * This class defines and implements CSP variables.
@@ -9,12 +9,12 @@ import scala.collection.mutable.HashSet
  * @author vion
  *
  */
-final class CSPOMVariable[+T <: Any](
+final class CSPOMVariable(
   val name: String,
-  var domain: CSPOMDomain[T],
+  var domain: CSPOMDomain[Any],
   val auxiliary: Boolean) {
 
-  val constraints = new HashSet[CSPOMConstraint]
+  var constraints: Set[CSPOMConstraint] = Set.empty
 
   override def toString = domain match {
     case c: Constant[_] => c.toString
@@ -30,11 +30,12 @@ final class CSPOMVariable[+T <: Any](
    */
   def registerConstraint(constraint: CSPOMConstraint) {
     assume(constraint.involves(this), constraint + " does not involve " + this);
-    constraints.add(constraint);
+    constraints += constraint;
   }
 
   def removeConstraint(constraint: CSPOMConstraint): Unit = {
-    assume(constraints.remove(constraint), this + " is not in " + constraint + "'s scope");
+    assume(constraints contains constraint, this + " is not in " + constraint + "'s scope");
+    constraints -= constraint
   }
 }
 
@@ -63,7 +64,7 @@ object CSPOMVariable {
    *            The unique value of the domain.
    */
   def constant[T](constant: T) =
-    new CSPOMVariable[T](VariableNameGenerator.generate, new Constant[T](constant), true)
+    new CSPOMVariable(VariableNameGenerator.generate, new Constant[T](constant), true)
 
   /**
    * Constructs a new variable with a domain defined by lower
@@ -77,7 +78,7 @@ object CSPOMVariable {
    *            Upper bound of the domain
    */
   def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int) =
-    new CSPOMVariable[java.lang.Integer](name, new IntInterval(lb, ub), false);
+    new CSPOMVariable(name, new IntInterval(lb, ub), false);
 
   /**
    * Constructs a new variable with given name. Domain is defined by a list of
@@ -95,13 +96,13 @@ object CSPOMVariable {
   def of[T](name: String, values: T*) = ofSeq(name, values)
 
   def ofSeq[T](name: String = VariableNameGenerator.generate, values: Seq[T]) =
-    new CSPOMVariable[T](name, new ExtensiveDomain[T](values), false)
+    new CSPOMVariable(name, new ExtensiveDomain[T](values), false)
 
   def ofBool(name: String = VariableNameGenerator.generate, value: Boolean) =
-    new CSPOMVariable[Boolean](name, BooleanDomain.valueOf(value), false);
+    new CSPOMVariable(name, BooleanDomain.valueOf(value), false);
 
   def bool(name: String = VariableNameGenerator.generate) =
-    new CSPOMVariable[Boolean](name, BooleanDomain, false)
+    new CSPOMVariable(name, UnknownBooleanDomain, false)
 
-  def aux() = new CSPOMVariable[Any](VariableNameGenerator.generate, null, true)
+  def aux() = new CSPOMVariable(VariableNameGenerator.generate, null, true)
 }

@@ -40,7 +40,7 @@ final class MergeEq(private val problem: CSPOM,
         val refVar = if (fullVars.isEmpty) auxVars.head else fullVars.head
 
         for (aux <- auxVars if aux != refVar) {
-          merge(aux.asInstanceOf[CSPOMVariable[Any]], refVar.asInstanceOf[CSPOMVariable[Any]])
+          merge(aux, refVar)
         }
 
       }
@@ -57,7 +57,7 @@ final class MergeEq(private val problem: CSPOM,
       d0.intersect(d1);
   }
 
-  private def merge[T >: Any](merged: CSPOMVariable[T], variable: CSPOMVariable[T]) {
+  private def merge(merged: CSPOMVariable, variable: CSPOMVariable) {
     assume(merged != variable)
 
     variable.domain = mergeDomain(merged.domain, variable.domain);
