@@ -111,7 +111,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
-<!-- 
+
 		<pluginManagement>
 			<plugins>
 				
@@ -148,6 +148,6 @@
 					</configuration>
 				</plugin>
 			</plugins>
-		</pluginManagement> -->
+		</pluginManagement> 
 	</build>
 </project>
