@@ -40,26 +40,28 @@ final class CSPOM {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private val variableMap = new LinkedHashMap[String, CSPOMVariable[_]]
+  private val variableMap = new LinkedHashMap[String, CSPOMVariable[Any]]
 
   /**
    * @return The variables of this problem.
    */
-  val variables = JavaConversions.asJavaCollection(variableMap.values);
+  val variables = variableMap.values;
+
+  val getVariables = JavaConversions.asJavaIterable(variables)
 
   /**
    * @param variableName
    *            A variable name.
    * @return The variable with the corresponding name.
    */
-  def variable(name: String) = variableMap(name);
+  def variable(name: String) = variableMap.get(name);
 
   /**
    * Collection of all constraints of the problem.
    */
-  private val _constraints = new LinkedHashSet[CSPOMConstraint]
+  val constraints = new LinkedHashSet[CSPOMConstraint]
 
-  val constraints = JavaConversions.mutableSetAsJavaSet(_constraints)
+  val getConstraints = JavaConversions.mutableSetAsJavaSet(constraints)
 
   /**
    * The constraint compiler used by this CSPOM instance.
@@ -74,7 +76,7 @@ final class CSPOM {
    * @throws DuplicateVariableException
    *             If a variable with the same name already exists.
    */
-  def addVariable[T](variable: CSPOMVariable[T]): CSPOMVariable[T] = {
+  def addVariable[T >: Any](variable: CSPOMVariable[T]): CSPOMVariable[T] = {
 
     assume(variableMap.put(variable.name, variable) == None, variable.name
       + ": a variable of the same name already exists");
@@ -160,23 +162,13 @@ final class CSPOM {
     constraintParser.split(string);
   }
 
-  def le(v0: CSPOMVariable[Int], v1: CSPOMVariable[Int]) =
-    addConstraint(new GeneralConstraint(
-      description = "le",
-      scope = Vector(v0, v1)));
+  def le(v0: CSPOMVariable[java.lang.Integer], v1: CSPOMVariable[java.lang.Integer]) =
+    addConstraint(new GeneralConstraint("le", v0, v1));
 
   override def toString = {
-    val stb = new StringBuilder
-
-    for (v <- variableMap.values) {
-      stb append v append " = " append
-        { if (v.domain == null) '?' else v.domain } append '\n'
-    }
-
-    for (c <- _constraints) {
-      stb append c append '\n'
-    }
-    stb.toString
+    variables.map(v =>
+      v + " = " + (if (v.domain == null) '?' else v.domain)).mkString(" ; ") +
+      "\n" + constraints.mkString("\n")
   }
 
   /**
@@ -199,7 +191,7 @@ final class CSPOM {
     }
 
     var gen = 0;
-    for (c <- _constraints) {
+    for (c <- constraints) {
       if (c.arity > 2) {
         stb.append("node [\n");
         stb.append("id \"cons").append(gen).append("\"\n");
@@ -228,13 +220,13 @@ final class CSPOM {
   }
 
   def control(solution: Map[String, Number]) = {
-    _constraints filter { c =>
+    constraints filter { c =>
       !c.evaluate(c.scope map { v => solution.get(v.name) })
     }
   }
 
   def controlInt(solution: Map[String, Int]) = {
-    _constraints filter { c =>
+    constraints filter { c =>
       !c.evaluate(c.scope map { v => solution.get(v.name) })
     }
   }

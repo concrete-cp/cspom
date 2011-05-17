@@ -1,10 +1,10 @@
 package cspom.xcsp;
 
-import cspom.extension.{Relation, ExtensionConstraint}
-import cspom.variable.{CSPOMVariable, CSPOMDomain}
-import cspom.{CSPParseException, CSPOM}
+import cspom.extension.{ Relation, ExtensionConstraint }
+import cspom.variable.{ CSPOMVariable, CSPOMDomain }
+import cspom.{ CSPParseException, CSPOM }
 import java.io.InputStream
-import scala.xml.{XML, NodeSeq}
+import scala.xml.{ XML, NodeSeq }
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -117,10 +117,10 @@ final class XCSPParser(private val problem: CSPOM) {
 
     val scope = varNames.split(" +") map { s =>
       problem.variable(s) match {
-        case null =>
+        case Some(v) => v
+        case None =>
           throw new CSPParseException("Could not find variable " + s
             + " from the scope of " + name);
-        case v => v
       }
     }
 

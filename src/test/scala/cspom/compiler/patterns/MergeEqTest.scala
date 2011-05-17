@@ -1,12 +1,11 @@
 package cspom.compiler.patterns
 
-import cspom.constraint.{ CSPOMConstraint, GeneralConstraint }
-import cspom.variable.CSPOMVariable
-import cspom.variable.ExtensiveDomain
+import cspom.constraint.{CSPOMConstraint, GeneralConstraint}
+import cspom.variable.{ExtensiveDomain, CSPOMVariable}
 import cspom.CSPOM
-import java.util.LinkedList
 import org.junit.Assert._
 import org.junit.Test
+import scala.collection.mutable.Queue
 
 class MergeEqTest {
   @Test
@@ -19,7 +18,7 @@ class MergeEqTest {
     val eq = new GeneralConstraint("eq", v0, v1)
     cspom.addConstraint(eq)
 
-    new MergeEq(cspom, new LinkedList[CSPOMConstraint]).compile(eq);
+    new MergeEq(cspom, new Queue[CSPOMConstraint]).compile(eq);
 
     assertEquals(1, cspom.variables.size)
     assertSame(v0, cspom.variables.iterator.next)
@@ -38,7 +37,7 @@ class MergeEqTest {
     val eq = new GeneralConstraint("eq", v0, v1)
     cspom.addConstraint(eq)
 
-    new MergeEq(cspom, new LinkedList[CSPOMConstraint]).compile(eq);
+    new MergeEq(cspom, new Queue[CSPOMConstraint]).compile(eq);
 
     assertEquals(1, cspom.variables.size)
     assertSame(v0, cspom.variables.iterator.next)

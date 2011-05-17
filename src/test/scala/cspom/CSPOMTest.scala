@@ -19,7 +19,7 @@ class CSPOMTest {
 
     vars foreach { cspom.addVariable(_) }
 
-    assert(vars sameElements JavaConversions.collectionAsScalaIterable(cspom.variables))
+    assert(vars sameElements cspom.variables)
     assertEquals(vars(0), cspom.variable("test1"))
   }
 

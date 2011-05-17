@@ -1,13 +1,13 @@
 package cspom.compiler.patterns;
 
-import cspom.variable.TrueDomain
 import cspom.constraint.{GeneralConstraint, FunctionalConstraint, CSPOMConstraint}
+import cspom.variable.TrueDomain
 import cspom.CSPOM
-import java.util.Deque
+import scala.collection.mutable.Queue
 
 final class DeReify(
   private val problem: CSPOM,
-  private val constraints: Deque[CSPOMConstraint]) extends ConstraintCompiler {
+  private val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
 
   override def compile(c: CSPOMConstraint) {
     c match {
@@ -16,7 +16,7 @@ final class DeReify(
         val newConstraint = new GeneralConstraint(
           fc.description, fc.parameters, fc.arguments);
         problem.addConstraint(newConstraint);
-        constraints.add(newConstraint);
+        constraints.enqueue(newConstraint);
       }
       case _ =>
     }

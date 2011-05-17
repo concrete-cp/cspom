@@ -46,29 +46,9 @@ final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
             case None =>
           }
       }
+      case _=>
     }
 
   }
-
-  //
-  //    private static CSPOMConstraint geConstraint(final CSPOMVariable variable) {
-  //        final CSPOMConstraint geConstraint;
-  //        try {
-  //            geConstraint = Iterables.find(variable.getConstraints(),
-  //                    CSPOMConstraint.matchesDescription("ge"));
-  //        } catch (NoSuchElementException e) {
-  //            return null;
-  //        }
-  //        final List<CSPOMVariable> scope;
-  //        if (geConstraint instanceof FunctionalConstraint) {
-  //            scope = ((FunctionalConstraint) geConstraint).getArguments();
-  //        } else {
-  //            scope = geConstraint.getScope();
-  //        }
-  //        if (scope.size() == 2 && scope.get(0) == variable) {
-  //            return geConstraint;
-  //        }
-  //        return null;
-  //    }
 
 }

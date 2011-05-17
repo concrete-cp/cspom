@@ -9,7 +9,7 @@ import scala.collection.mutable.HashSet
  * @author vion
  *
  */
-final class CSPOMVariable[T](
+final class CSPOMVariable[+T <: Any](
   val name: String,
   var domain: CSPOMDomain[T],
   val auxiliary: Boolean) {
@@ -77,7 +77,7 @@ object CSPOMVariable {
    *            Upper bound of the domain
    */
   def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int) =
-    new CSPOMVariable(name, new IntInterval(lb, ub), false);
+    new CSPOMVariable[java.lang.Integer](name, new IntInterval(lb, ub), false);
 
   /**
    * Constructs a new variable with given name. Domain is defined by a list of

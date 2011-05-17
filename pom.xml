@@ -39,20 +39,13 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.7</version>
+			<version>4.8.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.kohsuke</groupId>
 			<artifactId>bzip2</artifactId>
 			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>r09</version>
-			<type>jar</type>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.scala-lang</groupId>

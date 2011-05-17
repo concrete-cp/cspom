@@ -1,27 +1,16 @@
 package cspom.compiler.patterns;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.LinkedList;
-
-import com.google.common.collect.Iterables;
-
-import scala.collection.JavaConversions;
-
-import cspom.CSPOM;
-import cspom.constraint.CSPOMConstraint;
-import cspom.constraint.GeneralConstraint;
-import cspom.variable.CSPOMDomain;
-import cspom.variable.CSPOMVariable;
+import cspom.constraint.{ GeneralConstraint, CSPOMConstraint }
+import cspom.variable.{ CSPOMVariable, CSPOMDomain }
+import cspom.CSPOM
+import scala.collection.mutable.Queue
 
 /**
  * If given constraint is an all-equal constraint, merges and removes all
  * auxiliary variables.
  */
 final class MergeEq(private val problem: CSPOM,
-  private val constraints: Deque[CSPOMConstraint]) extends ConstraintCompiler {
+  private val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
 
   override def compile(constraint: CSPOMConstraint) {
 
@@ -41,7 +30,7 @@ final class MergeEq(private val problem: CSPOM,
          */
         if (fullVars.size > 1) {
           val newConstraint = new GeneralConstraint(description = "eq", scope = fullVars);
-          constraints.add(newConstraint)
+          constraints.enqueue(newConstraint)
           problem.addConstraint(newConstraint)
         }
 
@@ -51,10 +40,11 @@ final class MergeEq(private val problem: CSPOM,
         val refVar = if (fullVars.isEmpty) auxVars.head else fullVars.head
 
         for (aux <- auxVars if aux != refVar) {
-          merge(aux.asInstanceOf[CSPOMVariable[AnyRef]], refVar.asInstanceOf[CSPOMVariable[AnyRef]])
+          merge(aux.asInstanceOf[CSPOMVariable[Any]], refVar.asInstanceOf[CSPOMVariable[Any]])
         }
 
       }
+      case _ =>
     }
   }
 
@@ -67,7 +57,7 @@ final class MergeEq(private val problem: CSPOM,
       d0.intersect(d1);
   }
 
-  private def merge[T](merged: CSPOMVariable[T], variable: CSPOMVariable[T]) {
+  private def merge[T >: Any](merged: CSPOMVariable[T], variable: CSPOMVariable[T]) {
     assume(merged != variable)
 
     variable.domain = mergeDomain(merged.domain, variable.domain);

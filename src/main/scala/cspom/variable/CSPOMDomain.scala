@@ -1,9 +1,11 @@
 package cspom.variable
+import scala.collection.JavaConversions
 
-trait CSPOMDomain[T] {
+trait CSPOMDomain[+T <: Any] {
   def values: Seq[T]
+  def getValues = JavaConversions.asJavaCollection(values.asInstanceOf[Seq[_]])
   def size: Int = values.size
-  def intersect(domain: CSPOMDomain[T]): CSPOMDomain[T]
+  def intersect[S >: T](domain: CSPOMDomain[S]): CSPOMDomain[S]
 }
 
 object CSPOMDomain {

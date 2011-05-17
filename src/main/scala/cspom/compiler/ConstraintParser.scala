@@ -21,7 +21,7 @@ final class ConstraintParser(private val problem: CSPOM) {
         root.operator, root.parameters, root.child.siblings map { addToProblem(_) } toSeq));
   }
 
-  private def addToProblem(node: PredicateNode): CSPOMVariable[_] = {
+  private def addToProblem(node: PredicateNode): CSPOMVariable[Any] = {
     if (node.isLeaf) {
       addVariable(node);
     } else {
@@ -37,13 +37,13 @@ final class ConstraintParser(private val problem: CSPOM) {
 
   def addVariable(node: PredicateNode) = {
     problem.variable(node.operator) match {
-      case null => {
+      case Some(v) => v
+      case None => {
         assume(node.isInteger)
         val newVariable = CSPOMVariable.constant(node.operator.toInt);
         problem.addVariable(newVariable);
         newVariable;
       }
-      case v => v
     }
   }
 }

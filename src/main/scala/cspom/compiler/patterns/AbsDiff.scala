@@ -31,6 +31,7 @@ class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
             case None =>
           }
       }
+      case _=>
     }
   }
 }

@@ -7,14 +7,14 @@ import cspom.Evaluator
 class GeneralConstraint(
   description: String,
   parameters: String = null,
-  scope: Seq[CSPOMVariable[_]])
+  scope: Seq[CSPOMVariable[Any]])
   extends CSPOMConstraint(description, parameters, scope) {
 
   //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
   //    this(description = description, parameters = parameters,
   //      scope = scope.toList)
 
-  def this(description: String, scope: CSPOMVariable[_]*) =
+  def this(description: String, scope: CSPOMVariable[Any]*) =
     this(description = description, scope = scope)
 
   override def toString = {
@@ -51,7 +51,7 @@ class GeneralConstraint(
 
   }
 
-  override def replacedVar[T](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
+  override def replacedVar[T >: Any](which: CSPOMVariable[T], by: CSPOMVariable[T]) = {
     new GeneralConstraint(description, parameters,
       scope map { v => if (v == which) by else v })
   }
