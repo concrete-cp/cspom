@@ -22,8 +22,14 @@ class AllDiffTest {
         scope = p))
     }
 
-    new AllDiff(cspom).compile(cspom.constraints.head)
-    println(cspom)
+    val allDiff = new AllDiff(cspom);
+    val constraints = cspom.constraints.toSeq
+
+    for (c <- constraints if (cspom.constraints.contains(c))) {
+        allDiff.compile(c)
+    }
+
+    //println(cspom)
     assertEquals(1, cspom.constraints.size)
     assertEquals("allDifferent", cspom.constraints.head.description)
   }

@@ -10,7 +10,7 @@ object CliqueDetector {
 
   def haveSubsumingConstraint(
     constraint: CSPOMConstraint, validator: CSPOMConstraint => Boolean) =
-    constraint.scope.head.constraints.exists(
+    constraint.scope.minBy(_.constraints.size).constraints.exists(
       c => c != constraint && validator(c) && subsumes(c, constraint))
 
   def subsumes(constraint: CSPOMConstraint, subsumed: CSPOMConstraint) =

@@ -140,7 +140,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
       CliqueDetector.haveSubsumingConstraint(constraint, DIFF_CONSTRAINT)) {
 
       problem.removeConstraint(constraint);
-      //println("subsumed ! " + problem.constraints.size + " remaining")
+      println("subsumed ! " + problem.constraints.size + " remaining")
       true;
     } else {
       false;

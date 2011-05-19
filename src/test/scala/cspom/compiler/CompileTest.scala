@@ -12,7 +12,7 @@ final class CompileTest {
     val cspom = new CSPOM();
     new XCSPParser(cspom).parse(classOf[ParserTest].getResourceAsStream(FILENAME));
     ProblemCompiler.compile(cspom)
-    println(cspom);
+    //println(cspom);
 
   }
 
