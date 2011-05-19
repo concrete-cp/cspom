@@ -219,13 +219,19 @@ final class CSPOM {
     stb.append("]\n").toString
   }
 
-  def control(solution: Map[String, Number]) = {
+  def control(solution: collection.Map[String, Number]) = {
     constraints filter { c =>
       !c.evaluate(c.scope map { v => solution.get(v.name) })
     }
   }
 
-  def controlInt(solution: Map[String, Int]) = {
+  def controlInt(solution: collection.Map[String, Int]) = {
+    constraints filter { c =>
+      !c.evaluate(c.scope map { v => solution.get(v.name) })
+    }
+  }
+  
+  def controlInteger(solution: collection.Map[String, java.lang.Integer]) = {
     constraints filter { c =>
       !c.evaluate(c.scope map { v => solution.get(v.name) })
     }
