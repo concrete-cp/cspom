@@ -1,10 +1,8 @@
-package examplesjava.file;
+package javaexamples.file;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-
-import scalaexamples.file.File;
 
 import cspom.CSPOM;
 import cspom.CSPParseException;
@@ -19,15 +17,14 @@ public final class File {
 			CSPParseException {
 		final CSPOM cspom;
 		try {
-			cspom = CSPOM.load(File.class.getResource(FILENAME));
+			cspom = CSPOM.load(scalaexamples.file.File.class.getResource(FILENAME));
 
 		} catch (CSPParseException e) {
-            System.err
-                    .println(e.getMessage() + " at line " + e.lineNumber());
+			System.err.println(e.getMessage() + " at line " + e.lineNumber());
 			throw e;
 		}
 		System.out.println(cspom);
-		final Writer writer = new FileWriter("fapp.gml");
+		final Writer writer = new FileWriter(FILENAME + ".gml");
 		try {
 			writer.append(cspom.toGML());
 		} finally {
