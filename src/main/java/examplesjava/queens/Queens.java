@@ -1,4 +1,4 @@
-package examples.queens;
+package examplesjava.queens;
 
 import java.util.ArrayList;
 import java.util.List;

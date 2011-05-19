@@ -1,8 +1,10 @@
-package examples.file;
+package examplesjava.file;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+
+import scalaexamples.file.File;
 
 import cspom.CSPOM;
 import cspom.CSPParseException;
