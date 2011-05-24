@@ -8,11 +8,12 @@ import cspom.constraint.GeneralConstraint
 import cspom.variable.CSPOMVariable
 import scala.util.Random
 import scala.util.control.Breaks
+import cspom.Loggable
 
-final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
+final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable {
 
   val neighbors =
-    problem.variables map (v =>
+    problem.variables.iterator map (v =>
       v -> (v.constraints.iterator.filter(DIFF_CONSTRAINT).foldLeft(Set[CSPOMVariable]())(
         (acc, c) => acc ++ c.scope) - v)) toMap
 
@@ -58,7 +59,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
    * The pool contains all variables that can expand the base clique
    */
   private def populate(base: Set[CSPOMVariable]): Set[CSPOMVariable] =
-    base.iterator.map(neighbors(_)).reduceLeft((acc, vs) => acc & vs)
+    base.iterator.map(neighbors).reduceLeft((acc, vs) => acc & vs)
 
   private def expand(base: Set[CSPOMVariable]) = {
 
@@ -74,12 +75,12 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
 
     breakable {
       for (i <- (1 to ITER)) {
-        val (newVar, newTabu) = AllDiff.pick(pool, tabu, i);
+        val (newVar, newTabu) = AllDiff.pickTabu(pool, tabu, i);
         tabu = newTabu
         newVar match {
           case None => {
             /* Could not expand the clique, removing a variable (not from the base) */
-            AllDiff.pick((clique -- base).iterator) match {
+            AllDiff.randPick((clique -- base).iterator) match {
               case None => break
               case Some(variable) => clique -= variable
             }
@@ -90,7 +91,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
             if (clique.size > largest.size) {
               largest = clique
             }
-            pool -= variable;
+
             pool &= neighbors(variable)
 
           }
@@ -113,20 +114,22 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
       description = "allDifferent",
       scope = scope.toSeq);
 
-    if (problem.constraints.contains(allDiff)) {
-      return ;
-    }
-    problem.addConstraint(allDiff);
+    if (!problem.constraints.contains(allDiff)) {
+      problem.addConstraint(allDiff);
 
-    //    var removed = 0
-    //    /* Remove newly subsumed neq/alldiff constraints. */
-    //    for (
-    //      v <- scope; c <- v.constraints if (c != allDiff && ALLDIFF_CONSTRAINT(c) && CliqueDetector.subsumes(allDiff, c))
-    //    ) {
-    //      removed += 1
-    //      problem.removeConstraint(c);
-    //    }
-    //    println(System.currentTimeMillis + " : removed " + removed + " constraints, " + problem.constraints.size + " left")
+      //      val constraints =
+      //        scope.foldLeft(Set[CSPOMConstraint]())((acc, v) => acc ++ v.constraints) - allDiff;
+
+      var removed = 0
+      /* Remove newly subsumed neq/alldiff constraints. */
+      for (
+        v <- scope; c <- v.constraints if (c != allDiff && ALLDIFF_CONSTRAINT(c) && c.scope.forall(allDiff.scopeSet.contains))
+      ) {
+        removed += 1
+        problem.removeConstraint(c);
+      }
+      fine("removed " + removed + " constraints, " + problem.constraints.size + " left")
+    }
   }
 
   /**
@@ -137,10 +140,10 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler {
    */
   def dropSubsumedDiff(constraint: CSPOMConstraint) = {
     if (ALLDIFF_CONSTRAINT(constraint) &&
-      CliqueDetector.haveSubsumingConstraint(constraint, DIFF_CONSTRAINT)) {
+      AllDiff.haveSubsumingConstraint(constraint, DIFF_CONSTRAINT)) {
 
       problem.removeConstraint(constraint);
-      println("subsumed ! " + problem.constraints.size + " remaining")
+      //fine("subsumed ! " + problem.constraints.size + " remaining")
       true;
     } else {
       false;
@@ -161,9 +164,9 @@ object AllDiff {
 
   val TABU_SIZE = 15;
 
-  private def pick(pool: Set[CSPOMVariable], tabu: Map[CSPOMVariable, Int], iteration: Int): (Option[CSPOMVariable], Map[CSPOMVariable, Int]) = {
+  private def pickTabu(pool: Iterable[CSPOMVariable], tabu: Map[CSPOMVariable, Int], iteration: Int) = {
 
-    pick(pool.iterator.filter(v =>
+    randPick(pool.iterator.filter(v =>
       tabu.get(v) match {
         case None => true
         case Some(i) => i < iteration
@@ -176,7 +179,7 @@ object AllDiff {
 
   }
 
-  private def pick[T](it: Iterator[T]): Option[T] = {
+  private def randPick[T](it: Iterator[T]): Option[T] = {
     var tie = 1
     var returned: Option[T] = None
     for (i <- it) {
@@ -185,4 +188,10 @@ object AllDiff {
     }
     returned
   }
+
+  private def haveSubsumingConstraint(
+    constraint: CSPOMConstraint, validator: CSPOMConstraint => Boolean) =
+    constraint.scope.minBy(_.constraints.size).constraints.exists(
+      c => c != constraint && validator(c) && constraint.scope.forall(c.scopeSet.contains))
+
 }

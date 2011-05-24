@@ -1,6 +1,6 @@
 package cspom.constraint
 
-import _root_.cspom.variable.CSPOMVariable
+import cspom.variable.CSPOMVariable
 import scala.collection.JavaConversions
 abstract class CSPOMConstraint(
   val description: String,
@@ -8,7 +8,8 @@ abstract class CSPOMConstraint(
   val scope: Seq[CSPOMVariable]) {
 
   val arity = scope.size
-  override def hashCode = {
+  
+  val hash = {
     var hash = 31 * scope.hashCode + description.hashCode
     if (parameters != null) {
       hash *= 31
@@ -16,7 +17,9 @@ abstract class CSPOMConstraint(
     }
     hash
   }
-
+  
+  override def hashCode = hash
+  
   val scopeSet = scope.toSet
 
   val getScope = JavaConversions.seqAsJavaList(scope)

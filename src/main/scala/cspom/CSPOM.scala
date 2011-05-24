@@ -1,18 +1,19 @@
 package cspom
 
-import java.io.InputStream
-import cspom.constraint.{ GeneralConstraint, CSPOMConstraint }
-import java.io.IOException
-import java.net.{ URL, URI, URISyntaxException }
+import cspom.compiler.ConstraintParser
+import cspom.constraint.{GeneralConstraint, CSPOMConstraint}
+import cspom.dimacs.CNFParser
+import cspom.variable.CSPOMVariable
+import cspom.xcsp.XCSPParser
+import java.io.{IOException, InputStream}
+import java.net.{URL, URI, URISyntaxException}
 import java.util.zip.GZIPInputStream
 import org.apache.tools.bzip2.CBZip2InputStream
+import scala.collection.mutable.{HashSet, LinkedHashMap}
 import scala.collection.JavaConversions
-import scala.collection.mutable.{ LinkedHashMap, LinkedHashSet }
 import scala.util.matching.Regex
-import cspom.variable.CSPOMVariable
-import cspom.compiler.ConstraintParser
-import cspom.xcsp.XCSPParser
-import cspom.dimacs.CNFParser
+import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable.MyLinkedHashSet
 
 /**
  *
@@ -59,7 +60,7 @@ final class CSPOM {
   /**
    * Collection of all constraints of the problem.
    */
-  val constraints = new LinkedHashSet[CSPOMConstraint]
+  val constraints = new HashSet[CSPOMConstraint]
 
   val getConstraints = JavaConversions.mutableSetAsJavaSet(constraints)
 
