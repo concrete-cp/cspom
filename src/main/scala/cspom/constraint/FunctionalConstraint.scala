@@ -17,7 +17,7 @@ class FunctionalConstraint(
   require(!arguments.isEmpty, "Must have at least one argument")
 
   def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
-    this(result = result, function = function, arguments = arguments.toList)
+    this(result = result, function = function, arguments = arguments.toSeq)
 
   val getArguments = JavaConversions.seqAsJavaList(arguments)
 
