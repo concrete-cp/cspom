@@ -1,11 +1,10 @@
 package cspom
 
 import cspom.constraint.GeneralConstraint
-import scala.collection.JavaConversions
-import cspom.constraint.FunctionalConstraint
 import org.junit.Assert._
 import org.junit.Test
 import variable.CSPOMVariable
+
 class CSPOMTest {
 
   @Test
