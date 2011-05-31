@@ -1,6 +1,7 @@
 package cspom.extension
+import cspom.constraint.{PermutableConstraint, CSPOMConstraint}
 import cspom.variable.CSPOMVariable
-import cspom.constraint.{ PermutableConstraint, CSPOMConstraint }
+import cspom.xcsp.Extension
 
 /**
  * A class that implements extension constraints, that it constraints defined by
@@ -36,4 +37,5 @@ final class ExtensionConstraint(
       scope map { v => if (v == which) by else v })
   }
 
+  def extension = Extension(init, relation)
 }

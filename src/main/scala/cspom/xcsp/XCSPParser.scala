@@ -159,7 +159,7 @@ final class XCSPParser(private val problem: CSPOM) {
   }
 }
 
-class Extension(val init: Boolean, val relation: Relation);
+case class Extension(val init: Boolean, val relation: Relation);
 
 object XCSPParser {
   /**
