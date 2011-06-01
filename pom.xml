@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>cspfj</groupId>
 	<artifactId>cspom</artifactId>
@@ -33,6 +34,12 @@
 			<name>CSP4J repository</name>
 			<url>sftp://web.sourceforge.net/home/groups/c/cs/cspfj/htdocs/repository</url>
 		</repository>
+		<snapshotRepository>
+			<id>maven2-snapshot-repository</id>
+			<name>Maven2 Snapshot Repository</name>
+			<url>file:///tmp/snapshots</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
 	</distributionManagement>
 	<dependencies>
 		<dependency>
@@ -113,7 +120,7 @@
 
 		<pluginManagement>
 			<plugins>
-				
+
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -147,6 +154,6 @@
 					</configuration>
 				</plugin>
 			</plugins>
-		</pluginManagement> 
+		</pluginManagement>
 	</build>
 </project>
