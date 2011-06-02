@@ -45,10 +45,13 @@ final class ProblemCompiler(private val problem: CSPOM) {
 
   };
 
-  private val constraintCompilers = List(new RemoveAnd(problem, constraints), new MergeEq(problem,
-    constraints), new AllDiff(problem),
-    new DiffGe(problem), new AbsDiff(problem), new DeReify(problem,
-      constraints))
+  private val constraintCompilers = List(
+    new RemoveAnd(problem, constraints),
+    new MergeEq(problem, constraints),
+    new AllDiff(problem),
+    new DiffGe(problem),
+    new AbsDiff(problem),
+    new DeReify(problem, constraints))
 
   private def compile() {
     problem.constraints.foreach(constraints.enqueue(_));

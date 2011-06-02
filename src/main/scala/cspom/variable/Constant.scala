@@ -14,11 +14,8 @@ final class Constant[T](val value: T) extends CSPOMDomain[T] {
     case _ => false
   }
 
-  def intersect[T](domain: CSPOMDomain[T]): CSPOMDomain[T] = {
-    domain match {
-      case dT: CSPOMDomain[T] =>
-        if (dT.values.contains(value)) this;
-    }
-    throw new IllegalArgumentException("Empty intersection");
+  def intersect[B](domain: CSPOMDomain[B]): CSPOMDomain[B] = {
+    require(domain.isInstanceOf[CSPOMDomain[T]] && domain.values.contains(value))
+    this.asInstanceOf[CSPOMDomain[B]]
   }
 }

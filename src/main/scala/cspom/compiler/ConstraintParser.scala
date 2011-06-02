@@ -39,7 +39,7 @@ final class ConstraintParser(private val problem: CSPOM) {
     problem.variable(node.operator) match {
       case Some(v) => v
       case None => {
-        assume(node.isInteger)
+        assume(node.isInteger, node + " is not a valid leaf")
         val newVariable = CSPOMVariable.constant(node.operator.toInt);
         problem.addVariable(newVariable);
         newVariable;

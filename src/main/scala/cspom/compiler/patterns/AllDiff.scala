@@ -12,11 +12,6 @@ import cspom.Loggable
 
 final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable {
 
-  val neighbors =
-    problem.variables.iterator map (v =>
-      v -> (v.constraints.iterator.filter(DIFF_CONSTRAINT).foldLeft(Set[CSPOMVariable]())(
-        (acc, c) => acc ++ c.scope) - v)) toMap
-
   def DIFF_CONSTRAINT(constraint: CSPOMConstraint) =
     constraint.isInstanceOf[GeneralConstraint] &&
       Set("ne", "gt", "lt", "allDifferent").contains(constraint.description)
@@ -46,6 +41,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
 
     // val pool = populate(constraint.scope);
     //print(constraint + " : ")
+
     val clique = expand(constraint.scope.toSet);
     //println(clique.size)
     if (clique.size > constraint.scope.size) {
@@ -58,14 +54,17 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
   /**
    * The pool contains all variables that can expand the base clique
    */
-  private def populate(base: Set[CSPOMVariable]): Set[CSPOMVariable] =
+  private def populate(base: Set[CSPOMVariable], neighbors: Map[CSPOMVariable, Set[CSPOMVariable]]) =
     base.iterator.map(neighbors).reduceLeft((acc, vs) => acc & vs)
 
   private def expand(base: Set[CSPOMVariable]) = {
 
     var largest = base
     var clique = base
-    var pool = populate(base)
+    val neighbors = problem.variables.iterator map (v =>
+      v -> (v.constraints.iterator.filter(DIFF_CONSTRAINT).foldLeft(Set[CSPOMVariable]())(
+        (acc, c) => acc ++ c.scope) - v)) toMap
+    var pool = populate(base, neighbors)
 
     //final Set<CSPOMVariable> base = new HashSet<CSPOMVariable>(clique);
 
@@ -84,7 +83,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
               case None => break
               case Some(variable) => clique -= variable
             }
-            pool = populate(clique)
+            pool = populate(clique, neighbors)
           }
           case Some(variable) => {
             clique += variable

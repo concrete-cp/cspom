@@ -2,6 +2,8 @@ package cspom.xcsp;
 
 import cspom.compiler.PredicateScanner
 import cspom.variable.CSPOMVariable
+import scala.util.matching.Regex
+import scala.MatchError
 
 /**
  * This class is used to represent XCSP predicates.
@@ -60,7 +62,17 @@ final class Predicate(parametersString: String, expressionString: String) {
     var applyied = expression;
     for (p <- stringParameters.zip(this.parameters)) {
       controlParameter(p._1, scope);
-      applyied = applyied.replaceAll(p._2, p._1);
+      val regexp = new Regex("""^(.*[^A-Za-z])(""" + p._2 + """)([^A-Za-z0-9].*)$""")
+      
+      try {
+        while(true) {
+          val regexp(prefix, _, suffix) = applyied
+          applyied = prefix + p._1 + suffix
+        }
+      } catch {
+        case _: MatchError =>
+      }
+      
     }
 
     applyied;
