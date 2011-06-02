@@ -12,8 +12,6 @@ import org.apache.tools.bzip2.CBZip2InputStream
 import scala.collection.mutable.{HashSet, LinkedHashMap}
 import scala.collection.JavaConversions
 import scala.util.matching.Regex
-import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.MyLinkedHashSet
 
 /**
  *
@@ -241,8 +239,8 @@ final class CSPOM {
 
 object CSPOM {
   val VERSION = {
-    val ExVers = new Regex("""Rev:\ (\d+)""")
-    val ExVers(v) = "$Rev: 603 $"
+    val ExVers = new Regex("""\$Rev: (\d+) \$""")
+    val ExVers(v) = "$Rev$"
     v.toInt
   }
 
