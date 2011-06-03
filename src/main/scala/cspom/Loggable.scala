@@ -1,6 +1,7 @@
 package cspom
 
 import java.util.logging.Logger
+import java.util.logging.Level
 trait Loggable {
 
   val logger: Logger = Logging.getLogger(this)
@@ -22,7 +23,11 @@ trait Loggable {
   def warning(msg: String, refs: Any*) = logger warning checkFormat(msg, refs)
 
   def severe(msg: String, refs: Any*) = logger severe checkFormat(msg, refs)
-
+    
+  final def setLevel(level: Level) {
+    logger.setLevel(level)
+    //logger.getHandlers()(0).setLevel(level)
+  }
 }
 
 /**
@@ -35,4 +40,5 @@ object Logging {
   }
 
   def getLogger(logging: AnyRef) = Logger.getLogger(loggerNameForClass(logging.getClass.getName))
+
 }

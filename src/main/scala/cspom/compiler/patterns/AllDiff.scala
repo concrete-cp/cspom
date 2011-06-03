@@ -52,19 +52,35 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
   }
 
   /**
+   * Lazy neighbors computation
+   */
+  private class Neighbors {
+    var neighbors: Map[CSPOMVariable, Set[CSPOMVariable]] = Map.empty
+
+    def get(v: CSPOMVariable) = neighbors.get(v) match {
+      case Some(set) => set
+      case None => {
+        val n = (v.constraints.filter(DIFF_CONSTRAINT).foldLeft(Set[CSPOMVariable]())(
+          (acc, c) => acc ++ c.scope) - v)
+        neighbors += v -> n
+        n
+      }
+    }
+
+  }
+
+  /**
    * The pool contains all variables that can expand the base clique
    */
-  private def populate(base: Set[CSPOMVariable], neighbors: Map[CSPOMVariable, Set[CSPOMVariable]]) =
-    base.iterator.map(neighbors).reduceLeft((acc, vs) => acc & vs)
+  private def populate(base: Set[CSPOMVariable], neighbors: Neighbors) =
+    base.iterator.map(neighbors.get).reduceLeft((acc, vs) => acc & vs)
 
   private def expand(base: Set[CSPOMVariable]) = {
 
     var largest = base
     var clique = base
 
-    val neighbors = problem.variables.iterator map (v =>
-      v -> (v.constraints.iterator.filter(DIFF_CONSTRAINT).foldLeft(Set[CSPOMVariable]())(
-        (acc, c) => acc ++ c.scope) - v)) toMap
+    val neighbors = new Neighbors
 
     var pool = populate(base, neighbors)
 
@@ -93,7 +109,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
               largest = clique
             }
 
-            pool &= neighbors(variable)
+            pool &= neighbors.get(variable)
 
           }
         }
