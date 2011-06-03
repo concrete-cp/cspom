@@ -61,9 +61,11 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
 
     var largest = base
     var clique = base
+
     val neighbors = problem.variables.iterator map (v =>
       v -> (v.constraints.iterator.filter(DIFF_CONSTRAINT).foldLeft(Set[CSPOMVariable]())(
         (acc, c) => acc ++ c.scope) - v)) toMap
+
     var pool = populate(base, neighbors)
 
     //final Set<CSPOMVariable> base = new HashSet<CSPOMVariable>(clique);
