@@ -9,7 +9,7 @@ class FunctionalConstraint(
   val result: CSPOMVariable,
   val function: String,
   parameters: String = null,
-  val arguments: Seq[CSPOMVariable])
+  val arguments: collection.immutable.Seq[CSPOMVariable])
   extends CSPOMConstraint(function, parameters, result +: arguments)
   with Loggable {
   require(result != null)
@@ -17,7 +17,7 @@ class FunctionalConstraint(
   require(!arguments.isEmpty, "Must have at least one argument")
 
   def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
-    this(result = result, function = function, arguments = arguments.toSeq)
+    this(result = result, function = function, arguments = arguments.toList)
 
   val getArguments = JavaConversions.seqAsJavaList(arguments)
 
@@ -47,11 +47,11 @@ class FunctionalConstraint(
     }
 
     try {
-      Evaluator.evaluate((stb append ")").toString());
+      Evaluator.evaluate((stb append ")").toString);
     } catch {
       case e: ScriptException =>
         throwing(Evaluator.getClass.getName, "evaluate", e);
-        throw new IllegalStateException(e);
+        sys.error(stb.toString);
     }
 
   }

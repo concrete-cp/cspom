@@ -5,7 +5,7 @@ import scala.collection.JavaConversions
 abstract class CSPOMConstraint(
   val description: String,
   val parameters: String,
-  val scope: Seq[CSPOMVariable]) {
+  val scope: collection.immutable.Seq[CSPOMVariable]) {
 
   val arity = scope.size
   

@@ -7,7 +7,7 @@ import cspom.Evaluator
 class GeneralConstraint(
   description: String,
   parameters: String = null,
-  scope: Seq[CSPOMVariable])
+  scope: collection.immutable.Seq[CSPOMVariable])
   extends CSPOMConstraint(description, parameters, scope) {
 
   //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
@@ -15,7 +15,7 @@ class GeneralConstraint(
   //      scope = scope.toList)
 
   def this(description: String, scope: CSPOMVariable*) =
-    this(description = description, scope = scope)
+    this(description = description, scope = scope.toList)
 
   override def toString = {
     val stb = new StringBuilder

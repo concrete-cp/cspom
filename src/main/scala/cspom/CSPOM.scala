@@ -1,15 +1,15 @@
 package cspom
 
 import cspom.compiler.ConstraintParser
-import cspom.constraint.{GeneralConstraint, CSPOMConstraint}
+import cspom.constraint.{ GeneralConstraint, CSPOMConstraint }
 import cspom.dimacs.CNFParser
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.XCSPParser
-import java.io.{IOException, InputStream}
-import java.net.{URL, URI, URISyntaxException}
+import java.io.{ IOException, InputStream }
+import java.net.{ URL, URI, URISyntaxException }
 import java.util.zip.GZIPInputStream
 import org.apache.tools.bzip2.CBZip2InputStream
-import scala.collection.mutable.{HashSet, LinkedHashMap}
+import scala.collection.mutable.{ HashSet, LinkedHashMap }
 import scala.collection.JavaConversions
 import scala.util.matching.Regex
 
@@ -220,19 +220,22 @@ final class CSPOM {
 
   def control(solution: collection.Map[String, Number]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v => solution.get(v.name) })
+      !c.evaluate(c.scope map { v => solution(v.name) })
     }
   }
 
   def controlInt(solution: collection.Map[String, Int]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v => solution.get(v.name) })
+      !c.evaluate(c.scope map { v => solution(v.name) })
     }
   }
-  
+
   def controlInteger(solution: collection.Map[String, java.lang.Integer]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v => solution.get(v.name) })
+      val tuple = c.scope map { v =>
+        solution(v.name).toInt
+      }
+      !c.evaluate(tuple)
     }
   }
 }

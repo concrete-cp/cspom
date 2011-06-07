@@ -31,7 +31,9 @@ object CSPOMDomain {
             List(v.trim.toInt);
           }
         }).flatten.toSeq
-        if (values == (values.head to values.last)) {
+        if (values.size == 1) {
+          new Constant(values.head)
+        } else if (values == (values.head to values.last)) {
           new IntInterval(values.head, values.last)
         } else {
           new ExtensiveDomain(values)
