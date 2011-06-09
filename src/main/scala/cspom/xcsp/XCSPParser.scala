@@ -139,8 +139,10 @@ final class XCSPParser(private val problem: CSPOM) {
 
       case Some(relation) => relation match {
         case extension: Extension =>
-          problem.addConstraint(new ExtensionConstraint(extension.relation,
-            extension.init, scope));
+          problem.addConstraint(new ExtensionConstraint(
+            extension.relation,
+            extension.init,
+            scope.toList));
         case predicate: Predicate =>
           try {
             problem.ctr(predicate.applyParameters(parameters, scope))

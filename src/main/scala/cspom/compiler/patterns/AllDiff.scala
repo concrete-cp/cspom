@@ -129,7 +129,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
   private def newAllDiff(scope: Set[CSPOMVariable]) {
     val allDiff = new GeneralConstraint(
       description = "allDifferent",
-      scope = scope.toSeq);
+      scope = scope.toList);
 
     if (!problem.constraints.contains(allDiff)) {
       problem.addConstraint(allDiff);
