@@ -183,9 +183,12 @@ object XCSPParser {
    */
   def parseRelation(arity: Int, init: Boolean, nbTuples: Int, string: String): Extension = {
     val extension = new Extension(init, new Relation(arity));
-    val tupleList = string.trim.split("""\|""");
+    val tupleList: Array[String] = string.trim match {
+      case "" => Array.empty
+      case s => s.split("""\|""");
+    }
 
-    assume(tupleList.length == nbTuples, "Inconsistent number of Tuples ("
+    assume(tupleList.size == nbTuples, "Inconsistent number of Tuples ("
       + tupleList.length + " /= " + nbTuples + ") in " + string);
 
     for (parsedTuple <- tupleList) {
