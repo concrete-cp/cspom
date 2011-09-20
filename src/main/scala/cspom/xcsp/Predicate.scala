@@ -4,6 +4,7 @@ import cspom.compiler.PredicateScanner
 import cspom.variable.CSPOMVariable
 import scala.util.matching.Regex
 import scala.MatchError
+import sun.misc.Regexp
 
 /**
  * This class is used to represent XCSP predicates.
@@ -61,48 +62,21 @@ final class Predicate(parametersString: String, expressionString: String) {
 
     var applyied = expression;
     for (p <- stringParameters.zip(this.parameters)) {
-      controlParameter(p._1, scope);
-      val regexp = new Regex("""^(.*[^A-Za-z])(""" + p._2 + """)([^A-Za-z0-9].*)$""")
-      
-      try {
-        while(true) {
-          val regexp(prefix, _, suffix) = applyied
-          applyied = prefix + p._1 + suffix
-        }
-      } catch {
-        case _: MatchError =>
-      }
-      
+
+      assume(
+        PredicateScanner.INTEGER.matcher(p._1).matches ||
+          (PredicateScanner.IDENTIFIER.matcher(p._1).matches && scope.map { v => v.name }.contains(p._1)),
+        "Did not recognize " + p._1)
+
+      applyied = ("""^(.*[^A-Za-z])(""" + p._2 + """)([^A-Za-z0-9].*)$""").r.replaceAllIn(applyied, { m =>
+        m.group(1) + p._1 + m.group(3)
+      })
+
     }
 
     applyied;
   }
 
-  /**
-   * Controls whether the given parameter is valid (either an integer constant
-   * or an existing variable).
-   *
-   * @param parameter
-   *            The parameter.
-   * @param scope
-   *            An array of variable to validate the parameter against.
-   * @throws PredicateParseException
-   *             If the given parameter is invalid.
-   */
-  private def controlParameter(parameter: String, scope: Seq[CSPOMVariable]) {
-    if (PredicateScanner.INTEGER.matcher(parameter).matches()) {
-      return ;
-    }
-    if (PredicateScanner.IDENTIFIER.matcher(parameter).matches()) {
-      if (!scope.map { v => v.name }.contains(parameter)) {
-        throw new AssertionError("Could not find variable "
-          + parameter + " in " + scope);
-      }
-      return ;
-    }
-    throw new AssertionError("Could not recognize " + parameter);
-
-  }
 }
 
 /**
