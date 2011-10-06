@@ -68,7 +68,7 @@ final class Predicate(parametersString: String, expressionString: String) {
           (PredicateScanner.IDENTIFIER.matcher(p._1).matches && scope.map { v => v.name }.contains(p._1)),
         "Did not recognize " + p._1)
 
-      applyied = ("""^(.*[^A-Za-z])(""" + p._2 + """)([^A-Za-z0-9].*)$""").r.replaceAllIn(applyied, { m =>
+      applyied = ("""([^A-Za-z])(""" + p._2 + """)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
         m.group(1) + p._1 + m.group(3)
       })
 
