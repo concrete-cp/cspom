@@ -1,31 +1,23 @@
 package cspom
 import javax.script.ScriptEngineManager
 import java.io.InputStreamReader
-import java.net.URL;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
+import java.net.URL
+import javax.script.ScriptEngine
+import javax.script.ScriptEngineManager
 import javax.script.ScriptException;
+import org.mozilla.javascript.Context
 
 object Evaluator {
-  val ENGINE = {
-    val scriptEngine = new ScriptEngineManager().getEngineByName("JavaScript");
-    if (scriptEngine == null) {
-      throw new IllegalStateException("Could not find JavaScript engine");
-    }
-    try {
-      val url = getClass.getResource("predefinedFunctions.js");
+  val cx = Context.enter
+  val scope = cx.initStandardObjects
 
-      scriptEngine.eval(new InputStreamReader(url.openStream()));
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException(e);
-    }
-    scriptEngine;
+  {
+    val url = getClass.getResource("predefinedFunctions.js");
+    cx.evaluateReader(scope, new InputStreamReader(url.openStream), "predefinedFunctions.js", 1, null)
   }
 
   @throws(classOf[ScriptException])
   def evaluate(expression: String) =
-    ENGINE.eval(expression.replace("if(", "ite(")).asInstanceOf[Boolean];
+    cx.evaluateString(scope, expression.replace("if(", "ite("), "eval", 1, null).asInstanceOf[Boolean];
 
 }
