@@ -7,7 +7,7 @@ import cspom.Evaluator
 class GeneralConstraint(
   description: String,
   parameters: String = null,
-  scope: collection.immutable.Seq[CSPOMVariable])
+  scope: Seq[CSPOMVariable])
   extends CSPOMConstraint(description, parameters, scope) {
 
   //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =

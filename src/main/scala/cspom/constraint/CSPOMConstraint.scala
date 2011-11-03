@@ -1,11 +1,13 @@
 package cspom.constraint
 
-import cspom.variable.CSPOMVariable
 import scala.collection.JavaConversions
+
+import cspom.variable.CSPOMVariable
+
 abstract class CSPOMConstraint(
   val description: String,
   val parameters: String,
-  val scope: collection.immutable.Seq[CSPOMVariable]) {
+  val scope: Seq[CSPOMVariable]) {
 
   val arity = scope.size
   

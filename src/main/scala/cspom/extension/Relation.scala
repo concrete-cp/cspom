@@ -36,6 +36,7 @@ final class Relation(val arity: Int) extends HashSet[Seq[_]] {
   override def toString = arity + "-ary, " + size + " tuples"
 
   def addTuple(tuple: Int*): Boolean = { assume(tuple.size == arity); add(tuple) }
+  def addTuple(tuple: Array[Int]) = add(tuple)
   def containsTuple(tuple: Int*) = contains(tuple)
   
   /**

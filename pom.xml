@@ -34,12 +34,6 @@
 			<name>CSP4J repository</name>
 			<url>sftp://web.sourceforge.net/home/groups/c/cs/cspfj/htdocs/repository</url>
 		</repository>
-		<snapshotRepository>
-			<id>maven2-snapshot-repository</id>
-			<name>Maven2 Snapshot Repository</name>
-			<url>file:///tmp/snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-		</snapshotRepository>
 	</distributionManagement>
 	<dependencies>
 		<dependency>
@@ -122,43 +116,5 @@
 				</configuration>
 			</plugin>
 		</plugins>
-
-		<pluginManagement>
-			<plugins>
-
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.scala-tools
-										</groupId>
-										<artifactId>
-											maven-scala-plugin
-										</artifactId>
-										<versionRange>
-											[2.15.2,)
-										</versionRange>
-										<goals>
-											<goal>add-source</goal>
-											<goal>testCompile</goal>
-											<goal>compile</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore />
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
 </project>

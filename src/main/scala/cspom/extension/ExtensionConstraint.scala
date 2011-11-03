@@ -14,7 +14,7 @@ import cspom.xcsp.Extension
 final class ExtensionConstraint(
   val relation: Relation,
   val init: Boolean,
-  scope: collection.immutable.Seq[CSPOMVariable])
+  scope: Seq[CSPOMVariable])
   extends CSPOMConstraint("ext", null, scope) with PermutableConstraint {
 
   override def toString = super.toString + ": " + relation;
