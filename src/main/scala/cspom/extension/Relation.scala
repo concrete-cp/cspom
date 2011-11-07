@@ -38,7 +38,7 @@ final class Relation(val arity: Int) extends HashSet[Seq[_]] {
   def addTuple(tuple: Int*): Boolean = { assume(tuple.size == arity); add(tuple) }
   def addTuple(tuple: Array[Int]) = add(tuple)
   def containsTuple(tuple: Int*) = contains(tuple)
-  
+
   /**
    * This method returns a copy of this extension with permuted tuples. New
    * order of tuples is given as an argument.
@@ -52,14 +52,7 @@ final class Relation(val arity: Int) extends HashSet[Seq[_]] {
    *            new order of the extension.
    * @return a reversed copy of the extension.
    */
-  def permute(newOrder: Seq[Int]) = {
-    val reversed = new Relation(arity);
-
-    for (tuple <- this) {
-      reversed.add(newOrder map { i: Int => tuple(i) });
-    }
-
-    reversed;
-  }
+  def permute(newOrder: Seq[Int]): Relation =
+    new Relation(arity) ++= (this map { t => newOrder map { i => t(i) } })
 
 }
