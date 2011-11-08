@@ -29,7 +29,7 @@ import scala.collection.mutable.HashSet
  * @author vion
  *
  */
-final class Relation(val arity: Int) extends HashSet[Array[_ <: Any]] {
+final class Relation(val arity: Int) extends HashSet[Seq[_ <: Any]] {
 
   def tupleString = iterator map { _.mkString(" ") } mkString "|"
 
@@ -37,10 +37,10 @@ final class Relation(val arity: Int) extends HashSet[Array[_ <: Any]] {
 
   def addTuple(tuple: Any*): Boolean = {
     assume(tuple.size == arity, tuple.toString + "'s arity should be " + arity)
-    add(tuple.toArray)
+    add(tuple)
   }
 
-  def containsTuple(tuple: Any*) = contains(tuple.toArray)
+  def containsTuple(tuple: Any*) = contains(tuple)
 
   /**
    * This method returns a copy of this extension with permuted tuples. New
@@ -56,6 +56,6 @@ final class Relation(val arity: Int) extends HashSet[Array[_ <: Any]] {
    * @return a reversed copy of the extension.
    */
   def permute(newOrder: Seq[Int]): Relation =
-    new Relation(arity) ++= (this map { t => newOrder map { i => t(i) } toArray })
+    new Relation(arity) ++= (this map { t => newOrder map { i => t(i) } })
 
 }

@@ -40,6 +40,8 @@ abstract class CSPOMConstraint(
   def replacedVar(which: CSPOMVariable, by: CSPOMVariable): CSPOMConstraint;
 
   def evaluate(t: Seq[Any]): Boolean;
+  
+  override def toString = description + scope.toString
 }
 //object CSPOMConstraint {
 //  val CONSTRAINT_DESCRIPTION = new com.google.common.base.Function[CSPOMConstraint, String] {

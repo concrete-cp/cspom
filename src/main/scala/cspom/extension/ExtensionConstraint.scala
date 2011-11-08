@@ -19,7 +19,7 @@ final class ExtensionConstraint(
 
   override def toString = super.toString + ": " + relation;
 
-  override def evaluate(tuple: Seq[_]) = init ^ relation.containsTuple(tuple: _*)
+  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple)
 
   override val hashCode = 31 * super.hashCode + relation.hashCode
 
@@ -37,4 +37,5 @@ final class ExtensionConstraint(
     new ExtensionConstraint(relation, init,
       scope map { v => if (v == which) by else v })
   }
+
 }
