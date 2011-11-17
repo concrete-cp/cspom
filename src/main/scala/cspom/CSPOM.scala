@@ -76,11 +76,9 @@ final class CSPOM {
    *             If a variable with the same name already exists.
    */
   def addVariable[T >: Any](variable: CSPOMVariable): CSPOMVariable = {
-
-    assume(variableMap.put(variable.name, variable) == None, variable.name
-      + ": a variable of the same name already exists");
+    val oldVariable = variableMap.put(variable.name, variable)
+    assume(oldVariable == None, variable.name + ": a variable of the same name already exists");
     variable
-
   }
 
   def removeVariable(v: CSPOMVariable) {
@@ -96,7 +94,8 @@ final class CSPOM {
    *            The constraint to add.
    */
   def addConstraint(constraint: CSPOMConstraint) = {
-    assume(constraints.add(constraint),
+    val added = constraints.add(constraint)
+    assume(added,
       "The constraint " + constraint + " already belongs to the problem");
 
     for (v <- constraint.scope) { v.registerConstraint(constraint) }
