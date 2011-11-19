@@ -1,12 +1,10 @@
 package cspom.compiler.patterns
 
-import cspom.constraint.FunctionalConstraint
-import cspom.constraint.{ CSPOMConstraint, GeneralConstraint }
-import cspom.variable.CSPOMVariable
-import cspom.CSPOM
-import java.util.LinkedList
-import org.junit.Assert._
+import org.junit.Assert.assertEquals
 import org.junit.Test
+
+import cspom.constraint.GeneralConstraint
+import cspom.CSPOM
 
 class AllDiffTest {
   @Test
