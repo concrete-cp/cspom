@@ -1,7 +1,5 @@
 package cspom.constraint
 
-import scala.collection.JavaConversions
-
 import cspom.variable.CSPOMVariable
 
 abstract class CSPOMConstraint(
@@ -24,7 +22,7 @@ abstract class CSPOMConstraint(
   
   val scopeSet = scope.toSet
 
-  val getScope = JavaConversions.seqAsJavaList(scope)
+  //val getScope = JavaConversions.seqAsJavaList(scope)
   //TODO: val positions
 
   def involves(variable: CSPOMVariable) = scopeSet.contains(variable)
