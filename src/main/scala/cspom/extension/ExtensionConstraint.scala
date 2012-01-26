@@ -17,6 +17,8 @@ final class ExtensionConstraint(
   scope: Seq[CSPOMVariable])
   extends CSPOMConstraint("ext", null, scope) with PermutableConstraint {
 
+  def this(relation: Relation, init: Boolean, scope: Array[CSPOMVariable]) = this(relation, init, scope.toSeq)
+
   override def toString = super.toString + ": " + relation;
 
   override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple)
