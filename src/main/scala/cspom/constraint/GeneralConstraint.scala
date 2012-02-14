@@ -5,41 +5,39 @@ import cspom.variable.CSPOMVariable
 import cspom.Evaluator
 
 class GeneralConstraint(
-  description: String,
-  parameters: String = null,
+  val predicate: Predicate,
   scope: Seq[CSPOMVariable])
-  extends CSPOMConstraint(description, parameters, scope) {
+  extends CSPOMConstraint(predicate.function, scope) {
 
   //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
   //    this(description = description, parameters = parameters,
   //      scope = scope.toList)
 
-  def this(description: String, scope: CSPOMVariable*) =
-    this(description = description, scope = scope.toList)
+  def this(func: String, params: String, scope: CSPOMVariable*) =
+    this(Predicate(func, Some(params)), scope)
+
+  def this(func: String, scope: CSPOMVariable*) =
+    this(Predicate(func, None), scope)
 
   override def toString = {
     val stb = new StringBuilder
     stb append description
-
-    if (parameters != null) {
-      stb append '{' append parameters append '}'
-    }
-
+    stb.append(predicate.optParameters)
     scope.addString(stb, "(", ", ", ")").toString
 
   }
 
   override def evaluate(tuple: Seq[_]): Boolean = {
     val stb = new StringBuilder();
-    if (parameters != null) {
+    if (predicate.parameters.isDefined) {
       stb append "p_"
     }
     stb append description append '('
 
     tuple.addString(stb, ", ")
 
-    if (parameters != null) {
-      stb append ", " append parameters
+    if (predicate.parameters.isDefined) {
+      stb append ", " append predicate.parameters.get
     }
 
     try {
@@ -52,7 +50,7 @@ class GeneralConstraint(
   }
 
   override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {
-    new GeneralConstraint(description, parameters,
+    new GeneralConstraint(predicate,
       scope map { v => if (v == which) by else v })
   }
 

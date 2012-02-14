@@ -6,6 +6,7 @@ trait CSPOMDomain[+T] {
   def getValues = JavaConversions.asJavaCollection(values.asInstanceOf[Seq[_]])
   def size: Int = values.size
   def intersect[S >: T](domain: CSPOMDomain[S]): CSPOMDomain[S]
+  def toXCSP: String
 }
 
 object CSPOMDomain {

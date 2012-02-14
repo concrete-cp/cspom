@@ -29,7 +29,7 @@ final class MergeEq(private val problem: CSPOM,
          * remains.
          */
         if (fullVars.size > 1) {
-          val newConstraint = new GeneralConstraint(description = "eq", scope = fullVars);
+          val newConstraint = new GeneralConstraint("eq", fullVars: _*);
           constraints.enqueue(newConstraint)
           problem.addConstraint(newConstraint)
         }

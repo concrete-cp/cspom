@@ -7,34 +7,31 @@ import scala.collection.JavaConversions
 
 class FunctionalConstraint(
   val result: CSPOMVariable,
-  val function: String,
-  parameters: String = null,
-  val arguments: collection.immutable.Seq[CSPOMVariable])
-  extends CSPOMConstraint(function, parameters, result +: arguments)
+  val predicate: Predicate,
+  val arguments: Seq[CSPOMVariable])
+  extends CSPOMConstraint(predicate.function, result +: arguments)
   with Loggable {
   require(result != null)
   require(arguments != null)
   require(!arguments.isEmpty, "Must have at least one argument")
 
   def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
-    this(result = result, function = function, arguments = arguments.toList)
+    this(result, Predicate(function, None), arguments)
 
-  val getArguments = JavaConversions.seqAsJavaList(arguments)
+  def this(result: CSPOMVariable, func: String, params: String, args: CSPOMVariable*) =
+    this(result, Predicate(func, Some(params)), args)
 
   override def toString = {
     val stb = new StringBuilder
-    stb append result append " = " append description
-    if (parameters != null) {
-      stb append '{' append parameters append '}'
-    }
+    stb.append(result).append(" = ").append(predicate.function)
+    stb.append(predicate.optParameters)
     arguments.addString(stb, "(", ", ", ")").toString
   }
 
-  override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = 
+  override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) =
     new FunctionalConstraint({ if (which == result) by else result },
-      function, parameters,
+      Predicate(predicate.function, predicate.parameters),
       arguments map { v => if (v == which) by else v })
-  
 
   override def evaluate(tuple: Seq[Any]): Boolean = {
     val stb = new StringBuilder
@@ -42,8 +39,8 @@ class FunctionalConstraint(
 
     tuple.tail.addString(stb, ", ");
 
-    if (parameters != null) {
-      stb append ", " append parameters;
+    if (predicate.parameters.isDefined) {
+      stb append ", " append predicate.parameters.get;
     }
 
     try {

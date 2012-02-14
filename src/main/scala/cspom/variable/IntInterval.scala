@@ -3,7 +3,7 @@ package cspom.variable
 import scala.collection.immutable.List
 import scala.math.{ max, min }
 class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
-  require(ub > lb);
+  require(ub >= lb);
 
   val values = (lb to ub) toList
 
@@ -13,7 +13,7 @@ class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
     case _ => domain.intersect(this.asInstanceOf[CSPOMDomain[Int]])
   }
 
-  override def toString = "[" + lb + ".." + ub + "]";
+  override def toString = "[" + toXCSP + "]"
   override val hashCode = 31 * lb + ub;
   override val size = 1 + ub - lb
   override def equals(obj: Any) = obj match {
@@ -21,6 +21,7 @@ class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
     case d: CSPOMDomain[_] => values == d.values
     case _ => false
   }
+  def toXCSP = lb + ".." + ub
 
 }
 

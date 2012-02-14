@@ -6,10 +6,10 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 final class PredicateNode {
-  var sibling: PredicateNode = null;
-  var child: PredicateNode = null;
-  var operator: String = null;
-  var parameters: String = null;
+  var sibling: Option[PredicateNode] = None;
+  var child: Option[PredicateNode] = None;
+  var operator: Option[String] = None;
+  var parameters: Option[String] = None;
 
   override def toString = {
     val stb = new StringBuilder();
@@ -17,24 +17,18 @@ final class PredicateNode {
     stb.toString();
   }
 
-  def isInteger() = {
-    if (operator == null) {
-      false;
-    } else {
-      PredicateScanner.INTEGER.matcher(operator).matches();
-    }
+  def isInteger = operator match {
+    case None => false
+    case Some(o) => PredicateScanner.INTEGER.matcher(o).matches
   }
 
-  def isIdentifier() = {
-    if (operator == null) {
-      false;
-    } else {
-      PredicateScanner.IDENTIFIER.matcher(operator).matches();
-    }
+  def isIdentifier = operator match {
+    case None => false
+    case Some(o) => PredicateScanner.IDENTIFIER.matcher(o).matches
   }
 
   def isLeaf() = {
-    if (child == null) {
+    if (child.isEmpty) {
       assume(isInteger || isIdentifier,
         "Leaves should be variables or constants, was " + this);
 
@@ -49,26 +43,26 @@ final class PredicateNode {
       stb.append("-");
     }
     stb.append(operator);
-    if (parameters != null) {
-      stb.append('{').append(parameters).append('}');
+    if (parameters.isDefined) {
+      stb.append('{').append(parameters.get).append('}');
     }
     stb.append('\n');
-    if (child != null) {
-      child.tree(stb, level + 1);
+    if (child.isDefined) {
+      child.get.tree(stb, level + 1);
     }
-    if (sibling != null) {
-      sibling.tree(stb, level);
+    if (sibling.isDefined) {
+      sibling.get.tree(stb, level);
     }
   }
-  
-  def siblings = new Iterator[PredicateNode] {
-    var current = PredicateNode.this
 
-    override def hasNext = current != null
+  def siblings = new Iterator[PredicateNode] {
+    var current: Option[PredicateNode] = Some(PredicateNode.this)
+
+    override def hasNext = current.isDefined
 
     override def next = {
-      val ret = current;
-      current = current.sibling;
+      val ret = current.get;
+      current = current.get.sibling;
       ret
     }
   }

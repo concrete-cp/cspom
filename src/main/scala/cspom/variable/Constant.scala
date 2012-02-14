@@ -13,6 +13,8 @@ final class Constant[T](val value: T) extends CSPOMDomain[T] {
     case other: Constant[T] => other.value == value
     case _ => false
   }
+  
+  def toXCSP = value.toString
 
   def intersect[B](domain: CSPOMDomain[B]): CSPOMDomain[B] = {
     require(domain.isInstanceOf[CSPOMDomain[T]] && domain.values.contains(value))

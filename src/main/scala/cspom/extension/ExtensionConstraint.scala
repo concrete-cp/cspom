@@ -15,7 +15,7 @@ final class ExtensionConstraint(
   val relation: Relation,
   val init: Boolean,
   scope: Seq[CSPOMVariable])
-  extends CSPOMConstraint("ext", null, scope) with PermutableConstraint {
+  extends CSPOMConstraint("ext", scope) with PermutableConstraint {
 
   def this(relation: Relation, init: Boolean, scope: Array[CSPOMVariable]) =
     this(relation, init, scope.toSeq)

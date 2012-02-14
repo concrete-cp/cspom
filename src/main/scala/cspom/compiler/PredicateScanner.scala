@@ -17,36 +17,37 @@ final object PredicateScanner {
     val stack = new Stack[PredicateNode];
     var currentNode = new PredicateNode;
     var parameters: StringBuilder = null;
+    
     while (st.hasMoreElements()) {
       val token = st.nextToken();
       if ("}" == token) {
-        currentNode.parameters = parameters.toString();
+        currentNode.parameters = Some(parameters.toString)
         parameters = null;
       } else if (parameters != null) {
         parameters.append(token);
       } else token match {
         case " " =>
         case "{" =>
-          assume(currentNode.operator != null, "Empty operator");
+          assume(currentNode.operator.isDefined, "Empty operator");
           parameters = new StringBuilder();
         case "(" =>
-          assume(currentNode.operator != null, "Empty operator");
+          assume(currentNode.operator.isDefined, "Empty operator");
           val newPredicateNode = new PredicateNode();
-          currentNode.child = newPredicateNode;
+          currentNode.child = Some(newPredicateNode)
           stack.push(currentNode);
           currentNode = newPredicateNode;
         case ")" =>
           assume(!stack.isEmpty, "Too many )s");
           currentNode = stack.pop();
         case "," =>
-          assume(currentNode.operator != null, "Empty argument");
+          assume(currentNode.operator.isDefined, "Empty argument");
           val newPredicateNode = new PredicateNode();
-          currentNode.sibling = newPredicateNode;
+          currentNode.sibling = Some(newPredicateNode)
           currentNode = newPredicateNode;
         case _ =>
-          assume(currentNode.operator == null, "Delimiter expected in "
+          assume(currentNode.operator.isEmpty, "Delimiter expected in "
             + currentNode + " (" + expression + ")");
-          currentNode.operator = token;
+          currentNode.operator = Some(token)
       }
     }
     currentNode;

@@ -34,19 +34,19 @@ final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
               geConstraint match {
                 case fc: FunctionalConstraint =>
                   problem.addConstraint(new FunctionalConstraint(
-                    result = fc.result,
-                    function = "diffGe",
-                    arguments = subConstraint.arguments :+ fc.arguments(1)))
+                    fc.result,
+                    "diffGe",
+                    subConstraint.arguments :+ fc.arguments(1): _*))
                 case _ =>
-                  problem.addConstraint(new GeneralConstraint(description = "diffGe",
-                    scope = subConstraint.arguments :+ geConstraint.scope(1)))
+                  problem.addConstraint(new GeneralConstraint("diffGe",
+                    subConstraint.arguments :+ geConstraint.scope(1): _*))
 
               }
             }
             case None =>
           }
       }
-      case _=>
+      case _ =>
     }
 
   }

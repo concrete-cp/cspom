@@ -20,7 +20,7 @@ object UnknownBooleanDomain extends BooleanDomain {
   override val size = 2
   override def intersect[Boolean](domain: CSPOMDomain[Boolean]) = 
     UnknownBooleanDomain.asInstanceOf[CSPOMDomain[Boolean]]
-
+  def toXCSP = "0, 1"
 }
 
 object TrueDomain extends BooleanDomain {
@@ -36,6 +36,7 @@ object TrueDomain extends BooleanDomain {
       UnknownBooleanDomain.asInstanceOf[CSPOMDomain[Boolean]]
     }
   }
+  def toXCSP = "1"
 }
 
 object FalseDomain extends BooleanDomain {
@@ -50,4 +51,5 @@ object FalseDomain extends BooleanDomain {
     else
       UnknownBooleanDomain.asInstanceOf[CSPOMDomain[Boolean]]
   }
+  def toXCSP = "0"
 }

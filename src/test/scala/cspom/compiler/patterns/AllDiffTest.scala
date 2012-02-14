@@ -16,15 +16,15 @@ class AllDiffTest {
     val v3 = cspom.varOf(1, 2, 3)
     for (p <- List(v0, v1, v2, v3).combinations(2)) {
       cspom.addConstraint(new GeneralConstraint(
-        description = "ne",
-        scope = p))
+        "ne",
+        p: _*))
     }
 
     val allDiff = new AllDiff(cspom);
     val constraints = cspom.constraints.toSeq
 
     for (c <- constraints if (cspom.constraints.contains(c))) {
-        allDiff.compile(c)
+      allDiff.compile(c)
     }
 
     //println(cspom)

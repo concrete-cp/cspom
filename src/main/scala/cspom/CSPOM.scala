@@ -12,6 +12,8 @@ import org.apache.tools.bzip2.CBZip2InputStream
 import scala.collection.mutable.{ HashSet, LinkedHashMap }
 import scala.collection.JavaConversions
 import scala.util.matching.Regex
+import cspom.variable.CSPOMDomain
+import cspom.extension.Relation
 
 /**
  *
@@ -217,6 +219,37 @@ final class CSPOM {
     stb.append("]\n").toString
   }
 
+  def toXCSP = {
+    var domains: Map[CSPOMDomain[_], String] = Map.empty
+    var did = 0
+    for (v <- variables) {
+      if (!domains.contains(v.domain)) {
+        domains += v.domain -> ("D" + did)
+        did += 1
+      }
+    }
+
+    var relations: Map[Relation, String] = Map.empty
+    var predicates: Map[String, String] = Map.empty
+
+    <instance>
+      <presentation maxConstraintArity={ constraints.map(_.arity).max.toString }/>
+      <domains>
+        {
+          domains.map {
+            case (d, n) =>
+              <domain name={ n } nbValues={ d.size.toString }>{ d.toXCSP }</domain>
+          }
+        }
+      </domains>
+      <variables nbVariables={ variables.size.toString }> {
+        variables map { v =>
+          <variable name={ v.name } domain={ domains(v.domain) }/>
+        }
+      }</variables>
+    </instance>
+  }
+
   def control(solution: Map[String, Number]) = {
     constraints filter { c =>
       !c.evaluate(c.scope map { v => solution(v.name) })
@@ -240,11 +273,8 @@ final class CSPOM {
 }
 
 object CSPOM {
-  val VERSION = {
-    val ExVers = new Regex("""\$Rev: (\d+) \$""")
-    val ExVers(v) = "$Rev$"
-    v.toInt
-  }
+
+  val VERSION = """Rev:\ (\d+)""".r.findFirstMatchIn("$Rev$").get.group(1).toInt
 
   /**
    * Opens an InputStream according to the given URL. If URL ends with ".gz"

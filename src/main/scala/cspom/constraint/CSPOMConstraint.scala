@@ -4,21 +4,11 @@ import cspom.variable.CSPOMVariable
 
 abstract class CSPOMConstraint(
   val description: String,
-  val parameters: String,
   val scope: Seq[CSPOMVariable]) {
 
   val arity = scope.size
   
-  val hash = {
-    var hash = 31 * scope.hashCode + description.hashCode
-    if (parameters != null) {
-      hash *= 31
-      hash += parameters.hashCode
-    }
-    hash
-  }
-  
-  override def hashCode = hash
+
   
   val scopeSet = scope.toSet
 
@@ -29,11 +19,11 @@ abstract class CSPOMConstraint(
 
   final def getVariable(position: Int) = scope(position)
 
-  override def equals(obj: Any): Boolean = obj match {
-    case c: CSPOMConstraint =>
-      scope == c.scope && description == c.description && parameters == c.parameters
-    case _ => false
-  }
+//  override def equals(obj: Any): Boolean = obj match {
+//    case c: CSPOMConstraint =>
+//      scope == c.scope && description == c.description && parameters == c.parameters
+//    case _ => false
+//  }
 
   def replacedVar(which: CSPOMVariable, by: CSPOMVariable): CSPOMConstraint;
 

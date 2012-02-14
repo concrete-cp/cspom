@@ -24,14 +24,14 @@ class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
               problem.removeConstraint(subConstraint);
               problem.removeConstraint(fc);
               problem.addConstraint(new FunctionalConstraint(
-                result = fc.result,
-                function = "absdiff",
-                arguments = subConstraint.arguments));
+                fc.result,
+                "absdiff",
+                subConstraint.arguments: _*));
               problem.removeVariable(subConstraint.result)
             case None =>
           }
       }
-      case _=>
+      case _ =>
     }
   }
 }
