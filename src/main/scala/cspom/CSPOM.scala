@@ -14,6 +14,7 @@ import scala.collection.JavaConversions
 import scala.util.matching.Regex
 import cspom.variable.CSPOMDomain
 import cspom.extension.Relation
+import scala.collection.mutable.LinkedHashSet
 
 /**
  *
@@ -60,7 +61,7 @@ final class CSPOM {
   /**
    * Collection of all constraints of the problem.
    */
-  val constraints = new HashSet[CSPOMConstraint]
+  val constraints = new LinkedHashSet[CSPOMConstraint]
 
   val getConstraints = JavaConversions.mutableSetAsJavaSet(constraints)
 
