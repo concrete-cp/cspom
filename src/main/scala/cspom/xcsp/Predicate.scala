@@ -23,7 +23,7 @@ final class Predicate(parametersString: String, expressionString: String) {
   /**
    * Ordered list of parameters.
    */
-  val parameters = parametersString.trim.split(" +").grouped(2).map { p => p(1) } toSeq
+  val parameters = parametersString.trim.split(" +").grouped(2).map { p => p(1) } toList
 
   /**
    * Predicate expression.

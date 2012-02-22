@@ -2,7 +2,6 @@ package cspom.variable;
 
 import cspom.constraint.CSPOMConstraint
 
-
 /**
  * This class defines and implements CSP variables.
  *
@@ -66,6 +65,8 @@ object CSPOMVariable {
   def constant[T](constant: T) =
     new CSPOMVariable(VariableNameGenerator.generate, new Constant[T](constant), true)
 
+  var intervals: Map[(Int, Int), IntInterval] = Map.empty
+
   /**
    * Constructs a new variable with a domain defined by lower
    * and upper bounds.
@@ -77,8 +78,17 @@ object CSPOMVariable {
    * @param uB
    *            Upper bound of the domain
    */
-  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int) =
-    new CSPOMVariable(name, new IntInterval(lb, ub), false);
+  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int) = {
+    val i = intervals.get(lb, ub) match {
+      case Some(i) => i
+      case None =>
+        val i = new IntInterval(lb, ub)
+        intervals += (lb, ub) -> i
+        i
+
+    }
+    new CSPOMVariable(name, i, false);
+  }
 
   /**
    * Constructs a new variable with given name. Domain is defined by a list of

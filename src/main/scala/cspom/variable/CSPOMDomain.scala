@@ -25,13 +25,14 @@ object CSPOMDomain {
       case Array(single) if single contains ".." =>
         IntInterval.valueOf(single)
       case listOfValues =>
-        val values = (listOfValues.iterator.map { v =>
+        val values = listOfValues.toList.flatMap { v =>
           if (v.contains("..")) {
             IntInterval.valueOf(v).values;
           } else {
             List(v.trim.toInt);
           }
-        }).flatten.toSeq
+        }
+
         if (values.size == 1) {
           new Constant(values.head)
         } else if (values == (values.head to values.last)) {

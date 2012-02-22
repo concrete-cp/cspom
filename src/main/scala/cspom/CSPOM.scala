@@ -15,6 +15,9 @@ import scala.util.matching.Regex
 import cspom.variable.CSPOMDomain
 import cspom.extension.Relation
 import scala.collection.mutable.LinkedHashSet
+import cspom.extension.ExtensionConstraint
+import cspom.constraint.FunctionalConstraint
+import cspom.constraint.Predicate
 
 /**
  *
@@ -230,8 +233,29 @@ final class CSPOM {
       }
     }
 
-    var relations: Map[Relation, String] = Map.empty
-    var predicates: Map[String, String] = Map.empty
+    var relations: Map[(Relation, Boolean), String] = Map.empty
+
+    var predicates: Map[(Predicate, Int), String] = Map.empty
+
+    var rid = 0
+    var pid = 0
+
+    constraints.foreach {
+      case c: ExtensionConstraint if (!relations.contains((c.relation, c.init))) =>
+        relations += (c.relation, c.init) -> ("R" + rid)
+        rid += 1
+
+      case c: FunctionalConstraint if (!predicates.contains((c.predicate, c.arity))) =>
+        predicates += (c.predicate, c.arity) -> ("P" + pid)
+        pid += 1
+
+      case c: GeneralConstraint if (!predicates.contains((c.predicate, c.arity))) =>
+        predicates += (c.predicate, c.arity) -> ("P" + pid)
+        pid += 1
+
+      case _ =>
+
+    }
 
     <instance>
       <presentation maxConstraintArity={ constraints.map(_.arity).max.toString }/>
@@ -243,11 +267,67 @@ final class CSPOM {
           }
         }
       </domains>
-      <variables nbVariables={ variables.size.toString }> {
-        variables map { v =>
-          <variable name={ v.name } domain={ domains(v.domain) }/>
+      <variables nbVariables={ variables.size.toString }>
+        {
+          variables map { v =>
+            <variable name={ v.name } domain={ domains(v.domain) }/>
+          }
         }
-      }</variables>
+      </variables>
+      <relations nbRelations={ relations.size.toString }>
+        {
+          relations map {
+            case ((r, init), n) =>
+              <relation name={ n } arity={ r.arity.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
+                { r.tupleString }
+              </relation>
+          }
+        }
+      </relations>
+      <predicates nbPredicates={ predicates.size.toString }>
+        {
+          predicates map {
+            case ((p, a), n) =>
+              <predicate name={ n }>
+                <parameters>{ (0 until a) map ("int X" + _) }</parameters>
+                <expression><functional>{ p.function + (0 until a).map("X" + _).mkString("(", ", ", ")") }</functional></expression>
+              </predicate>
+
+          }
+        }
+      </predicates>
+      <constraints nbConstraints={ constraints.size.toString }>
+        {
+
+          constraints.zipWithIndex map {
+            case (c, i) =>
+              <constraint name={
+                "C" + i
+              } arity={
+                c.arity.toString
+              } scope={
+                c.scope.map(_.name).mkString(" ")
+              } reference={
+                c match {
+                  case c: ExtensionConstraint => relations(c.relation, c.init)
+                  case c: GeneralConstraint => predicates(c.predicate, c.arity)
+                  case c: FunctionalConstraint => predicates(c.predicate, c.arity)
+                }
+              }>
+                {
+                  c match {
+                    case c: GeneralConstraint =>
+                      <parameters>{ c.scope.map(_.name).mkString(" ") }</parameters>
+                    case c: FunctionalConstraint =>
+                      <parameters>{ c.scope.map(_.name).mkString(" ") }</parameters>
+                    case _ =>
+                  }
+                }
+              </constraint>
+
+          }
+        }
+      </constraints>
     </instance>
   }
 
