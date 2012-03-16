@@ -50,7 +50,7 @@ final class ProblemCompiler(private val problem: CSPOM) {
     new MergeEq(problem, constraints),
     new AllDiff(problem),
     new DiffGe(problem),
-    new AbsDiff(problem),
+    //new AbsDiff(problem),
     new DeReify(problem, constraints))
 
   private def compile() {
