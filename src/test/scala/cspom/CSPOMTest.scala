@@ -63,10 +63,11 @@ class CSPOMTest {
   @Test(expected = classOf[AssertionError])
   def protectedVariable {
     val cspom = new CSPOM
-    val v = List(CSPOMVariable.ofInterval("test1", 0, 10),
+    val v = List(
+      CSPOMVariable.ofInterval("test1", 0, 10),
       CSPOMVariable.ofInterval("test2", 0, 10));
 
-    v foreach { cspom.addVariable(_) }
+    v.foreach(cspom.addVariable)
 
     val leq = new GeneralConstraint("leq", v(0), v(1))
     cspom.addConstraint(leq);
