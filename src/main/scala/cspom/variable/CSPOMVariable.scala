@@ -1,6 +1,8 @@
 package cspom.variable;
 
 import cspom.constraint.CSPOMConstraint
+import cspom.constraint.FunctionalConstraint
+import cspom.constraint.GeneralConstraint
 
 /**
  * This class defines and implements CSP variables.
@@ -15,10 +17,18 @@ final class CSPOMVariable(
 
   var constraints: Set[CSPOMConstraint] = Set.empty
 
-  override def toString = domain match {
+  override def toString = (domain match {
     case c: Constant[_] => c.toString
     case _ => name
-  }
+  }) + (if (auxiliary) " aux" else "")
+
+  def functionalConstraints = constraints.iterator
+    .filter { _.isInstanceOf[FunctionalConstraint] }
+    .map { _.asInstanceOf[FunctionalConstraint] }
+
+  def generalConstraints = constraints.iterator
+    .filter { _.isInstanceOf[GeneralConstraint] }
+    .map { _.asInstanceOf[GeneralConstraint] }
 
   /**
    * This method is used to register the given constraint in the set of

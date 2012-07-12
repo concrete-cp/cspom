@@ -68,6 +68,16 @@ final class CSPOM {
 
   val getConstraints = JavaConversions.mutableSetAsJavaSet(constraints)
 
+  def functionalConstraints =
+    constraints.iterator
+      .filter(_.isInstanceOf[FunctionalConstraint])
+      .map(_.asInstanceOf[FunctionalConstraint])
+
+  def generalConstraints =
+    constraints.iterator
+      .filter(_.isInstanceOf[GeneralConstraint])
+      .map(_.asInstanceOf[GeneralConstraint])
+
   /**
    * The constraint compiler used by this CSPOM instance.
    */
@@ -333,13 +343,23 @@ final class CSPOM {
 
   def control(solution: Map[String, Number]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v => solution(v.name) })
+      !c.evaluate(c.scope map { v =>
+        solution.get(v.name) match {
+          case Some(value) => value
+          case None => v.domain.values.head
+        }
+      })
     }
   }
 
   def controlInt(solution: Map[String, Int]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v => solution(v.name) })
+      !c.evaluate(c.scope map { v =>
+        solution.get(v.name) match {
+          case Some(value) => value
+          case None => v.domain.values.head
+        }
+      })
     }
   }
 

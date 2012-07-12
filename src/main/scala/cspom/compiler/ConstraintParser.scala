@@ -18,22 +18,19 @@ final class ConstraintParser(private val problem: CSPOM) {
     assume(!root.isLeaf, "Constraint expected");
 
     problem.addConstraint(new GeneralConstraint(
-      new Predicate(root.operator.get,
-        root.parameters),
+      new Predicate(root.operator.get, root.parameters),
       root.child.get.siblings.map(addToProblem(_)).toList));
   }
 
   private def addToProblem(node: PredicateNode): CSPOMVariable = {
-    if (node.isLeaf) {
-      addVariable(node);
-    } else {
+    if (node.isLeaf) addVariable(node);
+    else {
       val result = CSPOMVariable.aux();
       problem.addVariable(result);
 
       problem.addConstraint(new FunctionalConstraint(
         result,
-        new Predicate(node.operator.get,
-          node.parameters),
+        new Predicate(node.operator.get, node.parameters),
         node.child.get.siblings map { addToProblem(_) } toList));
 
       result;

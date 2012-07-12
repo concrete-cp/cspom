@@ -13,6 +13,8 @@ import cspom.variable.CSPOMVariable
 import scala.collection.mutable.Queue
 import scala.collection.mutable.HashSet
 import scala.collection.JavaConversions
+import cspom.compiler.patterns.MergeDisj
+import cspom.compiler.patterns.MergeSame
 
 /**
  * This class implements some known useful reformulation rules.
@@ -51,7 +53,9 @@ final class ProblemCompiler(private val problem: CSPOM) {
     new AllDiff(problem),
     new DiffGe(problem),
     new AbsDiff(problem),
-    new DeReify(problem, constraints))
+    new DeReify(problem, constraints),
+    new MergeDisj(problem, constraints),
+    new MergeSame(problem, constraints))
 
   private def compile() {
     problem.constraints.foreach(constraints.enqueue(_));

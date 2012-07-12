@@ -17,7 +17,9 @@ object Evaluator {
   }
 
   @throws(classOf[ScriptException])
-  def evaluate(expression: String) =
+  def evaluate(expression: String) = try {
     cx.evaluateString(scope, expression.replace("if(", "ite("), "eval", 1, null).asInstanceOf[Boolean];
-
+  } catch {
+    case e => println(expression); throw e
+  }
 }

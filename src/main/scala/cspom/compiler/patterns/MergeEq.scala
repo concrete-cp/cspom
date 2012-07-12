@@ -12,15 +12,12 @@ import scala.collection.mutable.Queue
 final class MergeEq(private val problem: CSPOM,
   private val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
 
-  override def compile(constraint: CSPOMConstraint) {
-
-    constraint match {
-      case c: GeneralConstraint if c.description == "eq" => {
-        val (auxVars, fullVars) = c.scope.partition { _.auxiliary }
-
-        if (auxVars.isEmpty) {
-          return ;
-        }
+  override def compileGeneral(c: GeneralConstraint) {
+    if (c.description == "eq") {
+      for (
+        (auxVars, fullVars) <- Some(c.scope.partition { _.auxiliary });
+        if (auxVars.nonEmpty)
+      ) {
 
         problem.removeConstraint(c)
 
@@ -42,19 +39,14 @@ final class MergeEq(private val problem: CSPOM,
         for (aux <- auxVars if aux != refVar) {
           merge(aux, refVar)
         }
-
       }
-      case _ =>
     }
   }
 
   private def mergeDomain[T](d0: CSPOMDomain[T], d1: CSPOMDomain[T]) = {
-    if (d0 == null) {
-      d1;
-    } else if (d1 == null) {
-      d0;
-    } else
-      d0.intersect(d1);
+    if (d0 == null) d1
+    else if (d1 == null) d0
+    else d0.intersect(d1);
   }
 
   private def merge(merged: CSPOMVariable, variable: CSPOMVariable) {

@@ -36,17 +36,11 @@ class GeneralConstraint(
 
     tuple.addString(stb, ", ")
 
-    if (predicate.parameters.isDefined) {
-      stb append ", " append predicate.parameters.get
+    for (p <- predicate.parameters) {
+      stb append ", " append p
     }
 
-    try {
-      Evaluator.evaluate((stb append ')').toString);
-    } catch {
-      case e: ScriptException =>
-        throw new IllegalStateException(e);
-    }
-
+    Evaluator.evaluate((stb append ')').toString);
   }
 
   override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {

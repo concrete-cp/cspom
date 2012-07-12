@@ -15,8 +15,6 @@ final class CNFParser(private val problem: CSPOM) {
   def parse(is: InputStream) {
     val reader = new BufferedReader(new InputStreamReader(is));
 
-    var currentClause: List[Int] = Nil;
-
     val lines = Source.fromInputStream(is).getLines.filter(
       s => !(s startsWith "c") && !(s.trim.isEmpty))
 
@@ -25,8 +23,11 @@ final class CNFParser(private val problem: CSPOM) {
       case e => throw new CSPParseException("Parameter line not found", e, -1)
     }
 
-    (1 to nbVars.toInt).foreach(i => problem.addVariable(CSPOMVariable.bool("V" + i)))
+    for (i <- 1 to nbVars.toInt)
+      problem.addVariable(CSPOMVariable.bool("V" + i))
 
+      
+    var currentClause: List[Int] = Nil;
     var countClauses = 0
     for (line <- lines; value <- VAR.findAllIn(line).map(s => s.toInt)) {
       if (value == 0) {
@@ -37,7 +38,7 @@ final class CNFParser(private val problem: CSPOM) {
         currentClause ::= value;
       }
     }
-    
+
     assume(countClauses == nbClauses.toInt)
   }
 
@@ -46,8 +47,11 @@ final class CNFParser(private val problem: CSPOM) {
     val (clause, parameters) = currentClause map { i =>
       ("V" + math.abs(i), if (i > 0) "0" else "1")
     } unzip
-
-    "or" + parameters.mkString("{", ", ", "}") + clause.mkString("(", ", ", ")")
+    
+    val stb = new StringBuilder("or")
+    parameters.addString(stb, "{", ", ", "}")
+    clause.addString(stb, "(", ", ", ")")
+    stb.toString
 
   }
 }

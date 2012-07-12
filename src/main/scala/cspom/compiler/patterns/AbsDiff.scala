@@ -10,28 +10,23 @@ import _root_.cspom.CSPOM
  */
 class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
 
-  def compile(constraint: CSPOMConstraint) {
-    constraint match {
-      case subConstraint: FunctionalConstraint if ("sub" == constraint.description &&
-        subConstraint.result.auxiliary &&
-        subConstraint.result.constraints.size == 2) => {
+  override def compileFunctional(c: FunctionalConstraint) {
+    if ("sub" == c.description && c.result.auxiliary && c.result.constraints.size == 2) {
 
-        subConstraint.result.constraints.iterator
-          .filter { c => c.description == "abs" && c.isInstanceOf[FunctionalConstraint] }
-          .map { _.asInstanceOf[FunctionalConstraint] }
-          .find { _.arguments == List(subConstraint.result) } match {
-            case Some(fc) =>
-              problem.removeConstraint(subConstraint);
-              problem.removeConstraint(fc);
-              problem.addConstraint(new FunctionalConstraint(
-                fc.result,
-                "absdiff",
-                subConstraint.arguments: _*));
-              problem.removeVariable(subConstraint.result)
-            case None =>
-          }
+      for (
+        fc <- c.result.functionalConstraints;
+        if fc.description == "abs" && fc.arguments.sameElements(List(c.result))
+      ) {
+
+        problem.removeConstraint(c);
+        problem.removeConstraint(fc);
+        problem.addConstraint(new FunctionalConstraint(
+          fc.result,
+          "absdiff",
+          c.arguments: _*));
+        problem.removeVariable(c.result)
+
       }
-      case _ =>
     }
   }
 }

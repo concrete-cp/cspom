@@ -91,7 +91,7 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
     import mybreaks.{ break, breakable }
 
     breakable {
-      for (i <- (1 to ITER)) {
+      for (i <- 1 to ITER) {
         val (newVar, newTabu) = AllDiff.pickTabu(pool, tabu, i);
         tabu = newTabu
         newVar match {

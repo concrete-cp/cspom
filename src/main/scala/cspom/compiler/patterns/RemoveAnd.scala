@@ -6,18 +6,13 @@ import cspom.CSPOM
 import scala.collection.mutable.Queue
 
 class RemoveAnd(val problem: CSPOM, val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
-  override def compile(constraint: CSPOMConstraint) {
-    constraint match {
-      case andConstraint: GeneralConstraint if constraint.description == "and" => {
-        for (v <- constraint.scope) {
-          v.asInstanceOf[CSPOMVariable].domain = TrueDomain
-          for (c <- v.constraints if c != constraint)
-            constraints.enqueue(c)
-        }
-        problem.removeConstraint(constraint);
+  override def compileGeneral(constraint: GeneralConstraint) {
+    if (constraint.description == "and") {
+      for (v <- constraint.scope) {
+        v.domain = TrueDomain
+        for (c <- v.constraints if c != constraint) constraints.enqueue(c)
       }
-      case _ =>
-
+      problem.removeConstraint(constraint);
     }
   }
 }
