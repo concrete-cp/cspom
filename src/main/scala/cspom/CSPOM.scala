@@ -352,30 +352,25 @@ final class CSPOM {
 
   def control(solution: Map[String, Number]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v =>
-        solution.get(v.name) match {
-          case Some(value) => value
-          case None => v.domain.values.head
-        }
-      })
+      !c.evaluate(c.scope map (v =>
+        solution.getOrElse(v.name, v.domain.values.head)))
     }
   }
 
   def controlInt(solution: Map[String, Int]) = {
     constraints filter { c =>
-      !c.evaluate(c.scope map { v =>
-        solution.get(v.name) match {
-          case Some(value) => value
-          case None => v.domain.values.head
-        }
-      })
+      !c.evaluate(c.scope map (v =>
+        solution.getOrElse(v.name, v.domain.values.head)))
     }
   }
 
   def controlInteger(solution: Map[String, java.lang.Integer]) = {
     constraints filter { c =>
       val tuple = c.scope map { v =>
-        solution(v.name).toInt
+        solution.get(v.name) match {
+          case Some(value) => value.toInt
+          case None => v.domain.values.head
+        }
       }
       !c.evaluate(tuple)
     }
