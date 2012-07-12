@@ -18,6 +18,7 @@ import scala.collection.mutable.LinkedHashSet
 import cspom.extension.ExtensionConstraint
 import cspom.constraint.FunctionalConstraint
 import cspom.constraint.Predicate
+import scala.collection.mutable.HashMap
 
 /**
  *
@@ -243,24 +244,24 @@ final class CSPOM {
       }
     }
 
-    var relations: Map[(Relation, Boolean), String] = Map.empty
-
-    var predicates: Map[(Predicate, Int), String] = Map.empty
+    val relations = new HashMap[(Relation, Boolean), String]()
+    val genPredicates = new HashMap[(Predicate, Int), String]()
+    val funcPredicates = new HashMap[(Predicate, Int), String]()
 
     var rid = 0
     var pid = 0
 
     constraints.foreach {
       case c: ExtensionConstraint if (!relations.contains((c.relation, c.init))) =>
-        relations += (c.relation, c.init) -> ("R" + rid)
+        relations.put((c.relation, c.init), "R" + rid)
         rid += 1
 
-      case c: FunctionalConstraint if (!predicates.contains((c.predicate, c.arity))) =>
-        predicates += (c.predicate, c.arity) -> ("P" + pid)
+      case c: FunctionalConstraint if (!funcPredicates.contains((c.predicate, c.arity))) =>
+        funcPredicates.put((c.predicate, c.arity), "P" + pid)
         pid += 1
 
-      case c: GeneralConstraint if (!predicates.contains((c.predicate, c.arity))) =>
-        predicates += (c.predicate, c.arity) -> ("P" + pid)
+      case c: GeneralConstraint if (!genPredicates.contains((c.predicate, c.arity))) =>
+        genPredicates.put((c.predicate, c.arity), "P" + pid)
         pid += 1
 
       case _ =>
@@ -294,16 +295,24 @@ final class CSPOM {
           }
         }
       </relations>
-      <predicates nbPredicates={ predicates.size.toString }>
+      <predicates nbPredicates={ (genPredicates.size + funcPredicates.size).toString }>
         {
-          predicates map {
-            case ((p, a), n) =>
-              <predicate name={ n }>
-                <parameters>{ (0 until a) map ("int X" + _) }</parameters>
-                <expression><functional>{ p.function + (0 until a).map("X" + _).mkString("(", ", ", ")") }</functional></expression>
-              </predicate>
+          (
+            genPredicates map {
+              case ((p, a), n) =>
+                <predicate name={ n }>
+                  <parameters>{ (0 until a) map ("int X" + _) }</parameters>
+                  <expression><functional>{ p.function + (0 until a).map("X" + _).mkString("(", ", ", ")") }</functional></expression>
+                </predicate>
 
-          }
+            }) ++ (funcPredicates map {
+              case ((p, a), n) =>
+                <predicate name={ n }>
+                  <parameters>{ (0 until a) map ("int X" + _) }</parameters>
+                  <expression><functional>eq(X0, { p.function + (1 until a).map("X" + _).mkString("(", ", ", ")") })</functional></expression>
+                </predicate>
+
+            })
         }
       </predicates>
       <constraints nbConstraints={ constraints.size.toString }>
@@ -320,8 +329,8 @@ final class CSPOM {
               } reference={
                 c match {
                   case c: ExtensionConstraint => relations(c.relation, c.init)
-                  case c: GeneralConstraint => predicates(c.predicate, c.arity)
-                  case c: FunctionalConstraint => predicates(c.predicate, c.arity)
+                  case c: GeneralConstraint => genPredicates(c.predicate, c.arity)
+                  case c: FunctionalConstraint => funcPredicates(c.predicate, c.arity)
                 }
               }>
                 {

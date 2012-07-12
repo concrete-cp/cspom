@@ -5,7 +5,7 @@ import scala.math.{ max, min }
 class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
   require(ub >= lb);
 
-  val values = (lb to ub) toList
+  val values = (lb to ub)
 
   def intersect[Int](domain: CSPOMDomain[Int]): CSPOMDomain[Int] = domain match {
     case m: IntInterval =>
