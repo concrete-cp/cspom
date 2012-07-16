@@ -1,24 +1,28 @@
 package cspom
 
+import java.io.IOException
+import java.io.InputStream
+import java.net.URI
+import java.net.URISyntaxException
+import java.net.URL
+import java.util.zip.GZIPInputStream
+import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.HashMap
+import scala.collection.mutable.LinkedHashSet
+import scala.collection.JavaConversions
+import org.apache.tools.bzip2.CBZip2InputStream
 import cspom.compiler.ConstraintParser
-import cspom.constraint.{ GeneralConstraint, CSPOMConstraint }
+import cspom.constraint.CSPOMConstraint
+import cspom.constraint.FunctionalConstraint
+import cspom.constraint.GeneralConstraint
+import cspom.constraint.Predicate
 import cspom.dimacs.CNFParser
+import cspom.extension.ExtensionConstraint
+import cspom.extension.Trie
+import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.XCSPParser
-import java.io.{ IOException, InputStream }
-import java.net.{ URL, URI, URISyntaxException }
-import java.util.zip.GZIPInputStream
-import org.apache.tools.bzip2.CBZip2InputStream
-import scala.collection.mutable.{ HashSet, LinkedHashMap }
-import scala.collection.JavaConversions
-import scala.util.matching.Regex
-import cspom.variable.CSPOMDomain
-import cspom.extension.Relation
-import scala.collection.mutable.LinkedHashSet
-import cspom.extension.ExtensionConstraint
-import cspom.constraint.FunctionalConstraint
-import cspom.constraint.Predicate
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.HashSet
 
 /**
  *
@@ -65,7 +69,7 @@ final class CSPOM {
   /**
    * Collection of all constraints of the problem.
    */
-  val constraints = new LinkedHashSet[CSPOMConstraint]
+  val constraints = new HashSet[CSPOMConstraint]
 
   val getConstraints = JavaConversions.mutableSetAsJavaSet(constraints)
 
@@ -244,7 +248,7 @@ final class CSPOM {
       }
     }
 
-    val relations = new HashMap[(Relation, Boolean), String]()
+    val relations = new HashMap[(Trie, Boolean), String]()
     val genPredicates = new HashMap[(Predicate, Int), String]()
     val funcPredicates = new HashMap[(Predicate, Int), String]()
 
@@ -289,7 +293,7 @@ final class CSPOM {
         {
           relations map {
             case ((r, init), n) =>
-              <relation name={ n } arity={ r.arity.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
+              <relation name={ n } arity={ r.maxDepth.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
                 { r.tupleString }
               </relation>
           }

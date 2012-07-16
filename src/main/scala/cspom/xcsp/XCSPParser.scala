@@ -1,10 +1,16 @@
 package cspom.xcsp;
 
-import cspom.extension.{ Relation, ExtensionConstraint }
-import cspom.variable.{ CSPOMVariable, CSPOMDomain }
-import cspom.{ CSPParseException, CSPOM }
 import java.io.InputStream
-import scala.xml.{ XML, NodeSeq }
+
+import scala.xml.NodeSeq
+import scala.xml.XML
+
+import cspom.extension.ExtensionConstraint
+import cspom.extension.Trie
+import cspom.variable.CSPOMDomain
+import cspom.variable.CSPOMVariable
+import cspom.CSPOM
+import cspom.CSPParseException
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -161,7 +167,7 @@ final class XCSPParser(private val problem: CSPOM) {
   }
 }
 
-case class Extension(val init: Boolean, val relation: Relation);
+final class Extension(val init: Boolean, var relation: Trie);
 
 object XCSPParser {
   /**
@@ -182,7 +188,7 @@ object XCSPParser {
    *             given arity or nbTuples.
    */
   def parseRelation(arity: Int, init: Boolean, nbTuples: Int, string: String): Extension = {
-    val extension = new Extension(init, new Relation(arity));
+    val extension = new Extension(init, Trie.empty(arity));
     val tupleList: Array[String] = string.trim match {
       case "" => Array.empty
       case s => s.split("""\|""");
@@ -197,7 +203,7 @@ object XCSPParser {
       assume(values.length == arity, "Incorrect arity (" + values.length
         + " /= " + arity + ") in " + parsedTuple.trim);
 
-      extension.relation.add(values map { _.toInt });
+      extension.relation += values map { _.toInt }
     }
     return extension;
   }

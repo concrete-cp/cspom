@@ -12,24 +12,24 @@ import cspom.xcsp.Extension
  * @param <T>
  */
 final class ExtensionConstraint(
-  val relation: Relation,
+  val relation: Trie,
   val init: Boolean,
   scope: Seq[CSPOMVariable])
   extends CSPOMConstraint("ext", scope) with PermutableConstraint {
 
-  def this(relation: Relation, init: Boolean, scope: Array[CSPOMVariable]) =
+  def this(relation: Trie, init: Boolean, scope: Array[CSPOMVariable]) =
     this(relation, init, scope.toSeq)
 
   override def toString = super.toString + ": " + relation;
 
-  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple)
+  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple.map(_.asInstanceOf[Int]).toArray)
 
-  override val hashCode = 31 * super.hashCode + relation.hashCode
-
-  override def equals(obj: Any) = obj match {
-    case ec: ExtensionConstraint => super.equals(ec) && ec.relation == this.relation
-    case _ => false
-  }
+//  override lazy val hashCode = 31 * super.hashCode + relation.hashCode
+//
+//  override def equals(obj: Any) = obj match {
+//    case ec: ExtensionConstraint => super.equals(ec) && ec.relation == this.relation
+//    case _ => false
+//  }
 
   def standardize(newScope: Seq[CSPOMVariable]) = {
     assert(newScope.size == arity)
