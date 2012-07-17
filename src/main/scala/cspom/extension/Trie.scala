@@ -91,6 +91,9 @@ final class Trie(val trie: IntMap[Trie], override val size: Int, val maxDepth: I
       val m: IntMap[Trie] = trie.filter {
         case (k, _) =>
           f(depth, k)
+      } map {
+        case (k, v) =>
+          k -> v.filterTrie(f, depth + 1)
       }
 
       val n: IntMap[Trie] =
@@ -98,12 +101,7 @@ final class Trie(val trie: IntMap[Trie], override val size: Int, val maxDepth: I
           m.filter { case (_, v: Trie) => !v.isEmpty }
         } else m
 
-      val o = n map {
-        case (k, v) =>
-          k -> v.filterTrie(f, depth + 1)
-      }
-
-      new Trie(o, o.foldLeft(0)((acc, e) => acc + math.max(1, e._2.size)), maxDepth)
+      new Trie(n, n.foldLeft(0)((acc, e) => acc + math.max(1, e._2.size)), maxDepth)
     }
   }
 

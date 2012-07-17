@@ -16,10 +16,9 @@ object Evaluator {
     cx.evaluateReader(scope, new InputStreamReader(url.openStream), "predefinedFunctions.js", 1, null)
   }
 
-  @throws(classOf[ScriptException])
   def evaluate(expression: String) = try {
     cx.evaluateString(scope, expression.replace("if(", "ite("), "eval", 1, null).asInstanceOf[Boolean];
   } catch {
-    case e => println(expression); throw e
+    case e => throw new IllegalArgumentException(expression, e)
   }
 }

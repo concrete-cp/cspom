@@ -69,19 +69,19 @@ final class CSPOM {
   /**
    * Collection of all constraints of the problem.
    */
-  val constraints = new HashSet[CSPOMConstraint]
+  private var _constraints: Set[CSPOMConstraint] = Set.empty
 
-  val getConstraints = JavaConversions.mutableSetAsJavaSet(constraints)
+  def constraints = _constraints
 
-  def functionalConstraints =
-    constraints.iterator
-      .filter(_.isInstanceOf[FunctionalConstraint])
-      .map(_.asInstanceOf[FunctionalConstraint])
+  val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
-  def generalConstraints =
-    constraints.iterator
-      .filter(_.isInstanceOf[GeneralConstraint])
-      .map(_.asInstanceOf[GeneralConstraint])
+  private var _functionalConstraints: Set[FunctionalConstraint] = Set.empty
+  
+  def functionalConstraints = _functionalConstraints
+
+  private var _generalConstraints: Set[GeneralConstraint] = Set.empty
+  
+  def generalConstraints = _generalConstraints
 
   /**
    * The constraint compiler used by this CSPOM instance.
@@ -115,17 +115,30 @@ final class CSPOM {
    *            The constraint to add.
    */
   def addConstraint(constraint: CSPOMConstraint) = {
-    val added = constraints.add(constraint)
-    assume(added,
+
+    assume(!constraints.contains(constraint),
       "The constraint " + constraint + " already belongs to the problem");
+
+    _constraints += constraint
+    
+    constraint match {
+      case c: FunctionalConstraint => _functionalConstraints += c
+      case c: GeneralConstraint => _generalConstraints += c
+      case _ =>
+    }
 
     for (v <- constraint.scope) { v.registerConstraint(constraint) }
     constraint
   }
 
-  def removeConstraint(c: CSPOMConstraint): Unit = {
+  def removeConstraint(c: CSPOMConstraint) {
     for (v <- c.scope) { v.removeConstraint(c) }
-    constraints.remove(c)
+    _constraints -= c
+    c match {
+      case c: FunctionalConstraint => _functionalConstraints -= c
+      case c: GeneralConstraint => _generalConstraints -= c
+      case _ =>
+    }
   }
 
   /**
