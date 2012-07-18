@@ -7,18 +7,19 @@ import scala.collection.mutable.HashMap
 object Trie {
   var cache = new HashMap[Int, Trie]()
 
-  def empty(depth: Int) = cache.getOrElseUpdate(depth, new Trie(IntMap.empty, 0, depth))
+  def empty(depth: Int) = cache.getOrElseUpdate(depth, new Trie(Map.empty, 0, depth))
 
   def apply(tuples: Array[Int]*) = {
     if (tuples.isEmpty) empty(0)
     else {
       val size = tuples.head.length
-      tuples.foldLeft(empty(size))(_ + _)
+      val trie = tuples.foldLeft(empty(size))(_ + _)
+      trie
     }
   }
 }
 
-final class Trie(val trie: IntMap[Trie], override val size: Int, val maxDepth: Int) extends Set[Array[Int]] {
+final class Trie(val trie: Map[Int, Trie], override val size: Int, val maxDepth: Int) extends Set[Array[Int]] {
 
   def arity = maxDepth
 
@@ -70,7 +71,9 @@ final class Trie(val trie: IntMap[Trie], override val size: Int, val maxDepth: I
     case _ => false
   }
 
-  override def toString = size + " elements\n" + toString(0)
+  override lazy val hashCode = trie.hashCode
+
+  override def toString = nodes + " nodes representing " + size + " " + arity + "-uples" // + toString(0)
 
   private def toString(depth: Int): String =
     trie.map {
@@ -88,29 +91,44 @@ final class Trie(val trie: IntMap[Trie], override val size: Int, val maxDepth: I
   def filterTrie(f: (Int, Int) => Boolean, depth: Int = 0): Trie = {
     if (isEmpty) this
     else {
-      val m: IntMap[Trie] = trie.filter {
-        case (k, _) =>
-          f(depth, k)
-      } map {
-        case (k, v) =>
-          k -> v.filterTrie(f, depth + 1)
+      var same = true
+      val m = trie.filterKeys(f(depth, _)).mapValues { v =>
+        val filtered = v.filterTrie(f, depth + 1)
+        same &= filtered eq v
+        filtered
       }
 
-      val n: IntMap[Trie] =
-        if (depth < maxDepth) {
-          m.filter { case (_, v: Trie) => !v.isEmpty }
-        } else m
-
-      new Trie(n, n.foldLeft(0)((acc, e) => acc + math.max(1, e._2.size)), maxDepth)
+      if (m.size == trie.size && same) this
+      else cleanAndUpdate(m, depth)
     }
   }
 
-  private def asStream: Stream[List[Int]] =
-    trie.toStream flatMap {
-      case (i, t) => if (t.isEmpty) Stream(List(i)) else t.asStream map (i :: _)
-    }
+  private def cleanAndUpdate(m: Map[Int, Trie], depth: Int) = {
+    val n = if (depth < maxDepth) {
+      m.filter { case (_, v: Trie) => !v.isEmpty }
+    } else m
 
-  def iterator = asStream.iterator.map(_.toArray)
+    new Trie(n, n.foldLeft(0)((acc, e) => acc + math.max(1, e._2.size)), maxDepth)
+  }
+
+  //  private def asStream: Stream[List[Int]] =
+  //    trie.toStream flatMap {
+  //      case (i, t) => if (t.isEmpty) Stream(List(i)) else t.asStream map (i :: _)
+  //    }
+
+  private def listiterator: Iterator[List[Int]] = trie.iterator flatMap {
+    case (i, t) => if (t.isEmpty) Iterator(List(i)) else t.listiterator map (i :: _)
+  }
+
+  def iterator = listiterator map (_.toArray)
+  //  
+  //  private def asIterable: Iterable[List[Int]] = trie flatMap {
+  //    case (i, t) => if (t.isEmpty) List(List(i)) else t.asIterable map (i :: _)
+  //  } 
+  //  
+  //  override def toList = asList map (_.toArray)
+
+  def nodes: Int = 1 + trie.values.map(_.nodes).sum
 
   /**
    * This method returns a copy of this extension with permuted tuples. New
@@ -125,8 +143,8 @@ final class Trie(val trie: IntMap[Trie], override val size: Int, val maxDepth: I
    *            new order of the extension.
    * @return a reversed copy of the extension.
    */
-  def permute(newOrder: Seq[Int]) = Trie(asStream map { t => newOrder.map(t(_)).toArray }: _*)
+  def permute(newOrder: Seq[Int]) = Trie(toList map { t => newOrder.map(t(_)).toArray }: _*)
 
-  def tupleString = asStream map { _.mkString(" ") } mkString "|"
+  def tupleString = iterator map { _.mkString(" ") } mkString "|"
 
 }
