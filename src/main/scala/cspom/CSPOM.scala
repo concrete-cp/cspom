@@ -306,7 +306,7 @@ final class CSPOM {
         {
           relations map {
             case ((r, init), n) =>
-              <relation name={ n } arity={ r.maxDepth.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
+              <relation name={ n } arity={ r.depth.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
                 { r.tupleString }
               </relation>
           }

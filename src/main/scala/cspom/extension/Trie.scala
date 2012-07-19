@@ -3,27 +3,34 @@ package cspom.extension
 import scala.annotation.tailrec
 import scala.collection.immutable.IntMap
 import scala.collection.mutable.HashMap
+import cspom.Loggable
 
 object Trie {
-  var cache = new HashMap[Int, Trie]()
 
-  def empty(depth: Int) = cache.getOrElseUpdate(depth, new Trie(Map.empty, 0, depth))
+  val empty = new Trie(Map.empty, 0)
+
+  val leaf = new Trie(Map.empty, 1)
 
   def apply(tuples: Array[Int]*) = {
-    if (tuples.isEmpty) empty(0)
+    if (tuples.isEmpty) empty
     else {
       val size = tuples.head.length
-      val trie = tuples.foldLeft(empty(size))(_ + _)
+      val trie = tuples.foldLeft(empty)(_ + _)
       trie
     }
   }
 }
 
-final class Trie(val trie: Map[Int, Trie], override val size: Int, val maxDepth: Int) extends Set[Array[Int]] {
-
-  def arity = maxDepth
-
+final class Trie(val trie: Map[Int, Trie], override val size: Int)
+  extends Set[Array[Int]] with Loggable {
   def get(k: Int) = trie.get(k)
+
+  def depth: Int = {
+    if (this eq Trie.leaf) 0
+    else {
+      1 + trie.values.map(_.depth).max
+    }
+  }
 
   override def isEmpty = trie.isEmpty
 
@@ -32,25 +39,33 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int, val maxDepth:
   def +(t: Array[Int]): Trie = if (contains(t)) this else this + (t, 0)
 
   private def +(tuple: Array[Int], i: Int): Trie = {
-    assert(tuple.length - i == maxDepth)
-    if (i >= tuple.length) this
-    else new Trie(trie + (tuple(i) -> (trie.getOrElse(tuple(i), Trie.empty(maxDepth - 1)) + (tuple, i + 1))), size + 1, maxDepth)
+    if (i >= tuple.length) Trie.leaf
+    else {
+      val v = tuple(i)
+      new Trie(trie + (v -> (trie.getOrElse(v, Trie.empty) + (tuple, i + 1))), size + 1)
+    }
   }
+
+  def -(t: Int*): Trie = this - t.toArray
 
   def -(tuple: Array[Int]): Trie = this - (tuple, 0)
 
   private def -(tuple: Array[Int], i: Int): Trie = {
-    if (i >= tuple.length) this
-    else get(tuple(i)) match {
+    if (i >= tuple.length) {
+      if (this eq Trie.leaf) Trie.empty
+      else this
+    } else get(tuple(i)) match {
       case None => this
       case Some(t) => {
         val newTrie = t - (tuple, i + 1)
-        if (newTrie.isEmpty) new Trie(trie - tuple(i), size - 1, maxDepth)
-        else if (newTrie.size < t.size) new Trie(trie + (tuple(i) -> newTrie), size - 1, maxDepth)
+        if (newTrie eq Trie.empty) {
+          val t = trie - tuple(i)
+          if (t.isEmpty) Trie.empty
+          else new Trie(trie - tuple(i), size - 1)
+        } else if (newTrie.size < t.size) new Trie(trie + (tuple(i) -> newTrie), size - 1)
         else this
       }
     }
-
   }
 
   def contains(t: Int*): Boolean = contains(t.toArray)
@@ -73,7 +88,7 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int, val maxDepth:
 
   override lazy val hashCode = trie.hashCode
 
-  override def toString = nodes + " nodes representing " + size + " " + arity + "-uples" // + toString(0)
+  override def toString = nodes + " nodes representing " + size + " tuples" // + toString(0)
 
   private def toString(depth: Int): String =
     trie.map {
@@ -89,26 +104,25 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int, val maxDepth:
   }
 
   def filterTrie(f: (Int, Int) => Boolean, depth: Int = 0): Trie = {
-    if (isEmpty) this
+    if (this eq Trie.leaf) this
     else {
-      var same = true
-      val m = trie.filterKeys(f(depth, _)).mapValues { v =>
-        val filtered = v.filterTrie(f, depth + 1)
-        same &= filtered eq v
-        filtered
+      // Warning : filterKeys and mapValues are done lazily !
+      val m = trie.filterKeys(f(depth, _)).map {
+        case (k, v) =>
+          k -> v.filterTrie(f, depth + 1)
       }
 
-      if (m.size == trie.size && same) this
-      else cleanAndUpdate(m, depth)
+      val newSize = m.values.iterator.map(_.size).sum
+
+      if (size == newSize) {
+        //logger.info("Same trie : " + this)
+        this
+      } else {
+        val n = m.filter { case (_, v) => v ne Trie.empty }
+        if (n.isEmpty) Trie.empty
+        else new Trie(n, newSize)
+      }
     }
-  }
-
-  private def cleanAndUpdate(m: Map[Int, Trie], depth: Int) = {
-    val n = if (depth < maxDepth) {
-      m.filter { case (_, v: Trie) => !v.isEmpty }
-    } else m
-
-    new Trie(n, n.foldLeft(0)((acc, e) => acc + math.max(1, e._2.size)), maxDepth)
   }
 
   //  private def asStream: Stream[List[Int]] =

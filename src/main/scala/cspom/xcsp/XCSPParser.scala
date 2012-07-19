@@ -188,7 +188,7 @@ object XCSPParser {
    *             given arity or nbTuples.
    */
   def parseRelation(arity: Int, init: Boolean, nbTuples: Int, string: String): Extension = {
-    val extension = new Extension(init, Trie.empty(arity));
+    val extension = new Extension(init, Trie.empty);
     val tupleList: Array[String] = string.trim match {
       case "" => Array.empty
       case s => s.split("""\|""");
