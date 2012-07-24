@@ -5,28 +5,20 @@ import scala.collection.immutable.IntMap
 import scala.collection.mutable.HashMap
 import cspom.Loggable
 
-object Trie {
+object HashTrie {
 
-  val empty = new Trie(Map.empty, 0)
+  val empty = new HashTrie(Map.empty, 0)
 
-  val leaf = new Trie(Map.empty, 1)
+  val leaf = new HashTrie(Map.empty, 1)
 
-  def apply(tuples: Array[Int]*) = {
-    if (tuples.isEmpty) empty
-    else {
-      val size = tuples.head.length
-      val trie = tuples.foldLeft(empty)(_ + _)
-      trie
-    }
-  }
+  def apply(tuples: Array[Int]*) = tuples.foldLeft(empty)(_ + _)
 }
 
-final class Trie(val trie: Map[Int, Trie], override val size: Int)
+final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
   extends Set[Array[Int]] with Loggable {
-  def get(k: Int) = trie.get(k)
 
   def depth: Int = {
-    if (this eq Trie.leaf) 0
+    if (HashTrie.this eq HashTrie.leaf) 0
     else {
       1 + trie.values.map(_.depth).max
     }
@@ -34,55 +26,71 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int)
 
   override def isEmpty = trie.isEmpty
 
-  def +(t: Int*): Trie = this + t.toArray
+  def +(t: Array[Int]): HashTrie = if (contains(t)) HashTrie.this else HashTrie.this + (t, 0)
 
-  def +(t: Array[Int]): Trie = if (contains(t)) this else this + (t, 0)
-
-  private def +(tuple: Array[Int], i: Int): Trie = {
-    if (i >= tuple.length) Trie.leaf
+  private def +(tuple: Array[Int], i: Int): HashTrie = {
+    if (i >= tuple.length) HashTrie.leaf
     else {
       val v = tuple(i)
-      new Trie(trie + (v -> (trie.getOrElse(v, Trie.empty) + (tuple, i + 1))), size + 1)
+      new HashTrie(trie + (v -> (trie.getOrElse(v, HashTrie.empty) + (tuple, i + 1))), size + 1)
     }
   }
 
-  def -(t: Int*): Trie = this - t.toArray
+  def +(t: Int*): HashTrie = if (contains(t.toList)) HashTrie.this else HashTrie.this plus t
 
-  def -(tuple: Array[Int]): Trie = this - (tuple, 0)
+  private def plus(t: Seq[Int]): HashTrie = {
+    if (t.isEmpty) HashTrie.leaf
+    else {
+      val v = t.head
+      new HashTrie(trie + (v -> (trie.getOrElse(v, HashTrie.empty) plus t.tail)), size + 1)
+    }
+  }
 
-  private def -(tuple: Array[Int], i: Int): Trie = {
+  def -(t: Int*): HashTrie = HashTrie.this - t.toArray
+
+  def -(tuple: Array[Int]): HashTrie = HashTrie.this - (tuple, 0)
+
+  private def -(tuple: Array[Int], i: Int): HashTrie = {
     if (i >= tuple.length) {
-      if (this eq Trie.leaf) Trie.empty
-      else this
-    } else get(tuple(i)) match {
-      case None => this
+      if (HashTrie.this eq HashTrie.leaf) HashTrie.empty
+      else HashTrie.this
+    } else trie.get(tuple(i)) match {
+      case None => HashTrie.this
       case Some(t) => {
         val newTrie = t - (tuple, i + 1)
-        if (newTrie eq Trie.empty) {
+        if (newTrie eq HashTrie.empty) {
           val t = trie - tuple(i)
-          if (t.isEmpty) Trie.empty
-          else new Trie(trie - tuple(i), size - 1)
-        } else if (newTrie.size < t.size) new Trie(trie + (tuple(i) -> newTrie), size - 1)
-        else this
+          if (t.isEmpty) HashTrie.empty
+          else new HashTrie(trie - tuple(i), size - 1)
+        } else if (newTrie.size < t.size) new HashTrie(trie + (tuple(i) -> newTrie), size - 1)
+        else HashTrie.this
       }
     }
   }
 
-  def contains(t: Int*): Boolean = contains(t.toArray)
+  def contains(t: Int*): Boolean = contains(t.toList)
+
+  def contains(tuple: List[Int]): Boolean = {
+    if (tuple.isEmpty) true
+    else trie.get(tuple.head) match {
+      case None => false
+      case Some(t) => t.contains(tuple.tail)
+    }
+  }
 
   def contains(tuple: Array[Int]) = contains(tuple, 0)
 
   @tailrec
   private def contains(tuple: Array[Int], i: Int): Boolean = {
     if (i >= tuple.size) true
-    else get(tuple(i)) match {
+    else trie.get(tuple(i)) match {
       case None => false
       case Some(t) => t.contains(tuple, i + 1)
     }
   }
 
   override def equals(o: Any): Boolean = o match {
-    case t: Trie => trie == t.trie
+    case t: HashTrie => trie == t.trie
     case _ => false
   }
 
@@ -92,7 +100,7 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int)
 
   private def toString(depth: Int): String =
     trie.map {
-      case (k: Int, v: Trie) =>
+      case (k: Int, v: HashTrie) =>
         List.fill(depth)(" ").mkString + k + "\n" + v.toString(depth + 1)
     }.mkString
 
@@ -103,8 +111,8 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int)
     }
   }
 
-  def filterTrie(f: (Int, Int) => Boolean, depth: Int = 0): Trie = {
-    if (this eq Trie.leaf) this
+  def filterTrie(f: (Int, Int) => Boolean, depth: Int = 0): HashTrie = {
+    if (HashTrie.this eq HashTrie.leaf) HashTrie.this
     else {
       // Warning : filterKeys and mapValues are done lazily !
       val m = trie.filterKeys(f(depth, _)).map {
@@ -116,11 +124,11 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int)
 
       if (size == newSize) {
         //logger.info("Same trie : " + this)
-        this
+        HashTrie.this
       } else {
-        val n = m.filter { case (_, v) => v ne Trie.empty }
-        if (n.isEmpty) Trie.empty
-        else new Trie(n, newSize)
+        val n = m.filter { case (_, v) => v ne HashTrie.empty }
+        if (n.isEmpty) HashTrie.empty
+        else new HashTrie(n, newSize)
       }
     }
   }
@@ -157,7 +165,7 @@ final class Trie(val trie: Map[Int, Trie], override val size: Int)
    *            new order of the extension.
    * @return a reversed copy of the extension.
    */
-  def permute(newOrder: Seq[Int]) = Trie(toList map { t => newOrder.map(t(_)).toArray }: _*)
+  def permute(newOrder: Seq[Int]) = HashTrie(toList map { t => newOrder.map(t(_)).toArray }: _*)
 
   def tupleString = iterator map { _.mkString(" ") } mkString "|"
 

@@ -12,12 +12,12 @@ import cspom.xcsp.Extension
  * @param <T>
  */
 final class ExtensionConstraint(
-  val relation: Trie,
+  val relation: HashTrie,
   val init: Boolean,
   scope: Seq[CSPOMVariable])
   extends CSPOMConstraint("ext", scope) with PermutableConstraint {
 
-  def this(relation: Trie, init: Boolean, scope: Array[CSPOMVariable]) =
+  def this(relation: HashTrie, init: Boolean, scope: Array[CSPOMVariable]) =
     this(relation, init, scope.toSeq)
 
   override def toString = super.toString + ": " + relation;

@@ -6,7 +6,7 @@ import scala.xml.NodeSeq
 import scala.xml.XML
 
 import cspom.extension.ExtensionConstraint
-import cspom.extension.Trie
+import cspom.extension.HashTrie
 import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.CSPOM
@@ -167,7 +167,7 @@ final class XCSPParser(private val problem: CSPOM) {
   }
 }
 
-final class Extension(val init: Boolean, var relation: Trie);
+final class Extension(val init: Boolean, var relation: HashTrie);
 
 object XCSPParser {
   /**
@@ -188,7 +188,7 @@ object XCSPParser {
    *             given arity or nbTuples.
    */
   def parseRelation(arity: Int, init: Boolean, nbTuples: Int, string: String): Extension = {
-    val extension = new Extension(init, Trie.empty);
+    val extension = new Extension(init, HashTrie.empty);
     val tupleList: Array[String] = string.trim match {
       case "" => Array.empty
       case s => s.split("""\|""");

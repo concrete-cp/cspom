@@ -8,11 +8,11 @@ import org.junit.matchers.JUnitMatchers._
 
 final class ExtensionConstraintTest {
 
-  var relation: Trie = null;
+  var relation: HashTrie = null;
 
   @Before
   def setUp() {
-    relation = Trie.empty;
+    relation = HashTrie.empty;
     relation += (2, 5, 5);
     relation += (3, 5, 5);
   }
@@ -52,7 +52,7 @@ final class ExtensionConstraintTest {
 
   @Test
   def testFilter() {
-    assertSame(Trie.empty, relation.filterTrie({
+    assertSame(HashTrie.empty, relation.filterTrie({
       case (depth, value) => depth != 1 || value != 5
     }))
     assertEquals("2 5 5", relation.filterTrie({

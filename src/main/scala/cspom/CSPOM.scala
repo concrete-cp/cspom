@@ -18,7 +18,7 @@ import cspom.constraint.GeneralConstraint
 import cspom.constraint.Predicate
 import cspom.dimacs.CNFParser
 import cspom.extension.ExtensionConstraint
-import cspom.extension.Trie
+import cspom.extension.HashTrie
 import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.XCSPParser
@@ -261,7 +261,7 @@ final class CSPOM {
       }
     }
 
-    val relations = new HashMap[(Trie, Boolean), String]()
+    val relations = new HashMap[(HashTrie, Boolean), String]()
     val genPredicates = new HashMap[(Predicate, Int), String]()
     val funcPredicates = new HashMap[(Predicate, Int), String]()
 
