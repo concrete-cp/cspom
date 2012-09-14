@@ -20,16 +20,16 @@ final class ExtensionConstraint(
   def this(relation: HashTrie, init: Boolean, scope: Array[CSPOMVariable]) =
     this(relation, init, scope.toSeq)
 
-  override def toString = super.toString + ": " + relation;
+  override def toString = "%s: %s (%s)".format(super.toString, relation, if (init) "forbidden" else "allowed");
 
   override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple.map(_.asInstanceOf[Int]).toArray)
 
-//  override lazy val hashCode = 31 * super.hashCode + relation.hashCode
-//
-//  override def equals(obj: Any) = obj match {
-//    case ec: ExtensionConstraint => super.equals(ec) && ec.relation == this.relation
-//    case _ => false
-//  }
+  //  override lazy val hashCode = 31 * super.hashCode + relation.hashCode
+  //
+  //  override def equals(obj: Any) = obj match {
+  //    case ec: ExtensionConstraint => super.equals(ec) && ec.relation == this.relation
+  //    case _ => false
+  //  }
 
   def standardize(newScope: Seq[CSPOMVariable]) = {
     assert(newScope.size == arity)
@@ -37,8 +37,7 @@ final class ExtensionConstraint(
   }
 
   override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {
-    new ExtensionConstraint(relation, init,
-      scope map { v => if (v == which) by else v })
+    new ExtensionConstraint(relation, init, scope map { v => if (v == which) by else v })
   }
 
 }

@@ -30,7 +30,7 @@ abstract class CSPOMConstraint(
 
   def evaluate(t: Seq[Any]): Boolean;
 
-  override def toString = description + scope.toString
+  override def toString = description + scope.mkString("(", ", ", ")")
 }
 
 object CSPOMConstraint {
