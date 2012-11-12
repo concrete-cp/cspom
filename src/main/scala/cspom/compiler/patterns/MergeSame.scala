@@ -15,10 +15,9 @@ final class MergeSame(private val problem: CSPOM,
 
   override def compileFunctional(c: FunctionalConstraint) {
     for (
-      same <- problem.functionalConstraints.find(same =>
-        (same ne c) &&
-          same.description == c.description &&
-          same.arguments.sameElements(c.arguments))
+      same <- problem.functionalConstraints.find(same => (same ne c) &&
+        same.description == c.description &&
+        same.arguments == c.arguments)
     ) {
       problem.removeConstraint(c)
       val eqC = new GeneralConstraint("eq", c.result, same.result)
