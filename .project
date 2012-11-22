@@ -1,5 +1,5 @@
 <projectDescription>
-  <name>CSPOM</name>
+  <name>cspom</name>
   <buildSpec>
     <buildCommand>
       <name>org.scala-ide.sdt.core.scalabuilder</name>

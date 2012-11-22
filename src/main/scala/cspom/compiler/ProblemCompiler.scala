@@ -15,6 +15,7 @@ import scala.collection.mutable.HashSet
 import scala.collection.JavaConversions
 import cspom.compiler.patterns.MergeDisj
 import cspom.compiler.patterns.MergeSame
+import cspom.compiler.patterns.NeqVec
 
 /**
  * This class implements some known useful reformulation rules.
@@ -55,7 +56,8 @@ final class ProblemCompiler(private val problem: CSPOM) {
     new AbsDiff(problem),
     new DeReify(problem, constraints),
     new MergeDisj(problem, constraints),
-    new MergeSame(problem, constraints))
+    new MergeSame(problem, constraints),
+    new NeqVec(problem, constraints))
 
   private def compile() {
     problem.constraints.foreach(constraints.enqueue(_));
