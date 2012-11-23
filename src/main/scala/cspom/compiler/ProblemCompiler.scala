@@ -49,27 +49,38 @@ final class ProblemCompiler(private val problem: CSPOM) {
   };
 
   private val constraintCompilers = List(
+    new MergeDisj(problem, constraints),
+    new NeqVec(problem, constraints),
     new RemoveAnd(problem, constraints),
     new MergeEq(problem, constraints),
     new AllDiff(problem),
     new DiffGe(problem),
     new AbsDiff(problem),
     new DeReify(problem, constraints),
-    new MergeDisj(problem, constraints),
-    new MergeSame(problem, constraints),
-    new NeqVec(problem, constraints))
+    new MergeSame(problem, constraints))
 
   private def compile() {
-    problem.constraints.foreach(constraints.enqueue(_));
+    //    problem.constraints.foreach(constraints.enqueue(_));
+    //
+    //    while (!constraints.isEmpty) {
+    //      compileConstraint(constraints.dequeue());
+    //    }
 
-    while (!constraints.isEmpty) {
-      compileConstraint(constraints.dequeue());
+    var comp = constraintCompilers
+
+    while (comp.nonEmpty) {
+      if (ProblemCompiler.hasChanged(problem.constraints, {
+        c: CSPOMConstraint => problem.constraints.contains(c) && comp.head.compile(c)
+      }))
+        comp = constraintCompilers
+      else comp = comp.tail
     }
 
     /* Removes single auxiliary variables */
     problem.variables.filter { v =>
       v.auxiliary && v.constraints.isEmpty
     }.foreach(problem.removeVariable)
+
   }
 
   private def compileConstraint(constraint: CSPOMConstraint) {
@@ -86,6 +97,14 @@ final class ProblemCompiler(private val problem: CSPOM) {
 object ProblemCompiler {
   def compile(problem: CSPOM) {
     new ProblemCompiler(problem).compile();
+  }
+
+  def hasChanged[A](l: Traversable[A], f: A => Boolean) = {
+    var ch = false
+    for (e <- l) {
+      ch |= f(e)
+    }
+    ch
   }
 }
 

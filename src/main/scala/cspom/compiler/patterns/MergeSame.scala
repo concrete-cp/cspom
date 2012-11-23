@@ -13,12 +13,12 @@ import cspom.constraint.FunctionalConstraint
 final class MergeSame(private val problem: CSPOM,
   private val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
 
-  override def compileFunctional(c: FunctionalConstraint) {
+  override def compileFunctional(c: FunctionalConstraint) = {
     for (
       same <- problem.functionalConstraints.find(same => (same ne c) &&
         same.description == c.description &&
         same.arguments == c.arguments)
-    ) {
+    ) yield {
       problem.removeConstraint(c)
       val eqC = new GeneralConstraint("eq", c.result, same.result)
       problem.addConstraint(eqC)
@@ -29,6 +29,6 @@ final class MergeSame(private val problem: CSPOM,
       for (c <- same.result.constraints)
         constraints.enqueue(c)
     }
-  }
+  } isDefined
 
 }

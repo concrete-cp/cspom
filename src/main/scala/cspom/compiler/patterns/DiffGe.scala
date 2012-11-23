@@ -10,12 +10,12 @@ import cspom.constraint.GeneralConstraint
  */
 final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
 
-  override def compileFunctional(subConstraint: FunctionalConstraint) {
+  override def compileFunctional(subConstraint: FunctionalConstraint) = {
     if (subConstraint.description == "sub" &&
       subConstraint.result.auxiliary &&
       subConstraint.result.constraints.size == 2) {
 
-      for (
+      (for (
         geConstraint <- subConstraint.result.constraints.find { c: CSPOMConstraint =>
           c.description == "ge" && {
             val scope = c match {
@@ -25,7 +25,7 @@ final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
             scope.size == 2 && scope(0) == subConstraint.result
           }
         }
-      ) {
+      ) yield {
 
         problem.removeConstraint(subConstraint);
         problem.removeConstraint(geConstraint);
@@ -42,8 +42,9 @@ final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
               subConstraint.arguments :+ geConstraint.scope(1): _*))
 
         }
-      }
-    }
+        true
+      }).isDefined
+    } else false
 
   }
 

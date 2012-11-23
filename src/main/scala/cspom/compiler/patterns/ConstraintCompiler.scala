@@ -6,7 +6,7 @@ import cspom.constraint.GeneralConstraint
 import cspom.extension.ExtensionConstraint
 
 trait ConstraintCompiler {
-  def compile(constraint: CSPOMConstraint) {
+  def compile(constraint: CSPOMConstraint) = {
     constraint match {
       case c: GeneralConstraint => compileGeneral(c)
       case c: FunctionalConstraint => compileFunctional(c)
@@ -14,9 +14,9 @@ trait ConstraintCompiler {
     }
   }
   
-  def compileGeneral(constraint: GeneralConstraint) {}
+  def compileGeneral(constraint: GeneralConstraint) = false
   
-  def compileFunctional(constraint: FunctionalConstraint) {}
+  def compileFunctional(constraint: FunctionalConstraint) = false
   
-  def compileExtension(constraint: ExtensionConstraint) {}
+  def compileExtension(constraint: ExtensionConstraint) = false
 }

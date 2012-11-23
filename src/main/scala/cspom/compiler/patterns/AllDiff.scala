@@ -31,22 +31,23 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
    *
    * @param constraint
    */
-  def alldiff(constraint: CSPOMConstraint) {
-    if (!DIFF_CONSTRAINT(constraint)) {
-      return ;
-    }
-    // System.out.print(constraint);
+  def alldiff(constraint: CSPOMConstraint) = {
+    if (!DIFF_CONSTRAINT(constraint)) false
+    else {
+      // System.out.print(constraint);
 
-    //val clique: Set[CSPOMVariable] = Set.empty ++ constraint.scope
+      //val clique: Set[CSPOMVariable] = Set.empty ++ constraint.scope
 
-    // val pool = populate(constraint.scope);
-    //print(constraint + " : ")
+      // val pool = populate(constraint.scope);
+      //print(constraint + " : ")
 
-    val clique = expand(constraint.scope.toSet);
-    //println(clique.size)
-    if (clique.size > constraint.scope.size) {
-      problem.removeConstraint(constraint)
-      newAllDiff(clique);
+      val clique = expand(constraint.scope.toSet);
+      //println(clique.size)
+      if (clique.size > constraint.scope.size) {
+        problem.removeConstraint(constraint)
+        newAllDiff(clique);
+        true
+      } else false
     }
 
   }
@@ -167,11 +168,8 @@ final class AllDiff(val problem: CSPOM) extends ConstraintCompiler with Loggable
     }
   }
 
-  override def compile(constraint: CSPOMConstraint) {
-    if (!dropSubsumedDiff(constraint)) {
-      alldiff(constraint);
-    }
-
+  override def compile(constraint: CSPOMConstraint) = {
+    dropSubsumedDiff(constraint) || alldiff(constraint)
   }
 
 }

@@ -103,7 +103,7 @@ final class CSPOM {
   }
 
   def removeVariable(v: CSPOMVariable) {
-    assume(v.constraints.isEmpty, v + " is still implied by constraints")
+    assume(v.constraints.isEmpty, v + " is still implied by constraints : " + v.constraints)
 
     variableMap.remove(v.name);
   }

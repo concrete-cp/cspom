@@ -13,14 +13,14 @@ final class MergeDisj(
   private val problem: CSPOM,
   private val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
 
-  override def compileFunctional(fc: FunctionalConstraint) {
+  override def compileFunctional(fc: FunctionalConstraint)  = {
     if (fc.description == "or" &&
       fc.result.auxiliary &&
       fc.result.constraints.size == 2) {
 
-      for (
+      (for (
         orConstraint <- fc.result.generalConstraints if orConstraint.description == "or"
-      ) {
+      ) yield {
         problem.removeConstraint(fc)
         problem.removeConstraint(orConstraint)
         problem.removeVariable(fc.result)
@@ -29,13 +29,13 @@ final class MergeDisj(
         val newConstraint = new GeneralConstraint("or", newScope: _*)
         problem.addConstraint(newConstraint)
         
-        for (v <- newScope; c <- v.constraints if c != newConstraint) {
-          constraints.enqueue(c)
-        }
-      }
+//        for (v <- newScope; c <- v.constraints if c != newConstraint) {
+//          constraints.enqueue(c)
+//        }
+      }) contains (true)
 
-    }
+    } else false
 
-  }
+  } 
 
 }
