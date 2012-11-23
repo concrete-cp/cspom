@@ -15,7 +15,7 @@ final class MergeSame(private val problem: CSPOM,
 
   override def compileFunctional(c: FunctionalConstraint) = {
     for (
-      same <- problem.functionalConstraints.find(same => (same ne c) &&
+      same <- c.arguments.flatMap(_.functionalConstraints).find(same => (same ne c) &&
         same.description == c.description &&
         same.arguments == c.arguments)
     ) yield {
