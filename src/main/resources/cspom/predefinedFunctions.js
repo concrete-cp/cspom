@@ -90,6 +90,16 @@ function alldifferent() {
 	return true;
 }
 
+function nevec() {
+  var mid = arguments.length/2;
+  for (var i = mid; --i >= 0;) {
+    if (arguments[i] != arguments[i + mid]) { 
+      return true;
+    }
+  }
+  return false;
+}
+
 function absdiff(x,y) { return Math.abs(x-y) ; }
 
 function diffGe(x,y,z) { return x-y >= z ; }
