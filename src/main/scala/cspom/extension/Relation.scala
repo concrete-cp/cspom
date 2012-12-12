@@ -22,5 +22,7 @@ trait Relation extends Traversable[Array[Int]] {
   def contains(t: Seq[_]): Boolean
 
   def arity: Int
+  
+  def close()
 
 }

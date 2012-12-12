@@ -17,6 +17,8 @@ object HashTrie {
 final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
   extends Relation with Loggable {
 
+  def close() = throw new UnsupportedOperationException
+  
   def arity: Int = {
     if (HashTrie.this eq HashTrie.leaf) 0
     else {

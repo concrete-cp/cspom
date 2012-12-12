@@ -393,6 +393,14 @@ final class CSPOM {
       !c.evaluate(tuple)
     }
   }
+  
+  
+  def closeRelations() {
+    for (c <- constraints) c match {
+      case c: ExtensionConstraint => c.relation.close() 
+    }
+    	
+  }
 }
 
 object CSPOM {
@@ -481,5 +489,6 @@ object CSPOM {
     }
     problem;
   }
+
 
 }

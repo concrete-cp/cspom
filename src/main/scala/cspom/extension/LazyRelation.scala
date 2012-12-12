@@ -5,18 +5,25 @@ import java.util.StringTokenizer
 import scala.xml.Node
 import java.io.StringReader
 
+object LazyRelation {
+  var id = 0
+}
+
 final class LazyRelation(private val text: StringReader, val arity: Int, private val nbTuples: Int) extends Relation with Loggable {
 
   val bl = 4096
 
+  val id = LazyRelation.id
+  LazyRelation.id += 1
+
   def foreach[A](f: Array[Int] => A) {
+    text.reset()
     val buf = new Array[Char](bl)
     var nt = 0
     var b = new StringBuilder()
     while (true) {
       val l = text.read(buf, 0, bl)
       if (l < 0) {
-        text.close()
         if (b.nonEmpty) {
           f(b.toString.trim.split(" +").map(_.toInt))
           nt += 1
@@ -39,8 +46,21 @@ final class LazyRelation(private val text: StringReader, val arity: Int, private
     }
 
   }
-  
+
   override def isEmpty = nbTuples == 0
+
+  override def toString = id.toString
+
+  override def hashCode = id
+
+  override def equals(o: Any) = o match {
+    case a: AnyRef => this eq a
+    case _ => false
+  }
+
+  def close() {
+    text.close()
+  }
 
   //  
   //  new Iterator[Array[Int]] {
