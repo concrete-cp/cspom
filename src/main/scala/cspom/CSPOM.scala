@@ -23,6 +23,7 @@ import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.XCSPParser
 import scala.collection.mutable.HashSet
+import cspom.extension.Relation
 
 /**
  *
@@ -76,11 +77,11 @@ final class CSPOM {
   val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
   private var _functionalConstraints: Set[FunctionalConstraint] = Set.empty
-  
+
   def functionalConstraints = _functionalConstraints
 
   private var _generalConstraints: Set[GeneralConstraint] = Set.empty
-  
+
   def generalConstraints = _generalConstraints
 
   /**
@@ -120,7 +121,7 @@ final class CSPOM {
       "The constraint " + constraint + " already belongs to the problem");
 
     _constraints += constraint
-    
+
     constraint match {
       case c: FunctionalConstraint => _functionalConstraints += c
       case c: GeneralConstraint => _generalConstraints += c
@@ -261,7 +262,7 @@ final class CSPOM {
       }
     }
 
-    val relations = new HashMap[(HashTrie, Boolean), String]()
+    val relations = new HashMap[(Relation, Boolean), String]()
     val genPredicates = new HashMap[(Predicate, Int), String]()
     val funcPredicates = new HashMap[(Predicate, Int), String]()
 
@@ -306,7 +307,7 @@ final class CSPOM {
         {
           relations map {
             case ((r, init), n) =>
-              <relation name={ n } arity={ r.depth.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
+              <relation name={ n } arity={ r.arity.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
                 { r.tupleString }
               </relation>
           }

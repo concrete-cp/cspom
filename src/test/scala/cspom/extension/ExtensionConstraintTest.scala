@@ -19,8 +19,8 @@ final class ExtensionConstraintTest {
 
   @Test
   def testEvaluate() {
-    assertFalse(relation.contains(1, 2, 3));
-    assertTrue(relation.contains(2, 5, 5));
+    assertFalse(relation.contains(Seq(1, 2, 3)));
+    assertTrue(relation.contains(Seq(2, 5, 5)));
   }
 
   @Test
@@ -31,7 +31,7 @@ final class ExtensionConstraintTest {
   @Test
   def testSize() {
     assertEquals(2, relation.size)
-    assertEquals(3, relation.depth)
+    assertEquals(3, relation.arity)
   }
 
   @Test

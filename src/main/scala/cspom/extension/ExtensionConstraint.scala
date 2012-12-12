@@ -12,7 +12,7 @@ import cspom.xcsp.Extension
  * @param <T>
  */
 final class ExtensionConstraint(
-  val relation: HashTrie,
+  val relation: Relation,
   val init: Boolean,
   scope: Seq[CSPOMVariable])
   extends CSPOMConstraint("ext", scope) with PermutableConstraint {
@@ -22,7 +22,7 @@ final class ExtensionConstraint(
 
   override def toString = "%s: %s (%s)".format(super.toString, relation, if (init) "forbidden" else "allowed");
 
-  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple.map(_.asInstanceOf[Int]).toArray)
+  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple)
 
   //  override lazy val hashCode = 31 * super.hashCode + relation.hashCode
   //
@@ -33,7 +33,7 @@ final class ExtensionConstraint(
 
   def standardize(newScope: Seq[CSPOMVariable]) = {
     assert(newScope.size == arity)
-    new ExtensionConstraint(relation.permute(scope.map(v => newScope.indexOf(v))), init, newScope.toList)
+    new ExtensionConstraint(relation.asInstanceOf[LazyRelation].permute(scope.map(v => newScope.indexOf(v))), init, newScope.toList)
   }
 
   override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {

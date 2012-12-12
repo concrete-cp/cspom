@@ -1,16 +1,17 @@
 package cspom.xcsp;
 
 import java.io.InputStream
-
 import scala.xml.NodeSeq
 import scala.xml.XML
-
 import cspom.extension.ExtensionConstraint
 import cspom.extension.HashTrie
 import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.CSPOM
 import cspom.CSPParseException
+import cspom.extension.LazyRelation
+import cspom.extension.Relation
+import java.io.StringReader
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -83,11 +84,14 @@ final class XCSPParser(private val problem: CSPOM) {
    */
   private def parseConstraints(doc: NodeSeq) {
     val relations = ((doc \ "relations" \ "relation") map { node =>
-      (node \ "@name").text -> XCSPParser.parseRelation(
-        (node \ "@arity").text.toInt,
-        "conflicts" == (node \ "@semantics").text,
-        (node \ "@nbTuples").text.toInt,
-        node.text)
+      (node \ "@name").text -> {
+        val text = new StringReader(node.text)
+        val arity = (node \ "@arity").text.toInt
+        val nbTuples = (node \ "@nbTuples").text.toInt
+        val init = "conflicts" == (node \ "@semantics").text
+        new Extension(init, new LazyRelation(text, arity, nbTuples))
+      }
+
     }).toMap ++ ((doc \ "predicates" \ "predicate") map { node =>
       (node \ "@name").text -> new Predicate((node \ "parameters").text,
         (node \ "expression" \ "functional").text)
@@ -167,44 +171,20 @@ final class XCSPParser(private val problem: CSPOM) {
   }
 }
 
-final class Extension(val init: Boolean, var relation: HashTrie);
-
-object XCSPParser {
-  /**
-   * Parse a relation to generate a CSPOM Extension.
-   *
-   * @param arity
-   *            Arity of the relation.
-   * @param init
-   *            Whether tuples are initially true or false (resp. conflicts or
-   *            supports semantic).
-   * @param nbTuples
-   *            Number of tuples to be parsed.
-   * @param string
-   *            The relation to parse. Format is "a b c...|d e f...|..."
-   * @return The parsed extension
-   * @throws CSPParseException
-   *             If the relation could not be read or is inconsistent with
-   *             given arity or nbTuples.
-   */
-  def parseRelation(arity: Int, init: Boolean, nbTuples: Int, string: String): Extension = {
-    val extension = new Extension(init, HashTrie.empty);
-    val tupleList: Array[String] = string.trim match {
-      case "" => Array.empty
-      case s => s.split("""\|""");
-    }
-
-    assume(tupleList.size == nbTuples, "Inconsistent number of Tuples ("
-      + tupleList.length + " /= " + nbTuples + ") in " + string);
-
-    for (parsedTuple <- tupleList) {
-      val values = parsedTuple.trim.split(" +");
-
-      assume(values.length == arity, "Incorrect arity (" + values.length
-        + " /= " + arity + ") in " + parsedTuple.trim);
-
-      extension.relation += values map { _.toInt }
-    }
-    return extension;
-  }
-}
+final class Extension(val init: Boolean, val relation: Relation)
+//    //
+//    //    assume(tupleList.size == nbTuples, "Inconsistent number of Tuples ("
+//    //      + tupleList.length + " /= " + nbTuples + ") in " + string);
+//    //
+//    //    for (parsedTuple <- tupleList) {
+//    //      val values = parsedTuple.trim.split(" +");
+//    //
+//    //      assume(values.length == arity, "Incorrect arity (" + values.length
+//    //        + " /= " + arity + ") in " + parsedTuple.trim);
+//    //
+//    //      extension.relation += values map { _.toInt }
+//    //    }
+//    //    return extension;
+//    new Extension(init, new LazyRelation(string, arity, nbTuples))
+//  }
+//}

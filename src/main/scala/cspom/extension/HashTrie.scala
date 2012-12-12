@@ -15,12 +15,12 @@ object HashTrie {
 }
 
 final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
-  extends Set[Array[Int]] with Loggable {
+  extends Relation with Loggable {
 
-  def depth: Int = {
+  def arity: Int = {
     if (HashTrie.this eq HashTrie.leaf) 0
     else {
-      1 + trie.values.map(_.depth).max
+      1 + trie.values.map(_.arity).max
     }
   }
 
@@ -68,8 +68,6 @@ final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
     }
   }
 
-  def contains(t: Int*): Boolean = contains(t.toList)
-
   def contains(tuple: List[Int]): Boolean = {
     if (tuple.isEmpty) true
     else trie.get(tuple.head) match {
@@ -78,7 +76,9 @@ final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
     }
   }
 
-  def contains(tuple: Array[Int]) = contains(tuple, 0)
+  def contains(tuple: Array[Int]): Boolean = contains(tuple, 0)
+
+  def contains(t: Seq[_]) = contains(t.map(_.asInstanceOf[Int]).toList)
 
   @tailrec
   private def contains(tuple: Array[Int], i: Int): Boolean = {
@@ -143,6 +143,10 @@ final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
   }
 
   def iterator = listiterator map (_.toArray)
+
+  def foreach[A](f: Array[Int] => A) {
+    iterator.foreach(f)
+  }
   //  
   //  private def asIterable: Iterable[List[Int]] = trie flatMap {
   //    case (i, t) => if (t.isEmpty) List(List(i)) else t.asIterable map (i :: _)
@@ -151,22 +155,5 @@ final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
   //  override def toList = asList map (_.toArray)
 
   def nodes: Int = 1 + trie.values.map(_.nodes).sum
-
-  /**
-   * This method returns a copy of this extension with permuted tuples. New
-   * order of tuples is given as an argument.
-   *
-   * <p>
-   * For example, a ternary extension 1 2 3|1 3 4|2 4 5 will be reversed to 1
-   * 3 2|1 4 3|2 5 4 by a call to reverse(0, 2, 1).
-   * </p>
-   *
-   * @param newOrder
-   *            new order of the extension.
-   * @return a reversed copy of the extension.
-   */
-  def permute(newOrder: Seq[Int]) = HashTrie(toList map { t => newOrder.map(t(_)).toArray }: _*)
-
-  def tupleString = iterator map { _.mkString(" ") } mkString "|"
 
 }
