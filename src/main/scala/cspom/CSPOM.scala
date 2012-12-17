@@ -397,7 +397,8 @@ final class CSPOM {
   
   def closeRelations() {
     for (c <- constraints) c match {
-      case c: ExtensionConstraint => c.relation.close() 
+      case c: ExtensionConstraint => c.relation.close()
+      case _ => 
     }
     	
   }
