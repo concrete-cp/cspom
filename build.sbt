@@ -4,7 +4,9 @@ organization := "fr.univ-valenciennes.cspfj"
 
 version := "1.3-SNAPSHOT"
 
-scalaVersion := "2.9.2"
+resolvers += "sonatype-releases" at "http://oss.sonatype.org/content/repositories/releases/"
+
+scalaVersion := "2.10.0"
 
 libraryDependencies ++= Seq(
 	"org.mozilla" % "rhino" % "1.7R4",
