@@ -146,9 +146,6 @@ final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
 
   def iterator = listiterator map (_.toArray)
 
-  def foreach[A](f: Array[Int] => A) {
-    iterator.foreach(f)
-  }
   //  
   //  private def asIterable: Iterable[List[Int]] = trie flatMap {
   //    case (i, t) => if (t.isEmpty) List(List(i)) else t.asIterable map (i :: _)

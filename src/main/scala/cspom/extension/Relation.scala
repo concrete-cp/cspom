@@ -1,6 +1,6 @@
 package cspom.extension
 
-trait Relation extends Traversable[Array[Int]] {
+trait Relation extends Iterable[Array[Int]] {
 
   /**
    * This method returns a copy of this extension with permuted tuples. New
