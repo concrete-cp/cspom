@@ -14,10 +14,10 @@ object HashTrie {
   def apply(tuples: Array[Int]*) = tuples.foldLeft(empty)(_ + _)
 }
 
-final class HashTrie(val trie: Map[Int, HashTrie], override val size: Int)
+final class HashTrie(var trie: Map[Int, HashTrie], override val size: Int)
   extends Relation with Loggable {
 
-  def close() = throw new UnsupportedOperationException
+  def close() { trie = null }
 
   def arity: Int = {
     if (HashTrie.this eq HashTrie.leaf) 0
