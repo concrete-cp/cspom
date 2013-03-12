@@ -86,6 +86,6 @@ final class LazyRelation(private val text: StringReader, val arity: Int, private
   //    }
   //  }
 
-  def contains(t: Seq[_]) = exists(_ sameElements t)
+  def contains(t: Seq[Int]) = exists(_ sameElements t)
 
 }

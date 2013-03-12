@@ -18,7 +18,6 @@ import cspom.constraint.GeneralConstraint
 import cspom.constraint.Predicate
 import cspom.dimacs.CNFParser
 import cspom.extension.ExtensionConstraint
-import cspom.extension.HashTrie
 import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.XCSPParser

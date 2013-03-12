@@ -6,7 +6,7 @@ version := "1.3-SNAPSHOT"
 
 resolvers += "sonatype-releases" at "http://oss.sonatype.org/content/repositories/releases/"
 
-scalaVersion := "2.10.0"
+scalaVersion := "2.10.1-RC2"
 
 libraryDependencies ++= Seq(
 	"org.mozilla" % "rhino" % "1.7R4",

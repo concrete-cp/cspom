@@ -8,11 +8,11 @@ import org.junit.Test
 
 final class HashTrieTest {
 
-  private var ts: HashTrie = null
+  private var ts: MDD = null
 
   @Before
   def setUp() {
-    ts = HashTrie.empty;
+    ts = EmptyMDD;
     ts += (0, 0)
     ts += (0, 1)
     ts += (1, 0)
@@ -20,15 +20,8 @@ final class HashTrieTest {
 
   @Test
   def testContainsTuple() {
-    assertTrue(ts.contains(Array(0, 1)));
-    assertFalse(ts.contains(Array(1, 1)));
-  }
-
-  @Test
-  def testRemoveTuple() {
-    ts -= Array(0, 1);
-    assertFalse(ts.contains(Array(0, 1)));
-    ts -= Array(1, 1);
+    assertTrue(ts.contains(Seq(0, 1)));
+    assertFalse(ts.contains(Seq(1, 1)));
   }
 
   @Test
@@ -45,33 +38,31 @@ final class HashTrieTest {
   @Test
   def testSize() {
     assertEquals(3, ts.size);
-    ts -= (0, 0);
-    assertEquals(2, ts.size);
     ts += (1, 1);
-    assertEquals(3, ts.size);
+    assertEquals(4, ts.size);
   }
 
   @Test
   def testTrie() {
-    val t = HashTrie.empty + Array(1, 2, 3) + Array(1, 3, 4) + Array(1, 2, 5) + Array(2, 3, 5)
+    val t = MDD.empty + (1, 2, 3) + (1, 3, 4) + (1, 2, 5) + (2, 3, 5)
     assertEquals(4, t.size)
 
     assertTrue(t.contains(Array(1, 3, 4)))
     assertFalse(t.contains(Array(1, 2, 4)))
 
-    var s = HashTrie.empty + Array(1, 2, 5) + Array(1, 3, 4) + Array(1, 2, 3)
+    var s = MDD.empty + (1, 2, 5) + (1, 3, 4) + (1, 2, 3)
 
     assertFalse(t == s)
 
-    s += Array(2, 3, 5)
+    s += (2, 3, 5)
 
     assertEquals(t, s)
 
-    var u = HashTrie(
-      Array(1, 2, 3),
-      Array(1, 3, 4),
-      Array(1, 2, 5),
-      Array(2, 3, 5))
+    var u = MDD(
+      Seq(1, 2, 3),
+      Seq(1, 3, 4),
+      Seq(1, 2, 5),
+      Seq(2, 3, 5))
 
     assertEquals(t, u)
 

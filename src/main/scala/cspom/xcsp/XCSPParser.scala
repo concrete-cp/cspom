@@ -4,7 +4,6 @@ import java.io.InputStream
 import scala.xml.NodeSeq
 import scala.xml.XML
 import cspom.extension.ExtensionConstraint
-import cspom.extension.HashTrie
 import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.CSPOM

@@ -15,11 +15,11 @@ trait Relation extends Iterable[Array[Int]] {
    *            new order of the extension.
    * @return a reversed copy of the extension.
    */
-  def permute(newOrder: Seq[Int]) = HashTrie(toList map { t => newOrder.map(t(_)).toArray }: _*)
+  //def permute(newOrder: Seq[Int]) = HashTrie(toList map { t => newOrder.map(t(_)).toArray }: _*)
 
   def tupleString = map { _.mkString(" ") } mkString "|"
 
-  def contains(t: Seq[_]): Boolean
+  def contains(t: Seq[Int]): Boolean
 
   def arity: Int
   

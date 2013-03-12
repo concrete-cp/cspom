@@ -1,5 +1,5 @@
 package cspom.extension
-import cspom.constraint.{ PermutableConstraint, CSPOMConstraint }
+import cspom.constraint.{ CSPOMConstraint }
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.Extension
 
@@ -15,14 +15,13 @@ final class ExtensionConstraint(
   val relation: Relation,
   val init: Boolean,
   scope: Seq[CSPOMVariable])
-  extends CSPOMConstraint("ext", scope) with PermutableConstraint {
+  extends CSPOMConstraint("ext", scope) {
 
-  def this(relation: HashTrie, init: Boolean, scope: Array[CSPOMVariable]) =
-    this(relation, init, scope.toSeq)
+  def this(r: Relation, i: Boolean, s: Array[CSPOMVariable]) = this(r, i, s.toSeq)
 
   override def toString = "%s: %s (%s)".format(super.toString, relation, if (init) "forbidden" else "allowed");
 
-  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple)
+  override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple.map(_.asInstanceOf[Int]))
 
   //  override lazy val hashCode = 31 * super.hashCode + relation.hashCode
   //
@@ -31,10 +30,10 @@ final class ExtensionConstraint(
   //    case _ => false
   //  }
 
-  def standardize(newScope: Seq[CSPOMVariable]) = {
-    assert(newScope.size == arity)
-    new ExtensionConstraint(relation.asInstanceOf[LazyRelation].permute(scope.map(v => newScope.indexOf(v))), init, newScope.toList)
-  }
+  //  def standardize(newScope: Seq[CSPOMVariable]) = {
+  //    assert(newScope.size == arity)
+  //    new ExtensionConstraint(relation.asInstanceOf[LazyRelation].permute(scope.map(v => newScope.indexOf(v))), init, newScope.toList)
+  //  }
 
   override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {
     new ExtensionConstraint(relation, init, scope map { v => if (v == which) by else v })
