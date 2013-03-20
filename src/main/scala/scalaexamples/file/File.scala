@@ -11,7 +11,6 @@ final object File {
       case e: CSPParseException =>
         println(e.getMessage() + " at line " + e.lineNumber);
         throw e;
-      case e => throw e;
     }
     println(cspom);
 

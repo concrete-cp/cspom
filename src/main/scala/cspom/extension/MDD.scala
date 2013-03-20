@@ -21,6 +21,7 @@ trait MDD extends Relation {
   def lambda: BigInt
   def reduce: MDD = reduce(new HashMap[Map[Int, MDD], MDD]())
   def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD
+  override def toString = s"MDD with $edges edges representing $lambda tuples"
 }
 
 object EmptyMDD extends MDD {

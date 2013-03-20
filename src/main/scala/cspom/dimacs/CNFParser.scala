@@ -20,13 +20,12 @@ final class CNFParser(private val problem: CSPOM) {
 
     val PARAMETER(nbVars, nbClauses) = try lines.next
     catch {
-      case e => throw new CSPParseException("Parameter line not found", e, -1)
+      case e: Exception => throw new CSPParseException("Parameter line not found", e, -1)
     }
 
     for (i <- 1 to nbVars.toInt)
       problem.addVariable(CSPOMVariable.bool("V" + i))
 
-      
     var currentClause: List[Int] = Nil;
     var countClauses = 0
     for (line <- lines; value <- VAR.findAllIn(line).map(s => s.toInt)) {
@@ -47,7 +46,7 @@ final class CNFParser(private val problem: CSPOM) {
     val (clause, parameters) = currentClause map { i =>
       ("V" + math.abs(i), if (i > 0) "0" else "1")
     } unzip
-    
+
     val stb = new StringBuilder("or")
     parameters.addString(stb, "{", ", ", "}")
     clause.addString(stb, "(", ", ", ")")

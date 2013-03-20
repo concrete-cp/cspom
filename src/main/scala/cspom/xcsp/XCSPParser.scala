@@ -59,7 +59,7 @@ final class XCSPParser(private val problem: CSPOM) {
           try {
             problem.addVariable(new CSPOMVariable(name, d, false));
           } catch {
-            case e =>
+            case e: Exception =>
               throw new CSPParseException("Could not add variable " + name, e);
           }
         case None =>
@@ -140,7 +140,7 @@ final class XCSPParser(private val problem: CSPOM) {
       try {
         problem.ctr(constraint);
       } catch {
-        case e =>
+        case e: Exception =>
           throw new CSPParseException("Error parsing constraint " + constraint, e);
       }
 
@@ -156,7 +156,7 @@ final class XCSPParser(private val problem: CSPOM) {
           try {
             problem.ctr(predicate.applyParameters(parameters, scope))
           } catch {
-            case e =>
+            case e: Exception =>
               throw new CSPParseException("Error parsing predicate " + predicate
                 + " with constraint parameters " + parameters, e);
           }
@@ -171,19 +171,3 @@ final class XCSPParser(private val problem: CSPOM) {
 }
 
 final class Extension(val init: Boolean, val relation: Relation)
-//    //
-//    //    assume(tupleList.size == nbTuples, "Inconsistent number of Tuples ("
-//    //      + tupleList.length + " /= " + nbTuples + ") in " + string);
-//    //
-//    //    for (parsedTuple <- tupleList) {
-//    //      val values = parsedTuple.trim.split(" +");
-//    //
-//    //      assume(values.length == arity, "Incorrect arity (" + values.length
-//    //        + " /= " + arity + ") in " + parsedTuple.trim);
-//    //
-//    //      extension.relation += values map { _.toInt }
-//    //    }
-//    //    return extension;
-//    new Extension(init, new LazyRelation(string, arity, nbTuples))
-//  }
-//}

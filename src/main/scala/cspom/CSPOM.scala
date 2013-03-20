@@ -98,7 +98,7 @@ final class CSPOM {
    */
   def addVariable[T >: Any](variable: CSPOMVariable): CSPOMVariable = {
     val oldVariable = variableMap.put(variable.name, variable)
-    assume(oldVariable == None, variable.name + ": a variable of the same name already exists");
+    require(oldVariable == None, variable.name + ": a variable of the same name already exists");
     variable
   }
 
@@ -375,9 +375,14 @@ final class CSPOM {
   }
 
   def controlInt(solution: Map[String, Int]) = {
-    constraints filter { c =>
-      !c.evaluate(c.scope map (v =>
-        solution.getOrElse(v.name, v.domain.values.head)))
+    constraints flatMap { c =>
+      val values = c.scope map (v =>
+        solution.getOrElse(v.name, v.domain.values.head))
+      if (c.evaluate(values)) {
+        Nil
+      } else {
+        List((c, values))
+      }
     }
   }
 
@@ -392,14 +397,13 @@ final class CSPOM {
       !c.evaluate(tuple)
     }
   }
-  
-  
+
   def closeRelations() {
     for (c <- constraints) c match {
       case c: ExtensionConstraint => c.relation.close()
-      case _ => 
+      case _ =>
     }
-    	
+
   }
 }
 
@@ -489,6 +493,5 @@ object CSPOM {
     }
     problem;
   }
-
 
 }
