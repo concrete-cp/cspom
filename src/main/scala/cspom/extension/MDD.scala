@@ -1,11 +1,11 @@
 package cspom.extension
 
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.HashSet
 
 object MDD {
   def empty = EmptyMDD
   def apply(t: Seq[Int]*): MDD = t.foldLeft[MDD](empty)(_ + (_: _*))
-  var timestamp = 0
 }
 
 trait MDD extends Relation {
@@ -13,12 +13,13 @@ trait MDD extends Relation {
   def +(t: Int*): MDD
   def iterator = lIterator map (_.toArray)
   def lIterator: Iterator[List[Int]]
-  def edges: Int = {
-    MDD.timestamp += 1
-    edges(MDD.timestamp)
-  }
-  def edges(ts: Int): Int
-  def lambda: BigInt
+
+  final def edges: Int = edges(new HashSet[MDD]())
+  def edges(es: HashSet[MDD]): Int
+
+  final def lambda: BigInt = lambda(new HashMap[MDD, BigInt]())
+  def lambda(ls: HashMap[MDD, BigInt]): BigInt
+
   def reduce: MDD = reduce(new HashMap[Map[Int, MDD], MDD]())
   def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD
   override def toString = s"MDD with $edges edges representing $lambda tuples"
@@ -36,8 +37,8 @@ object EmptyMDD extends MDD {
   def close {}
   def arity = throw new UnsupportedOperationException
   def contains(t: Seq[Int]) = false
-  def edges(ts: Int) = 0
-  def lambda = BigInt(0)
+  def edges(e: HashSet[MDD]) = 0
+  def lambda(ls: HashMap[MDD, BigInt]) = BigInt(0)
   def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = throw new UnsupportedOperationException
 }
 
@@ -48,13 +49,12 @@ object MDDLeaf extends MDD {
   def close {}
   def arity = 0
   def contains(t: Seq[Int]) = t.isEmpty
-  def edges(ts: Int) = 0
-  def lambda = BigInt(1)
+  def edges(e: HashSet[MDD]) = 0
+  def lambda(ls: HashMap[MDD, BigInt]) = BigInt(1)
   def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = this
 }
 
-class MDDNode(var trie: Map[Int, MDD]) extends MDD {
-  var timestamp: Int = _
+final class MDDNode(var trie: Map[Int, MDD]) extends MDD {
   override def isEmpty = false
   def +(t: Int*) = {
     if (t.isEmpty) {
@@ -71,15 +71,18 @@ class MDDNode(var trie: Map[Int, MDD]) extends MDD {
   def contains(t: Seq[Int]) = {
     trie.get(t.head).map(_.contains(t.tail)).getOrElse(false)
   }
-  def edges(ts: Int) = {
-    if (timestamp == ts) {
+  def edges(e: HashSet[MDD]) = {
+    if (e.contains(this)) {
       0
     } else {
-      timestamp = ts
-      trie.size + trie.values.map(_.edges(ts)).sum
+      e += this
+      trie.size + trie.values.map(_.edges(e)).sum
     }
   }
-  lazy val lambda = trie.values.map(_.lambda).sum
+
+  def lambda(ls: HashMap[MDD, BigInt]): BigInt = {
+    trie.values.map(m => ls.getOrElseUpdate(m, lambda(ls))).sum
+  }
 
   override lazy val hashCode: Int = trie.hashCode
 
