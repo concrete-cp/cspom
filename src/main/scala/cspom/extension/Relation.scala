@@ -22,7 +22,7 @@ trait Relation extends Iterable[Array[Int]] {
   def contains(t: Seq[Int]): Boolean
 
   def arity: Int
-  
+
   //def close()
 
 }
