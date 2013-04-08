@@ -19,6 +19,6 @@ object Evaluator {
   def evaluate(expression: String) = try {
     cx.evaluateString(scope, expression.replace("if(", "ite("), "eval", 1, null).asInstanceOf[Boolean];
   } catch {
-    case e => throw new IllegalArgumentException(expression, e)
+    case e: Exception => throw new IllegalArgumentException(expression, e)
   }
 }

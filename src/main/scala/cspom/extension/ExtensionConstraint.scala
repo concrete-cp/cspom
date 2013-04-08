@@ -12,13 +12,15 @@ import cspom.xcsp.Extension
  * @param <T>
  */
 final class ExtensionConstraint(
-  val relation: Relation,
+  private var _relation: Relation,
   val init: Boolean,
   scope: Seq[CSPOMVariable])
   extends CSPOMConstraint("ext", scope) {
 
   def this(r: Relation, i: Boolean, s: Array[CSPOMVariable]) = this(r, i, s.toSeq)
 
+  def relation = _relation
+  
   override def toString = "%s: %s (%s)".format(super.toString, relation, if (init) "forbidden" else "allowed");
 
   override def evaluate(tuple: Seq[_]) = init ^ relation.contains(tuple.map(_.asInstanceOf[Int]))
@@ -37,6 +39,10 @@ final class ExtensionConstraint(
 
   override def replacedVar(which: CSPOMVariable, by: CSPOMVariable) = {
     new ExtensionConstraint(relation, init, scope map { v => if (v == which) by else v })
+  }
+  
+  def closeRelation(){
+    _relation = null
   }
 
 }

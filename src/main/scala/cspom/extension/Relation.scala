@@ -23,6 +23,6 @@ trait Relation extends Iterable[Array[Int]] {
 
   def arity: Int
   
-  def close()
+  //def close()
 
 }

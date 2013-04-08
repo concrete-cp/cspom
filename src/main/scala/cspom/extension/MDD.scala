@@ -2,10 +2,16 @@ package cspom.extension
 
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
+import MDD.Trie
 
 object MDD {
+  type Trie = List[(Int, MDD)]
+
   def empty = EmptyMDD
   def apply(t: Seq[Int]*): MDD = t.foldLeft[MDD](empty)(_ + (_: _*))
+  def fromList(l: Trie) = l.foldLeft[MDD](EmptyMDD) {
+    case (acc, (i, m)) => new MDDNode(m, acc, i)
+  }
 }
 
 trait MDD extends Relation {
@@ -14,14 +20,15 @@ trait MDD extends Relation {
   def iterator = lIterator map (_.toArray)
   def lIterator: Iterator[List[Int]]
 
-  final def edges: Int = edges(new HashSet[MDD]())
-  def edges(es: HashSet[MDD]): Int
+  final def edges: Int = edges(new HashSet[Trie]())
+  def edges(es: HashSet[Trie]): Int
 
   final def lambda: BigInt = lambda(new HashMap[MDD, BigInt]())
   def lambda(ls: HashMap[MDD, BigInt]): BigInt
 
-  def reduce: MDD = reduce(new HashMap[Map[Int, MDD], MDD]())
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD
+  def reduce: MDD = reduce(new HashMap[List[(Int, MDD)], MDD]())
+  def reduce(mdds: HashMap[Trie, MDD]): MDD
+  def asList: Trie
   override def toString = s"MDD with $edges edges representing $lambda tuples"
 }
 
@@ -31,72 +38,83 @@ object EmptyMDD extends MDD {
     if (t.isEmpty) {
       MDDLeaf
     } else {
-      new MDDNode(Map(t.head -> (EmptyMDD + (t.tail: _*))))
+      new MDDNode(EmptyMDD + (t.tail: _*), EmptyMDD, t.head)
     }
   def lIterator = Iterator()
-  def close {}
   def arity = throw new UnsupportedOperationException
   def contains(t: Seq[Int]) = false
-  def edges(e: HashSet[MDD]) = 0
+  def edges(e: HashSet[Trie]) = 0
   def lambda(ls: HashMap[MDD, BigInt]) = BigInt(0)
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = throw new UnsupportedOperationException
+  def asList = Nil
+  def reduce(mdds: HashMap[Trie, MDD]): MDD = throw new UnsupportedOperationException
 }
 
 object MDDLeaf extends MDD {
   override def isEmpty = false
   def +(t: Int*) = throw new UnsupportedOperationException
   def lIterator = Iterator(Nil)
-  def close {}
   def arity = 0
   def contains(t: Seq[Int]) = t.isEmpty
-  def edges(e: HashSet[MDD]) = 0
+  def edges(e: HashSet[Trie]) = 0
   def lambda(ls: HashMap[MDD, BigInt]) = BigInt(1)
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = this
+  def reduce(mdds: HashMap[Trie, MDD]): MDD = this
+  def asList = throw new UnsupportedOperationException
+
 }
 
-final class MDDNode(var trie: Map[Int, MDD]) extends MDD {
+final class MDDNode(val child: MDD, val next: MDD, val value: Int) extends MDD {
   override def isEmpty = false
   def +(t: Int*) = {
     if (t.isEmpty) {
       throw new UnsupportedOperationException
     } else {
       val v = t.head
-      val newTrie = trie.updated(t.head, trie.getOrElse(t.head, EmptyMDD) + (t.tail: _*))
-      new MDDNode(newTrie)
+      if (v == value) {
+        new MDDNode(child + (t.tail: _*), next, value)
+      } else {
+        new MDDNode(child, next + (t: _*), value)
+      }
     }
   }
-  def lIterator = trie.iterator.flatMap { case (k, t) => t.lIterator.map(k :: _) }
-  def close { trie = null }
-  def arity = 1 + trie.head._2.arity
+  def lIterator = child.lIterator.map(value :: _) ++ next.lIterator
+  def arity = 1 + child.arity
   def contains(t: Seq[Int]) = {
-    trie.get(t.head).map(_.contains(t.tail)).getOrElse(false)
+    if (value == t.head) {
+      child.contains(t.tail)
+    } else {
+      next.contains(t)
+    }
   }
-  def edges(e: HashSet[MDD]) = {
-    if (e.contains(this)) {
+  def edges(e: HashSet[Trie]) = {
+    val t = asList
+    if (e.contains(t)) {
       0
     } else {
-      e += this
-      trie.size + trie.values.map(_.edges(e)).sum
+      e += t
+      t.size + t.map(_._2.edges(e)).sum
     }
   }
 
   def lambda(ls: HashMap[MDD, BigInt]): BigInt = {
-    trie.values.map(m => ls.getOrElseUpdate(m, lambda(ls))).sum
+    ls.getOrElseUpdate(this, {
+      child.lambda(ls) + next.lambda(ls)
+    })
   }
 
-  override lazy val hashCode: Int = trie.hashCode
+  override val hashCode: Int = 31 * child.hashCode + next.hashCode
 
   override def equals(o: Any): Boolean = o match {
-    case t: MDDNode =>
-      trie.size == t.trie.size && trie.forall {
-        case (k1, v1) => t.trie.get(k1).map(_ eq v1).getOrElse(false)
-      }
+    case t: MDDNode => value == t.value && (child eq t.child) && next.equals(t.next)
     case _ => false
   }
 
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = {
-    var b = trie.map(e => e._1 -> e._2.reduce(mdds))
-    mdds.getOrElseUpdate(b, new MDDNode(b))
+  def asList: Trie = {
+    (value, child) :: next.asList
+  }
+
+  def reduce(mdds: HashMap[Trie, MDD]): MDD = {
+    val t = asList
+    mdds.getOrElseUpdate(t, this)
   }
 
 }

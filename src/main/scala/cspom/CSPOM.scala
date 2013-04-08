@@ -398,13 +398,13 @@ final class CSPOM {
     }
   }
 
-  def closeRelations() {
-    for (c <- constraints) c match {
-      case c: ExtensionConstraint => c.relation.close()
-      case _ =>
-    }
-
-  }
+//  def closeRelations() {
+//    for (c <- constraints) c match {
+//      case c: ExtensionConstraint => c.closeRelation()
+//      case _ =>
+//    }
+//
+//  }
 }
 
 object CSPOM {

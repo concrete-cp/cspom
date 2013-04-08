@@ -62,10 +62,6 @@ final class LazyRelation(private val text: StringReader, val arity: Int, private
     case _ => false
   }
 
-  def close() {
-    text.close()
-  }
-
   //  
   //  new Iterator[Array[Int]] {
   //    val st = new StringTokenizer(text, "|")
