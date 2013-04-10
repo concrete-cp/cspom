@@ -92,7 +92,7 @@ final class MDDNode(val trie: Map[Int, MDD]) extends MDD {
   }
 
   def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = {
-    var b = trie.map(e => e._1 -> e._2.reduce(mdds))
+    val b = trie.map(e => e._1 -> e._2.reduce(mdds))
     mdds.getOrElseUpdate(b, new MDDNode(b))
   }
 
