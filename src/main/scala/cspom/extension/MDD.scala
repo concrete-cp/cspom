@@ -78,7 +78,7 @@ final class MDDNode(val trie: Map[Int, MDD]) extends MDD {
   }
 
   def lambda(ls: HashMap[MDD, BigInt]): BigInt = {
-    trie.values.map(m => ls.getOrElseUpdate(m, lambda(ls))).sum
+    trie.values.map(m => ls.getOrElseUpdate(m, m.lambda(ls))).sum
   }
 
   override lazy val hashCode: Int = trie.hashCode
