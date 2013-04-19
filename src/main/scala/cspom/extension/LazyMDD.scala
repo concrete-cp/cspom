@@ -7,6 +7,7 @@ class LazyMDD(val f: Unit => MDD) extends Relation {
   def apply = {
     val m = f()
     _arity = m.arity
+    
     m
   }
 
