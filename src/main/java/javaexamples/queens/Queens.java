@@ -17,8 +17,7 @@ public final class Queens {
 
 		final CSPOM problem = new CSPOM();
 
-		final List<CSPOMVariable> queens = new ArrayList<CSPOMVariable>(
-				nbQueens);
+		final List<CSPOMVariable> queens = new ArrayList<CSPOMVariable>(nbQueens);
 
 		for (int i = 0; i < nbQueens; i++) {
 			queens.add(problem.interVar("q" + i, 0, nbQueens));
@@ -26,10 +25,11 @@ public final class Queens {
 
 		for (int i = nbQueens; --i >= 0;) {
 			for (int j = i; --j >= 0;) {
-				problem.ctr("neq(" + queens.get(i) + " , " + queens.get(j)
-						+ ")");
-				problem.ctr("neq(abs(sub(" + queens.get(i) + ","
-						+ queens.get(j) + ")), " + Math.abs(i - j) + ")");
+				problem.ctr("neq", queens.get(i), queens.get(j));
+				problem.ctr(
+						"neq",
+						problem.is("abs", problem.is("sub", queens.get(i), queens.get(j)),
+								problem.varOf(Math.abs(i - j))));
 			}
 		}
 

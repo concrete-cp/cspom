@@ -3,6 +3,7 @@ package cspom.variable;
 import cspom.constraint.CSPOMConstraint
 import cspom.constraint.FunctionalConstraint
 import cspom.constraint.GeneralConstraint
+import cspom.CSPOM
 
 /**
  * This class defines and implements CSP variables.
@@ -45,6 +46,10 @@ final class CSPOMVariable(
   def removeConstraint(constraint: CSPOMConstraint): Unit = {
     assume(constraints contains constraint, this + " is not in " + constraint + "'s scope");
     constraints -= constraint
+  }
+
+  def is(name: String, scope: CSPOMVariable*)(implicit problem: CSPOM) {
+    problem.addConstraint(new FunctionalConstraint(this, name, scope: _*))
   }
 }
 

@@ -23,6 +23,8 @@ import cspom.variable.CSPOMVariable
 import cspom.xcsp.XCSPParser
 import scala.collection.mutable.HashSet
 import cspom.extension.Relation
+import scala.util.DynamicVariable
+import cspom.xcsp.Extension
 
 /**
  *
@@ -84,11 +86,6 @@ final class CSPOM {
   def generalConstraints = _generalConstraints
 
   /**
-   * The constraint compiler used by this CSPOM instance.
-   */
-  private var constraintParser: ConstraintParser = null
-
-  /**
    * Adds a variable to the problem.
    *
    * @param variable
@@ -141,17 +138,26 @@ final class CSPOM {
     }
   }
 
-  /**
-   * Adds a bounded, unnamed variable in the problem.
-   *
-   * @param lb
-   *            lower bound
-   * @param ub
-   *            upper bound
-   * @return The added variable.
-   */
-  def interVar(lb: Int, ub: Int) =
-    addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
+  @annotation.varargs
+  def ctr(name: String, scope: CSPOMVariable*): CSPOMConstraint = {
+    addConstraint(new GeneralConstraint(name, scope: _*))
+  }
+
+  @annotation.varargs
+  def ctr(name: String, parameters: String, scope: CSPOMVariable*): CSPOMConstraint = {
+    addConstraint(new GeneralConstraint(name, parameters, scope: _*))
+  }
+
+  @annotation.varargs
+  def ctr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
+    addConstraint(new ExtensionConstraint(rel, init, vars))
+
+  @annotation.varargs
+  def is(name: String, scope: CSPOMVariable*): CSPOMVariable = {
+    val result = addVariable(CSPOMVariable.aux())
+    addConstraint(new FunctionalConstraint(result, name, scope: _*))
+    result
+  }
 
   /**
    * Adds a bounded, named variable in the problem.
@@ -169,33 +175,29 @@ final class CSPOM {
   def interVar(name: String, lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(name, lb, ub))
 
+  /**
+   * Adds a bounded, unnamed variable in the problem.
+   *
+   * @param lb
+   *            lower bound
+   * @param ub
+   *            upper bound
+   * @return The added variable.
+   */
+  def interVar(lb: Int, ub: Int) =
+    addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
+
+  def aux(): CSPOMVariable = addVariable(CSPOMVariable.aux())
+
+  @annotation.varargs
   def varOf[T](values: T*) = addVariable(CSPOMVariable.ofSeq(values = values))
 
+  @annotation.varargs
   def varOf[T](name: String, values: T*) = addVariable(CSPOMVariable.ofSeq(name = name, values = values))
 
   def boolVar() = addVariable(CSPOMVariable.bool())
 
   def boolVar(name: String) = addVariable(CSPOMVariable.bool(name))
-
-  /**
-   * Adds functional constraints to the problem. The given predicate will be
-   * parsed and the appropriate constraints added to the problem. The
-   * predicate may be complex and is usually translated to a set of
-   * constraints and auxiliary variables. Use variable names in the predicate
-   * to reference them. These variables must already be added to the problem.
-   *
-   * @param string
-   *            A predicate.
-   */
-  def ctr(string: String) {
-    if (constraintParser == null) {
-      constraintParser = new ConstraintParser(this);
-    }
-    constraintParser.split(string);
-  }
-
-  def le(v0: CSPOMVariable, v1: CSPOMVariable) =
-    addConstraint(new GeneralConstraint("le", v0, v1));
 
   override def toString = {
     variables.map(v =>
@@ -398,13 +400,13 @@ final class CSPOM {
     }
   }
 
-//  def closeRelations() {
-//    for (c <- constraints) c match {
-//      case c: ExtensionConstraint => c.closeRelation()
-//      case _ =>
-//    }
-//
-//  }
+  //  def closeRelations() {
+  //    for (c <- constraints) c match {
+  //      case c: ExtensionConstraint => c.closeRelation()
+  //      case _ =>
+  //    }
+  //
+  //  }
 }
 
 object CSPOM {
@@ -494,4 +496,74 @@ object CSPOM {
     problem;
   }
 
+  private val dyn = new DynamicVariable[CSPOM](null)
+
+  def apply[T](f: CSPOM => T): CSPOM = {
+    val p = new CSPOM()
+    f(p)
+    p
+  }
+
+  def apply[T](f: => T): CSPOM = apply { p: CSPOM => dyn.withValue(p)(f) }
+
+  /**
+   * An implicit function that returns the thread-local problem in a model block
+   */
+  implicit def threadLocalProblem: CSPOM = {
+    val s = dyn.value
+    if (s eq null)
+      throw new IllegalStateException("No implicit session available; threadLocalSession can only be used within a withSession block")
+    else s
+  }
+
+  /**
+   * Adds a bounded, named variable in the problem.
+   *
+   * @param name
+   *            name of the variable
+   * @param lb
+   *            lower bound
+   * @param ub
+   *            upper bound
+   * @return The added variable.
+   * @throws DuplicateVariableException
+   *             if a variable of the same name already exists
+   */
+  def interVar(name: String, lb: Int, ub: Int)(implicit problem: CSPOM) = problem.interVar(name, lb, ub)
+
+  /**
+   * Adds a bounded, unnamed variable in the problem.
+   *
+   * @param lb
+   *            lower bound
+   * @param ub
+   *            upper bound
+   * @return The added variable.
+   */
+  def interVar(lb: Int, ub: Int)(implicit problem: CSPOM) = problem.interVar(lb, ub)
+
+  def ctr(typ: String, vars: CSPOMVariable*)(implicit problem: CSPOM) =
+    problem.ctr(typ, vars: _*)
+
+  def ctr(typ: String, params: String, vars: CSPOMVariable*)(implicit problem: CSPOM) =
+    problem.ctr(typ, params, vars: _*)
+
+  def ctr(rel: Relation, init: Boolean, vars: CSPOMVariable*)(implicit problem: CSPOM) =
+    problem.ctr(rel, init, vars: _*)
+
+  def is(typ: String, vars: CSPOMVariable*)(implicit problem: CSPOM) = {
+    problem.is(typ, vars: _*)
+  }
+
+  implicit def constantVar(value: Int)(implicit problem: CSPOM): CSPOMVariable = problem.varOf(value)
+
+  implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
+
+  def varOf[T](values: T*)(implicit problem: CSPOM) = problem.varOf(values: _*)
+
+  def varOf[T](name: String, values: T*)(implicit problem: CSPOM) = problem.varOf(name, values: _*)
+
+  def boolVar()(implicit problem: CSPOM) = problem.boolVar()
+
+  def boolVar(name: String)(implicit problem: CSPOM) = problem.boolVar(name)
 }
