@@ -11,17 +11,29 @@ import cspom.CSPOM
  * @author vion
  *
  */
-final class CSPOMVariable(
-  val name: String,
-  var domain: CSPOMDomain[Any],
-  val auxiliary: Boolean) {
+abstract class CSPOMVariable(val name: String, var _domain: Option[CSPOMDomain[Any]]) {
+
+  def auxiliary: Boolean
 
   var constraints: Set[CSPOMConstraint] = Set.empty
 
-  override def toString = (domain match {
-    case c: Constant[_] => c.toString
-    case _ => name
-  }) + (if (auxiliary) " aux" else "")
+  def domain_=(d: CSPOMDomain[Any]) {
+    require(_domain.isEmpty)
+    _domain = Some(d)
+  }
+  
+  def domain = _domain.get
+  
+  def domainOption = _domain
+
+  override def toString = {
+    val n = domainOption match {
+      case Some(c: Constant[_]) => c.toString
+      case _ => name
+    }
+
+    if (auxiliary) s"$n aux" else n
+  }
 
   def functionalConstraints = constraints.iterator
     .filter { _.isInstanceOf[FunctionalConstraint] }
@@ -39,18 +51,40 @@ final class CSPOMVariable(
    *            The constraint involving the variable.
    */
   def registerConstraint(constraint: CSPOMConstraint) {
-    assume(constraint.involves(this), constraint + " does not involve " + this);
+    assume(constraint.involves(this), s"$constraint does not involve $this");
     constraints += constraint;
   }
 
   def removeConstraint(constraint: CSPOMConstraint): Unit = {
-    assume(constraints contains constraint, this + " is not in " + constraint + "'s scope");
+    assume(constraints contains constraint, s"$this is not in $constraint's scope");
     constraints -= constraint
   }
 
   def is(name: String, scope: CSPOMVariable*)(implicit problem: CSPOM) {
     problem.addConstraint(new FunctionalConstraint(this, name, scope: _*))
   }
+
+  def >(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("gt", this, other)
+
+  def >=(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("ge", this, other)
+
+  def <(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("lt", this, other)
+
+  def <=(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("le", this, other)
+
+  def ne(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("ne", this, other)
+
+  def ≠(other: CSPOMVariable)(implicit problem: CSPOM) = ne(other)
+
+  def ==(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("eq", this, other)
+
+  def +(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("add", this, other)
+
+  def -(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("sub", this, other)
+
+  def *(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("mul", this, other)
+
+  def /(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("div", this, other)
 }
 
 object VariableNameGenerator {
@@ -61,7 +95,7 @@ object VariableNameGenerator {
    *
    * @return An unique variable name.
    */
-  def generate = {
+  def generate() = {
     val name = "_" + unnamed;
     unnamed += 1;
     name;
@@ -78,7 +112,7 @@ object CSPOMVariable {
    *            The unique value of the domain.
    */
   def constant[T](constant: T) =
-    new CSPOMVariable(VariableNameGenerator.generate, new Constant[T](constant), true)
+    new ProblemVar(VariableNameGenerator.generate, new Constant[T](constant))
 
   var intervals: Map[(Int, Int), IntInterval] = Map.empty
 
@@ -102,7 +136,7 @@ object CSPOMVariable {
         i
 
     }
-    new CSPOMVariable(name, i, false);
+    new ProblemVar(name, i);
   }
 
   /**
@@ -120,14 +154,13 @@ object CSPOMVariable {
 
   def of[T](name: String, values: T*) = ofSeq(name, values)
 
-  def ofSeq[T](name: String = VariableNameGenerator.generate, values: Seq[T]) =
-    new CSPOMVariable(name, new ExtensiveDomain[T](values), false)
+  def ofSeq[T](name: String = VariableNameGenerator.generate(), values: Seq[T]) =
+    new ProblemVar(name, new ExtensiveDomain[T](values))
 
-  def ofBool(name: String = VariableNameGenerator.generate, value: Boolean) =
-    new CSPOMVariable(name, BooleanDomain.valueOf(value), false);
+  def ofBool(name: String = VariableNameGenerator.generate(), value: Boolean) =
+    new ProblemVar(name, BooleanDomain.valueOf(value));
 
-  def bool(name: String = VariableNameGenerator.generate) =
-    new CSPOMVariable(name, UnknownBooleanDomain, false)
+  def bool(name: String = VariableNameGenerator.generate()) =
+    new ProblemVar(name, UnknownBooleanDomain)
 
-  def aux() = new CSPOMVariable(VariableNameGenerator.generate, null, true)
 }

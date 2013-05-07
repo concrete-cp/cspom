@@ -22,7 +22,7 @@ class CSPOMTest {
     assertEquals(Some(vars(0)), cspom.variable("test1"))
   }
 
-  @Test(expected = classOf[AssertionError])
+  @Test(expected = classOf[IllegalArgumentException])
   def duplicateVariable {
     val cspom = new CSPOM
     cspom.addVariable(CSPOMVariable.ofInterval("Test", 0, 10))
@@ -60,7 +60,7 @@ class CSPOMTest {
     v foreach { cspom removeVariable _ }
   }
 
-  @Test(expected = classOf[AssertionError])
+  @Test(expected = classOf[IllegalArgumentException])
   def protectedVariable {
     val cspom = new CSPOM
     val v = List(

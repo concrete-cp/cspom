@@ -6,6 +6,7 @@ import java.io.{ InputStreamReader, InputStream, BufferedReader }
 import java.util.Iterator
 import scala.io.Source
 import scala.util.matching.Regex
+import cspom.constraint.GeneralConstraint
 
 final class CNFParser(private val problem: CSPOM) {
 
@@ -23,14 +24,13 @@ final class CNFParser(private val problem: CSPOM) {
       case e: Exception => throw new CSPParseException("Parameter line not found", e, -1)
     }
 
-    for (i <- 1 to nbVars.toInt)
-      problem.addVariable(CSPOMVariable.bool("V" + i))
+    val variables = for (i <- 1 to nbVars.toInt) yield problem.addVariable(CSPOMVariable.bool("V" + i))
 
     var currentClause: List[Int] = Nil;
     var countClauses = 0
     for (line <- lines; value <- VAR.findAllIn(line).map(s => s.toInt)) {
       if (value == 0) {
-        problem.ctr(clause(currentClause));
+        problem.addConstraint(clause(currentClause, variables));
         countClauses += 1;
         currentClause = Nil;
       } else {
@@ -41,16 +41,13 @@ final class CNFParser(private val problem: CSPOM) {
     assume(countClauses == nbClauses.toInt)
   }
 
-  private def clause(currentClause: List[Int]) = {
+  private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMVariable]) = {
 
     val (clause, parameters) = currentClause map { i =>
-      ("V" + math.abs(i), if (i > 0) "0" else "1")
+      (variables(math.abs(i) - 1), if (i > 0) "0" else "1")
     } unzip
 
-    val stb = new StringBuilder("or")
-    parameters.addString(stb, "{", ", ", "}")
-    clause.addString(stb, "(", ", ", ")")
-    stb.toString
+    new GeneralConstraint("or", parameters.mkString(", "), clause: _*)
 
   }
 }

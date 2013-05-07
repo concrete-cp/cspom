@@ -46,16 +46,18 @@ final class MergeEq(private val problem: CSPOM,
     } else false
   }
 
-  private def mergeDomain[T](d0: CSPOMDomain[T], d1: CSPOMDomain[T]) = {
-    if (d0 == null) d1
-    else if (d1 == null) d0
-    else d0.intersect(d1);
+  private def mergeDomain[T](d0: Option[CSPOMDomain[T]], d1: Option[CSPOMDomain[T]]) = {
+    if (d0.isEmpty) { d1 }
+    else if (d1.isEmpty) { d0 }
+    else { Some(d0.get.intersect(d1.get)) }
   }
 
   private def merge(merged: CSPOMVariable, variable: CSPOMVariable) {
     assume(merged != variable)
 
-    variable.domain = mergeDomain(merged.domain, variable.domain);
+    for (d <- mergeDomain(merged.domainOption, variable.domainOption)) {
+      variable.domain = d
+    }
 
     for (c <- merged.constraints) {
       problem.removeConstraint(c);

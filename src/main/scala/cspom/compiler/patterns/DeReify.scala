@@ -11,7 +11,7 @@ final class DeReify(
   private val constraints: Queue[CSPOMConstraint]) extends ConstraintCompiler {
 
   override def compileFunctional(fc: FunctionalConstraint) = {
-    if (fc.result.domain == TrueDomain) {
+    if (fc.result.domainOption.map(_ == TrueDomain).getOrElse(false)) {
       problem.removeConstraint(fc);
       val newConstraint = new GeneralConstraint(
         Predicate(fc.predicate.function, fc.predicate.parameters), fc.arguments);

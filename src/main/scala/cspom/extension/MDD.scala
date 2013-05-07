@@ -43,7 +43,7 @@ object EmptyMDD extends MDD {
 
 object MDDLeaf extends MDD {
   override def isEmpty = false
-  def +(t: Int*) = throw new UnsupportedOperationException
+  def +(t: Int*) = if (t.isEmpty) { this } else { throw new UnsupportedOperationException }
   def lIterator = Iterator(Nil)
   def arity = 0
   def contains(t: Seq[Int]) = t.isEmpty
@@ -86,7 +86,7 @@ final class MDDNode(val trie: Map[Int, MDD]) extends MDD {
   override def equals(o: Any): Boolean = o match {
     case t: MDDNode =>
       trie.size == t.trie.size && trie.forall {
-        case (k1, v1) => t.trie.get(k1).map(_ eq v1).getOrElse(false)
+        case (k1, v1) => t.trie.get(k1).map(_ == v1).getOrElse(false)
       }
     case _ => false
   }

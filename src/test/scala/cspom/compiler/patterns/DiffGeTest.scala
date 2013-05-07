@@ -4,7 +4,7 @@ import cspom.constraint.FunctionalConstraint
 import cspom.constraint.{ CSPOMConstraint, GeneralConstraint }
 import cspom.variable.CSPOMVariable
 import cspom.CSPOM
-import CSPOM._
+import CSPOM.{ _ }
 import java.util.LinkedList
 import org.junit.Assert._
 import org.junit.Test
@@ -16,13 +16,12 @@ class DiffGeTest {
     val cspom = CSPOM {
       cspom: CSPOM =>
 
-        val r = aux()
+        val r = aux()(cspom)
         assertTrue(r.auxiliary)
-        sub = new FunctionalConstraint(r, "sub", varOf(1, 2, 3), varOf(2, 3, 4))
+        sub = new FunctionalConstraint(r, "sub", cspom.varOf(1, 2, 3), cspom.varOf(2, 3, 4))
         cspom.addConstraint(sub)
 
-        ctr("ge", r, interVar(0, 5))
-
+        ctr(r.>=(cspom.interVar(0, 5))(cspom))
     }
     new DiffGe(cspom).compile(sub)
     //println(cspom)
@@ -38,11 +37,11 @@ class DiffGeTest {
     val cspom = CSPOM {
       cspom: CSPOM =>
 
-        val r = aux()
-        val sub = new FunctionalConstraint(r, "sub", varOf(1, 2, 3), varOf(2, 3, 4))
+        val r = aux()(cspom)
+        sub = new FunctionalConstraint(r, "sub", cspom.varOf(1, 2, 3), cspom.varOf(2, 3, 4))
         cspom.addConstraint(sub)
 
-        boolVar() is ("ge", r, interVar(0, 5))
+        ctr(cspom.boolVar().==(r.>=(cspom.interVar(0, 5))(cspom))(cspom))
     }
     new DiffGe(cspom).compile(sub)
     //println(cspom)

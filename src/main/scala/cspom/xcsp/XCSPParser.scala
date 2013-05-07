@@ -11,6 +11,8 @@ import cspom.CSPParseException
 import cspom.extension.LazyRelation
 import cspom.extension.Relation
 import java.io.StringReader
+import cspom.variable.ProblemVar
+import cspom.compiler.ConstraintParser
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -19,6 +21,8 @@ import java.io.StringReader
  */
 final class XCSPParser(private val problem: CSPOM) {
 
+  val constraintParser = new ConstraintParser(problem)
+  
   /**
    * Append the XCSP data provided by the InputStream to the given CSPOM
    * problem.
@@ -57,7 +61,7 @@ final class XCSPParser(private val problem: CSPOM) {
       domains.get(domain) match {
         case Some(d) =>
           try {
-            problem.addVariable(new CSPOMVariable(name, d, false));
+            problem.addVariable(new ProblemVar(name, d));
           } catch {
             case e: Exception =>
               throw new CSPParseException("Could not add variable " + name, e);
@@ -138,7 +142,7 @@ final class XCSPParser(private val problem: CSPOM) {
       val constraint = reference.substring(7) + scope.mkString("(", ", ", ")")
 
       try {
-        problem.ctr(constraint);
+        constraintParser.split(constraint);
       } catch {
         case e: Exception =>
           throw new CSPParseException("Error parsing constraint " + constraint, e);
@@ -154,7 +158,7 @@ final class XCSPParser(private val problem: CSPOM) {
             scope.toList));
         case predicate: Predicate =>
           try {
-            problem.ctr(predicate.applyParameters(parameters, scope))
+            constraintParser.split(predicate.applyParameters(parameters, scope))
           } catch {
             case e: Exception =>
               throw new CSPParseException("Error parsing predicate " + predicate

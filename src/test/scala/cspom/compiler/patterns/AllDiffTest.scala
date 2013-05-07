@@ -16,8 +16,8 @@ class AllDiffTest {
       val v2 = varOf(1, 2, 3)
       val v3 = varOf(1, 2, 3)
 
-      for (p <- List(v0, v1, v2, v3).combinations(2)) {
-        ctr("ne", p: _*)
+      for (Seq(p1, p2) <- List(v0, v1, v2, v3).combinations(2)) {
+        p1 ≠ p2
       }
     }
 

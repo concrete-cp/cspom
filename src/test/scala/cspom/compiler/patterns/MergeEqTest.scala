@@ -7,6 +7,7 @@ import CSPOM._
 import org.junit.Assert._
 import org.junit.Test
 import scala.collection.mutable.Queue
+import cspom.variable.AuxVar
 
 class MergeEqTest {
   @Test
@@ -18,7 +19,7 @@ class MergeEqTest {
       val v1 = aux()
       v1.domain = ExtensiveDomain.of(2, 3, 4)
       assertTrue(v1.auxiliary)
-      eq = ctr("eq", v0, v1)
+      eq = ctr(v0 == v1) //ctr("eq", v0, v1)
     }
 
     new MergeEq(cspom, new Queue[CSPOMConstraint]).compile(eq);
@@ -36,11 +37,11 @@ class MergeEqTest {
     var v0: CSPOMVariable = null
 
     val cspom = CSPOM { cspom: CSPOM =>
-      v0 = interVar(1, 3)
-      val v1 = cspom.addVariable(CSPOMVariable.aux())
+      v0 = cspom.interVar(1, 3)
+      val v1 = cspom.addVariable(new AuxVar())
       v1.domain = ExtensiveDomain.of(2, 3, 4)
       assertTrue(v1.auxiliary)
-      eq = ctr("eq", v0, v1)
+      eq = ctr(v0.==(v1)(cspom))
     }
     new MergeEq(cspom, new Queue[CSPOMConstraint]).compile(eq);
 

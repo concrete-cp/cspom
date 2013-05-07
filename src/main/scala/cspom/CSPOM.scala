@@ -6,10 +6,10 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.net.URL
 import java.util.zip.GZIPInputStream
-import scala.collection.mutable.LinkedHashMap
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.LinkedHashSet
 import scala.collection.JavaConversions
+import scala.collection.mutable.HashMap
+import scala.collection.mutable.LinkedHashMap
+import scala.util.DynamicVariable
 import org.apache.tools.bzip2.CBZip2InputStream
 import cspom.compiler.ConstraintParser
 import cspom.constraint.CSPOMConstraint
@@ -18,13 +18,13 @@ import cspom.constraint.GeneralConstraint
 import cspom.constraint.Predicate
 import cspom.dimacs.CNFParser
 import cspom.extension.ExtensionConstraint
+import cspom.extension.Relation
+import cspom.variable.AuxVar
 import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
-import cspom.xcsp.XCSPParser
-import scala.collection.mutable.HashSet
-import cspom.extension.Relation
-import scala.util.DynamicVariable
 import cspom.xcsp.Extension
+import cspom.xcsp.XCSPParser
+import cspom.variable.TrueDomain
 
 /**
  *
@@ -93,14 +93,14 @@ final class CSPOM {
    * @throws DuplicateVariableException
    *             If a variable with the same name already exists.
    */
-  def addVariable[T >: Any](variable: CSPOMVariable): CSPOMVariable = {
+  def addVariable[T <: CSPOMVariable](variable: T): T = {
     val oldVariable = variableMap.put(variable.name, variable)
     require(oldVariable == None, variable.name + ": a variable of the same name already exists");
     variable
   }
 
   def removeVariable(v: CSPOMVariable) {
-    assume(v.constraints.isEmpty, v + " is still implied by constraints : " + v.constraints)
+    require(v.constraints.isEmpty, v + " is still implied by constraints : " + v.constraints)
 
     variableMap.remove(v.name);
   }
@@ -138,6 +138,8 @@ final class CSPOM {
     }
   }
 
+  def ctr(v: AuxVar): CSPOMConstraint = CSPOM.ctr(v)
+
   @annotation.varargs
   def ctr(name: String, scope: CSPOMVariable*): CSPOMConstraint = {
     addConstraint(new GeneralConstraint(name, scope: _*))
@@ -153,9 +155,16 @@ final class CSPOM {
     addConstraint(new ExtensionConstraint(rel, init, vars))
 
   @annotation.varargs
-  def is(name: String, scope: CSPOMVariable*): CSPOMVariable = {
-    val result = addVariable(CSPOMVariable.aux())
+  def is(name: String, scope: CSPOMVariable*): AuxVar = {
+    val result = aux()
     addConstraint(new FunctionalConstraint(result, name, scope: _*))
+    result
+  }
+
+  @annotation.varargs
+  def is(name: String, params: String, scope: CSPOMVariable*): AuxVar = {
+    val result = aux()
+    addConstraint(new FunctionalConstraint(result, name, params, scope: _*))
     result
   }
 
@@ -187,7 +196,7 @@ final class CSPOM {
   def interVar(lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
 
-  def aux(): CSPOMVariable = addVariable(CSPOMVariable.aux())
+  def aux(): AuxVar = addVariable(new AuxVar())
 
   @annotation.varargs
   def varOf[T](values: T*) = addVariable(CSPOMVariable.ofSeq(values = values))
@@ -200,9 +209,12 @@ final class CSPOM {
   def boolVar(name: String) = addVariable(CSPOMVariable.bool(name))
 
   override def toString = {
-    variables.map(v =>
-      v + " = " + (if (v.domain == null) '?' else v.domain)).mkString(" ; ") +
-      "\n" + constraints.mkString("\n")
+    val vars = variables.map(v =>
+      s"$v = ${v.domainOption.map(_.toString).getOrElse("?")}").mkString("\n")
+
+    val cons = constraints.mkString("\n")
+
+    vars + cons
   }
 
   /**
@@ -512,7 +524,7 @@ object CSPOM {
   implicit def threadLocalProblem: CSPOM = {
     val s = dyn.value
     if (s eq null)
-      throw new IllegalStateException("No implicit session available; threadLocalSession can only be used within a withSession block")
+      throw new IllegalStateException("No implicit problem available; threadLocalProblem can only be used within a problem block")
     else s
   }
 
@@ -542,22 +554,34 @@ object CSPOM {
    */
   def interVar(lb: Int, ub: Int)(implicit problem: CSPOM) = problem.interVar(lb, ub)
 
-  def ctr(typ: String, vars: CSPOMVariable*)(implicit problem: CSPOM) =
-    problem.ctr(typ, vars: _*)
+  //  def ctr(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
+  //    problem.ctr(typ, vars: _*)
 
-  def ctr(typ: String, params: String, vars: CSPOMVariable*)(implicit problem: CSPOM) =
-    problem.ctr(typ, params, vars: _*)
+  def ctr(v: AuxVar): CSPOMConstraint = {
+    val Seq(c) = v.constraints.toSeq
+    v.domain = TrueDomain
+    c
+  }
 
-  def ctr(rel: Relation, init: Boolean, vars: CSPOMVariable*)(implicit problem: CSPOM) =
+  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
     problem.ctr(rel, init, vars: _*)
+  //
+  //  def is(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) = {
+  //    problem.is(typ, vars: _*)
+  //  }
 
-  def is(typ: String, vars: CSPOMVariable*)(implicit problem: CSPOM) = {
-    problem.is(typ, vars: _*)
+  implicit class CSPOMSymbConstraint(typ: Symbol) {
+    def apply(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
+      problem.is(typ.name, vars: _*)
+    }
+    def apply(params: String)(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
+      problem.is(typ.name, params, vars: _*)
+    }
   }
 
   implicit def constantVar(value: Int)(implicit problem: CSPOM): CSPOMVariable = problem.varOf(value)
 
-  implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
+  implicit def aux()(implicit problem: CSPOM): AuxVar = new AuxVar()
 
   def varOf[T](values: T*)(implicit problem: CSPOM) = problem.varOf(values: _*)
 
@@ -567,3 +591,5 @@ object CSPOM {
 
   def boolVar(name: String)(implicit problem: CSPOM) = problem.boolVar(name)
 }
+
+
