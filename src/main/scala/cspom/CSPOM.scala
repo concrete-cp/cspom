@@ -138,7 +138,14 @@ final class CSPOM {
     }
   }
 
-  def ctr(v: AuxVar): CSPOMConstraint = CSPOM.ctr(v)
+  def ctr(v: AuxVar): CSPOMConstraint = {
+    // dereify
+    val Seq(fc: FunctionalConstraint) = v.constraints.toSeq
+    removeConstraint(fc)
+    removeVariable(v)
+    val newConstraint = new GeneralConstraint(Predicate(fc.predicate.function, fc.predicate.parameters), fc.arguments)
+    addConstraint(newConstraint)
+  }
 
   @annotation.varargs
   def ctr(name: String, scope: CSPOMVariable*): CSPOMConstraint = {
@@ -146,7 +153,7 @@ final class CSPOM {
   }
 
   @annotation.varargs
-  def ctr(name: String, parameters: String, scope: CSPOMVariable*): CSPOMConstraint = {
+  def ctr(name: String, parameters: Any, scope: CSPOMVariable*): CSPOMConstraint = {
     addConstraint(new GeneralConstraint(name, parameters, scope: _*))
   }
 
@@ -162,7 +169,7 @@ final class CSPOM {
   }
 
   @annotation.varargs
-  def is(name: String, params: String, scope: CSPOMVariable*): AuxVar = {
+  def is(name: String, params: Any, scope: CSPOMVariable*): AuxVar = {
     val result = aux()
     addConstraint(new FunctionalConstraint(result, name, params, scope: _*))
     result
@@ -214,7 +221,7 @@ final class CSPOM {
 
     val cons = constraints.mkString("\n")
 
-    vars + cons
+    s"$vars\n$cons"
   }
 
   /**
@@ -510,13 +517,16 @@ object CSPOM {
 
   private val dyn = new DynamicVariable[CSPOM](null)
 
-  def apply[T](f: CSPOM => T): CSPOM = {
+  def apply[T](f: => T): CSPOM = withResult(f)._1
+
+  def apply[T](f: CSPOM => T): CSPOM = withResult(f)._1
+
+  def withResult[T](f: CSPOM => T): (CSPOM, T) = {
     val p = new CSPOM()
-    f(p)
-    p
+    (p, f(p))
   }
 
-  def apply[T](f: => T): CSPOM = apply { p: CSPOM => dyn.withValue(p)(f) }
+  def withResult[T](f: => T): (CSPOM, T) = withResult { cspom => dyn.withValue(cspom)(f) }
 
   /**
    * An implicit function that returns the thread-local problem in a model block
@@ -557,11 +567,7 @@ object CSPOM {
   //  def ctr(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
   //    problem.ctr(typ, vars: _*)
 
-  def ctr(v: AuxVar): CSPOMConstraint = {
-    val Seq(c) = v.constraints.toSeq
-    v.domain = TrueDomain
-    c
-  }
+  def ctr(v: AuxVar)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
 
   def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
     problem.ctr(rel, init, vars: _*)
@@ -574,7 +580,7 @@ object CSPOM {
     def apply(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
       problem.is(typ.name, vars: _*)
     }
-    def apply(params: String)(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
+    def apply(params: Any)(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
       problem.is(typ.name, params, vars: _*)
     }
   }

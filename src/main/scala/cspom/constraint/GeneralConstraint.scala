@@ -13,7 +13,7 @@ class GeneralConstraint(
   //    this(description = description, parameters = parameters,
   //      scope = scope.toList)
 
-  def this(func: String, params: String, scope: CSPOMVariable*) =
+  def this(func: String, params: Any, scope: CSPOMVariable*) =
     this(Predicate(func, Some(params)), scope)
 
   def this(func: String, scope: CSPOMVariable*) =

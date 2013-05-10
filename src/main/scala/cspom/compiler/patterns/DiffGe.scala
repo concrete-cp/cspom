@@ -11,12 +11,10 @@ import cspom.constraint.GeneralConstraint
 final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
 
   override def compileFunctional(subConstraint: FunctionalConstraint) = {
-    if (subConstraint.description == "sub" &&
+    subConstraint.description == "sub" &&
       subConstraint.result.auxiliary &&
-      subConstraint.result.constraints.size == 2) {
-
-      (for (
-        geConstraint <- subConstraint.result.constraints.find { c: CSPOMConstraint =>
+      subConstraint.result.constraints.size == 2 && (
+        subConstraint.result.constraints.find { c: CSPOMConstraint =>
           c.description == "ge" && {
             val scope = c match {
               case fGe: FunctionalConstraint => fGe.arguments
@@ -24,27 +22,26 @@ final class DiffGe(val problem: CSPOM) extends ConstraintCompiler {
             }
             scope.size == 2 && scope(0) == subConstraint.result
           }
-        }
-      ) yield {
+        } map { geConstraint =>
 
-        problem.removeConstraint(subConstraint);
-        problem.removeConstraint(geConstraint);
-        problem.removeVariable(subConstraint.result)
+          problem.removeConstraint(subConstraint);
+          problem.removeConstraint(geConstraint);
+          problem.removeVariable(subConstraint.result)
 
-        geConstraint match {
-          case fc: FunctionalConstraint =>
-            problem.addConstraint(new FunctionalConstraint(
-              fc.result,
-              "diffGe",
-              subConstraint.arguments :+ fc.arguments(1): _*))
-          case _ =>
-            problem.addConstraint(new GeneralConstraint("diffGe",
-              subConstraint.arguments :+ geConstraint.scope(1): _*))
+          geConstraint match {
+            case fc: FunctionalConstraint =>
+              problem.addConstraint(new FunctionalConstraint(
+                fc.result,
+                "diffGe",
+                subConstraint.arguments :+ fc.arguments(1): _*))
+            case _ =>
+              problem.addConstraint(new GeneralConstraint("diffGe",
+                subConstraint.arguments :+ geConstraint.scope(1): _*))
 
-        }
-        true
-      }).isDefined
-    } else false
+          }
+          true
+
+        } getOrElse (false))
 
   }
 

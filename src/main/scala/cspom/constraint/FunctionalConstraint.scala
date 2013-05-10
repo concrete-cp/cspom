@@ -18,7 +18,7 @@ class FunctionalConstraint(
   def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
     this(result, Predicate(function, None), arguments)
 
-  def this(result: CSPOMVariable, func: String, params: String, args: CSPOMVariable*) =
+  def this(result: CSPOMVariable, func: String, params: Any, args: CSPOMVariable*) =
     this(result, Predicate(func, Some(params)), args)
 
   override def toString = {
