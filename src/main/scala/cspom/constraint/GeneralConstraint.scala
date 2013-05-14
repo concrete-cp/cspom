@@ -24,7 +24,6 @@ class GeneralConstraint(
     stb append description
     stb.append(predicate.optParameters)
     scope.addString(stb, "(", ", ", ")").toString
-
   }
 
   override def evaluate(tuple: Seq[_]): Boolean = {
@@ -36,8 +35,12 @@ class GeneralConstraint(
 
     tuple.addString(stb, ", ")
 
-    for (p <- predicate.parameters) {
-      stb append ", " append p
+    predicate.parameters foreach {
+      case s: Seq[Any] =>
+        stb.append(", ")
+        s.addString(stb, ", ")
+      case p: Any =>
+        stb.append(", ").append(p)
     }
 
     Evaluator.evaluate((stb append ')').toString);

@@ -14,21 +14,19 @@ class AbsDiff(val problem: CSPOM) extends ConstraintCompiler {
   override def compileFunctional(c: FunctionalConstraint) = {
     "sub" == c.description && c.result.auxiliary && c.result.constraints.size == 2 && {
       val process = c.result.functionalConstraints.filter {
-        c => c.description == "abs" && c.arguments.sameElements(List(c.result))
+        absC => absC.description == "abs" && absC.arguments.sameElements(List(c.result))
+      }
+      val r = process.nonEmpty
+
+      for (fc <- process) {
+        problem.removeConstraint(c);
+        problem.removeConstraint(fc);
+        problem.addConstraint(new FunctionalConstraint(
+          fc.result, "absdiff", c.arguments: _*));
+        problem.removeVariable(c.result)
       }
 
-      if (process.hasNext) {
-        for (fc <- process) {
-          problem.removeConstraint(c);
-          problem.removeConstraint(fc);
-          problem.addConstraint(new FunctionalConstraint(
-            fc.result,
-            "absdiff",
-            c.arguments: _*));
-          problem.removeVariable(c.result)
-        }
-        true
-      } else false
+      r
     }
 
   }

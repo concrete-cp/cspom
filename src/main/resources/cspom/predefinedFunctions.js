@@ -68,7 +68,7 @@ function iff(x,y) {
 	return x==y;
 }
 
-function allDifferent() {
+function allDiff(arguments) {
 	for (var i = arguments.length; --i >= 0;) {
 	  for (var j = i; --j >= 0;) {
 	    if (arguments[i] == arguments[j]) {
@@ -79,16 +79,15 @@ function allDifferent() {
 	return true;
 }
 
-function alldifferent() {
-	for (var i = arguments.length; --i >= 0;) {
-	  for (var j = i; --j >= 0;) {
-	    if (arguments[i] == arguments[j]) {
-	      return false;
-	    }
-	  }
-	}
-	return true;
+function allDifferent() {
+	return allDiff(arguments);
 }
+
+function alldifferent() {
+ 	return allDiff(arguments);
+}
+
+
 
 function nevec() {
   var mid = arguments.length/2;

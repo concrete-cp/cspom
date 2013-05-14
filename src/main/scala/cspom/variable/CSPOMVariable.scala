@@ -21,10 +21,14 @@ abstract class CSPOMVariable(val name: String, var _domain: Option[CSPOMDomain[A
     require(_domain.isEmpty)
     _domain = Some(d)
   }
-  
+
   def domain = _domain.get
-  
+
   def domainOption = _domain
+
+  def intersectDomains(d: CSPOMDomain[Any]) {
+    _domain = _domain.map(_.intersect(d)).orElse(Some(d))
+  }
 
   override def toString = {
     val n = domainOption match {

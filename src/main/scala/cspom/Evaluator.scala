@@ -13,7 +13,11 @@ object Evaluator {
 
   {
     val url = getClass.getResource("predefinedFunctions.js");
-    cx.evaluateReader(scope, new InputStreamReader(url.openStream), "predefinedFunctions.js", 1, null)
+    val stream = try url.openStream()
+    catch {
+      case e: NullPointerException => throw new IllegalStateException("could not open " + url)
+    }
+    cx.evaluateReader(scope, new InputStreamReader(stream), "predefinedFunctions.js", 1, null)
   }
 
   def evaluate(expression: String) = try {

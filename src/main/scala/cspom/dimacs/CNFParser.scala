@@ -44,10 +44,10 @@ final class CNFParser(private val problem: CSPOM) {
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMVariable]) = {
 
     val (clause, parameters) = currentClause map { i =>
-      (variables(math.abs(i) - 1), if (i > 0) "0" else "1")
+      (variables(math.abs(i) - 1), i == 0)
     } unzip
 
-    new GeneralConstraint("or", parameters.mkString(", "), clause: _*)
+    new GeneralConstraint("or", parameters, clause: _*)
 
   }
 }
