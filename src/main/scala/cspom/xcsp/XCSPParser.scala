@@ -21,8 +21,6 @@ import cspom.compiler.ConstraintParser
  */
 final class XCSPParser(private val problem: CSPOM) {
 
-  val constraintParser = new ConstraintParser(problem)
-  
   /**
    * Append the XCSP data provided by the InputStream to the given CSPOM
    * problem.
@@ -56,19 +54,16 @@ final class XCSPParser(private val problem: CSPOM) {
     } toMap
 
     for (node <- doc \ "variables" \ "variable") {
-      val domain = (node \ "@domain").text
+      val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
-      domains.get(domain) match {
-        case Some(d) =>
-          try {
-            problem.addVariable(new ProblemVar(name, d));
-          } catch {
-            case e: Exception =>
-              throw new CSPParseException("Could not add variable " + name, e);
-          }
-        case None =>
-          throw new CSPParseException("Could not find domain " + domain)
+      
+      try {
+        problem.addVariable(new ProblemVar(name, domain));
+      } catch {
+        case e: Exception =>
+          throw new CSPParseException(s"Could not add variable $name", e);
       }
+
     }
   }
 
@@ -129,11 +124,9 @@ final class XCSPParser(private val problem: CSPOM) {
     parameters: String, reference: String, relations: Map[String, AnyRef]) {
 
     val scope = varNames.split(" +") map { s =>
-      problem.variable(s) match {
-        case Some(v) => v
-        case None =>
-          throw new CSPParseException("Could not find variable " + s
-            + " from the scope of " + name);
+      problem.variable(s).getOrElse {
+        throw new CSPParseException("Could not find variable " + s
+          + " from the scope of " + name);
       }
     }
 
@@ -142,34 +135,30 @@ final class XCSPParser(private val problem: CSPOM) {
       val constraint = reference.substring(7) + scope.mkString("(", ", ", ")")
 
       try {
-        constraintParser.split(constraint);
+        ConstraintParser.split(constraint, problem);
       } catch {
         case e: Exception =>
-          throw new CSPParseException("Error parsing constraint " + constraint, e);
+          throw new CSPParseException(s"Error parsing constraint $constraint", e);
       }
 
-    } else relations.get(reference) match {
+    } else {
+      relations.get(reference) match {
 
-      case Some(relation) => relation match {
-        case extension: Extension =>
-          problem.addConstraint(new ExtensionConstraint(
-            extension.relation,
-            extension.init,
-            scope.toList));
-        case predicate: Predicate =>
+        case Some(extension: Extension) => problem.addConstraint(new ExtensionConstraint(
+          extension.relation,
+          extension.init,
+          scope.toList));
+        case Some(predicate: Predicate) =>
           try {
-            constraintParser.split(predicate.applyParameters(parameters, scope))
+            ConstraintParser.split(predicate.applyParameters(parameters, scope), problem)
           } catch {
             case e: Exception =>
               throw new CSPParseException("Error parsing predicate " + predicate
                 + " with constraint parameters " + parameters, e);
           }
-        case _ => throw new CSPParseException("Unknown relation type")
+        case _ => throw new CSPParseException(s"Unknown relation type or reference: $reference")
+
       }
-
-      case None =>
-        throw new CSPParseException("Unknown reference " + reference);
-
     }
   }
 }

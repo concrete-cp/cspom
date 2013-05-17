@@ -1,10 +1,10 @@
 package cspom.xcsp;
 
-import cspom.compiler.PredicateScanner
 import cspom.variable.CSPOMVariable
 import scala.util.matching.Regex
 import scala.MatchError
 import sun.misc.Regexp
+import cspom.compiler.ConstraintParser
 
 /**
  * This class is used to represent XCSP predicates.
@@ -61,15 +61,15 @@ final class Predicate(parametersString: String, expressionString: String) {
     assume(stringParameters.length == this.parameters.size, "Incorrect parameter count");
 
     var applyied = expression;
-    for (p <- stringParameters.zip(this.parameters)) {
+    for ((s, p) <- stringParameters.zip(this.parameters)) {
 
       assume(
-        PredicateScanner.INTEGER.matcher(p._1).matches ||
-          (PredicateScanner.IDENTIFIER.matcher(p._1).matches && scope.map { v => v.name }.contains(p._1)),
-        "Did not recognize " + p._1)
+        ConstraintParser.isInt(s) ||
+          (ConstraintParser.isId(s) && scope.map { v => v.name }.contains(s)),
+        s"Did not recognize $s")
 
-      applyied = ("""([^A-Za-z])(""" + p._2 + """)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
-        m.group(1) + p._1 + m.group(3)
+      applyied = (s"""([^A-Za-z])($p)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
+        m.group(1) + p + m.group(3)
       })
 
     }

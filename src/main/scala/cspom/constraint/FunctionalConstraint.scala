@@ -13,7 +13,7 @@ class FunctionalConstraint(
   with Loggable {
   require(result != null)
   require(arguments != null)
-  require(!arguments.isEmpty, "Must have at least one argument")
+  require(arguments.nonEmpty, "Must have at least one argument")
 
   def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
     this(result, Predicate(function, None), arguments)

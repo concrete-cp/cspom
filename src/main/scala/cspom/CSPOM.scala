@@ -147,6 +147,8 @@ final class CSPOM {
     addConstraint(newConstraint)
   }
 
+  def parseCtr(ctr: String) = ConstraintParser.split(ctr, this)
+
   @annotation.varargs
   def ctr(name: String, scope: CSPOMVariable*): CSPOMConstraint = {
     addConstraint(new GeneralConstraint(name, scope: _*))

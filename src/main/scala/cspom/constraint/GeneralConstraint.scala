@@ -9,6 +9,7 @@ class GeneralConstraint(
   scope: Seq[CSPOMVariable])
   extends CSPOMConstraint(predicate.function, scope) {
 
+  require(scope.nonEmpty, "The constraint must involve at least one variable")
   //  def this(description: String, parameters: String, scope: CSPOMVariable[_]*) =
   //    this(description = description, parameters = parameters,
   //      scope = scope.toList)

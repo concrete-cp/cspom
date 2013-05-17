@@ -82,13 +82,17 @@ abstract class CSPOMVariable(val name: String, var _domain: Option[CSPOMDomain[A
 
   def ==(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("eq", this, other)
 
-  def +(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("add", this, other)
+  def +(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("add", this, other)
 
-  def -(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("sub", this, other)
+  def -(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("sub", this, other)
 
-  def *(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("mul", this, other)
+  def *(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("mul", this, other)
 
-  def /(other: CSPOMVariable)(implicit problem: CSPOM): CSPOMVariable = problem.is("div", this, other)
+  def /(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("div", this, other)
+
+  def |(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("or", this, other)
+
+  def &(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("and", this, other)
 }
 
 object VariableNameGenerator {

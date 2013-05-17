@@ -1,9 +1,4 @@
 package cspom.compiler;
-import scala.collection.mutable.Stack
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 final class PredicateNode {
   var sibling: Option[PredicateNode] = None;
@@ -17,25 +12,15 @@ final class PredicateNode {
     stb.toString();
   }
 
-  def isInteger = operator match {
-    case None => false
-    case Some(o) => PredicateScanner.INTEGER.matcher(o).matches
-  }
+  def isInteger = operator.map(ConstraintParser.isInt).getOrElse(false)
 
-  def isIdentifier = operator match {
-    case None => false
-    case Some(o) => PredicateScanner.IDENTIFIER.matcher(o).matches
-  }
+  def isIdentifier = operator.map(ConstraintParser.isId).getOrElse(false)
 
-  def isLeaf() = {
-    if (child.isEmpty) {
-      assume(isInteger || isIdentifier,
-        "Leaves should be variables or constants, was " + this);
+  def isLeaf = {
+    assume(child.nonEmpty || isInteger || isIdentifier,
+      "Leaves should be variables or constants, was " + this);
 
-      true;
-    } else {
-      false;
-    }
+    child.isEmpty
   }
 
   def tree(stb: StringBuilder, level: Int) {
@@ -43,15 +28,15 @@ final class PredicateNode {
       stb.append("-");
     }
     stb.append(operator);
-    if (parameters.isDefined) {
-      stb.append('{').append(parameters.get).append('}');
+    for (p <- parameters) {
+      stb.append('{').append(p).append('}');
     }
     stb.append('\n');
-    if (child.isDefined) {
-      child.get.tree(stb, level + 1);
+    for (c <- child) {
+      c.tree(stb, level + 1)
     }
-    if (sibling.isDefined) {
-      sibling.get.tree(stb, level);
+    for (s <- sibling) {
+      s.tree(stb, level);
     }
   }
 
@@ -62,7 +47,7 @@ final class PredicateNode {
 
     override def next = {
       val ret = current.get;
-      current = current.get.sibling;
+      current = ret.sibling;
       ret
     }
   }
