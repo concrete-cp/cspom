@@ -7,6 +7,8 @@ class ExtensiveDomain[T](val values: Seq[T]) extends CSPOMDomain[T] {
     case ed: ExtensiveDomain[T] => ed.values == values
     case _ => false
   }
+  
+  def contains(value: Any) = values.contains(value)
 
   override def toString =
     if (size > 5)

@@ -9,11 +9,13 @@ final class Constant[T](val value: T) extends CSPOMDomain[T] {
 
   override val size = 1
 
+  def contains(v: Any) = v == value
+
   override def equals(that: Any) = that match {
     case other: Constant[T] => other.value == value
     case _ => false
   }
-  
+
   def toXCSP = value.toString
 
   def intersect[B](domain: CSPOMDomain[B]): CSPOMDomain[B] = {

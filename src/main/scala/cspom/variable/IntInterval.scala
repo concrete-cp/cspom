@@ -13,14 +13,21 @@ class IntInterval(val lb: Int, val ub: Int) extends CSPOMDomain[Int] {
     case _ => domain.intersect(this.asInstanceOf[CSPOMDomain[Int]])
   }
 
+  def contains(value: Any) = value match {
+    case v: Int => lb <= v && v <= ub
+    case _ => false
+  }
+
   override def toString = "[" + toXCSP + "]"
   override val hashCode = 31 * lb + ub;
   override val size = 1 + ub - lb
+  
   override def equals(obj: Any) = obj match {
     case i: IntInterval => lb == i.lb && ub == i.ub
     case d: CSPOMDomain[_] => values == d.values
     case _ => false
   }
+  
   def toXCSP = lb + ".." + ub
 
 }
