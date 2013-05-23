@@ -1,16 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" output="target/scala-2.10/classes" path="src/main/scala"/>
-	<classpathentry kind="src" output="target/scala-2.10/classes" path="src/main/java"/>
-	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/scala"/>
-	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/java"/>
-	<classpathentry kind="src" path="src/test/resources"/>
-	<classpathentry kind="src" path="src/main/resources"/>
-	<classpathentry kind="lib" path="/home/vion/workspace/cspom/lib/bzip2-1.0.jar"/>
-	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/vion/.ivy2/cache/org.mozilla/rhino/jars/rhino-1.7R4.jar"/>
-	<classpathentry kind="lib" path="/home/vion/.ivy2/cache/junit/junit/jars/junit-4.10.jar"/>
-	<classpathentry kind="lib" path="/home/vion/.ivy2/cache/org.hamcrest/hamcrest-core/jars/hamcrest-core-1.1.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="output" path="bin"/>
+  <classpathentry output="target/scala-2.10/classes" path="src/main/scala" kind="src"></classpathentry>
+  <classpathentry output="target/scala-2.10/classes" path="src/main/java" kind="src"></classpathentry>
+  <classpathentry output="target/scala-2.10/test-classes" path="src/test/scala" kind="src"></classpathentry>
+  <classpathentry output="target/scala-2.10/test-classes" path="src/test/java" kind="src"></classpathentry>
+  <classpathentry path="./lib/bzip2-1.0.jar" kind="lib"></classpathentry>
+  <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"></classpathentry>
+  <classpathentry path="/home/vion/.ivy2/cache/org.mozilla/rhino/jars/rhino-1.7R4.jar" kind="lib"></classpathentry>
+  <classpathentry path="/home/vion/.ivy2/cache/org.jcp/jsr331/jars/jsr331-1.1.1.jar" kind="lib"></classpathentry>
+  <classpathentry path="/home/vion/.ivy2/cache/junit/junit/jars/junit-4.10.jar" kind="lib"></classpathentry>
+  <classpathentry path="/home/vion/.ivy2/cache/org.hamcrest/hamcrest-core/jars/hamcrest-core-1.1.jar" kind="lib"></classpathentry>
+  <classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"></classpathentry>
+  <classpathentry path="bin" kind="output"></classpathentry>
 </classpath>
