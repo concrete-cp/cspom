@@ -1,6 +1,6 @@
 name := "cspom"
 
-organization := "fr.univ-valenciennes.cspfj"
+organization := "fr.univ-valenciennes.concrete"
 
 version := "1.3-SNAPSHOT"
 
