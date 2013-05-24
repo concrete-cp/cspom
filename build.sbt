@@ -6,7 +6,7 @@ version := "1.3-SNAPSHOT"
 
 resolvers += "sonatype-releases" at "http://oss.sonatype.org/content/repositories/releases/"
 
-resolvers += "Concrete repository" at "http://cspfj.sourceforge.net/repository"
+resolvers += "Concrete repository" at "http://scand1sk.github.io/concrete/repository"
 
 
 scalaVersion := "2.10.1"
@@ -18,6 +18,5 @@ libraryDependencies ++= Seq(
 	)
 
 publishTo := Some(
-	Resolver.sftp("Concrete publish repository",
-		"web.sourceforge.net",
-		"/home/groups/c/cs/cspfj/htdocs/repository"))
+	Resolver.file("Concrete local repository",
+		new File(Path.userHome.absolutePath+"/concrete/repository")))
