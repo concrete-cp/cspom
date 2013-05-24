@@ -4,7 +4,7 @@ import java.util.logging.Logger
 import java.util.logging.Level
 trait Loggable {
 
-  val logger: Logger = Logging.getLogger(this)
+  lazy val logger: Logger = Logging.getLogger(this)
 
   def checkFormat(msg: String, refs: Seq[_]): String =
     if (!refs.isEmpty)

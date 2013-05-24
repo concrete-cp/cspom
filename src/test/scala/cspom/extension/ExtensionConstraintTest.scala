@@ -4,7 +4,6 @@ import org.junit.Test
 import org.junit.Before
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
-import org.junit.matchers.JUnitMatchers._
 
 final class ExtensionConstraintTest {
 
@@ -39,24 +38,24 @@ final class ExtensionConstraintTest {
     relation += (2, 5, 5);
     assertEquals(2, relation.size);
   }
-//
-//  @Test
-//  def testRemove() {
-//    relation -= Array(2, 5, 5)
-//    assertEquals(1, relation.size)
-//    assertEquals("3 5 5", relation.tupleString)
-//    relation -= Array(3, 5, 5)
-//    assertEquals(0, relation.size)
-//    assertEquals("", relation.tupleString)
-//  }
-//
-//  @Test
-//  def testFilter() {
-//    assertSame(HashTrie.empty, relation.filterTrie({
-//      case (depth, value) => depth != 1 || value != 5
-//    }))
-//    assertEquals("2 5 5", relation.filterTrie({
-//      case (depth, value) => depth != 0 || value != 3
-//    }).tupleString)
-//  }
+  //
+  //  @Test
+  //  def testRemove() {
+  //    relation -= Array(2, 5, 5)
+  //    assertEquals(1, relation.size)
+  //    assertEquals("3 5 5", relation.tupleString)
+  //    relation -= Array(3, 5, 5)
+  //    assertEquals(0, relation.size)
+  //    assertEquals("", relation.tupleString)
+  //  }
+  //
+  //  @Test
+  //  def testFilter() {
+  //    assertSame(HashTrie.empty, relation.filterTrie({
+  //      case (depth, value) => depth != 1 || value != 5
+  //    }))
+  //    assertEquals("2 5 5", relation.filterTrie({
+  //      case (depth, value) => depth != 0 || value != 3
+  //    }).tupleString)
+  //  }
 }

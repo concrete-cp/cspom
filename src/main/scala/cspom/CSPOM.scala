@@ -428,11 +428,18 @@ final class CSPOM {
   //    }
   //
   //  }
+  def loadXML(is: InputStream) {
+    new XCSPParser(this).parse(is)
+  }
+
+  def loadCNF(is: InputStream) {
+    new CNFParser(this).parse(is)
+  }
 }
 
 object CSPOM {
 
-  val VERSION = """Rev:\ (\d+)""".r.findFirstMatchIn("$Rev$").get.group(1).toInt
+  val VERSION = "CSPOM 1.3-SNAPSHOT"
 
   /**
    * Opens an InputStream according to the given URL. If URL ends with ".gz"
@@ -507,13 +514,12 @@ object CSPOM {
     val problem = new CSPOM();
     val problemIS = problemInputStream(url);
 
-    if (url.getFile() contains ".xml") {
-      new XCSPParser(problem).parse(problemIS);
-    } else if (url.getFile() contains ".cnf") {
-      new CNFParser(problem).parse(problemIS);
-    } else {
-      throw new IllegalArgumentException("Unhandled file format");
+    url.getFile match {
+      case name if name.contains(".xml") => problem.loadXML(problemIS)
+      case name if name.contains(".cnf") => problem.loadCNF(problemIS)
+      case _ => throw new IllegalArgumentException("Unhandled file format");
     }
+
     problem;
   }
 
@@ -535,9 +541,8 @@ object CSPOM {
    */
   implicit def threadLocalProblem: CSPOM = {
     val s = dyn.value
-    if (s eq null)
-      throw new IllegalStateException("No implicit problem available; threadLocalProblem can only be used within a problem block")
-    else s
+    require(s ne null, "No implicit problem available; threadLocalProblem can only be used within a problem block")
+    s
   }
 
   /**
