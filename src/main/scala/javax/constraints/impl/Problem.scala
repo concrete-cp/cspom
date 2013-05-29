@@ -50,18 +50,25 @@ class Problem(name: String) extends AbstractProblem(name) with Loggable {
     ow.close()
   }
   def post(v1: javax.constraints.Var, op: String, v2: javax.constraints.Var): javax.constraints.Constraint = {
-    val constraint = new GeneralConstraint(op, v1.getImpl.asInstanceOf[CSPOMVariable], v2.getImpl.asInstanceOf[CSPOMVariable])
+    val constraint = cspom.ctr(op, v1.getImpl.asInstanceOf[CSPOMVariable], v2.getImpl.asInstanceOf[CSPOMVariable])
     new Constraint(this, constraint)
   }
   def post(v: javax.constraints.Var, op: String, c: Int): javax.constraints.Constraint = {
-    val constraint = new GeneralConstraint(op, v.getImpl.asInstanceOf[CSPOMVariable], cspom.varOf(c))
+    val constraint = cspom.ctr(op, v.getImpl.asInstanceOf[CSPOMVariable], cspom.varOf(c))
     new Constraint(this, constraint)
   }
-  def post(vs: Array[javax.constraints.Var], op: String, v: javax.constraints.Var): javax.constraints.Constraint = {
-    val constraint = new GeneralConstraint(op, (vs :+ v).map(_.getImpl.asInstanceOf[CSPOMVariable]): _*)
+  def post(sum: Array[javax.constraints.Var], op: String, v: javax.constraints.Var): javax.constraints.Constraint = {
+    val lb = sum.map(_.getMin()).sum
+    val ub = sum.map(_.getMax()).sum
+    val r = cspom.interVar(lb, ub)
+    val c = cspom.ctr("zerosum", -1 :: List.fill(sum.length)(1), r +: sum.map(_.getImpl.asInstanceOf[CSPOMVariable]): _*)
+    val constraint = cspom.ctr(op, r, v.getImpl.asInstanceOf[CSPOMVariable])
     new Constraint(this, constraint)
   }
-  def post(x$1: Array[javax.constraints.Var], x$2: String, x$3: Int): javax.constraints.Constraint = ???
+  def post(vs: Array[javax.constraints.Var], op: String, v: Int): javax.constraints.Constraint = {
+    val constant = cspom.varOf(v)
+    post(vs, op, new Var(this, constant.name, constant))
+  }
   def post(x$1: Array[Int], x$2: Array[javax.constraints.Var], x$3: String, x$4: javax.constraints.Var): javax.constraints.Constraint = ???
   def post(x$1: Array[Int], x$2: Array[javax.constraints.Var], x$3: String, x$4: Int): javax.constraints.Constraint = ???
   def postCardinality(x$1: Array[javax.constraints.Var], x$2: Int, x$3: String, x$4: javax.constraints.Var): javax.constraints.Constraint = ???
