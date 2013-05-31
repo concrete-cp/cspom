@@ -69,7 +69,7 @@ final class Predicate(parametersString: String, expressionString: String) {
         s"Did not recognize $s")
 
       applyied = (s"""([^A-Za-z])($p)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
-        m.group(1) + p + m.group(3)
+        s"${m.group(1)}$s${m.group(3)}"
       })
 
     }
