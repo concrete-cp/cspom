@@ -490,7 +490,8 @@ object CSPOM {
         throw new IOException("Invalid URI", e);
     }
 
-    if (uri.isAbsolute) load(uri.toURL)
+    if (uri.isAbsolute) {
+    	load(uri.toURL)}
     else load(new URL("file://" + uri));
 
   }
