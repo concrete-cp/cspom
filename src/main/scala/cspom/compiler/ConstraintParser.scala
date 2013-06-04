@@ -32,24 +32,24 @@ final object ConstraintParser {
     require(!root.isLeaf, "Constraint expected");
 
     root.parameters.map { p =>
-      problem.ctr(root.operator.get, p,
+      problem.ctr(root.operator, p,
         root.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
     } getOrElse {
-      problem.ctr(root.operator.get, root.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
+      problem.ctr(root.operator, root.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
     }
   }
 
   private def addToProblem(node: PredicateNode, problem: CSPOM): CSPOMVariable = {
     if (node.isLeaf) {
-      problem.variable(node.operator.get).getOrElse {
-        assume(node.isInteger, node + " is not a valid leaf")
-        problem.varOf(node.operator.get.toInt)
+      problem.variable(node.operator).getOrElse {
+        assume(node.isInteger, s"$node is not a valid leaf")
+        problem.varOf(node.operator.toInt)
       }
     } else {
       node.parameters.map { p =>
-        problem.is(node.operator.get, p, node.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
+        problem.is(node.operator, p, node.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
       } getOrElse {
-        problem.is(node.operator.get, node.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
+        problem.is(node.operator, node.child.toList.flatMap(_.siblings).map(addToProblem(_, problem)): _*)
       }
     }
   }
@@ -71,10 +71,10 @@ final object ConstraintParser {
         token match {
           case " " =>
           case "{" =>
-            require(currentNode.operator.isDefined, "Empty operator");
+            require(currentNode.operatorIsDefined, "Empty operator");
             parameters = new StringBuilder();
           case "(" =>
-            require(currentNode.operator.isDefined, "Empty operator");
+            require(currentNode.operatorIsDefined, "Empty operator");
             val newPredicateNode = new PredicateNode();
             currentNode.child = Some(newPredicateNode)
             stack.push(currentNode);
@@ -83,14 +83,14 @@ final object ConstraintParser {
             require(!stack.isEmpty, "Too many )s");
             currentNode = stack.pop();
           case "," =>
-            require(currentNode.operator.isDefined, "Empty argument");
+            require(currentNode.operatorIsDefined, "Empty argument");
             val newPredicateNode = new PredicateNode();
             currentNode.sibling = Some(newPredicateNode)
             currentNode = newPredicateNode;
           case _ =>
-            require(currentNode.operator.isEmpty, "Delimiter expected in "
+            require(!currentNode.operatorIsDefined, "Delimiter expected in "
               + currentNode + " (" + expression + ")");
-            currentNode.operator = Some(token)
+            currentNode.operator = token
         }
       }
     }

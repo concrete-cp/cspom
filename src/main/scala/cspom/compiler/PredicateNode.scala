@@ -3,18 +3,23 @@ package cspom.compiler;
 final class PredicateNode {
   var sibling: Option[PredicateNode] = None;
   var child: Option[PredicateNode] = None;
-  var operator: Option[String] = None;
+  private var _operator: Option[String] = None;
   var parameters: Option[String] = None;
 
-  override def toString = {
-    val stb = new StringBuilder();
-    tree(stb, 0);
-    stb.toString();
+  override def toString = tree(new StringBuilder()).toString;
+
+  def operator = _operator.get
+
+  def operator_=(v: String) {
+    require(_operator.isEmpty)
+    _operator = Some(v)
   }
 
-  def isInteger = operator.map(ConstraintParser.isInt).getOrElse(false)
+  def operatorIsDefined = _operator.nonEmpty
 
-  def isIdentifier = operator.map(ConstraintParser.isId).getOrElse(false)
+  def isInteger = ConstraintParser.isInt(operator)
+
+  def isIdentifier = ConstraintParser.isId(operator)
 
   def isLeaf = {
     assume(child.nonEmpty || isInteger || isIdentifier,
@@ -23,21 +28,22 @@ final class PredicateNode {
     child.isEmpty
   }
 
-  def tree(stb: StringBuilder, level: Int) {
-    for (i <- 1 to level) {
-      stb.append("-");
-    }
+  def tree(stb: StringBuilder): StringBuilder = {
     stb.append(operator);
     for (p <- parameters) {
       stb.append('{').append(p).append('}');
     }
     stb.append('\n');
     for (c <- child) {
-      c.tree(stb, level + 1)
+      stb.append("(")
+      c.tree(stb)
+      stb.append(")")
     }
     for (s <- sibling) {
-      s.tree(stb, level);
+      stb.append(", ")
+      s.tree(stb);
     }
+    stb
   }
 
   def siblings = new Iterator[PredicateNode] {
