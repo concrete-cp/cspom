@@ -213,6 +213,11 @@ final class CSPOM {
   @annotation.varargs
   def varOf[T](name: String, values: T*) = addVariable(CSPOMVariable.ofSeq(name = name, values = values))
 
+  private val constants = new HashMap[Any, CSPOMVariable]()
+
+  def constant[T](value: T) = constants.getOrElseUpdate(value,
+    addVariable(CSPOMVariable.constant(value)))
+
   def boolVar() = addVariable(CSPOMVariable.bool())
 
   def boolVar(name: String) = addVariable(CSPOMVariable.bool(name))
@@ -491,8 +496,10 @@ object CSPOM {
     }
 
     if (uri.isAbsolute) {
-    	load(uri.toURL)}
-    else load(new URL("file://" + uri));
+      load(uri.toURL)
+    } else {
+      load(new URL("file://" + uri));
+    }
 
   }
 
@@ -593,7 +600,7 @@ object CSPOM {
     }
   }
 
-  implicit def constantVar(value: Int)(implicit problem: CSPOM): CSPOMVariable = problem.varOf(value)
+  implicit def constantVar(value: Int)(implicit problem: CSPOM): CSPOMVariable = problem.constant(value)
 
   implicit def aux()(implicit problem: CSPOM): AuxVar = new AuxVar()
 

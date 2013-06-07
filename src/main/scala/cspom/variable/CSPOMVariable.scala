@@ -120,7 +120,7 @@ object CSPOMVariable {
    *            The unique value of the domain.
    */
   def constant[T](constant: T) =
-    new ProblemVar(VariableNameGenerator.generate, new Constant[T](constant))
+    new ProblemVar(s"{$constant}", new Constant[T](constant))
 
   var intervals: Map[(Int, Int), IntInterval] = Map.empty
 
@@ -162,8 +162,10 @@ object CSPOMVariable {
 
   def of[T](name: String, values: T*) = ofSeq(name, values)
 
-  def ofSeq[T](name: String = VariableNameGenerator.generate(), values: Seq[T]) =
+  def ofSeq[T](name: String = VariableNameGenerator.generate(), values: Seq[T]) = {
+    require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
     new ProblemVar(name, new ExtensiveDomain[T](values))
+  }
 
   def ofBool(name: String = VariableNameGenerator.generate(), value: Boolean) =
     new ProblemVar(name, BooleanDomain.valueOf(value));
