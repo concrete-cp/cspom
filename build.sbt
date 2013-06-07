@@ -13,8 +13,7 @@ scalaVersion := "2.10.1"
 
 libraryDependencies ++= Seq(
 	"org.mozilla" % "rhino" % "1.7R4",
-	"junit" % "junit" % "4.11" % "test",
-	"org.jcp" % "jsr331" % "1.1.1"
+	"junit" % "junit" % "4.11" % "test"
 	)
 
 publishTo := Some(
