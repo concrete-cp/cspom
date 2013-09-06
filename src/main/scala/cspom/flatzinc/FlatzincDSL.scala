@@ -39,7 +39,7 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
   }
 
   /*
-   * Definition of what's a flatzinc file : optional predicate(s) + optional parameter(s) + optional constraint(s) + solve goal
+   * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
   def flatzincModel: Parser[Any] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
