@@ -11,7 +11,7 @@ final class CompileTest {
   def test() {
     val cspom = new CSPOM();
     new XCSPParser(cspom).parse(classOf[ParserTest].getResourceAsStream(FILENAME));
-    ProblemCompiler.compile(cspom)
+    ProblemCompiler.compile(cspom, Seq())
     //println(cspom);
 
   }

@@ -4,15 +4,17 @@ import java.io.InputStream
 import scala.xml.NodeSeq
 import scala.xml.XML
 import cspom.extension.ExtensionConstraint
-import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.CSPOM
 import cspom.CSPParseException
 import cspom.extension.LazyRelation
 import cspom.extension.Relation
 import java.io.StringReader
-import cspom.variable.ProblemVar
 import cspom.compiler.ConstraintParser
+import cspom.variable.IntDomain
+import cspom.variable.IntVariable
+
+
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -50,7 +52,7 @@ final class XCSPParser(private val problem: CSPOM) {
    */
   private def parseVariables(doc: NodeSeq) {
     val domains = (doc \ "domains" \ "domain") map { node =>
-      (node \ "@name").text -> CSPOMDomain.valueOf(node.text)
+      (node \ "@name").text -> IntDomain.valueOf(node.text)
     } toMap
 
     for (node <- doc \ "variables" \ "variable") {
@@ -58,7 +60,7 @@ final class XCSPParser(private val problem: CSPOM) {
       val name = (node \ "@name").text
       
       try {
-        problem.addVariable(new ProblemVar(name, domain));
+        problem.addVariable(new IntVariable(name, domain));
       } catch {
         case e: Exception =>
           throw new CSPParseException(s"Could not add variable $name", e);
@@ -91,7 +93,7 @@ final class XCSPParser(private val problem: CSPOM) {
       }
 
     }).toMap ++ ((doc \ "predicates" \ "predicate") map { node =>
-      (node \ "@name").text -> new Predicate((node \ "parameters").text,
+      (node \ "@name").text -> new XCSPPredicate((node \ "parameters").text,
         (node \ "expression" \ "functional").text)
     }).toMap;
 
@@ -148,7 +150,7 @@ final class XCSPParser(private val problem: CSPOM) {
           extension.relation,
           extension.init,
           scope.toList));
-        case Some(predicate: Predicate) =>
+        case Some(predicate: XCSPPredicate) =>
           try {
             ConstraintParser.split(predicate.applyParameters(parameters, scope), problem)
           } catch {

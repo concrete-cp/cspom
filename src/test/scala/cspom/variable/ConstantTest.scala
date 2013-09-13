@@ -12,19 +12,19 @@ class ConstantTest() {
 
   val TEST_CONSTANT_INT = Random.nextInt;
   val TEST_CONSTANT_DOUBLE = Random.nextDouble;
-  val intConstant: Constant[Int] = new Constant(TEST_CONSTANT_INT);
-  val doubleConstant: Constant[Double] = new Constant(TEST_CONSTANT_DOUBLE);
+  val intConstant = new IntConstant(TEST_CONSTANT_INT);
+  val doubleConstant = new DoubleConstant(TEST_CONSTANT_DOUBLE);
 
   @Test
   def testEquals = {
-    assertEquals(intConstant, new Constant(TEST_CONSTANT_INT));
-    assertEquals(doubleConstant, new Constant(TEST_CONSTANT_DOUBLE));
+    assertEquals(intConstant, new IntConstant(TEST_CONSTANT_INT));
+    assertEquals(doubleConstant, new DoubleConstant(TEST_CONSTANT_DOUBLE));
   }
 
   @Test
   def testHashCode = {
-    assertEquals(intConstant.hashCode, new Constant(TEST_CONSTANT_INT).hashCode);
-    assertEquals(doubleConstant.hashCode, new Constant(TEST_CONSTANT_DOUBLE).hashCode);
+    assertEquals(intConstant.hashCode, new IntConstant(TEST_CONSTANT_INT).hashCode);
+    assertEquals(doubleConstant.hashCode, new DoubleConstant(TEST_CONSTANT_DOUBLE).hashCode);
   }
 
   @Test

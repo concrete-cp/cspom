@@ -87,10 +87,10 @@ abstract class CSPOMVariable(val name: String, val params: String*) extends CSPO
   //
   //  def /(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("div", this, other)
   //
-  //  def |(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("or", this, other)
-  //
-  //  def &(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("and", this, other)
+
 }
+
+class FreeVariable(name: String, params: String*) extends CSPOMVariable(name, params: _*)
 
 object VariableNameGenerator {
   var unnamed = 0;
@@ -119,8 +119,6 @@ object CSPOMVariable {
   //  def constant[T](constant: T) =
   //    new ProblemVar(s"{$constant}", new Constant[T](constant))
 
-  var intervals: collection.mutable.Map[(Int, Int), IntInterval] = new HashMap
-
   /**
    * Constructs a new variable with a domain defined by lower
    * and upper bounds.
@@ -132,10 +130,10 @@ object CSPOMVariable {
    * @param uB
    *            Upper bound of the domain
    */
-  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int) = {
-    val i = intervals.getOrElseUpdate((lb, ub), new IntInterval(lb, ub))
-    
-    new IntVariable(name, i);
+  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int, params: Seq[String] = Seq()) = {
+    //val i = intervals.getOrElseUpdate((lb, ub), new IntInterval(lb, ub))
+
+    new IntVariable(name, new IntInterval(lb, ub), params);
   }
 
   /**
@@ -149,54 +147,16 @@ object CSPOMVariable {
    * @param values
    *            List of values defining the domain.
    */
-  def of[T](values: T*) = ofSeq(values = values)
+  def ofInt(values: Int*) = ofIntSeq(values = values)
 
-  def of[T](name: String, values: T*) = ofSeq(name, values)
+  def ofInt(name: String, values: Int*) = ofIntSeq(name, values)
 
-  def ofSeq[T](name: String = VariableNameGenerator.generate(), values: Seq[T]) = {
-    require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
-    new ProblemVar(name, new ExtensiveDomain[T](values))
-  }
-
-  def ofBool(name: String = VariableNameGenerator.generate(), value: Boolean) =
-    new ProblemVar(name, BooleanDomain.valueOf(value));
+  def ofIntSeq(name: String = VariableNameGenerator.generate(), values: Seq[Int], params: Seq[String] = Seq()) =
+    IntVariable.of(name, IntDomain.of(values: _*), params)
 
   def bool(name: String = VariableNameGenerator.generate()) =
-    new ProblemVar(name, UnknownBooleanDomain)
+    new BoolVariable(name)
 
-  /**
-   * Parse the given domain given as a String. Domains are usually sequence of
-   * values separated by spaces such as "1 3 -4 5" or intervals in the format
-   * "a..b". Sequences of values and intervals such as "1 3..10 18..30" are
-   * allowed and converted to a sequence of values.
-   *
-   * @param domain
-   *            The String domain to parse
-   * @return The resulting Domain object
-   */
-  def valueOf(desc: String) = {
-    desc.trim.split(" +") match {
-      case Array(single) if single contains ".." =>
-        IntInterval.valueOf(single)
-      case listOfValues =>
-        val values = listOfValues.toList.flatMap { v =>
-          if (v.contains("..")) {
-            IntInterval.valueOf(v).values;
-          } else {
-            List(v.trim.toInt);
-          }
-        }
-
-        if (values.size == 1) {
-          new Constant(values.head)
-        } else if (values == (values.head to values.last)) {
-          new IntInterval(values.head, values.last)
-        } else {
-          new ExtensiveDomain(values)
-        }
-
-    }
-
-  }
+  def aux() = new FreeVariable(VariableNameGenerator.generate(), "var_is_introduced")
 
 }

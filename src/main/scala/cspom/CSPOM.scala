@@ -19,12 +19,14 @@ import cspom.constraint.Predicate
 import cspom.dimacs.CNFParser
 import cspom.extension.ExtensionConstraint
 import cspom.extension.Relation
-import cspom.variable.AuxVar
-import cspom.variable.CSPOMDomain
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.Extension
 import cspom.xcsp.XCSPParser
-import cspom.variable.TrueDomain
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMSeq
+import cspom.variable.IntConstant
+import cspom.variable.BoolVariable
+import cspom.variable.CSPOMConstant
 
 /**
  *
@@ -99,8 +101,14 @@ final class CSPOM {
     variable
   }
 
+  def addExpression(expression: CSPOMExpression): Seq[CSPOMVariable] = expression match {
+    case v: CSPOMVariable => Seq(addVariable(v))
+    case s: CSPOMSeq => s.flatMap(addExpression)
+    case _ => throw new UnsupportedOperationException
+  }
+
   def removeVariable(v: CSPOMVariable) {
-    require(v.constraints.isEmpty, v + " is still implied by constraints : " + v.constraints)
+    require(constraints(v).isEmpty, v + " is still implied by constraints : " + constraints(v))
 
     variableMap.remove(v.name);
   }
@@ -124,12 +132,12 @@ final class CSPOM {
       case _ =>
     }
 
-    for (v <- constraint.scope) { v.registerConstraint(constraint) }
+    //for (v <- constraint.scope) { v.registerConstraint(constraint) }
     constraint
   }
 
   def removeConstraint(c: CSPOMConstraint) {
-    for (v <- c.scope) { v.removeConstraint(c) }
+    //for (v <- c.scope) { v.removeConstraint(c) }
     _constraints -= c
     c match {
       case c: FunctionalConstraint => _functionalConstraints -= c
@@ -138,9 +146,12 @@ final class CSPOM {
     }
   }
 
-  def ctr(v: AuxVar): CSPOMConstraint = {
+  // TODO: caching !
+  def constraints(v: CSPOMVariable) = _constraints.filter(_.scope.contains(v))
+
+  def ctr(v: BoolVariable): CSPOMConstraint = {
     // dereify
-    val Seq(fc: FunctionalConstraint) = v.constraints.toSeq
+    val Seq(fc: FunctionalConstraint) = constraints(v)
     removeConstraint(fc)
     removeVariable(v)
     val newConstraint = new GeneralConstraint(Predicate(fc.predicate.function, fc.predicate.parameters), fc.arguments)
@@ -150,12 +161,12 @@ final class CSPOM {
   def parseCtr(ctr: String) = ConstraintParser.split(ctr, this)
 
   @annotation.varargs
-  def ctr(name: String, scope: CSPOMVariable*): CSPOMConstraint = {
+  def ctr(name: String, scope: CSPOMExpression*): CSPOMConstraint = {
     addConstraint(new GeneralConstraint(name, scope: _*))
   }
 
   @annotation.varargs
-  def ctr(name: String, parameters: Any, scope: CSPOMVariable*): CSPOMConstraint = {
+  def ctr(name: String, parameters: Any, scope: CSPOMExpression*): CSPOMConstraint = {
     addConstraint(new GeneralConstraint(name, parameters, scope: _*))
   }
 
@@ -164,15 +175,22 @@ final class CSPOM {
     addConstraint(new ExtensionConstraint(rel, init, vars))
 
   @annotation.varargs
-  def is(name: String, scope: CSPOMVariable*): AuxVar = {
-    val result = aux()
+  def is(name: String, scope: CSPOMExpression*): CSPOMVariable = {
+    val result = CSPOMVariable.aux()
     addConstraint(new FunctionalConstraint(result, name, scope: _*))
     result
   }
 
   @annotation.varargs
-  def is(name: String, params: Any, scope: CSPOMVariable*): AuxVar = {
-    val result = aux()
+  def isReified(name: String, scope: CSPOMExpression*): BoolVariable = {
+    val result = CSPOMVariable.bool()
+    addConstraint(new FunctionalConstraint(result, name, scope: _*))
+    result
+  }
+
+  @annotation.varargs
+  def is(name: String, params: Any, scope: CSPOMExpression*): CSPOMVariable = {
+    val result = CSPOMVariable.aux()
     addConstraint(new FunctionalConstraint(result, name, params, scope: _*))
     result
   }
@@ -205,26 +223,24 @@ final class CSPOM {
   def interVar(lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
 
-  def aux(): AuxVar = addVariable(new AuxVar())
+  //def aux(): CSPOMVariable = addVariable(new AuxVar())
 
   @annotation.varargs
-  def varOf[T](values: T*) = addVariable(CSPOMVariable.ofSeq(values = values))
+  def varOf(values: Int*) = addVariable(CSPOMVariable.ofInt(values: _*))
 
   @annotation.varargs
-  def varOf[T](name: String, values: T*) = addVariable(CSPOMVariable.ofSeq(name = name, values = values))
+  def varOf(name: String, values: Int*) = addVariable(CSPOMVariable.ofInt(name = name, values = values: _*))
 
-  private val constants = new HashMap[Any, CSPOMVariable]()
+  private val constants = new HashMap[Int, IntConstant]()
 
-  def constant[T](value: T) = constants.getOrElseUpdate(value,
-    addVariable(CSPOMVariable.constant(value)))
+  def constant(value: Int) = constants.getOrElseUpdate(value, IntConstant(value))
 
   def boolVar() = addVariable(CSPOMVariable.bool())
 
   def boolVar(name: String) = addVariable(CSPOMVariable.bool(name))
 
   override def toString = {
-    val vars = variables.map(v =>
-      s"$v = ${v.domainOption.map(_.toString).getOrElse("?")}").mkString("\n")
+    val vars = variables.mkString("\n")
 
     val cons = constraints.mkString("\n")
 
@@ -261,7 +277,7 @@ final class CSPOM {
         stb.append("]\n");
         stb.append("]\n");
 
-        for (v <- c.scope) {
+        for (v <- c.scope.collect { case v: CSPOMVariable => v }) {
           stb.append("edge [\n");
           stb.append("source \"cons").append(gen).append("\"\n");
           stb.append("target \"").append(v.name).append("\"\n");
@@ -279,133 +295,15 @@ final class CSPOM {
     stb.append("]\n").toString
   }
 
-  def toXCSP = {
-    var domains: Map[CSPOMDomain[_], String] = Map.empty
-    var did = 0
-    for (v <- variables) {
-      if (!domains.contains(v.domain)) {
-        domains += v.domain -> ("D" + did)
-        did += 1
-      }
-    }
-
-    val relations = new HashMap[(Relation, Boolean), String]()
-    val genPredicates = new HashMap[(Predicate, Int), String]()
-    val funcPredicates = new HashMap[(Predicate, Int), String]()
-
-    var rid = 0
-    var pid = 0
-
-    constraints.foreach {
-      case c: ExtensionConstraint if (!relations.contains((c.relation, c.init))) =>
-        relations.put((c.relation, c.init), "R" + rid)
-        rid += 1
-
-      case c: FunctionalConstraint if (!funcPredicates.contains((c.predicate, c.arity))) =>
-        funcPredicates.put((c.predicate, c.arity), "P" + pid)
-        pid += 1
-
-      case c: GeneralConstraint if (!genPredicates.contains((c.predicate, c.arity))) =>
-        genPredicates.put((c.predicate, c.arity), "P" + pid)
-        pid += 1
-
-      case _ =>
-
-    }
-
-    <instance>
-      <presentation maxConstraintArity={ constraints.map(_.arity).max.toString }/>
-      <domains>
-        {
-          domains.map {
-            case (d, n) =>
-              <domain name={ n } nbValues={ d.size.toString }>{ d.toXCSP }</domain>
-          }
-        }
-      </domains>
-      <variables nbVariables={ variables.size.toString }>
-        {
-          variables map { v =>
-            <variable name={ v.name } domain={ domains(v.domain) }/>
-          }
-        }
-      </variables>
-      <relations nbRelations={ relations.size.toString }>
-        {
-          relations map {
-            case ((r, init), n) =>
-              <relation name={ n } arity={ r.arity.toString } nbTuples={ r.size.toString } semantics={ (if (init) "conflicts" else "supports") }>
-                { r.tupleString }
-              </relation>
-          }
-        }
-      </relations>
-      <predicates nbPredicates={ (genPredicates.size + funcPredicates.size).toString }>
-        {
-          (
-            genPredicates map {
-              case ((p, a), n) =>
-                <predicate name={ n }>
-                  <parameters>{ (0 until a) map ("int X" + _) }</parameters>
-                  <expression><functional>{ p.function + (0 until a).map("X" + _).mkString("(", ", ", ")") }</functional></expression>
-                </predicate>
-
-            }) ++ (funcPredicates map {
-              case ((p, a), n) =>
-                <predicate name={ n }>
-                  <parameters>{ (0 until a) map ("int X" + _) }</parameters>
-                  <expression><functional>eq(X0, { p.function + (1 until a).map("X" + _).mkString("(", ", ", ")") })</functional></expression>
-                </predicate>
-
-            })
-        }
-      </predicates>
-      <constraints nbConstraints={ constraints.size.toString }>
-        {
-
-          constraints.zipWithIndex map {
-            case (c, i) =>
-              <constraint name={
-                "C" + i
-              } arity={
-                c.arity.toString
-              } scope={
-                c.scope.map(_.name).mkString(" ")
-              } reference={
-                c match {
-                  case c: ExtensionConstraint => relations(c.relation, c.init)
-                  case c: GeneralConstraint => genPredicates(c.predicate, c.arity)
-                  case c: FunctionalConstraint => funcPredicates(c.predicate, c.arity)
-                }
-              }>
-                {
-                  c match {
-                    case c: GeneralConstraint =>
-                      <parameters>{ c.scope.map(_.name).mkString(" ") }</parameters>
-                    case c: FunctionalConstraint =>
-                      <parameters>{ c.scope.map(_.name).mkString(" ") }</parameters>
-                    case _ =>
-                  }
-                }
-              </constraint>
-
-          }
-        }
-      </constraints>
-    </instance>
-  }
-
   def control(solution: Map[String, Number]) = {
-    constraints filter { c =>
-      !c.evaluate(c.scope map (v =>
-        solution.getOrElse(v.name, v.domain.values.head)))
+    constraints filterNot { c =>
+      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
     }
   }
 
   def controlInt(solution: Map[String, Int]) = {
     constraints flatMap { c =>
-      val values = c.scope map (v =>
-        solution.getOrElse(v.name, v.domain.values.head))
+      val values = c.scope.collect { case v: CSPOMVariable => solution(v.name) }
       if (c.evaluate(values)) {
         Nil
       } else {
@@ -415,14 +313,9 @@ final class CSPOM {
   }
 
   def controlInteger(solution: Map[String, java.lang.Integer]) = {
-    constraints filter { c =>
-      val tuple = c.scope map { v =>
-        solution.get(v.name) match {
-          case Some(value) => value.toInt
-          case None => v.domain.values.head
-        }
-      }
-      !c.evaluate(tuple)
+    constraints filterNot { c =>
+      val tuple = c.scope.collect { case v: CSPOMVariable => solution(v.name).toInt }
+      c.evaluate(tuple)
     }
   }
 
@@ -582,7 +475,7 @@ object CSPOM {
   //  def ctr(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
   //    problem.ctr(typ, vars: _*)
 
-  def ctr(v: AuxVar)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
+  def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
 
   def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
     problem.ctr(rel, init, vars: _*)
@@ -592,21 +485,21 @@ object CSPOM {
   //  }
 
   implicit class CSPOMSymbConstraint(typ: Symbol) {
-    def apply(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
+    def apply(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
       problem.is(typ.name, vars: _*)
     }
-    def apply(params: Any)(vars: CSPOMVariable*)(implicit problem: CSPOM): AuxVar = {
+    def apply(params: Any)(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
       problem.is(typ.name, params, vars: _*)
     }
   }
 
-  implicit def constantVar(value: Int)(implicit problem: CSPOM): CSPOMVariable = problem.constant(value)
+  implicit def constant(value: Int)(implicit problem: CSPOM): CSPOMConstant = problem.constant(value)
 
-  implicit def aux()(implicit problem: CSPOM): AuxVar = new AuxVar()
+  implicit def aux()(implicit problem: CSPOM): CSPOMVariable = CSPOMVariable.aux()
 
-  def varOf[T](values: T*)(implicit problem: CSPOM) = problem.varOf(values: _*)
+  def varOf(values: Int*)(implicit problem: CSPOM) = problem.varOf(values: _*)
 
-  def varOf[T](name: String, values: T*)(implicit problem: CSPOM) = problem.varOf(name, values: _*)
+  def varOf(name: String, values: Int*)(implicit problem: CSPOM) = problem.varOf(name, values: _*)
 
   def boolVar()(implicit problem: CSPOM) = problem.boolVar()
 

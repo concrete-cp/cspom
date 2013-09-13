@@ -1,4 +1,4 @@
-package cspom.compiler.patterns;
+package cspom.compiler
 
 import cspom.constraint.CSPOMConstraint
 import cspom.constraint.FunctionalConstraint

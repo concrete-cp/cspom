@@ -22,7 +22,7 @@ final object Queens {
 
   def main(args: Array[String]) {
     val p = queens(SIZE)
-    ProblemCompiler.compile(p)
+    //ProblemCompiler.compile(p)
     println(p);
   }
 }

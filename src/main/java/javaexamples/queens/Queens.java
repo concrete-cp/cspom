@@ -29,7 +29,7 @@ public final class Queens {
 				problem.ctr(
 						"neq",
 						problem.is("abs", problem.is("sub", queens.get(i), queens.get(j)),
-								problem.varOf(Math.abs(i - j))));
+								problem.constant(Math.abs(i - j))));
 			}
 		}
 

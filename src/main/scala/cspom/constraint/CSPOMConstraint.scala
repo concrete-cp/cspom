@@ -1,10 +1,11 @@
 package cspom.constraint
 
 import cspom.variable.CSPOMVariable
+import cspom.variable.CSPOMExpression
 
 abstract class CSPOMConstraint(
   val description: String,
-  val scope: Seq[CSPOMVariable]) {
+  val scope: Seq[CSPOMExpression]) {
 
   val arity = scope.size
 

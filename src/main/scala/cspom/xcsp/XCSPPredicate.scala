@@ -12,7 +12,7 @@ import cspom.compiler.ConstraintParser
  * @author vion
  *
  */
-final class Predicate(parametersString: String, expressionString: String) {
+final class XCSPPredicate(parametersString: String, expressionString: String) {
   // private static final Map<String, ValueType> DECLARATIONS = new HashMap<String, ValueType>();
 
   /**
@@ -33,7 +33,7 @@ final class Predicate(parametersString: String, expressionString: String) {
   override def toString = "(" + parameters + "): " + expression
 
   override def equals(obj: Any) = obj match {
-    case p: Predicate => expression == p.expression
+    case p: XCSPPredicate => expression == p.expression
     case _ => false
   }
 

@@ -4,15 +4,14 @@ import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 import scala.util.parsing.combinator.RegexParsers
 import cspom.variable.CSPOMVariable
-import cspom.variable.CSPOMDomain
-import cspom.variable.UnknownBooleanDomain
 import cspom.variable.IntInterval
-import cspom.variable.ExtensiveDomain
 import cspom.CSPOM
 import java.io.InputStream
 import scala.util.parsing.input.StreamReader
 import java.io.InputStreamReader
 import cspom.constraint.CSPOMConstraint
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMSeq
 
 trait DebugJavaTokenParsers extends JavaTokenParsers {
   class Wrap[+T](name: String, parser: Parser[T]) extends Parser[T] {
@@ -43,11 +42,16 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
    */
   def flatzincModel: Parser[Any] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
-      for (varOrArray <- variables; v <- varOrArray.getVars) {
-        problem.addVariable(v)
-      }
-      val varMap = variables.map(va => va.name -> va).toMap
-      rep(constraint(varMap)) ~ solve_goal
+      val varMap = variables.collect {
+        case single: CSPOMVariable =>
+          single.name -> single
+      } toMap
+
+      val seqMap = variables.collect {
+        case seq: CSPOMSeq => seq.name -> seq
+      } toMap
+
+      rep(constraint(varMap, seqMap)) ~ solve_goal
 
   }
 
@@ -57,14 +61,15 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
 
   def pred_param_type: Parser[Any] = par_pred_param_type | var_pred_param_type
 
-  def par_type: Parser[Any] = "bool" |
-    "float" |
-    "int" |
-    "set of int" |
-    "array [" ~ index_set ~ "] of bool" |
-    "array [" ~ index_set ~ "] of float" |
-    "array [" ~ index_set ~ "] of int" |
-    "array [" ~ index_set ~ "] of set of int"
+  def par_type: Parser[Any] =
+    "bool" |
+      "float" |
+      "int" |
+      "set of int" |
+      "array [" ~ index_set ~ "] of bool" |
+      "array [" ~ index_set ~ "] of float" |
+      "array [" ~ index_set ~ "] of int" |
+      "array [" ~ index_set ~ "] of set of int"
 
   def par_pred_param_type: Parser[Any] =
     par_type |
@@ -88,23 +93,25 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
   //      "array [" ~ index_set ~ "] of float" |
   //      "set of int"
 
-  def var_type[Parser[FZVariableType]] = "var_type" !!! {
-    single_var_type ^^ FZSingleVariable |
+  def var_type: Parser[FZVarType] = "var_type" !!! {
+    single_var_type |
       "array [" ~ index_set ~ "] of " ~ single_var_type ^^ {
-        case "array [" ~ indices ~ "] of " ~ vartype => FZVariableArray(indices, vartype)
+        case "array [" ~ indices ~ "] of " ~ vartype => FZArray(indices, vartype)
       }
   }
 
-  def single_var_type: Parser[CSPOMDomain[Any]] =
-    "var bool" ^^^ UnknownBooleanDomain |
-      "var float" ~> err("Unsupported domain type") |
-      "var" ~ float_const ~ ".." ~ float_const ~> err("Unsupported domain type") |
-      "var int" ^^^ new IntInterval(Int.MinValue, Int.MaxValue) |
+  def single_var_type: Parser[FZVarType] =
+    "var bool" ^^^ FZBoolean |
+      "var float" ^^^ FZFloat |
+      "var" ~ float_const ~ ".." ~ float_const ^^ {
+        case "var" ~ lb ~ ".." ~ ub => FZFloatInterval(lb, ub)
+      } |
+      "var int" ^^^ FZInt |
       "var" ~ int_const ~ ".." ~ int_const ^^ {
-        case "var" ~ lb ~ ".." ~ ub => new IntInterval(lb, ub)
+        case "var" ~ lb ~ ".." ~ ub => FZIntInterval(lb, ub)
       } |
       "var" ~ "{" ~ repsep(int_const, ",") ~ "}" ^^ {
-        case "var" ~ "{" ~ list ~ "}" => new ExtensiveDomain[Int](list)
+        case "var" ~ "{" ~ list ~ "}" => FZIntSeq(list)
       } |
       "var set of" ~ int_const ~ ".." ~ int_const ~> err("Unsupported domain type") |
       "var set of" ~ "{" ~ repsep(int_const, ",") ~ "}" ~> err("Unsupported domain type")
@@ -158,16 +165,16 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
     case t ~ ":" ~ id ~ "=" ~ expr ~ ";" => Parameter.getParamater(id, "int")
   }
 
-  def var_decl: Parser[FZVariableDecl] = "var_decl" !!! {
+  def var_decl: Parser[CSPOMExpression] = "var_decl" !!! {
     var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~ expr) ~ ";" ^? ({
-      case varType ~ ":" ~ varParId ~ ann ~ None ~ ";" => varType.genVariables(varParId, ann)
+      case varType ~ ":" ~ varParId ~ ann ~ None ~ ";" => varType.genVariable(varParId, ann)
     }, _ => "Expressions not supported in var declaration")
 
   }
   //  ^^
   //    { case t ~ ":" ~ id ~ annot ~ _ ~ ";" => Variable.getVariable(id, "D0").toXML }
 
-  def constraint(vars: Map[String, FZVariableDecl]): Parser[CSPOMConstraint] =
+  def constraint(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq]): Parser[CSPOMConstraint] =
     "constraint" ~ pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ~ annotations ~ ";" ^^ {
       ???
     }

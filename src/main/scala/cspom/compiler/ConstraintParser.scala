@@ -9,7 +9,6 @@ import cspom.variable.CSPOMVariable
 import cspom.CSPOM
 import scala.collection.mutable.Stack
 import cspom.constraint.Predicate
-import cspom.variable.AuxVar
 import scala.collection.mutable.Stack
 import java.util.Deque;
 import java.util.LinkedList;

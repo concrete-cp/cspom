@@ -32,8 +32,8 @@ class CSPOMTest {
   @Test
   def boolVariables {
     val cspom = new CSPOM
-    cspom.addVariable(CSPOMVariable.ofBool(value = true))
-    cspom.addVariable(CSPOMVariable.ofBool(value = true))
+    cspom.addVariable(CSPOMVariable.bool())
+    cspom.addVariable(CSPOMVariable.bool())
     assertEquals(2, cspom.variables.size)
   }
 
@@ -48,14 +48,14 @@ class CSPOMTest {
     val leq = new GeneralConstraint("leq", v(0), v(1))
     cspom.addConstraint(leq);
 
-    assertTrue(v(0).constraints contains leq)
-    assertTrue(v(1).constraints contains leq)
+    assertTrue(cspom.constraints(v(0)) contains leq)
+    assertTrue(cspom.constraints(v(1)) contains leq)
 
     cspom.removeConstraint(leq)
 
     assertTrue(cspom.constraints.isEmpty)
-    assertFalse(v(0).constraints contains leq)
-    assertFalse(v(1).constraints contains leq)
+    assertFalse(cspom.constraints(v(0)) contains leq)
+    assertFalse(cspom.constraints(v(1)) contains leq)
 
     v foreach { cspom removeVariable _ }
   }

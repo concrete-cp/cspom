@@ -4,21 +4,22 @@ import cspom.variable.CSPOMVariable
 import cspom.{ Evaluator, Loggable }
 import javax.script.ScriptException
 import scala.collection.JavaConversions
+import cspom.variable.CSPOMExpression
 
 class FunctionalConstraint(
-  val result: CSPOMVariable,
+  val result: CSPOMExpression,
   val predicate: Predicate,
-  val arguments: Seq[CSPOMVariable])
+  val arguments: Seq[CSPOMExpression])
   extends CSPOMConstraint(predicate.function, result +: arguments)
   with Loggable {
   require(result != null)
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
-  def this(result: CSPOMVariable, function: String, arguments: CSPOMVariable*) =
+  def this(result: CSPOMVariable, function: String, arguments: CSPOMExpression*) =
     this(result, Predicate(function, None), arguments)
 
-  def this(result: CSPOMVariable, func: String, params: Any, args: CSPOMVariable*) =
+  def this(result: CSPOMVariable, func: String, params: Any, args: CSPOMExpression*) =
     this(result, Predicate(func, Some(params)), args)
 
   override def toString = {

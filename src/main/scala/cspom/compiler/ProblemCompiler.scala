@@ -1,21 +1,11 @@
 package cspom.compiler;
 
+import scala.collection.mutable.HashSet
+import scala.collection.mutable.Queue
+
 import cspom.CSPOM
-import cspom.compiler.patterns.AbsDiff
-import cspom.compiler.patterns.AllDiff
-import cspom.compiler.patterns.ConstraintCompiler
-import cspom.compiler.patterns.DeReify
-import cspom.compiler.patterns.DiffGe
-import cspom.compiler.patterns.MergeEq
-import cspom.compiler.patterns.RemoveAnd
 import cspom.constraint.CSPOMConstraint
 import cspom.variable.CSPOMVariable
-import scala.collection.mutable.Queue
-import scala.collection.mutable.HashSet
-import scala.collection.JavaConversions
-import cspom.compiler.patterns.MergeDisj
-import cspom.compiler.patterns.MergeSame
-import cspom.compiler.patterns.NeqVec
 
 /**
  * This class implements some known useful reformulation rules.
@@ -23,7 +13,9 @@ import cspom.compiler.patterns.NeqVec
  * @author vion
  *
  */
-final class ProblemCompiler(private val problem: CSPOM) {
+final class ProblemCompiler(
+  private val problem: CSPOM,
+  private val constraintCompilers: Seq[ConstraintCompiler]) {
 
   private val constraints = new Queue[CSPOMConstraint]() {
 
@@ -48,16 +40,16 @@ final class ProblemCompiler(private val problem: CSPOM) {
 
   };
 
-  private val constraintCompilers = List(
-    new MergeDisj(problem, constraints),
-    new NeqVec(problem, constraints),
-    new RemoveAnd(problem, constraints),
-    new MergeEq(problem, constraints),
-    new AllDiff(problem),
-    new DiffGe(problem),
-    new AbsDiff(problem),
-    new DeReify(problem, constraints),
-    new MergeSame(problem, constraints))
+  //  private val constraintCompilers = List(
+  //    new MergeDisj(problem, constraints),
+  //    new NeqVec(problem, constraints),
+  //    new RemoveAnd(problem, constraints),
+  //    new MergeEq(problem, constraints),
+  //    new AllDiff(problem),
+  //    new DiffGe(problem),
+  //    new AbsDiff(problem),
+  //    new DeReify(problem, constraints),
+  //    new MergeSame(problem, constraints))
 
   private def compile() {
     //    problem.constraints.foreach(constraints.enqueue(_));
@@ -76,9 +68,9 @@ final class ProblemCompiler(private val problem: CSPOM) {
       else comp = comp.tail
     }
 
-    /* Removes single auxiliary variables */
+    /* Removes disconnected auxiliary variables */
     problem.variables.filter { v =>
-      v.auxiliary && v.constraints.isEmpty
+      v.params.contains("var_is_introduced") && problem.constraints(v).isEmpty
     }.foreach(problem.removeVariable)
 
   }
@@ -95,8 +87,8 @@ final class ProblemCompiler(private val problem: CSPOM) {
 }
 
 object ProblemCompiler {
-  def compile(problem: CSPOM) {
-    new ProblemCompiler(problem).compile();
+  def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]) {
+    new ProblemCompiler(problem, compilers).compile();
   }
 
   def hasChanged[A](l: Traversable[A], f: A => Boolean) = {

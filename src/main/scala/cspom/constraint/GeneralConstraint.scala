@@ -3,10 +3,11 @@ package cspom.constraint
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
 import cspom.Evaluator
+import cspom.variable.CSPOMExpression
 
 class GeneralConstraint(
   val predicate: Predicate,
-  scope: Seq[CSPOMVariable])
+  scope: Seq[CSPOMExpression])
   extends CSPOMConstraint(predicate.function, scope) {
 
   require(scope.nonEmpty, "The constraint must involve at least one variable")
@@ -14,10 +15,10 @@ class GeneralConstraint(
   //    this(description = description, parameters = parameters,
   //      scope = scope.toList)
 
-  def this(func: String, params: Any, scope: CSPOMVariable*) =
+  def this(func: String, params: Any, scope: CSPOMExpression*) =
     this(Predicate(func, Some(params)), scope)
 
-  def this(func: String, scope: CSPOMVariable*) =
+  def this(func: String, scope: CSPOMExpression*) =
     this(Predicate(func, None), scope)
 
   override def toString = {

@@ -9,7 +9,7 @@ trait IntDomain extends Seq[Int] {
 }
 
 object IntDomain {
-  def of[T](values: Int*) = {
+  def of(values: Int*) = {
     require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
     values match {
       case r: Range => new IntInterval(r.head, r.last)
