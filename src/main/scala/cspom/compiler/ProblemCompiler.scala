@@ -4,7 +4,7 @@ import scala.collection.mutable.HashSet
 import scala.collection.mutable.Queue
 
 import cspom.CSPOM
-import cspom.constraint.CSPOMConstraint
+import cspom.CSPOMConstraint
 import cspom.variable.CSPOMVariable
 
 /**

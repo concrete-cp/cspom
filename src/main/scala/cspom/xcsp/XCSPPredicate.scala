@@ -4,7 +4,8 @@ import cspom.variable.CSPOMVariable
 import scala.util.matching.Regex
 import scala.MatchError
 import sun.misc.Regexp
-import cspom.compiler.ConstraintParser
+import scala.util.parsing.input.CharSequenceReader
+import scala.util.parsing.combinator.RegexParsers
 
 /**
  * This class is used to represent XCSP predicates.
@@ -12,18 +13,27 @@ import cspom.compiler.ConstraintParser
  * @author vion
  *
  */
-final class XCSPPredicate(parametersString: String, expressionString: String) {
+final class XCSPPredicate(parametersString: String, expressionString: String) extends RegexParsers {
   // private static final Map<String, ValueType> DECLARATIONS = new HashMap<String, ValueType>();
+
+  def typ: Parser[String] = "int"
+
+  def paramId: Parser[String] = """\p{javaJavaIdentifierStart}\p{javaJavaIdentifierPart}*""".r
+
+  def parameter: Parser[(String, String)] = typ ~ paramId ^^ { x => x._2 -> x._1 }
+
+  def parametersParser: Parser[Seq[(String, String)]] = rep1(parameter)
 
   /**
    * Maps parameters to their respective types.
    */
-  val types = parametersString.trim.split(" +").grouped(2).map { p => p(1) -> p(0) } toMap
+  val (types, parameters) = {
+    parametersParser(new CharSequenceReader(parametersString)) match {
+      case Success(params, n) => (params.toMap, params.map(_._1))
+      case o => throw new IllegalArgumentException(o.toString)
+    }
 
-  /**
-   * Ordered list of parameters.
-   */
-  val parameters = parametersString.trim.split(" +").grouped(2).map { p => p(1) } toList
+  }
 
   /**
    * Predicate expression.
@@ -60,21 +70,24 @@ final class XCSPPredicate(parametersString: String, expressionString: String) {
 
     assume(stringParameters.length == this.parameters.size, "Incorrect parameter count");
 
-    var applyied = expression;
-    for ((s, p) <- stringParameters.zip(this.parameters)) {
-
-      assume(
-        ConstraintParser.isInt(s) ||
-          (ConstraintParser.isId(s) && scope.map { v => v.name }.contains(s)),
-        s"Did not recognize $s")
-
-      applyied = (s"""([^A-Za-z])($p)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
-        s"${m.group(1)}$s${m.group(3)}"
-      })
-
-    }
-
-    applyied;
+    ConstraintParser.mapFunc((this.parameters zip stringParameters).toMap)(new CharSequenceReader(expression)).get
+    //
+    //    var applyied = expression;
+    //    for ((s, p) <- stringParameters.zip(this.parameters)) {
+    //
+    //      assume(
+    //
+    //        ConstraintParser.isInt(s) ||
+    //          (ConstraintParser.isId(s) && scope.map { v => v.name }.contains(s)),
+    //        s"Did not recognize $s")
+    //
+    //      applyied = (s"""([^A-Za-z])($p)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
+    //        s"${m.group(1)}$s${m.group(3)}"
+    //      })
+    //
+    //    }
+    //
+    //    applyied;
   }
 
 }

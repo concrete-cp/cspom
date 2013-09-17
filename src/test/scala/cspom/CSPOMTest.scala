@@ -1,9 +1,8 @@
 package cspom
 
-import cspom.constraint.GeneralConstraint
 import org.junit.Assert._
 import org.junit.Test
-import variable.CSPOMVariable
+import cspom.variable.CSPOMVariable
 
 class CSPOMTest {
 
@@ -45,7 +44,7 @@ class CSPOMTest {
 
     v foreach { cspom.addVariable(_) }
 
-    val leq = new GeneralConstraint("leq", v(0), v(1))
+    val leq = new CSPOMConstraint("leq", v(0), v(1))
     cspom.addConstraint(leq);
 
     assertTrue(cspom.constraints(v(0)) contains leq)
@@ -53,7 +52,7 @@ class CSPOMTest {
 
     cspom.removeConstraint(leq)
 
-    assertTrue(cspom.constraints.isEmpty)
+    assertEquals(Set(), cspom.constraints)
     assertFalse(cspom.constraints(v(0)) contains leq)
     assertFalse(cspom.constraints(v(1)) contains leq)
 
@@ -69,7 +68,7 @@ class CSPOMTest {
 
     v.foreach(cspom.addVariable)
 
-    val leq = new GeneralConstraint("leq", v(0), v(1))
+    val leq = new CSPOMConstraint("leq", v(0), v(1))
     cspom.addConstraint(leq);
     cspom.removeVariable(v(1))
   }

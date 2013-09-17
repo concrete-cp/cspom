@@ -2,7 +2,6 @@ package cspom.xcsp;
 
 import org.junit.Assert._
 import org.junit.Test
-import cspom.constraint.Predicate
 import cspom.variable.CSPOMVariable
 
 final class PredicateTest {
@@ -24,7 +23,7 @@ final class PredicateTest {
       CSPOMVariable.ofInt("V1", 1, 2),
       CSPOMVariable.ofInt("V2", 2, 3))
 
-    assertEquals("or(ne(V0,V1),or(ne(V2,5)))", predicate.applyParameters("V0 V1 V2 5", variables))
+    assertEquals("or(ne(V0, V1), or(ne(V2, 5)))", predicate.applyParameters("V0 V1 V2 5", variables))
   }
 
   @Test
@@ -43,7 +42,7 @@ final class PredicateTest {
       CSPOMVariable.ofInt("V1", 1, 2),
       CSPOMVariable.ofInt("V2", 2, 3))
 
-    assertEquals("or(ne(V0,V1),or(ne(V0,V2)))", predicate.applyParameters("V0 V1 V2", variables))
+    assertEquals("or(ne(V0, V1), or(ne(V0, V2)))", predicate.applyParameters("V0 V1 V2", variables))
   }
 
   @Test
@@ -66,7 +65,7 @@ final class PredicateTest {
       CSPOMVariable.ofInt("V189", 1, 2))
 
     assertEquals(
-      "or(ne(V3,V126),or(ne(V17,V136),or(ne(V31,V146),or(ne(V46,V161),or(ne(V56,V175),ne(V66,V189))))))",
+      "or(ne(V3, V126), or(ne(V17, V136), or(ne(V31, V146), or(ne(V46, V161), or(ne(V56, V175), ne(V66, V189))))))",
       predicate.applyParameters("V3 V126 V17 V136 V31 V146 V46 V161 V56 V175 V66 V189", variables))
 
   }

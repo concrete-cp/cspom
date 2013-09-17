@@ -1,12 +1,17 @@
 package cspom.dimacs;
 
-import cspom.variable.CSPOMVariable
-import cspom.{ CSPParseException, CSPOM }
-import java.io.{ InputStreamReader, InputStream, BufferedReader }
+import java.io.BufferedReader
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.util.Iterator
+
 import scala.io.Source
 import scala.util.matching.Regex
-import cspom.constraint.GeneralConstraint
+
+import cspom.CSPOM
+import cspom.CSPParseException
+import cspom.CSPOMConstraint
+import cspom.variable.CSPOMVariable
 
 final class CNFParser(private val problem: CSPOM) {
 
@@ -47,7 +52,7 @@ final class CNFParser(private val problem: CSPOM) {
       (variables(math.abs(i) - 1), i == 0)
     } unzip
 
-    new GeneralConstraint("or", parameters, clause: _*)
+    new CSPOMConstraint("or", clause, Map("revsign" -> parameters))
 
   }
 }

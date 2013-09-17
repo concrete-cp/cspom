@@ -9,11 +9,19 @@ import cspom.CSPOM
 import java.io.InputStream
 import scala.util.parsing.input.StreamReader
 import java.io.InputStreamReader
-import cspom.constraint.CSPOMConstraint
+import cspom.CSPOMConstraint
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
+import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMFalse
+import cspom.variable.DoubleConstant
+import cspom.variable.IntConstant
+import cspom.variable.CSPOMSeq
+import scala.util.parsing.input.CharSequenceReader
 
 trait DebugJavaTokenParsers extends JavaTokenParsers {
+  private val DEBUG = false
+
   class Wrap[+T](name: String, parser: Parser[T]) extends Parser[T] {
     def apply(in: Input): ParseResult[T] = {
       val first = in.first
@@ -27,35 +35,50 @@ trait DebugJavaTokenParsers extends JavaTokenParsers {
   }
 
   implicit def toWrapped(name: String) = new {
-    def !!![T](p: Parser[T]) = p //new Wrap(name, p)
+    def !!![T](p: Parser[T]) = if (DEBUG) new Wrap(name, p) else p
   }
 }
 
-class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
+object FlatzincDSL extends DebugJavaTokenParsers {
 
   def parse(is: InputStream) {
     flatzincModel(StreamReader(new InputStreamReader(is)))
   }
 
+  private def mapVariables(variables: Seq[CSPOMExpression]) = {
+    val varMap = variables.collect {
+      case single: CSPOMVariable =>
+        single.name -> single
+    } toMap
+
+    val seqMap = variables.collect {
+      case seq: CSPOMSeq => seq.name -> seq
+    } toMap
+
+    (varMap, seqMap)
+  }
+
   /*
    * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
-  def flatzincModel: Parser[Any] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
+  def flatzincModel = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
-      val varMap = variables.collect {
-        case single: CSPOMVariable =>
-          single.name -> single
-      } toMap
 
-      val seqMap = variables.collect {
-        case seq: CSPOMSeq => seq.name -> seq
-      } toMap
+      val (varMap, seqMap) = mapVariables(variables)
+      //println(varMap)
+      //println(seqMap)
 
-      rep(constraint(varMap, seqMap)) ~ solve_goal
-
+      success(varMap, seqMap) ~ rep(constraint(varMap, seqMap)) ~ solve_goal
+  } ^^ {
+    case (varMap, seqMap) ~ constraints ~ goal =>
+      val p = new CSPOM()
+      val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables)).toSet
+      allVars.foreach(p.addVariable)
+      constraints.foreach(p.addConstraint)
+      p
   }
 
-  def pred_decl: Parser[Any] = "predicate" ~ ident ~ "(" ~ repsep(pred_param, ",") ~ ")" ~ ";"
+  def pred_decl: Parser[Any] = "predicate" ~> ident ~ "(" ~ repsep(pred_param, ",") ~ ")" ~ ";"
 
   def pred_param: Parser[Any] = pred_param_type ~ ":" ~ pred_ann_id
 
@@ -95,26 +118,26 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
 
   def var_type: Parser[FZVarType] = "var_type" !!! {
     single_var_type |
-      "array [" ~ index_set ~ "] of " ~ single_var_type ^^ {
-        case "array [" ~ indices ~ "] of " ~ vartype => FZArray(indices, vartype)
+      ("array [" ~> index_set <~ "] of ") ~ single_var_type ^^ {
+        case indices ~ vartype => FZArray(indices, vartype)
       }
   }
 
   def single_var_type: Parser[FZVarType] =
     "var bool" ^^^ FZBoolean |
       "var float" ^^^ FZFloat |
-      "var" ~ float_const ~ ".." ~ float_const ^^ {
-        case "var" ~ lb ~ ".." ~ ub => FZFloatInterval(lb, ub)
+      ("var" ~> float_const <~ "..") ~ float_const ^^ {
+        case lb ~ ub => FZFloatInterval(lb, ub)
       } |
       "var int" ^^^ FZInt |
-      "var" ~ int_const ~ ".." ~ int_const ^^ {
-        case "var" ~ lb ~ ".." ~ ub => FZIntInterval(lb, ub)
+      ("var" ~> int_const <~ "..") ~ int_const ^^ {
+        case lb ~ ub => FZIntInterval(lb, ub)
       } |
-      "var" ~ "{" ~ repsep(int_const, ",") ~ "}" ^^ {
-        case "var" ~ "{" ~ list ~ "}" => FZIntSeq(list)
+      "var" ~> "{" ~> repsep(int_const, ",") <~ "}" ^^ {
+        case list => FZIntSeq(list)
       } |
-      "var set of" ~ int_const ~ ".." ~ int_const ~> err("Unsupported domain type") |
-      "var set of" ~ "{" ~ repsep(int_const, ",") ~ "}" ~> err("Unsupported domain type")
+      "var set of" ~> int_const ~ ".." ~ int_const ~> err("Unsupported domain type") |
+      "var set of" ~> "{" ~> repsep(int_const, ",") ~ "}" ~> err("Unsupported domain type")
 
   def var_pred_param_type: Parser[Any] =
     var_type |
@@ -141,6 +164,14 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
       stringLiteral
   }
 
+  def cspomExpr(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq]): Parser[CSPOMExpression] =
+    bool_const ^^ { case true => CSPOMTrue; case false => CSPOMFalse } |
+      int_const ^^ { case value => IntConstant(value) } |
+      float_const ^^ { case value => DoubleConstant(value) } |
+      var_par_id ~ ("[" ~> int_const <~ "]") ^^ { case id ~ index => seqs(id)(index) } |
+      var_par_id ^^ { case id => vars.getOrElse(id, seqs(id)) } |
+      "[" ~> repsep(cspomExpr(vars, seqs), ",") <~ "]" ^^ { case seq => new CSPOMSeq(seq) }
+
   def pred_ann_id: Parser[String] = ident //"[A-Za-z][A-Za-z0-9_]*".r
 
   def var_par_id: Parser[String] = ident //"_*[A-Za-z][A-Za-z0-9_]*".r
@@ -153,21 +184,20 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
 
   def set_const: Parser[Seq[Int]] = "set_const" !!! {
     int_const ~ ".." ~ int_const ^^ { case i ~ ".." ~ j => i to j } |
-      "{" ~ repsep(int_const, ",") ~ "}" ^^ { case "{" ~ listint ~ "}" => listint }
+      "{" ~> repsep(int_const, ",") <~ "}"
   }
 
-  def array_expr: Parser[Array[Any]] = "array_expr" !!! {
-    //"[]" ^^ (_ => Array[Any]()) |
-    "[" ~ repsep(expr, ",") ~ "]" ^^ { case "[" ~ e ~ "]" => e.toArray }
+  def array_expr: Parser[Seq[Any]] = "array_expr" !!! {
+    "[" ~> repsep(expr, ",") <~ "]"
   }
 
-  def param_decl: Parser[Parameter] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr ~ ";" ^^ {
-    case t ~ ":" ~ id ~ "=" ~ expr ~ ";" => Parameter.getParamater(id, "int")
+  def param_decl: Parser[Parameter] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
+    case t ~ ":" ~ id ~ "=" ~ expr => Parameter.getParamater(id, "int")
   }
 
   def var_decl: Parser[CSPOMExpression] = "var_decl" !!! {
-    var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~ expr) ~ ";" ^? ({
-      case varType ~ ":" ~ varParId ~ ann ~ None ~ ";" => varType.genVariable(varParId, ann)
+    var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~ expr) <~ ";" ^? ({
+      case varType ~ ":" ~ varParId ~ ann ~ None => varType.genVariable(varParId, ann)
     }, _ => "Expressions not supported in var declaration")
 
   }
@@ -175,8 +205,11 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
   //    { case t ~ ":" ~ id ~ annot ~ _ ~ ";" => Variable.getVariable(id, "D0").toXML }
 
   def constraint(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq]): Parser[CSPOMConstraint] =
-    "constraint" ~ pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ~ annotations ~ ";" ^^ {
-      ???
+    "constraint" !!! {
+      "constraint" ~> pred_ann_id ~ "(" ~ repsep(cspomExpr(vars, seqs), ",") ~ ")" ~ annotations ~ ";" ^^ {
+        case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
+          new CSPOMConstraint(CSPOMTrue, predAnnId, expr, annotations.map(_ -> Unit).toMap)
+      }
     }
 
   def solve_goal: Parser[Any] =
@@ -184,7 +217,7 @@ class FlatzincDSL(private val problem: CSPOM) extends DebugJavaTokenParsers {
       "solve" ~ annotations ~ "minimize" ~ expr ~ ";" |
       "solve" ~ annotations ~ "maximize" ~ expr ~ ";"
 
-  def annotations: Parser[Seq[String]] = "annotations" !!! rep("::" ~ annotation ^^ { case "::" ~ annotation => annotation })
+  def annotations: Parser[Seq[String]] = "annotations" !!! rep("::" ~> annotation)
 
   def annotation: Parser[String] = "annotation" !!! {
     pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ^^ (_.toString) |

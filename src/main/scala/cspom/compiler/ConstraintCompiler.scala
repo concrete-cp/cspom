@@ -1,22 +1,22 @@
 package cspom.compiler
 
-import cspom.constraint.CSPOMConstraint
-import cspom.constraint.FunctionalConstraint
-import cspom.constraint.GeneralConstraint
-import cspom.extension.ExtensionConstraint
+import cspom.CSPOMConstraint
+import cspom.variable.CSPOMTrue
 
 trait ConstraintCompiler {
   def compile(constraint: CSPOMConstraint) = {
-    constraint match {
-      case c: GeneralConstraint => compileGeneral(c)
-      case c: FunctionalConstraint => compileFunctional(c)
-      case c: ExtensionConstraint => compileExtension(c)
+    if (constraint.function == "extension") {
+      compileExtension(constraint)
+    } else if (constraint.result == CSPOMTrue) {
+      compileGeneral(constraint)
+    } else {
+      compileFunctional(constraint)
     }
   }
-  
-  def compileGeneral(constraint: GeneralConstraint) = false
-  
-  def compileFunctional(constraint: FunctionalConstraint) = false
-  
-  def compileExtension(constraint: ExtensionConstraint) = false
+
+  def compileGeneral(constraint: CSPOMConstraint) = false
+
+  def compileFunctional(constraint: CSPOMConstraint) = false
+
+  def compileExtension(constraint: CSPOMConstraint) = false
 }

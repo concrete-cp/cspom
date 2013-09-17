@@ -15,6 +15,7 @@ final class ParserTest {
     //println(cspom);
     assertEquals(25, cspom.variables.filterNot(_.params.contains("var_is_introduced")).size)
     assertTrue(cspom.constraints.size >= 55)
+    println(cspom)
   }
 
 }

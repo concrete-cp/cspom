@@ -3,18 +3,16 @@ package cspom.xcsp;
 import java.io.InputStream
 import scala.xml.NodeSeq
 import scala.xml.XML
-import cspom.extension.ExtensionConstraint
 import cspom.variable.CSPOMVariable
 import cspom.CSPOM
 import cspom.CSPParseException
 import cspom.extension.LazyRelation
 import cspom.extension.Relation
 import java.io.StringReader
-import cspom.compiler.ConstraintParser
 import cspom.variable.IntDomain
 import cspom.variable.IntVariable
-
-
+import scala.util.parsing.input.CharSequenceReader
+import cspom.CSPOMConstraint
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -58,7 +56,7 @@ final class XCSPParser(private val problem: CSPOM) {
     for (node <- doc \ "variables" \ "variable") {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
-      
+
       try {
         problem.addVariable(new IntVariable(name, domain));
       } catch {
@@ -85,7 +83,7 @@ final class XCSPParser(private val problem: CSPOM) {
   private def parseConstraints(doc: NodeSeq) {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
-        val text = new StringReader(node.text)
+        val text = new CharSequenceReader(node.text) //new StringReader(node.text)
         val arity = (node \ "@arity").text.toInt
         val nbTuples = (node \ "@nbTuples").text.toInt
         val init = "conflicts" == (node \ "@semantics").text
@@ -146,10 +144,9 @@ final class XCSPParser(private val problem: CSPOM) {
     } else {
       relations.get(reference) match {
 
-        case Some(extension: Extension) => problem.addConstraint(new ExtensionConstraint(
-          extension.relation,
-          extension.init,
-          scope.toList));
+        case Some(extension: Extension) => problem.addConstraint(new CSPOMConstraint(
+          "extension", scope, Map("init" -> extension.init, "relation" -> extension.relation)))
+
         case Some(predicate: XCSPPredicate) =>
           try {
             ConstraintParser.split(predicate.applyParameters(parameters, scope), problem)

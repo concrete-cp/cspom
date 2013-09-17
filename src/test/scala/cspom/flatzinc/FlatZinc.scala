@@ -17,13 +17,9 @@ class FlatZinc {
     val in = StreamReader(url.reader)
     //val tokens = new FlatzincDSL.lexical.Scanner(in)
 
-    val cspom = new CSPOM
+    val r = FlatzincDSL.flatzincModel(in) //FlatzincDSL.flatzincModel)(tokens)
 
-    val r = new FlatzincDSL(cspom).flatzincModel(in) //FlatzincDSL.flatzincModel)(tokens)
-
-
-    println(r)
-    println(cspom)
+    println(r.get)
     //    r match {
     //      case Success(list, msg) => println(list)
     //      case e: NoSuccess => throw new IllegalArgumentException()

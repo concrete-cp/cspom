@@ -1,8 +1,6 @@
 package cspom.variable;
 
-import cspom.constraint.CSPOMConstraint
-import cspom.constraint.FunctionalConstraint
-import cspom.constraint.GeneralConstraint
+import cspom.CSPOMConstraint
 import cspom.CSPOM
 import scala.collection.mutable.HashMap
 
@@ -13,7 +11,6 @@ import scala.collection.mutable.HashMap
  *
  */
 abstract class CSPOMVariable(val name: String, val params: String*) extends CSPOMExpression {
-
   //  def domain_=(d: CSPOMDomain[Any]) {
   //    require(_domain.isEmpty)
   //    _domain = Some(d)
@@ -87,10 +84,13 @@ abstract class CSPOMVariable(val name: String, val params: String*) extends CSPO
   //
   //  def /(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("div", this, other)
   //
+  def flattenVariables = Seq(this)
 
 }
 
-class FreeVariable(name: String, params: String*) extends CSPOMVariable(name, params: _*)
+class FreeVariable(name: String, params: String*) extends CSPOMVariable(name, params: _*) {
+  override def toString = s"var $name: ?"
+}
 
 object VariableNameGenerator {
   var unnamed = 0;

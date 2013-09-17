@@ -11,13 +11,8 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedHashMap
 import scala.util.DynamicVariable
 import org.apache.tools.bzip2.CBZip2InputStream
-import cspom.compiler.ConstraintParser
-import cspom.constraint.CSPOMConstraint
-import cspom.constraint.FunctionalConstraint
-import cspom.constraint.GeneralConstraint
-import cspom.constraint.Predicate
+import cspom.xcsp.ConstraintParser
 import cspom.dimacs.CNFParser
-import cspom.extension.ExtensionConstraint
 import cspom.extension.Relation
 import cspom.variable.CSPOMVariable
 import cspom.xcsp.Extension
@@ -27,6 +22,7 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.IntConstant
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
+import cspom.variable.CSPOMTrue
 
 /**
  *
@@ -79,14 +75,6 @@ final class CSPOM {
 
   val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
-  private var _functionalConstraints: Set[FunctionalConstraint] = Set.empty
-
-  def functionalConstraints = _functionalConstraints
-
-  private var _generalConstraints: Set[GeneralConstraint] = Set.empty
-
-  def generalConstraints = _generalConstraints
-
   /**
    * Adds a variable to the problem.
    *
@@ -126,72 +114,64 @@ final class CSPOM {
 
     _constraints += constraint
 
-    constraint match {
-      case c: FunctionalConstraint => _functionalConstraints += c
-      case c: GeneralConstraint => _generalConstraints += c
-      case _ =>
-    }
-
     //for (v <- constraint.scope) { v.registerConstraint(constraint) }
     constraint
   }
 
   def removeConstraint(c: CSPOMConstraint) {
-    //for (v <- c.scope) { v.removeConstraint(c) }
+    //for (v <- c.scope) { v.removeConstraint(c) } 
     _constraints -= c
-    c match {
-      case c: FunctionalConstraint => _functionalConstraints -= c
-      case c: GeneralConstraint => _generalConstraints -= c
-      case _ =>
-    }
   }
 
   // TODO: caching !
   def constraints(v: CSPOMVariable) = _constraints.filter(_.scope.contains(v))
 
   def ctr(v: BoolVariable): CSPOMConstraint = {
-    // dereify
-    val Seq(fc: FunctionalConstraint) = constraints(v)
+    // replace the variable by the CSPOMTrue constant
+    val Seq(fc: CSPOMConstraint) = constraints(v)
     removeConstraint(fc)
     removeVariable(v)
-    val newConstraint = new GeneralConstraint(Predicate(fc.predicate.function, fc.predicate.parameters), fc.arguments)
+    val newConstraint = fc.replacedVar(v, CSPOMTrue)
     addConstraint(newConstraint)
+
+    //    val newConstraint = new GeneralConstraint(Predicate(fc.predicate.function, fc.predicate.parameters), fc.arguments)
+    //    addConstraint(newConstraint)
+    //removeVariable(v)
+
   }
 
   def parseCtr(ctr: String) = ConstraintParser.split(ctr, this)
 
   @annotation.varargs
   def ctr(name: String, scope: CSPOMExpression*): CSPOMConstraint = {
-    addConstraint(new GeneralConstraint(name, scope: _*))
+    addConstraint(new CSPOMConstraint(name, scope: _*))
   }
 
-  @annotation.varargs
-  def ctr(name: String, parameters: Any, scope: CSPOMExpression*): CSPOMConstraint = {
-    addConstraint(new GeneralConstraint(name, parameters, scope: _*))
+  def ctr(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): CSPOMConstraint = {
+    addConstraint(new CSPOMConstraint(name, scope, params))
   }
 
   @annotation.varargs
   def ctr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
-    addConstraint(new ExtensionConstraint(rel, init, vars))
+    addConstraint(new CSPOMConstraint("extension", vars, Map("init" -> init, "relation" -> rel)))
 
   @annotation.varargs
   def is(name: String, scope: CSPOMExpression*): CSPOMVariable = {
     val result = CSPOMVariable.aux()
-    addConstraint(new FunctionalConstraint(result, name, scope: _*))
+    addConstraint(new CSPOMConstraint(result, name, scope: _*))
     result
   }
 
   @annotation.varargs
   def isReified(name: String, scope: CSPOMExpression*): BoolVariable = {
     val result = CSPOMVariable.bool()
-    addConstraint(new FunctionalConstraint(result, name, scope: _*))
+    addConstraint(new CSPOMConstraint(result, name, scope: _*))
     result
   }
 
-  @annotation.varargs
-  def is(name: String, params: Any, scope: CSPOMExpression*): CSPOMVariable = {
+  def is(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): CSPOMVariable = {
     val result = CSPOMVariable.aux()
-    addConstraint(new FunctionalConstraint(result, name, params, scope: _*))
+    addConstraint(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
@@ -268,56 +248,58 @@ final class CSPOM {
 
     var gen = 0;
     for (c <- constraints) {
-      if (c.arity > 2) {
-        stb.append("node [\n");
-        stb.append("id \"cons").append(gen).append("\"\n");
-        stb.append("label \"").append(c.description).append("\"\n");
-        stb.append("graphics [\n");
-        stb.append("fill \"#FFAA00\"\n");
-        stb.append("]\n");
-        stb.append("]\n");
-
-        for (v <- c.scope.collect { case v: CSPOMVariable => v }) {
+      c.scope.toSeq match {
+        case Seq(source, target) =>
           stb.append("edge [\n");
-          stb.append("source \"cons").append(gen).append("\"\n");
-          stb.append("target \"").append(v.name).append("\"\n");
+          stb.append("source \"").append(source).append("\"\n");
+          stb.append("target \"").append(target).append("\"\n");
+          stb.append("label \"").append(c.function).append("\"\n");
           stb.append("]\n");
-        }
-        gen += 1;
-      } else if (c.arity == 2) {
-        stb.append("edge [\n");
-        stb.append("source \"").append(c.scope(0)).append("\"\n");
-        stb.append("target \"").append(c.scope(1)).append("\"\n");
-        stb.append("label \"").append(c.description).append("\"\n");
-        stb.append("]\n");
+        case s =>
+          stb.append("node [\n");
+          stb.append("id \"cons").append(gen).append("\"\n");
+          stb.append("label \"").append(c.function).append("\"\n");
+          stb.append("graphics [\n");
+          stb.append("fill \"#FFAA00\"\n");
+          stb.append("]\n");
+          stb.append("]\n");
+
+          for (v <- s) {
+            stb.append("edge [\n");
+            stb.append("source \"cons").append(gen).append("\"\n");
+            stb.append("target \"").append(v.name).append("\"\n");
+            stb.append("]\n");
+          }
+          gen += 1;
       }
     }
     stb.append("]\n").toString
   }
 
-  def control(solution: Map[String, Number]) = {
-    constraints filterNot { c =>
-      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
-    }
-  }
 
-  def controlInt(solution: Map[String, Int]) = {
-    constraints flatMap { c =>
-      val values = c.scope.collect { case v: CSPOMVariable => solution(v.name) }
-      if (c.evaluate(values)) {
-        Nil
-      } else {
-        List((c, values))
-      }
-    }
-  }
-
-  def controlInteger(solution: Map[String, java.lang.Integer]) = {
-    constraints filterNot { c =>
-      val tuple = c.scope.collect { case v: CSPOMVariable => solution(v.name).toInt }
-      c.evaluate(tuple)
-    }
-  }
+//  def control(solution: Map[String, Number]) = {
+//    constraints filterNot { c =>
+//      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
+//    }
+//  }
+//
+//  def controlInt(solution: Map[String, Int]) = {
+//    constraints flatMap { c =>
+//      val values = c.scope.collect { case v: CSPOMVariable => solution(v.name) }
+//      if (c.evaluate(values)) {
+//        Nil
+//      } else {
+//        List((c, values))
+//      }
+//    }
+//  }
+//
+//  def controlInteger(solution: Map[String, java.lang.Integer]) = {
+//    constraints filterNot { c =>
+//      val tuple = c.scope.collect { case v: CSPOMVariable => solution(v.name).toInt }
+//      c.evaluate(tuple)
+//    }
+//  }
 
   //  def closeRelations() {
   //    for (c <- constraints) c match {
@@ -488,8 +470,8 @@ object CSPOM {
     def apply(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
       problem.is(typ.name, vars: _*)
     }
-    def apply(params: Any)(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
-      problem.is(typ.name, params, vars: _*)
+    def apply(params: Map[String, Any])(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
+      problem.is(typ.name, vars, params)
     }
   }
 
