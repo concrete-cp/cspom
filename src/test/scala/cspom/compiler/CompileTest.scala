@@ -1,6 +1,6 @@
 package cspom.compiler;
 
-import cspom.xcsp.{ParserTest, XCSPParser}
+import cspom.xcsp.{ ParserTest, XCSPParser }
 import cspom.CSPOM
 import org.junit.Test
 
@@ -9,8 +9,7 @@ final class CompileTest {
 
   @Test
   def test() {
-    val cspom = new CSPOM();
-    new XCSPParser(cspom).parse(classOf[ParserTest].getResourceAsStream(FILENAME));
+    val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME));
     ProblemCompiler.compile(cspom, Seq())
     //println(cspom);
 

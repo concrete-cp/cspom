@@ -109,8 +109,13 @@ final class CSPOM {
    */
   def addConstraint(constraint: CSPOMConstraint) = {
 
-    assume(!constraints.contains(constraint),
+    require(!constraints.contains(constraint),
       "The constraint " + constraint + " already belongs to the problem");
+
+    for (v <- constraint.scope) {
+      require(variableMap.get(v.name).map(v eq _).getOrElse(false),
+        s"Variable $v is not in the problem")
+    }
 
     _constraints += constraint
 
@@ -139,8 +144,6 @@ final class CSPOM {
     //removeVariable(v)
 
   }
-
-  def parseCtr(ctr: String) = ConstraintParser.split(ctr, this)
 
   @annotation.varargs
   def ctr(name: String, scope: CSPOMExpression*): CSPOMConstraint = {
@@ -276,30 +279,29 @@ final class CSPOM {
     stb.append("]\n").toString
   }
 
-
-//  def control(solution: Map[String, Number]) = {
-//    constraints filterNot { c =>
-//      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
-//    }
-//  }
-//
-//  def controlInt(solution: Map[String, Int]) = {
-//    constraints flatMap { c =>
-//      val values = c.scope.collect { case v: CSPOMVariable => solution(v.name) }
-//      if (c.evaluate(values)) {
-//        Nil
-//      } else {
-//        List((c, values))
-//      }
-//    }
-//  }
-//
-//  def controlInteger(solution: Map[String, java.lang.Integer]) = {
-//    constraints filterNot { c =>
-//      val tuple = c.scope.collect { case v: CSPOMVariable => solution(v.name).toInt }
-//      c.evaluate(tuple)
-//    }
-//  }
+  //  def control(solution: Map[String, Number]) = {
+  //    constraints filterNot { c =>
+  //      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
+  //    }
+  //  }
+  //
+  //  def controlInt(solution: Map[String, Int]) = {
+  //    constraints flatMap { c =>
+  //      val values = c.scope.collect { case v: CSPOMVariable => solution(v.name) }
+  //      if (c.evaluate(values)) {
+  //        Nil
+  //      } else {
+  //        List((c, values))
+  //      }
+  //    }
+  //  }
+  //
+  //  def controlInteger(solution: Map[String, java.lang.Integer]) = {
+  //    constraints filterNot { c =>
+  //      val tuple = c.scope.collect { case v: CSPOMVariable => solution(v.name).toInt }
+  //      c.evaluate(tuple)
+  //    }
+  //  }
 
   //  def closeRelations() {
   //    for (c <- constraints) c match {
@@ -308,13 +310,13 @@ final class CSPOM {
   //    }
   //
   //  }
-  def loadXML(is: InputStream) {
-    new XCSPParser(this).parse(is)
-  }
-
-  def loadCNF(is: InputStream) {
-    new CNFParser(this).parse(is)
-  }
+  //  def loadXML(is: InputStream) {
+  //    new XCSPParser(this).parse(is)
+  //  }
+  //
+  //  def loadCNF(is: InputStream) {
+  //    new CNFParser(this).parse(is)
+  //  }
 }
 
 object CSPOM {
@@ -394,16 +396,14 @@ object CSPOM {
   @throws(classOf[CSPParseException])
   @throws(classOf[IOException])
   def load(url: URL): CSPOM = {
-    val problem = new CSPOM();
     val problemIS = problemInputStream(url);
 
     url.getFile match {
-      case name if name.contains(".xml") => problem.loadXML(problemIS)
-      case name if name.contains(".cnf") => problem.loadCNF(problemIS)
+      case name if name.contains(".xml") => XCSPParser.parse(problemIS)
+      case name if name.contains(".cnf") => CNFParser.parse(problemIS)
       case _ => throw new IllegalArgumentException("Unhandled file format");
     }
 
-    problem;
   }
 
   private val dyn = new DynamicVariable[CSPOM](null)

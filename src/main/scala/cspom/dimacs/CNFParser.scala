@@ -13,12 +13,12 @@ import cspom.CSPParseException
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMVariable
 
-final class CNFParser(private val problem: CSPOM) {
+final object CNFParser {
 
   private val PARAMETER = new Regex("""^p cnf (\d+) (\d+)$""");
   private val VAR = new Regex("""(-?\d+)""");
 
-  def parse(is: InputStream) {
+  def parse(is: InputStream) = {
     val reader = new BufferedReader(new InputStreamReader(is));
 
     val lines = Source.fromInputStream(is).getLines.filter(
@@ -28,6 +28,8 @@ final class CNFParser(private val problem: CSPOM) {
     catch {
       case e: Exception => throw new CSPParseException("Parameter line not found", e, -1)
     }
+
+    val problem = new CSPOM()
 
     val variables = for (i <- 1 to nbVars.toInt) yield problem.addVariable(CSPOMVariable.bool("V" + i))
 
@@ -44,6 +46,8 @@ final class CNFParser(private val problem: CSPOM) {
     }
 
     assume(countClauses == nbClauses.toInt)
+
+    problem
   }
 
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMVariable]) = {

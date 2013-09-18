@@ -8,10 +8,13 @@ import cspom.CSPOM
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMExpression
 import cspom.variable.IntConstant
+import cspom.CSPOMConstraint
 
 sealed trait PredicateNode
 
-final case class PredicateConstraint(val operator: String, val arguments: Seq[PredicateNode]) extends PredicateNode
+final case class PredicateConstraint(val operator: String, val arguments: Seq[PredicateNode]) extends PredicateNode {
+  require(arguments.nonEmpty)
+}
 final case class PredicateConstant(val constant: Int) extends PredicateNode
 final case class PredicateVariable(val variableId: String) extends PredicateNode
 
@@ -37,7 +40,7 @@ final case class PredicateVariable(val variableId: String) extends PredicateNode
 
 final object ConstraintParser extends JavaTokenParsers {
 
-  def integer = wholeNumber ^^ (_.toInt)
+  private def integer = wholeNumber ^^ (_.toInt)
 
   def func: Parser[PredicateNode] =
     ident ~ ("(" ~> repsep(func, ",") <~ ")") ^^ {
@@ -53,19 +56,27 @@ final object ConstraintParser extends JavaTokenParsers {
       ident ^^ (map(_)) |
       integer ^^ (_.toString)
 
-  def split(expression: String, problem: CSPOM) = {
+  def split(expression: String, declaredVariables: Map[String, CSPOMVariable]): (Seq[CSPOMVariable], Seq[CSPOMConstraint]) = {
     func(new CharSequenceReader(expression)).get match {
-      case PredicateConstraint(operator, arguments) => problem.ctr(operator, arguments.map(addToProblem(_, problem)): _*)
+      case PredicateConstraint(operator, arguments) =>
+        val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
+
+        (genVars.flatten, genCons.flatten :+ new CSPOMConstraint(operator, sub: _*))
+
       case _ => throw new IllegalArgumentException("Constraint expected")
     }
 
   }
 
-  private def addToProblem(node: PredicateNode, problem: CSPOM): CSPOMExpression = {
+  private def toVariable(node: PredicateNode, declaredVariables: Map[String, CSPOMVariable]): (CSPOMExpression, Seq[CSPOMVariable], Seq[CSPOMConstraint]) = {
     node match {
-      case PredicateConstant(value) => IntConstant(value)
-      case PredicateVariable(variableId) => problem.variable(variableId).get
-      case PredicateConstraint(operator, arguments) => problem.is(operator, arguments.map(addToProblem(_, problem)): _*)
+      case PredicateConstant(value) => (IntConstant(value), Seq(), Seq())
+      case PredicateVariable(variableId) => (declaredVariables(variableId), Seq(), Seq())
+      case PredicateConstraint(operator, arguments) => {
+        val result = CSPOMVariable.aux()
+        val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
+        (result, genVars.flatten :+ result, genCons.flatten :+ new CSPOMConstraint(result, operator, sub: _*))
+      }
     }
   }
 

@@ -15,16 +15,24 @@ trait CSPOMExpression {
   def ==(other: CSPOMExpression)(implicit problem: CSPOM) = problem.is("eq", this, other)
 
   def flattenVariables: Seq[CSPOMVariable]
+
+  def cspomType: CSPOMType
 }
 
 final case class CSPOMSeq(
   val name: String,
+  val innerType: CSPOMType,
   val values: Seq[CSPOMExpression],
   val definedIndices: Range,
   val params: Seq[String] = Seq())
   extends Seq[CSPOMExpression] with CSPOMExpression {
-  def this(name: String, seq: Seq[CSPOMExpression]) = this(name, seq, seq.indices)
+
+  require(values.nonEmpty)
+  require(values.forall(_.cspomType.isCompatible(innerType)))
+
+  def this(name: String, seq: Seq[CSPOMExpression]) = this(name, seq.head.cspomType, seq, seq.indices)
   def this(seq: Seq[CSPOMExpression]) = this(VariableNameGenerator.generate() + "_array", seq)
+
   //def variables = seq
   // Members declared in scala.collection.IterableLike 
   def iterator: Iterator[cspom.variable.CSPOMExpression] = values.iterator
@@ -32,6 +40,25 @@ final case class CSPOMSeq(
   def apply(idx: Int): cspom.variable.CSPOMExpression = values(definedIndices.indexOf(idx))
   def length: Int = values.length
   def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
+  def cspomType = CSPOMSeqType(innerType)
+}
+
+trait CSPOMType {
+  def isCompatible(other: CSPOMType): Boolean = other == this
+}
+
+object CSPOMFree extends CSPOMType {
+  override def isCompatible(other: CSPOMType) = true
+}
+object CSPOMInt extends CSPOMType
+object CSPOMDouble extends CSPOMType
+object CSPOMBool extends CSPOMType
+
+case class CSPOMSeqType(content: CSPOMType) extends CSPOMType {
+  override def isCompatible(other: CSPOMType) = other match {
+    case CSPOMSeqType(c) => c.isCompatible(content)
+    case _ => false
+  }
 }
 
 trait CSPOMConstant extends CSPOMExpression {
@@ -40,9 +67,11 @@ trait CSPOMConstant extends CSPOMExpression {
 
 final class IntConstant private (val value: Int) extends CSPOMConstant {
   override def toString = value.toString
+  def cspomType = CSPOMInt
 }
 
 object IntConstant {
+
   val cache = new WeakHashMap[Int, IntConstant]
   def apply(value: Int) =
     cache.getOrElseUpdate(value, new IntConstant(value))
@@ -51,6 +80,7 @@ object IntConstant {
 
 final class DoubleConstant private (val value: Double) extends CSPOMConstant {
   override def toString = value.toString
+  def cspomType = CSPOMDouble
 }
 
 object DoubleConstant {
@@ -60,12 +90,16 @@ object DoubleConstant {
 
 }
 
-object CSPOMTrue extends CSPOMConstant {
+object CSPOMTrue extends CSPOMConstant with CSPOMType {
   override def toString = "true"
+  def cspomType = this
+  override def isCompatible(other: CSPOMType) = other == this || other == CSPOMBool
 }
 
-object CSPOMFalse extends CSPOMConstant {
+object CSPOMFalse extends CSPOMConstant with CSPOMType {
   override def toString = "false"
+  def cspomType = this
+  override def isCompatible(other: CSPOMType) = other == this || other == CSPOMBool
 }
 
 object CSPOMExpression {

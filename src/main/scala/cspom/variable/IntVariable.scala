@@ -22,6 +22,8 @@ final class IntVariable(name: String, val domain: IntDomain, params: Seq[String]
   def /(other: IntVariable)(implicit problem: CSPOM) = problem.is("div", this, other)
 
   override def toString = s"var $name: Int ($domain)"
+  
+  def cspomType = CSPOMInt
 }
 
 object IntVariable {

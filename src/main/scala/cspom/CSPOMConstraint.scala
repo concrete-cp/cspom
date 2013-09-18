@@ -1,9 +1,7 @@
 package cspom
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMTrue
-import cspom.Evaluator
 import javax.script.ScriptException
-import cspom.Loggable
 
 final class CSPOMConstraint(
   val result: CSPOMExpression,
@@ -15,6 +13,10 @@ final class CSPOMConstraint(
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
+  /**
+   *  Warning: scope is not ordered! Use result and arguments values to get ordered
+   *  information.
+   */
   lazy val scope = (result +: arguments).flatMap(_.flattenVariables).toSet
 
   def arity = scope.size

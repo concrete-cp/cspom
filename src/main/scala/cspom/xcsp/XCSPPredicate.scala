@@ -14,8 +14,6 @@ import scala.util.parsing.combinator.RegexParsers
  *
  */
 final class XCSPPredicate(parametersString: String, expressionString: String) extends RegexParsers {
-  // private static final Map<String, ValueType> DECLARATIONS = new HashMap<String, ValueType>();
-
   def typ: Parser[String] = "int"
 
   def paramId: Parser[String] = """\p{javaJavaIdentifierStart}\p{javaJavaIdentifierPart}*""".r
@@ -71,23 +69,7 @@ final class XCSPPredicate(parametersString: String, expressionString: String) ex
     assume(stringParameters.length == this.parameters.size, "Incorrect parameter count");
 
     ConstraintParser.mapFunc((this.parameters zip stringParameters).toMap)(new CharSequenceReader(expression)).get
-    //
-    //    var applyied = expression;
-    //    for ((s, p) <- stringParameters.zip(this.parameters)) {
-    //
-    //      assume(
-    //
-    //        ConstraintParser.isInt(s) ||
-    //          (ConstraintParser.isId(s) && scope.map { v => v.name }.contains(s)),
-    //        s"Did not recognize $s")
-    //
-    //      applyied = (s"""([^A-Za-z])($p)([^A-Za-z0-9])""").r.replaceAllIn(applyied, { m =>
-    //        s"${m.group(1)}$s${m.group(3)}"
-    //      })
-    //
-    //    }
-    //
-    //    applyied;
+
   }
 
 }

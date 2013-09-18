@@ -63,7 +63,7 @@ final class LazyRelation(private val text: Reader[Char], val arity: Int, overrid
 
   def iterator = traversable.toStream.iterator
 
-  override def toString = s"relation nb ${id} with $size tuples"
+  override def toString = s"relation #${id} with $size tuples"
 
   override def hashCode = id
 

@@ -13,13 +13,14 @@ import cspom.variable.IntDomain
 import cspom.variable.IntVariable
 import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPOMConstraint
+import cspom.variable.CSPOMSeq
 
 /**
  * This class implements an XCSP 2.0 parser.
  *
  * @author vion
  */
-final class XCSPParser(private val problem: CSPOM) {
+final object XCSPParser {
 
   /**
    * Append the XCSP data provided by the InputStream to the given CSPOM
@@ -32,10 +33,16 @@ final class XCSPParser(private val problem: CSPOM) {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def parse(is: InputStream) {
+  def parse(is: InputStream) = {
     val document = XML.load(is)
-    parseVariables(document);
-    parseConstraints(document);
+    val declaredVariables = parseVariables(document);
+    val (genVariables, constraints) = parseConstraints(document, declaredVariables);
+    val problem = new CSPOM
+    declaredVariables.values.foreach(problem.addVariable)
+    genVariables.foreach(problem.addVariable)
+    constraints.foreach(problem.addConstraint)
+    problem
+
   }
 
   /**
@@ -48,28 +55,29 @@ final class XCSPParser(private val problem: CSPOM) {
    * @throws CSPParseException
    *             If two variables have the same name.
    */
-  private def parseVariables(doc: NodeSeq) {
+  private def parseVariables(doc: NodeSeq): Map[String, CSPOMVariable] = {
     val domains = (doc \ "domains" \ "domain") map { node =>
       (node \ "@name").text -> IntDomain.valueOf(node.text)
     } toMap
 
-    for (node <- doc \ "variables" \ "variable") {
+    val seq = for (node <- doc \ "variables" \ "variable") yield {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      try {
-        problem.addVariable(new IntVariable(name, domain));
-      } catch {
-        case e: Exception =>
-          throw new CSPParseException(s"Could not add variable $name", e);
-      }
+      name -> new IntVariable(name, domain)
+      //      try {
+      //        problem.addVariable(new IntVariable(name, domain));
+      //      } catch {
+      //        case e: Exception =>
+      //          throw new CSPParseException(s"Could not add variable $name", e);
+      //      }
 
     }
+    seq.toMap
   }
 
   /**
-   * Parse constraints, defined either by relations or predicates, and add
-   * them to the CSPOM problem.
+   * Parse constraints, defined either by relations or predicates.
    *
    * @param relations
    *            Relations constraints may use.
@@ -80,14 +88,14 @@ final class XCSPParser(private val problem: CSPOM) {
    * @throws CSPParseException
    *             If a relation or predicate could not be found or applied.
    */
-  private def parseConstraints(doc: NodeSeq) {
+  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, CSPOMVariable]) = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
         val text = new CharSequenceReader(node.text) //new StringReader(node.text)
         val arity = (node \ "@arity").text.toInt
         val nbTuples = (node \ "@nbTuples").text.toInt
         val init = "conflicts" == (node \ "@semantics").text
-        new Extension(init, new LazyRelation(text, arity, nbTuples))
+        Extension(init, new LazyRelation(text, arity, nbTuples))
       }
 
     }).toMap ++ ((doc \ "predicates" \ "predicate") map { node =>
@@ -95,19 +103,24 @@ final class XCSPParser(private val problem: CSPOM) {
         (node \ "expression" \ "functional").text)
     }).toMap;
 
-    for (node <- doc \ "constraints" \ "constraint") {
-      addConstraint(
-        (node \ "@name").text,
-        (node \ "@scope").text,
-        node.text,
-        (node \ "@reference").text,
-        relations);
-    }
+    val gen = for (
+      node <- doc \ "constraints" \ "constraint"
+    ) yield genConstraint(
+      (node \ "@name").text,
+      (node \ "@scope").text,
+      node.text,
+      (node \ "@reference").text,
+      relations,
+      declaredVariables)
+
+    val (genVars, genCons) = gen.unzip
+    (genVars.flatten, genCons.flatten)
 
   }
 
   /**
-   * Parse and adds the given constraint to the problem.
+   * Parse the given predicate and returns a sequence of auxiliary variables and constraints
+   * required to represent it.
    *
    * @param name
    *            Constraint name
@@ -120,14 +133,15 @@ final class XCSPParser(private val problem: CSPOM) {
    * @param relations
    *            Map of relations
    */
-  private def addConstraint(name: String, varNames: String,
-    parameters: String, reference: String, relations: Map[String, AnyRef]) {
+  private def genConstraint(name: String, varNames: String,
+    parameters: String, reference: String, relations: Map[String, AnyRef],
+    declaredVariables: Map[String, CSPOMVariable]): (Seq[CSPOMVariable], Seq[CSPOMConstraint]) = {
 
     val scope = varNames.split(" +") map { s =>
-      problem.variable(s).getOrElse {
+      declaredVariables.getOrElse(s, {
         throw new CSPParseException("Could not find variable " + s
           + " from the scope of " + name);
-      }
+      })
     }
 
     if (reference startsWith "global:") {
@@ -135,7 +149,7 @@ final class XCSPParser(private val problem: CSPOM) {
       val constraint = reference.substring(7) + scope.mkString("(", ", ", ")")
 
       try {
-        ConstraintParser.split(constraint, problem);
+        ConstraintParser.split(constraint, declaredVariables);
       } catch {
         case e: Exception =>
           throw new CSPParseException(s"Error parsing constraint $constraint", e);
@@ -143,13 +157,13 @@ final class XCSPParser(private val problem: CSPOM) {
 
     } else {
       relations.get(reference) match {
-
-        case Some(extension: Extension) => problem.addConstraint(new CSPOMConstraint(
-          "extension", scope, Map("init" -> extension.init, "relation" -> extension.relation)))
+    	  
+        case Some(extension: Extension) => (Seq(), Seq(new CSPOMConstraint(
+          "extension", Seq(new CSPOMSeq(scope)), Map("init" -> extension.init, "relation" -> extension.relation))))
 
         case Some(predicate: XCSPPredicate) =>
           try {
-            ConstraintParser.split(predicate.applyParameters(parameters, scope), problem)
+            ConstraintParser.split(predicate.applyParameters(parameters, scope), declaredVariables)
           } catch {
             case e: Exception =>
               throw new CSPParseException("Error parsing predicate " + predicate
@@ -162,4 +176,4 @@ final class XCSPParser(private val problem: CSPOM) {
   }
 }
 
-final class Extension(val init: Boolean, val relation: Relation)
+final case class Extension(val init: Boolean, val relation: Relation)

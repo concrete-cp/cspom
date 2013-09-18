@@ -90,6 +90,7 @@ abstract class CSPOMVariable(val name: String, val params: String*) extends CSPO
 
 class FreeVariable(name: String, params: String*) extends CSPOMVariable(name, params: _*) {
   override def toString = s"var $name: ?"
+  def cspomType = CSPOMFree
 }
 
 object VariableNameGenerator {
