@@ -96,6 +96,8 @@ final class CSPOM {
   }
 
   def removeVariable(v: CSPOMVariable) {
+    val variable = variableMap(v.name)
+    require(variable eq v, s"Another variable with the same name ($variable) exists in the problem")
     require(constraints(v).isEmpty, v + " is still implied by constraints : " + constraints(v))
 
     variableMap.remove(v.name);
@@ -113,13 +115,12 @@ final class CSPOM {
       "The constraint " + constraint + " already belongs to the problem");
 
     for (v <- constraint.scope) {
-      require(variableMap.get(v.name).map(v eq _).getOrElse(false),
-        s"Variable $v is not in the problem")
+      val variable = variableMap.getOrElse(v.name, throw new IllegalArgumentException(s"No variable named ${v.name} is referenced in the problem"))
+      require(variable eq v, s"$variable (from problem) and $v (from $constraint) do not refer to the same instance")
     }
 
     _constraints += constraint
 
-    //for (v <- constraint.scope) { v.registerConstraint(constraint) }
     constraint
   }
 
@@ -129,7 +130,8 @@ final class CSPOM {
   }
 
   // TODO: caching !
-  def constraints(v: CSPOMVariable) = _constraints.filter(_.scope.contains(v))
+  def constraints(v: CSPOMVariable) =
+    _constraints.iterator.filter(_.scope.contains(v)).toSeq
 
   def ctr(v: BoolVariable): CSPOMConstraint = {
     // replace the variable by the CSPOMTrue constant

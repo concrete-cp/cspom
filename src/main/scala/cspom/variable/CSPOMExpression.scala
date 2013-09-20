@@ -2,6 +2,7 @@ package cspom.variable
 
 import cspom.CSPOM
 import scala.collection.mutable.WeakHashMap
+import javaexamples.queens.Queens
 
 /*
  * An expression can be either a variable, a constant or a variable sequence
@@ -24,11 +25,11 @@ final case class CSPOMSeq(
   val innerType: CSPOMType,
   val values: Seq[CSPOMExpression],
   val definedIndices: Range,
-  val params: Seq[String] = Seq())
+  val params: Set[String] = Set())
   extends Seq[CSPOMExpression] with CSPOMExpression {
 
   require(values.nonEmpty)
-  require(values.forall(_.cspomType.isCompatible(innerType)))
+  require(values.forall(v => innerType.generalizes(v.cspomType)))
 
   def this(name: String, seq: Seq[CSPOMExpression]) = this(name, seq.head.cspomType, seq, seq.indices)
   def this(seq: Seq[CSPOMExpression]) = this(VariableNameGenerator.generate() + "_array", seq)
@@ -41,65 +42,6 @@ final case class CSPOMSeq(
   def length: Int = values.length
   def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
   def cspomType = CSPOMSeqType(innerType)
-}
-
-trait CSPOMType {
-  def isCompatible(other: CSPOMType): Boolean = other == this
-}
-
-object CSPOMFree extends CSPOMType {
-  override def isCompatible(other: CSPOMType) = true
-}
-object CSPOMInt extends CSPOMType
-object CSPOMDouble extends CSPOMType
-object CSPOMBool extends CSPOMType
-
-case class CSPOMSeqType(content: CSPOMType) extends CSPOMType {
-  override def isCompatible(other: CSPOMType) = other match {
-    case CSPOMSeqType(c) => c.isCompatible(content)
-    case _ => false
-  }
-}
-
-trait CSPOMConstant extends CSPOMExpression {
-  def flattenVariables = Seq()
-}
-
-final class IntConstant private (val value: Int) extends CSPOMConstant {
-  override def toString = value.toString
-  def cspomType = CSPOMInt
-}
-
-object IntConstant {
-
-  val cache = new WeakHashMap[Int, IntConstant]
-  def apply(value: Int) =
-    cache.getOrElseUpdate(value, new IntConstant(value))
-
-}
-
-final class DoubleConstant private (val value: Double) extends CSPOMConstant {
-  override def toString = value.toString
-  def cspomType = CSPOMDouble
-}
-
-object DoubleConstant {
-  val cache = new WeakHashMap[Double, DoubleConstant]
-  def apply(value: Double) =
-    cache.getOrElseUpdate(value, new DoubleConstant(value))
-
-}
-
-object CSPOMTrue extends CSPOMConstant with CSPOMType {
-  override def toString = "true"
-  def cspomType = this
-  override def isCompatible(other: CSPOMType) = other == this || other == CSPOMBool
-}
-
-object CSPOMFalse extends CSPOMConstant with CSPOMType {
-  override def toString = "false"
-  def cspomType = this
-  override def isCompatible(other: CSPOMType) = other == this || other == CSPOMBool
 }
 
 object CSPOMExpression {

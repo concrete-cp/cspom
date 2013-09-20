@@ -1,7 +1,7 @@
 package cspom.variable
 import scala.collection.JavaConversions
 
-trait IntDomain extends Seq[Int] {
+sealed trait IntDomain extends Seq[Int] {
   //def values: Seq[Int]
   def getValues = JavaConversions.asJavaCollection(this)
   def intersect(domain: IntDomain): IntDomain

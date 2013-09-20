@@ -17,55 +17,34 @@ final class ProblemCompiler(
   private val problem: CSPOM,
   private val constraintCompilers: Seq[ConstraintCompiler]) {
 
-  private val constraints = new Queue[CSPOMConstraint]() {
-
-    /**
-     *
-     */
-    val serialVersionUID = 1L;
-
-    val present = new HashSet[CSPOMConstraint]();
-
-    override def enqueue(e: CSPOMConstraint*) = {
-      for (c <- e if (!present.contains(c))) {
-        super.enqueue(c)
-      }
-    }
-
-    override def dequeue() = {
-      val constraint = super.dequeue();
-      present.remove(constraint);
-      constraint;
-    }
-
-  };
-
-  //  private val constraintCompilers = List(
-  //    new MergeDisj(problem, constraints),
-  //    new NeqVec(problem, constraints),
-  //    new RemoveAnd(problem, constraints),
-  //    new MergeEq(problem, constraints),
-  //    new AllDiff(problem),
-  //    new DiffGe(problem),
-  //    new AbsDiff(problem),
-  //    new DeReify(problem, constraints),
-  //    new MergeSame(problem, constraints))
+  private val constraints = new QueueSet[CSPOMConstraint]()
+  private val compilers = new QueueSet[ConstraintCompiler]()
 
   private def compile() {
-    //    problem.constraints.foreach(constraints.enqueue(_));
-    //
-    //    while (!constraints.isEmpty) {
-    //      compileConstraint(constraints.dequeue());
-    //    }
+    val compilers = new QueueSet[ConstraintCompiler]()
 
-    var comp = constraintCompilers
+    compilers.enqueue(constraintCompilers: _*)
 
-    while (comp.nonEmpty) {
-      if (ProblemCompiler.hasChanged(problem.constraints, {
-        c: CSPOMConstraint => problem.constraints.contains(c) && comp.head.compile(c)
-      }))
-        comp = constraintCompilers
-      else comp = comp.tail
+    while (compilers.nonEmpty) {
+      val compiler = compilers.dequeue()
+      val constraints = new QueueSet[CSPOMConstraint]()
+      constraints.enqueue(problem.constraints.toSeq: _*)
+      while (constraints.nonEmpty) {
+        val constraint = constraints.dequeue()
+
+        val ch = hasChanged(compiler.matcher(constraint, problem), { data: compiler.A =>
+          val delta = compiler.compile(constraint, problem, data)
+
+          constraints.remove(delta.removed: _*)
+          constraints.enqueue(delta.added: _*)
+          delta.nonEmpty
+        })
+
+        if (ch) {
+          compilers.enqueue(constraintCompilers.filterNot(_ == compiler): _*)
+        }
+
+      }
     }
 
     /* Removes disconnected auxiliary variables */
@@ -75,13 +54,12 @@ final class ProblemCompiler(
 
   }
 
-  private def compileConstraint(constraint: CSPOMConstraint) {
-    for (cc <- constraintCompilers) {
-      if (!problem.constraints.contains(constraint)) {
-        return ;
-      }
-      cc.compile(constraint);
+  private def hasChanged[A](l: Option[A], f: A => Boolean) = {
+    var ch = false
+    for (e <- l) {
+      ch |= f(e)
     }
+    ch
   }
 
 }
@@ -91,12 +69,5 @@ object ProblemCompiler {
     new ProblemCompiler(problem, compilers).compile();
   }
 
-  def hasChanged[A](l: Traversable[A], f: A => Boolean) = {
-    var ch = false
-    for (e <- l) {
-      ch |= f(e)
-    }
-    ch
-  }
 }
 

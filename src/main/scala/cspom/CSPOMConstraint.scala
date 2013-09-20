@@ -14,10 +14,12 @@ final class CSPOMConstraint(
   require(arguments.nonEmpty, "Must have at least one argument")
 
   /**
-   *  Warning: scope is not ordered! Use result and arguments values to get ordered
+   *  Warning: scope is not ordered! Use fullScope to get ordered
    *  information.
    */
-  lazy val scope = (result +: arguments).flatMap(_.flattenVariables).toSet
+  lazy val scope = fullScope.flatMap(_.flattenVariables).toSet
+
+  def fullScope = result +: arguments
 
   def arity = scope.size
 

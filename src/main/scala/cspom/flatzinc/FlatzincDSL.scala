@@ -197,7 +197,7 @@ object FlatzincDSL extends DebugJavaTokenParsers {
 
   def var_decl: Parser[CSPOMExpression] = "var_decl" !!! {
     var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~ expr) <~ ";" ^? ({
-      case varType ~ ":" ~ varParId ~ ann ~ None => varType.genVariable(varParId, ann)
+      case varType ~ ":" ~ varParId ~ ann ~ None => varType.genVariable(varParId, ann.toSet)
     }, _ => "Expressions not supported in var declaration")
 
   }

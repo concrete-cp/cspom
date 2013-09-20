@@ -1,46 +1,84 @@
 package cspom.compiler
 
 import cspom.CSPOM
-import cspom.variable.CSPOMVariable
 import cspom.CSPOMConstraint
+import cspom.variable.BoolVariable
+import cspom.variable.CSPOMBool
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMFree
+import cspom.variable.CSPOMInt
 import cspom.variable.CSPOMType
+import cspom.variable.CSPOMVariable
+import cspom.variable.IntVariable
 
-case class ConstraintSignature(val result: CSPOMType, val function: String, val arguments: CSPOMType*)
+final case class ConstraintSignature(
+  val result: CSPOMType,
+  val function: String,
+  val arguments: CSPOMType*) {
+  def fullScope = result +: arguments
+}
 
-object ConstraintTyper {
+final class ConstraintTyper(signatures: Seq[ConstraintSignature]) extends ConstraintCompiler {
+  type A = Unit
+  private val signMap = signatures.groupBy(_.function).toMap
 
-  def matchSignature(constraint: CSPOMConstraint, signatures: Map[String, Seq[ConstraintSignature]]): Option[ConstraintSignature] = {
-    for (
-      candidates <- signatures.get(constraint.function);
-      found <- candidates.find { candidate =>
-        constraint.result.cspomType.isCompatible(candidate.result) &&
-          (constraint.arguments zip candidate.arguments).forall { t =>
-            t._1.cspomType.isCompatible(t._2)
-          }
-      }
-    ) yield found
+  private def isCompatible(e: CSPOMExpression, t: CSPOMType) =
+    e.cspomType == CSPOMFree || t.generalizes(e.cspomType)
+
+  private def matchSignature(constraint: CSPOMConstraint): Seq[ConstraintSignature] = {
+    signMap.getOrElse(constraint.function, Nil).filter { candidate =>
+      (constraint.fullScope zip candidate.fullScope).forall(t => isCompatible(t._1, t._2))
+    }
   }
 
-  def typer(problem: CSPOM, signatures: Seq[ConstraintSignature]): CSPOM = {
-    val signMap = signatures.groupBy(_.function).toMap
+  def matcher(constraint: CSPOMConstraint, problem: CSPOM) =
+    Some(())
 
-    val variables = collection.mutable.Set[CSPOMVariable]()
-    variables ++= problem.variables
-    val constraints = collection.mutable.Set[CSPOMConstraint]()
-    constraints ++= problem.constraints
-
-    val queue = new collection.mutable.Queue[CSPOMConstraint]()
-    queue ++= constraints
-
-    while (queue.nonEmpty) {
-      val constraint = queue.dequeue()
-      val signature = matchSignature(constraint, signMap)
-      require(signature.nonEmpty, s"Could not identify a signature for $constraint")
+  private def enforcedType(typ: CSPOMType, candidates: Seq[CSPOMType]): CSPOMType = {
+    if (typ == CSPOMFree) {
+      candidates.filter(_ != CSPOMFree).distinct match {
+        case Seq(single) => single
+        case _ => CSPOMFree
+      }
+    } else {
+      CSPOMFree
     }
 
-    val p = new CSPOM()
-    variables.foreach(p.addVariable)
-    constraints.foreach(p.addConstraint)
-    p
+  }
+
+  private def enforce(variable: CSPOMExpression, problem: CSPOM, et: CSPOMType): Delta =
+    variable match {
+      case v: CSPOMVariable =>
+        et match {
+          case CSPOMInt => replaceVar(v, IntVariable.free(v.name, v.params), problem)
+          case CSPOMBool => replaceVar(v, new BoolVariable(v.name, v.params), problem)
+          case _ => Delta()
+        }
+
+      case _ => Delta()
+    }
+
+  private def enforce(constraint: CSPOMConstraint, problem: CSPOM, signatures: Seq[ConstraintSignature]): Delta = {
+    //println(signatures)
+    val t = signatures.map(_.fullScope).transpose
+    //println(t)
+
+    val toEnforce = (for ((arg, sign) <- constraint.fullScope zip t)
+      yield (arg, enforcedType(arg.cspomType, sign))).groupBy(_._1)
+
+    var delta = Delta()
+    for ((arg, Seq(e)) <- toEnforce) {
+      delta ++= enforce(arg, problem, e._2)
+    }
+    delta
+
+  }
+
+  def compile(constraint: CSPOMConstraint, problem: CSPOM, data: Unit) = {
+    val signature = matchSignature(constraint)
+    require(signature.nonEmpty,
+      s"Could not identify a signature for $constraint (candidates: ${signMap.getOrElse(constraint.function, "None")})")
+
+    enforce(constraint, problem, signature)
   }
 }

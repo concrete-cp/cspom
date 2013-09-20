@@ -10,7 +10,8 @@ import scala.collection.mutable.HashMap
  * @author vion
  *
  */
-abstract class CSPOMVariable(val name: String, val params: String*) extends CSPOMExpression {
+abstract class CSPOMVariable(val name: String, val params: Set[String]) extends CSPOMExpression {
+  def this(name: String, params: String*) = this(name, params.toSet)
   //  def domain_=(d: CSPOMDomain[Any]) {
   //    require(_domain.isEmpty)
   //    _domain = Some(d)
@@ -88,7 +89,8 @@ abstract class CSPOMVariable(val name: String, val params: String*) extends CSPO
 
 }
 
-class FreeVariable(name: String, params: String*) extends CSPOMVariable(name, params: _*) {
+class FreeVariable(name: String, params: Set[String]) extends CSPOMVariable(name, params) {
+  def this(name: String, params: String*) = this(name, params.toSet)
   override def toString = s"var $name: ?"
   def cspomType = CSPOMFree
 }
@@ -131,7 +133,7 @@ object CSPOMVariable {
    * @param uB
    *            Upper bound of the domain
    */
-  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int, params: Seq[String] = Seq()) = {
+  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int, params: Set[String] = Set()) = {
     //val i = intervals.getOrElseUpdate((lb, ub), new IntInterval(lb, ub))
 
     new IntVariable(name, new IntInterval(lb, ub), params);
@@ -152,7 +154,7 @@ object CSPOMVariable {
 
   def ofInt(name: String, values: Int*) = ofIntSeq(name, values)
 
-  def ofIntSeq(name: String = VariableNameGenerator.generate(), values: Seq[Int], params: Seq[String] = Seq()) =
+  def ofIntSeq(name: String = VariableNameGenerator.generate(), values: Seq[Int], params: Set[String] = Set()) =
     IntVariable.of(name, IntDomain.of(values: _*), params)
 
   def bool(name: String = VariableNameGenerator.generate()) =
