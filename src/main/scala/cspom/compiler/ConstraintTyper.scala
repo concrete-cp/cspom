@@ -19,7 +19,7 @@ final case class ConstraintSignature(
 }
 
 final class ConstraintTyper(signatures: Seq[ConstraintSignature]) extends ConstraintCompiler {
-  type A = Unit
+  type A = Map[CSPOMExpression, CSPOMType]
   private val signMap = signatures.groupBy(_.function).toMap
 
   private def isCompatible(e: CSPOMExpression, t: CSPOMType) =
@@ -31,9 +31,6 @@ final class ConstraintTyper(signatures: Seq[ConstraintSignature]) extends Constr
     }
   }
 
-  def matcher(constraint: CSPOMConstraint, problem: CSPOM) =
-    Some(())
-
   private def enforcedType(typ: CSPOMType, candidates: Seq[CSPOMType]): CSPOMType = {
     if (typ == CSPOMFree) {
       candidates.filter(_ != CSPOMFree).distinct match {
@@ -44,6 +41,26 @@ final class ConstraintTyper(signatures: Seq[ConstraintSignature]) extends Constr
       CSPOMFree
     }
 
+  }
+
+  def mtch(constraint: CSPOMConstraint, problem: CSPOM) = {
+    val signature = matchSignature(constraint)
+    require(signature.nonEmpty,
+      s"Could not identify a signature for $constraint (candidates: ${signMap.getOrElse(constraint.function, "None")})")
+    val transposed = signature.map(_.fullScope).transpose
+    //println(t)
+
+    val toEnforce = (constraint.fullScope zip transposed).map {
+      case (arg, sign) => arg -> enforcedType(arg.cspomType, sign)
+    }.groupBy(_._1).collect {
+      case (arg, Seq((_, sign))) => arg -> sign
+    }
+
+    if (toEnforce.nonEmpty) {
+      Some(toEnforce)
+    } else {
+      None
+    }
   }
 
   private def enforce(variable: CSPOMExpression, problem: CSPOM, et: CSPOMType): Delta =
@@ -58,27 +75,9 @@ final class ConstraintTyper(signatures: Seq[ConstraintSignature]) extends Constr
       case _ => Delta()
     }
 
-  private def enforce(constraint: CSPOMConstraint, problem: CSPOM, signatures: Seq[ConstraintSignature]): Delta = {
-    //println(signatures)
-    val t = signatures.map(_.fullScope).transpose
-    //println(t)
-
-    val toEnforce = (for ((arg, sign) <- constraint.fullScope zip t)
-      yield (arg, enforcedType(arg.cspomType, sign))).groupBy(_._1)
-
-    var delta = Delta()
-    for ((arg, Seq(e)) <- toEnforce) {
-      delta ++= enforce(arg, problem, e._2)
+  def compile(constraint: CSPOMConstraint, problem: CSPOM, data: A) =
+    data.foldLeft(Delta()) {
+      case (acc, (arg, sign)) => acc ++ enforce(arg, problem, sign)
     }
-    delta
 
-  }
-
-  def compile(constraint: CSPOMConstraint, problem: CSPOM, data: Unit) = {
-    val signature = matchSignature(constraint)
-    require(signature.nonEmpty,
-      s"Could not identify a signature for $constraint (candidates: ${signMap.getOrElse(constraint.function, "None")})")
-
-    enforce(constraint, problem, signature)
-  }
 }

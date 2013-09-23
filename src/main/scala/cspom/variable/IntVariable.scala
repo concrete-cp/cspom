@@ -24,6 +24,7 @@ final class IntVariable(name: String, val domain: IntDomain, params: Set[String]
   override def toString = s"var $name: Int ($domain)"
 
   def cspomType = CSPOMInt
+
 }
 
 object IntVariable {

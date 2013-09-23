@@ -29,21 +29,24 @@ final class ProblemCompiler(
       val compiler = compilers.dequeue()
       val constraints = new QueueSet[CSPOMConstraint]()
       constraints.enqueue(problem.constraints.toSeq: _*)
+      var ch = false
       while (constraints.nonEmpty) {
         val constraint = constraints.dequeue()
-
-        val ch = hasChanged(compiler.matcher(constraint, problem), { data: compiler.A =>
+        println(constraint)
+        for (data <- compiler.mtch(constraint, problem)) {
           val delta = compiler.compile(constraint, problem, data)
 
           constraints.remove(delta.removed: _*)
-          constraints.enqueue(delta.added: _*)
-          delta.nonEmpty
-        })
-
-        if (ch) {
-          compilers.enqueue(constraintCompilers.filterNot(_ == compiler): _*)
+          for (v <- delta.altered) {
+            constraints.enqueue(problem.constraints(v): _*)
+          }
+          ch |= delta.nonEmpty
         }
 
+      }
+
+      if (ch) {
+        compilers.enqueue(constraintCompilers.filterNot(_ == compiler): _*)
       }
     }
 
@@ -54,13 +57,7 @@ final class ProblemCompiler(
 
   }
 
-  private def hasChanged[A](l: Option[A], f: A => Boolean) = {
-    var ch = false
-    for (e <- l) {
-      ch |= f(e)
-    }
-    ch
-  }
+  private def hasChanged[A](l: Option[A], f: A => Boolean) = l.map(f).getOrElse(false)
 
 }
 

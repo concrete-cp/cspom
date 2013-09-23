@@ -12,6 +12,7 @@ import scala.collection.mutable.HashMap
  */
 abstract class CSPOMVariable(val name: String, val params: Set[String]) extends CSPOMExpression {
   def this(name: String, params: String*) = this(name, params.toSet)
+
   //  def domain_=(d: CSPOMDomain[Any]) {
   //    require(_domain.isEmpty)
   //    _domain = Some(d)
@@ -86,13 +87,15 @@ abstract class CSPOMVariable(val name: String, val params: Set[String]) extends 
   //  def /(other: CSPOMVariable)(implicit problem: CSPOM) = problem.is("div", this, other)
   //
   def flattenVariables = Seq(this)
-
+  def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
+    if (which == this) by else this
 }
 
 class FreeVariable(name: String, params: Set[String]) extends CSPOMVariable(name, params) {
   def this(name: String, params: String*) = this(name, params.toSet)
   override def toString = s"var $name: ?"
   def cspomType = CSPOMFree
+  def intersect(other: CSPOMVariable) = other
 }
 
 object VariableNameGenerator {

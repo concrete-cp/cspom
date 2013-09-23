@@ -4,6 +4,7 @@ import scala.collection.mutable.WeakHashMap
 
 trait CSPOMConstant extends CSPOMExpression {
   def flattenVariables = Seq()
+  final def replaceVar(which: CSPOMVariable, by: CSPOMExpression) = this
 }
 
 final class IntConstant private (val value: Int) extends CSPOMConstant {

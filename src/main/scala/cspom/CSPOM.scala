@@ -97,11 +97,13 @@ final class CSPOM {
 
   def removeVariable(v: CSPOMVariable) {
     val variable = variableMap(v.name)
-    require(variable eq v, s"Another variable with the same name ($variable) exists in the problem")
+    require(variable eq v, s"Variable $variable referenced as ${v.name} in the problem is not the same instance as $v")
     require(constraints(v).isEmpty, v + " is still implied by constraints : " + constraints(v))
 
     variableMap.remove(v.name);
   }
+
+  private val ctrV = collection.mutable.WeakHashMap[CSPOMVariable, Seq[CSPOMConstraint]]()
 
   /**
    * Adds a constraint to the problem.
@@ -121,17 +123,29 @@ final class CSPOM {
 
     _constraints += constraint
 
+    ctrV --= constraint.scope
+    _neighbors --= constraint.scope
+
     constraint
   }
 
   def removeConstraint(c: CSPOMConstraint) {
     //for (v <- c.scope) { v.removeConstraint(c) } 
     _constraints -= c
+    ctrV --= c.scope
+    _neighbors --= c.scope
   }
 
-  // TODO: caching !
-  def constraints(v: CSPOMVariable) =
-    _constraints.iterator.filter(_.scope.contains(v)).toSeq
+  def constraints(v: CSPOMVariable) = {
+    ctrV.getOrElseUpdate(v,
+      _constraints.iterator.filter(_.scope.contains(v)).toSeq)
+  }
+
+  private val _neighbors = collection.mutable.WeakHashMap[CSPOMVariable, Set[CSPOMVariable]]()
+
+  def neighbors(v: CSPOMVariable) = {
+    _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
+  }
 
   def ctr(v: BoolVariable): CSPOMConstraint = {
     // replace the variable by the CSPOMTrue constant

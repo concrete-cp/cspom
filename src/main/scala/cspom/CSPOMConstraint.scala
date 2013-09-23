@@ -2,6 +2,7 @@ package cspom
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMTrue
 import javax.script.ScriptException
+import cspom.variable.CSPOMVariable
 
 final class CSPOMConstraint(
   val result: CSPOMExpression,
@@ -50,10 +51,10 @@ final class CSPOMConstraint(
     case _ => false
   }
 
-  def replacedVar(which: CSPOMExpression, by: CSPOMExpression) =
-    new CSPOMConstraint({ if (which == result) by else result },
+  def replacedVar(which: CSPOMVariable, by: CSPOMExpression) =
+    new CSPOMConstraint(result.replaceVar(which, by),
       function,
-      arguments map { v => if (v == which) by else v },
+      arguments map { v => v.replaceVar(which, by) },
       params)
 
   def evaluate(tuple: Seq[Any]): Boolean = {

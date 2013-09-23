@@ -3,12 +3,7 @@ package cspom.compiler
 import scala.collection.mutable.Queue
 import scala.collection.mutable.HashSet
 
-class QueueSet[A] {
-  /**
-   *
-   */
-  val serialVersionUID = 1L;
-
+final class QueueSet[A] {
   private val present = collection.mutable.Set[A]()
 
   private val queue: Queue[A] = new Queue()
@@ -20,6 +15,7 @@ class QueueSet[A] {
     }
   }
 
+  @annotation.tailrec
   def dequeue(): A = {
     val a = queue.dequeue();
     if (present(a)) {

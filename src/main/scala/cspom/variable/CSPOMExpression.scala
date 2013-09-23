@@ -13,11 +13,13 @@ trait CSPOMExpression {
 
   def ≠(other: CSPOMExpression)(implicit problem: CSPOM) = ne(other)
 
-  def ==(other: CSPOMExpression)(implicit problem: CSPOM) = problem.is("eq", this, other)
+  def ===(other: CSPOMExpression)(implicit problem: CSPOM) = problem.is("eq", this, other)
 
   def flattenVariables: Seq[CSPOMVariable]
 
   def cspomType: CSPOMType
+
+  def replaceVar(which: CSPOMVariable, by: CSPOMExpression): CSPOMExpression
 }
 
 final case class CSPOMSeq(
@@ -42,6 +44,8 @@ final case class CSPOMSeq(
   def length: Int = values.length
   def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
   def cspomType = CSPOMSeqType(innerType)
+  def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
+    new CSPOMSeq(name, innerType, values.map(_.replaceVar(which, by)), definedIndices, params)
 }
 
 object CSPOMExpression {
