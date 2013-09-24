@@ -35,4 +35,6 @@ object IntVariable {
     new IntVariable(name, IntDomain.valueOf(valueDesc), params)
 
   def free(name: String, params: Set[String] = Set()) = new IntVariable(name, FreeInt, params)
+
+  def unapply(v: IntVariable) = Some(v.name, v.domain, v.params)
 }

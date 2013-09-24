@@ -4,7 +4,7 @@ import cspom.variable.CSPOMTrue
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
 
-final class CSPOMConstraint(
+final case class CSPOMConstraint(
   val result: CSPOMExpression,
   val function: String,
   val arguments: Seq[CSPOMExpression],

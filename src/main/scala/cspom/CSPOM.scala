@@ -295,6 +295,8 @@ final class CSPOM {
     stb.append("]\n").toString
   }
 
+  def controlInt(solution: Map[String, Int]): Set[CSPOMConstraint] = ???
+  
   //  def control(solution: Map[String, Number]) = {
   //    constraints filterNot { c =>
   //      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
