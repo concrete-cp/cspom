@@ -115,4 +115,5 @@ object FreeInt extends IntDomain {
   def apply(idx: Int): Int = throw new UnsupportedOperationException
   def length: Int = throw new UnsupportedOperationException
   def toXCSP = throw new UnsupportedOperationException
+  override def toString = "?"
 }
