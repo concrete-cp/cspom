@@ -36,6 +36,9 @@ final case class CSPOMConstraint(
   def this(function: String, arguments: Seq[CSPOMExpression], params: Map[String, Any]) =
     this(CSPOMTrue, function, arguments, params)
 
+  def this(function: String, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
+    this(CSPOMTrue, function, arguments.toSeq, params)
+
   //val scopeSet = scope.toSet
 
   //val getScope = JavaConversions.seqAsJavaList(scope)
@@ -88,5 +91,12 @@ final case class CSPOMConstraint(
 
 object CSPOMConstraint {
   var id = 0
+
+  def param(key: String, v: Any) = ConstraintParameters(Map(key -> v))
+}
+
+case class ConstraintParameters(m: Map[String, Any]) {
+  def param(key: String, v: Any) = ConstraintParameters(m + (key -> v))
+  def toMap = m
 }
 
