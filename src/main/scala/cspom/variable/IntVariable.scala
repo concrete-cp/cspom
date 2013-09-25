@@ -13,13 +13,13 @@ final class IntVariable(name: String, val domain: IntDomain, params: Set[String]
 
   def <=(other: IntVariable)(implicit problem: CSPOM) = problem.isReified("le", this, other)
 
-  def +(other: IntVariable)(implicit problem: CSPOM) = problem.is("add", this, other)
+  def +(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("add", this, other)
 
-  def -(other: IntVariable)(implicit problem: CSPOM) = problem.is("sub", this, other)
+  def -(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("sub", this, other)
 
-  def *(other: IntVariable)(implicit problem: CSPOM) = problem.is("mul", this, other)
+  def *(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("mul", this, other)
 
-  def /(other: IntVariable)(implicit problem: CSPOM) = problem.is("div", this, other)
+  def /(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("div", this, other)
 
   override def toString = s"var $name: Int ($domain)"
 
@@ -31,10 +31,11 @@ object IntVariable {
   def of(name: String, values: Seq[Int], params: Set[String] = Set()) =
     new IntVariable(name, IntDomain.of(values: _*), params)
 
-  def valueOf(name: String, valueDesc: String, params: Set[String] = Set()) =
-    new IntVariable(name, IntDomain.valueOf(valueDesc), params)
+  def valueOf(name: String, valueDesc: String, params: String*) =
+    new IntVariable(name, IntDomain.valueOf(valueDesc), params.toSet)
 
-  def free(name: String, params: Set[String] = Set()) = new IntVariable(name, FreeInt, params)
+  def free(name: String, params: String*): IntVariable = free(name, params.toSet)
+  def free(name: String, params: Set[String]): IntVariable = new IntVariable(name, FreeInt, params)
 
   def unapply(v: IntVariable) = Some(v.name, v.domain, v.params)
 }

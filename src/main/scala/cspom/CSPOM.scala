@@ -23,6 +23,7 @@ import cspom.variable.IntConstant
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMTrue
+import cspom.variable.IntVariable
 
 /**
  *
@@ -50,12 +51,12 @@ final class CSPOM {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private val variableMap = new LinkedHashMap[String, CSPOMVariable]
+  private val variableMap = collection.mutable.LinkedHashMap[String, CSPOMVariable]()
 
   /**
    * @return The variables of this problem.
    */
-  val variables = variableMap.values;
+  def variables = variableMap.values;
 
   val getVariables = JavaConversions.asJavaCollection(variables)
 
@@ -69,7 +70,7 @@ final class CSPOM {
   /**
    * Collection of all constraints of the problem.
    */
-  private var _constraints: Set[CSPOMConstraint] = Set.empty
+  private val _constraints = collection.mutable.Set[CSPOMConstraint]()
 
   def constraints = _constraints
 
@@ -85,7 +86,7 @@ final class CSPOM {
    */
   def addVariable[T <: CSPOMVariable](variable: T): T = {
     val oldVariable = variableMap.put(variable.name, variable)
-    require(oldVariable == None, variable.name + ": a variable of the same name already exists");
+    require(oldVariable.isEmpty, variable.name + ": a variable of the same name already exists");
     variable
   }
 
@@ -176,21 +177,32 @@ final class CSPOM {
 
   @annotation.varargs
   def is(name: String, scope: CSPOMExpression*): CSPOMVariable = {
-    val result = CSPOMVariable.aux()
+    val result = aux()
+    addConstraint(new CSPOMConstraint(result, name, scope: _*))
+    result
+  }
+
+  def is(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): CSPOMVariable = {
+    val result = aux()
+    addConstraint(new CSPOMConstraint(result, name, scope, params))
+    result
+  }
+
+  @annotation.varargs
+  def isInt(name: String, scope: CSPOMExpression*): IntVariable = {
+    isInt(name, scope, Map[String, Any]())
+  }
+
+  def isInt(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): IntVariable = {
+    val result = auxInt()
     addConstraint(new CSPOMConstraint(result, name, scope: _*))
     result
   }
 
   @annotation.varargs
   def isReified(name: String, scope: CSPOMExpression*): BoolVariable = {
-    val result = CSPOMVariable.bool()
+    val result = boolVar()
     addConstraint(new CSPOMConstraint(result, name, scope: _*))
-    result
-  }
-
-  def is(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): CSPOMVariable = {
-    val result = CSPOMVariable.aux()
-    addConstraint(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
@@ -222,7 +234,9 @@ final class CSPOM {
   def interVar(lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
 
-  //def aux(): CSPOMVariable = addVariable(new AuxVar())
+  def aux(): CSPOMVariable = addVariable(CSPOMVariable.aux())
+
+  def auxInt(): IntVariable = addVariable(CSPOMVariable.auxInt())
 
   @annotation.varargs
   def varOf(values: Int*) = addVariable(CSPOMVariable.ofInt(values: _*))
@@ -296,7 +310,7 @@ final class CSPOM {
   }
 
   def controlInt(solution: Map[String, Int]): Set[CSPOMConstraint] = ???
-  
+
   //  def control(solution: Map[String, Number]) = {
   //    constraints filterNot { c =>
   //      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
@@ -495,7 +509,9 @@ object CSPOM {
 
   implicit def constant(value: Int)(implicit problem: CSPOM): CSPOMConstant = problem.constant(value)
 
-  implicit def aux()(implicit problem: CSPOM): CSPOMVariable = CSPOMVariable.aux()
+  implicit def auxInt()(implicit problem: CSPOM): IntVariable = problem.auxInt()
+
+  implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
 
   def varOf(values: Int*)(implicit problem: CSPOM) = problem.varOf(values: _*)
 

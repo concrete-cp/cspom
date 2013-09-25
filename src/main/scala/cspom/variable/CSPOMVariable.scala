@@ -153,16 +153,21 @@ object CSPOMVariable {
    * @param values
    *            List of values defining the domain.
    */
-  def ofInt(values: Int*) = ofIntSeq(values = values)
+  def ofInt(values: Int*) = ofIntSeq(values)
 
   def ofInt(name: String, values: Int*) = ofIntSeq(name, values)
 
-  def ofIntSeq(name: String = VariableNameGenerator.generate(), values: Seq[Int], params: Set[String] = Set()) =
+  def ofIntSeq(name: String = VariableNameGenerator.generate(), values: Seq[Int], params: Set[String] = Set()): IntVariable =
     IntVariable.of(name, IntDomain.of(values: _*), params)
+
+  def ofIntSeq(values: Seq[Int], params: String*): IntVariable =
+    ofIntSeq(values = values, params = params.toSet)
 
   def bool(name: String = VariableNameGenerator.generate()) =
     new BoolVariable(name)
 
   def aux() = new FreeVariable(VariableNameGenerator.generate(), "var_is_introduced")
+
+  def auxInt() = IntVariable.free(VariableNameGenerator.generate(), "var_is_introduced")
 
 }
