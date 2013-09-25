@@ -13,7 +13,7 @@ trait CSPOMExpression {
 
   def ≠(other: CSPOMExpression)(implicit problem: CSPOM) = ne(other)
 
-  def ===(other: CSPOMExpression)(implicit problem: CSPOM) = problem.is("eq", this, other)
+  def ===(other: CSPOMExpression)(implicit problem: CSPOM) = problem.isReified("eq", this, other)
 
   def flattenVariables: Seq[CSPOMVariable]
 
