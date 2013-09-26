@@ -67,8 +67,8 @@ final class ConstraintTyper(signatures: Seq[ConstraintSignature]) extends Constr
     variable match {
       case v: CSPOMVariable =>
         et match {
-          case CSPOMInt => replaceVar(v, IntVariable.free(v.name, v.params), problem)
-          case CSPOMBool => replaceVar(v, new BoolVariable(v.name, v.params), problem)
+          case CSPOMInt => replaceVars(Seq(v), IntVariable.free(v.name, v.params), problem)
+          case CSPOMBool => replaceVars(Seq(v), new BoolVariable(v.name, v.params), problem)
           case _ => Delta()
         }
 

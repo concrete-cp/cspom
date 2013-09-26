@@ -244,6 +244,8 @@ final class CSPOM {
   @annotation.varargs
   def varOf(name: String, values: Int*) = addVariable(CSPOMVariable.ofInt(name = name, values = values: _*))
 
+  def varOfSeq(values: Seq[Int], params: String*) = addVariable(CSPOMVariable.ofIntSeq(values, params: _*))
+
   private val constants = new HashMap[Int, IntConstant]()
 
   def constant(value: Int) = constants.getOrElseUpdate(value, IntConstant(value))
@@ -516,6 +518,8 @@ object CSPOM {
   def varOf(values: Int*)(implicit problem: CSPOM) = problem.varOf(values: _*)
 
   def varOf(name: String, values: Int*)(implicit problem: CSPOM) = problem.varOf(name, values: _*)
+
+  def varOfSeq(values: Seq[Int], params: String*)(implicit problem: CSPOM) = problem.varOfSeq(values, params: _*)
 
   def boolVar()(implicit problem: CSPOM) = problem.boolVar()
 
