@@ -7,7 +7,7 @@ trait CSPOMConstant extends CSPOMExpression {
   final def replaceVar(which: CSPOMVariable, by: CSPOMExpression) = this
 }
 
-final class IntConstant private (val value: Int) extends CSPOMConstant {
+final class IntConstant private (val value: Int) extends CSPOMConstant with IntExpression {
   override def toString = value.toString
   def cspomType = CSPOMInt
 }
@@ -32,13 +32,13 @@ object DoubleConstant {
 
 }
 
-object CSPOMTrue extends CSPOMConstant with CSPOMType {
+object CSPOMTrue extends CSPOMConstant with CSPOMType with BoolExpression {
   override def toString = "true"
   def cspomType = this
   def generalizes(other: CSPOMType) = other == CSPOMTrue
 }
 
-object CSPOMFalse extends CSPOMConstant with CSPOMType {
+object CSPOMFalse extends CSPOMConstant with CSPOMType with BoolExpression {
   override def toString = "false"
   def cspomType = this
   def generalizes(other: CSPOMType) = other == CSPOMFalse

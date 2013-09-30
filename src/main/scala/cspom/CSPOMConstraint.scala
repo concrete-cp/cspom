@@ -95,8 +95,11 @@ object CSPOMConstraint {
   def param(key: String, v: Any) = ConstraintParameters(Map(key -> v))
 }
 
-case class ConstraintParameters(m: Map[String, Any]) {
+case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {
   def param(key: String, v: Any) = ConstraintParameters(m + (key -> v))
-  def toMap = m
+  def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = ConstraintParameters(m + kv)
+  def -(key: String): scala.collection.immutable.Map[String, Any] = ConstraintParameters(m - key)
+  def get(key: String): Option[Any] = m.get(key)
+  def iterator: Iterator[(String, Any)] = m.iterator
 }
 

@@ -24,6 +24,7 @@ import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMTrue
 import cspom.variable.IntVariable
+import cspom.variable.FreeVariable
 
 /**
  *
@@ -148,7 +149,8 @@ final class CSPOM {
     _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
   }
 
-  def ctr(v: BoolVariable): CSPOMConstraint = {
+  def ctr(v: CSPOMVariable): CSPOMConstraint = {
+    require(v.isInstanceOf[BoolVariable] || v.isInstanceOf[FreeVariable])
     // replace the variable by the CSPOMTrue constant
     val Seq(fc: CSPOMConstraint) = constraints(v)
     removeConstraint(fc)
@@ -234,7 +236,7 @@ final class CSPOM {
   def interVar(lb: Int, ub: Int) =
     addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
 
-  def aux(): CSPOMVariable = addVariable(CSPOMVariable.aux())
+  def aux(): FreeVariable = addVariable(CSPOMVariable.aux())
 
   def auxInt(): IntVariable = addVariable(CSPOMVariable.auxInt())
 
@@ -491,29 +493,42 @@ object CSPOM {
   //  def ctr(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
   //    problem.ctr(typ, vars: _*)
 
-  def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
+  def ctr(v: CSPOMVariable)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
 
   def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
     problem.ctr(rel, init, vars: _*)
-  //
+
   //  def is(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) = {
   //    problem.is(typ, vars: _*)
   //  }
 
   implicit class CSPOMSymbConstraint(typ: Symbol) {
-    def apply(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
+    def apply(vars: CSPOMExpression*)(implicit problem: CSPOM): CSPOMVariable = {
       problem.is(typ.name, vars: _*)
     }
-    def apply(params: Map[String, Any])(vars: CSPOMVariable*)(implicit problem: CSPOM): CSPOMVariable = {
+    def apply(params: Map[String, Any])(vars: CSPOMExpression*)(implicit problem: CSPOM): CSPOMVariable = {
       problem.is(typ.name, vars, params)
+    }
+    def defInt(vars: CSPOMExpression*)(implicit problem: CSPOM): IntVariable = {
+      problem.isInt(typ.name, vars: _*)
     }
   }
 
-  implicit def constant(value: Int)(implicit problem: CSPOM): CSPOMConstant = problem.constant(value)
+  implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
 
   implicit def auxInt()(implicit problem: CSPOM): IntVariable = problem.auxInt()
 
   implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
+
+  implicit def seq2CSPOMSeq(s: Seq[CSPOMExpression]): CSPOMSeq = new CSPOMSeq(s)
+
+  implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq(s)
+  //    var l: List[CSPOMExpression] = Nil
+  //    for (i <- s) {
+  //      l ::= i
+  //    }
+  //    new CSPOMSeq(l)
+  //  }
 
   def varOf(values: Int*)(implicit problem: CSPOM) = problem.varOf(values: _*)
 

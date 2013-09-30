@@ -8,7 +8,7 @@ import cspom.variable.CSPOMVariable
 
 // TODO : very incomplete, do not use
 object XCSPWriter {
-  def toXCSP(problem: CSPOM) = {
+  def apply(problem: CSPOM) = {
     val domains = collection.mutable.Map[IntDomain, String]()
     var did = 0
     problem.variables.foreach {

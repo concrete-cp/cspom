@@ -22,6 +22,31 @@ trait CSPOMExpression {
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression): CSPOMExpression
 }
 
+trait IntExpression extends CSPOMExpression {
+
+  def >(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("gt", this, other)
+
+  def >=(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("ge", this, other)
+
+  def <(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("lt", this, other)
+
+  def <=(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("le", this, other)
+
+  def +(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("add", this, other)
+
+  def -(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("sub", this, other)
+
+  def *(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("mul", this, other)
+
+  def /(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("div", this, other)
+}
+
+trait BoolExpression extends CSPOMExpression {
+  def |(other: BoolExpression)(implicit problem: CSPOM) = problem.isReified("or", this, other)
+
+  def &(other: BoolExpression)(implicit problem: CSPOM) = problem.isReified("and", this, other)
+}
+
 final case class CSPOMSeq(
   val name: String,
   val innerType: CSPOMType,
@@ -46,6 +71,13 @@ final case class CSPOMSeq(
   def cspomType = CSPOMSeqType(innerType)
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
     new CSPOMSeq(name, innerType, values.map(_.replaceVar(which, by)), definedIndices, params)
+}
+
+object CSPOMSeq {
+  @annotation.varargs
+  def apply(s: CSPOMExpression*) = new CSPOMSeq(s)
+  @annotation.varargs
+  def applyVar(s: CSPOMVariable*) = new CSPOMSeq(s)
 }
 
 object CSPOMExpression {

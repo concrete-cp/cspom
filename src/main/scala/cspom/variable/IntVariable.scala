@@ -3,23 +3,7 @@ package cspom.variable
 import cspom.CSPOM
 
 final class IntVariable(name: String, val domain: IntDomain, params: Set[String] = Set())
-  extends CSPOMVariable(name, params) {
-
-  def >(other: IntVariable)(implicit problem: CSPOM) = problem.isReified("gt", this, other)
-
-  def >=(other: IntVariable)(implicit problem: CSPOM) = problem.isReified("ge", this, other)
-
-  def <(other: IntVariable)(implicit problem: CSPOM) = problem.isReified("lt", this, other)
-
-  def <=(other: IntVariable)(implicit problem: CSPOM) = problem.isReified("le", this, other)
-
-  def +(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("add", this, other)
-
-  def -(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("sub", this, other)
-
-  def *(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("mul", this, other)
-
-  def /(other: IntVariable)(implicit problem: CSPOM) = problem.isInt("div", this, other)
+  extends CSPOMVariable(name, params) with IntExpression {
 
   override def toString = s"var $name: Int ($domain)"
 
