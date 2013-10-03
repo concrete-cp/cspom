@@ -51,7 +51,7 @@ object IntDomain {
 
 }
 
-final class IntSeq(val values: Seq[Int]) extends IntDomain {
+final case class IntSeq(val values: Seq[Int]) extends IntDomain {
   //  override def equals(obj: Any) = obj match {
   //    case ed: IntSeq => ed.values == values
   //    case _ => false
@@ -74,7 +74,7 @@ final class IntSeq(val values: Seq[Int]) extends IntDomain {
   def length: Int = values.length
 }
 
-class IntInterval(val lb: Int, val ub: Int) extends Range.Inclusive(lb, ub, 1) with IntDomain {
+final case class IntInterval(val lb: Int, val ub: Int) extends Range.Inclusive(lb, ub, 1) with IntDomain {
   require(lb <= ub, "lb <= ub required");
 
   def intersect(domain: IntDomain): IntDomain = domain match {
