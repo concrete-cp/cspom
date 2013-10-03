@@ -93,7 +93,7 @@ final class CSPOM {
 
   def addExpression(expression: CSPOMExpression): Seq[CSPOMVariable] = expression match {
     case v: CSPOMVariable => Seq(addVariable(v))
-    case s: CSPOMSeq => s.flatMap(addExpression)
+    case s: CSPOMSeq[_] => s.flatMap(addExpression)
     case _ => throw new UnsupportedOperationException
   }
 
@@ -105,7 +105,7 @@ final class CSPOM {
     variableMap.remove(v.name);
   }
 
-  private val ctrV = collection.mutable.WeakHashMap[CSPOMVariable, Seq[CSPOMConstraint]]()
+  private val ctrV = collection.mutable.HashMap[CSPOMVariable, Seq[CSPOMConstraint]]().withDefault(_ => Nil)
 
   /**
    * Adds a constraint to the problem.
@@ -125,7 +125,9 @@ final class CSPOM {
 
     _constraints += constraint
 
-    ctrV --= constraint.scope
+    for (v <- constraint.scope) {
+      ctrV += v -> (constraint +: ctrV.getOrElseUpdate(v, Nil))
+    }
     _neighbors --= constraint.scope
 
     constraint
@@ -134,13 +136,15 @@ final class CSPOM {
   def removeConstraint(c: CSPOMConstraint) {
     //for (v <- c.scope) { v.removeConstraint(c) } 
     _constraints -= c
-    ctrV --= c.scope
+    for (v <- c.scope) {
+      ctrV += v -> (ctrV.getOrElseUpdate(v, Nil).filter(_ ne c))
+    }
     _neighbors --= c.scope
   }
 
   def constraints(v: CSPOMVariable) = {
     ctrV.getOrElseUpdate(v,
-      _constraints.iterator.filter(_.scope.contains(v)).toSeq)
+      _constraints.iterator.filter(_.scope.contains(v)).toList)
   }
 
   private val _neighbors = collection.mutable.WeakHashMap[CSPOMVariable, Set[CSPOMVariable]]()
@@ -520,9 +524,9 @@ object CSPOM {
 
   implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
 
-  implicit def seq2CSPOMSeq(s: Seq[CSPOMExpression]): CSPOMSeq = new CSPOMSeq(s)
+  implicit def seq2CSPOMSeq[T <: CSPOMExpression](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
 
-  implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq(s)
+  implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq[T](s)
   //    var l: List[CSPOMExpression] = Nil
   //    for (i <- s) {
   //      l ::= i

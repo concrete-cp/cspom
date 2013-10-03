@@ -47,25 +47,25 @@ trait BoolExpression extends CSPOMExpression {
   def &(other: BoolExpression)(implicit problem: CSPOM) = problem.isReified("and", this, other)
 }
 
-final case class CSPOMSeq(
+final case class CSPOMSeq[T <: CSPOMExpression](
   val name: String,
   val innerType: CSPOMType,
-  val values: Seq[CSPOMExpression],
+  val values: Seq[T],
   val definedIndices: Range,
   val params: Set[String] = Set())
-  extends Seq[CSPOMExpression] with CSPOMExpression {
+  extends Seq[T] with CSPOMExpression {
 
   require(values.nonEmpty)
   require(values.forall(v => innerType.generalizes(v.cspomType)))
 
-  def this(name: String, seq: Seq[CSPOMExpression]) = this(name, seq.head.cspomType, seq, seq.indices)
-  def this(seq: Seq[CSPOMExpression]) = this(VariableNameGenerator.generate() + "_array", seq)
+  def this(name: String, seq: Seq[T]) = this(name, seq.head.cspomType, seq, seq.indices)
+  def this(seq: Seq[T]) = this(VariableNameGenerator.generate() + "_array", seq)
 
   //def variables = seq
   // Members declared in scala.collection.IterableLike 
-  def iterator: Iterator[cspom.variable.CSPOMExpression] = values.iterator
+  def iterator: Iterator[T] = values.iterator
   // Members declared in scala.collection.SeqLike 
-  def apply(idx: Int): cspom.variable.CSPOMExpression = values(definedIndices.indexOf(idx))
+  def apply(idx: Int): T = values(definedIndices.indexOf(idx))
   def length: Int = values.length
   def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
   def cspomType = CSPOMSeqType(innerType)

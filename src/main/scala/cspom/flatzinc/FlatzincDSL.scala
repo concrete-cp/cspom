@@ -52,7 +52,7 @@ object FlatzincDSL extends DebugJavaTokenParsers {
     } toMap
 
     val seqMap = variables.collect {
-      case seq: CSPOMSeq => seq.name -> seq
+      case seq: CSPOMSeq[CSPOMExpression] => seq.name -> seq
     } toMap
 
     (varMap, seqMap)
@@ -164,7 +164,7 @@ object FlatzincDSL extends DebugJavaTokenParsers {
       stringLiteral
   }
 
-  def cspomExpr(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq]): Parser[CSPOMExpression] =
+  def cspomExpr(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq[CSPOMExpression]]): Parser[CSPOMExpression] =
     bool_const ^^ { case true => CSPOMTrue; case false => CSPOMFalse } |
       int_const ^^ { case value => IntConstant(value) } |
       float_const ^^ { case value => DoubleConstant(value) } |
@@ -204,7 +204,7 @@ object FlatzincDSL extends DebugJavaTokenParsers {
   //  ^^
   //    { case t ~ ":" ~ id ~ annot ~ _ ~ ";" => Variable.getVariable(id, "D0").toXML }
 
-  def constraint(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq]): Parser[CSPOMConstraint] =
+  def constraint(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq[CSPOMExpression]]): Parser[CSPOMConstraint] =
     "constraint" !!! {
       "constraint" ~> pred_ann_id ~ "(" ~ repsep(cspomExpr(vars, seqs), ",") ~ ")" ~ annotations ~ ";" ^^ {
         case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
