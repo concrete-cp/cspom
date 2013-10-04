@@ -32,7 +32,7 @@ final class ProblemCompiler(
       var ch = false
       while (constraints.nonEmpty) {
         val constraint = constraints.dequeue()
-        println(constraint)
+        //println(constraint)
         for (data <- compiler.mtch(constraint, problem)) {
           val delta = compiler.compile(constraint, problem, data)
 

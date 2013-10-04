@@ -208,7 +208,7 @@ object FlatzincDSL extends DebugJavaTokenParsers {
     "constraint" !!! {
       "constraint" ~> pred_ann_id ~ "(" ~ repsep(cspomExpr(vars, seqs), ",") ~ ")" ~ annotations ~ ";" ^^ {
         case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
-          new CSPOMConstraint(predAnnId, expr, annotations.map(_ -> Unit).toMap)
+          new CSPOMConstraint(Symbol(predAnnId), expr, annotations.map(_ -> Unit).toMap)
       }
     }
 

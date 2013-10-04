@@ -8,8 +8,8 @@ import cspom.variable.CSPOMSeqType
 
 object XCSPConstraintSignatures {
   def get = Seq(
-    ConstraintSignature(CSPOMBool, "ne", CSPOMInt, CSPOMInt),
-    ConstraintSignature(CSPOMBool, "or", CSPOMBool, CSPOMBool),
-    ConstraintSignature(CSPOMTrue, "extension", CSPOMSeqType(CSPOMInt)))
+    ConstraintSignature(CSPOMBool, 'ne, CSPOMInt, CSPOMInt),
+    ConstraintSignature(CSPOMBool, 'or, CSPOMBool, CSPOMBool),
+    ConstraintSignature(CSPOMTrue, 'extension, CSPOMSeqType(CSPOMInt)))
 
 }

@@ -2,19 +2,11 @@ package cspom.variable
 
 import cspom.CSPOM
 import scala.collection.mutable.WeakHashMap
-import javaexamples.queens.Queens
 
 /*
  * An expression can be either a variable, a constant or a variable sequence
  */
 trait CSPOMExpression {
-
-  def ne(other: CSPOMExpression)(implicit problem: CSPOM) = problem.isReified("ne", this, other)
-
-  def ≠(other: CSPOMExpression)(implicit problem: CSPOM) = ne(other)
-
-  def ===(other: CSPOMExpression)(implicit problem: CSPOM) = problem.isReified("eq", this, other)
-
   def flattenVariables: Seq[CSPOMVariable]
 
   def cspomType: CSPOMType
@@ -22,29 +14,10 @@ trait CSPOMExpression {
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression): CSPOMExpression
 }
 
-trait IntExpression extends CSPOMExpression {
-
-  def >(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("gt", this, other)
-
-  def >=(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("ge", this, other)
-
-  def <(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("lt", this, other)
-
-  def <=(other: IntExpression)(implicit problem: CSPOM) = problem.isReified("le", this, other)
-
-  def +(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("add", this, other)
-
-  def -(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("sub", this, other)
-
-  def *(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("mul", this, other)
-
-  def /(other: IntExpression)(implicit problem: CSPOM) = problem.isInt("div", this, other)
-}
+trait IntExpression extends CSPOMExpression
 
 trait BoolExpression extends CSPOMExpression {
-  def |(other: BoolExpression)(implicit problem: CSPOM) = problem.isReified("or", this, other)
 
-  def &(other: BoolExpression)(implicit problem: CSPOM) = problem.isReified("and", this, other)
 }
 
 final case class CSPOMSeq[T <: CSPOMExpression](

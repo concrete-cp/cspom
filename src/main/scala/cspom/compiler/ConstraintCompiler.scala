@@ -13,7 +13,7 @@ trait ConstraintCompiler {
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: A): Delta
 
   def replaceVars(which: Seq[CSPOMVariable], by: CSPOMExpression, in: CSPOM): Delta = {
-    println(s"Replacing $which with $by")
+    //println(s"Replacing $which with $by")
     val oldConstraints = which.flatMap(in.constraints).distinct
     for (c <- oldConstraints) {
       in.removeConstraint(c)
@@ -25,7 +25,7 @@ trait ConstraintCompiler {
 
     val newConstraints = oldConstraints.map { c =>
       val newC = which.foldLeft(c) { (c, v) => c.replacedVar(v, by) }
-      println(s"$c to $newC")
+      //println(s"$c to $newC")
       in.addConstraint(newC);
     }
 

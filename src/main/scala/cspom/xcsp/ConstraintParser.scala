@@ -61,7 +61,7 @@ final object ConstraintParser extends JavaTokenParsers {
       case PredicateConstraint(operator, arguments) =>
         val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
 
-        (genVars.flatten, genCons.flatten :+ new CSPOMConstraint(operator, sub: _*))
+        (genVars.flatten, genCons.flatten :+ new CSPOMConstraint(Symbol(operator), sub: _*))
 
       case _ => throw new IllegalArgumentException("Constraint expected")
     }
@@ -75,7 +75,7 @@ final object ConstraintParser extends JavaTokenParsers {
       case PredicateConstraint(operator, arguments) => {
         val result = CSPOMVariable.aux()
         val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
-        (result, genVars.flatten :+ result, genCons.flatten :+ new CSPOMConstraint(result, operator, sub: _*))
+        (result, genVars.flatten :+ result, genCons.flatten :+ new CSPOMConstraint(result, Symbol(operator), sub: _*))
       }
     }
   }

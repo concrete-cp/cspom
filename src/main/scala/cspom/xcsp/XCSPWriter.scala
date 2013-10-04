@@ -18,7 +18,7 @@ object XCSPWriter {
     }
 
     val relations = collection.mutable.Map[(Relation, Boolean), String]()
-    val predicates = collection.mutable.Map[(String, Int), String]()
+    val predicates = collection.mutable.Map[(Symbol, Int), String]()
 
     var rid = 0
     var pid = 0

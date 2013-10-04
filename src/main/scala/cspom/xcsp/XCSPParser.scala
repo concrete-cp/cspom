@@ -157,9 +157,9 @@ final object XCSPParser {
 
     } else {
       relations.get(reference) match {
-    	  
+
         case Some(extension: Extension) => (Seq(), Seq(new CSPOMConstraint(
-          "extension", Seq(new CSPOMSeq(scope)), Map("init" -> extension.init, "relation" -> extension.relation))))
+          'extension, Seq(new CSPOMSeq(scope)), Map("init" -> extension.init, "relation" -> extension.relation))))
 
         case Some(predicate: XCSPPredicate) =>
           try {

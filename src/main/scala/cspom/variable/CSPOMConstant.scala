@@ -9,6 +9,10 @@ trait CSPOMConstant extends CSPOMExpression {
 
 final class IntConstant private (val value: Int) extends CSPOMConstant with IntExpression {
   override def toString = value.toString
+  override def equals(o: Any) = o match {
+    case i: IntConstant => i.value == value
+    case _ => false
+  }
   def cspomType = CSPOMInt
 }
 

@@ -6,7 +6,7 @@ import cspom.variable.CSPOMVariable
 
 final case class CSPOMConstraint(
   val result: CSPOMExpression,
-  val function: String,
+  val function: Symbol,
   val arguments: Seq[CSPOMExpression],
   val params: Map[String, Any] = Map()) extends Loggable {
 
@@ -27,16 +27,16 @@ final case class CSPOMConstraint(
   val id = CSPOMConstraint.id
   CSPOMConstraint.id += 1
 
-  def this(result: CSPOMExpression, function: String, arguments: CSPOMExpression*) =
+  def this(result: CSPOMExpression, function: Symbol, arguments: CSPOMExpression*) =
     this(result, function, arguments)
 
-  def this(function: String, arguments: CSPOMExpression*) =
+  def this(function: Symbol, arguments: CSPOMExpression*) =
     this(CSPOMTrue, function, arguments)
 
-  def this(function: String, arguments: Seq[CSPOMExpression], params: Map[String, Any]) =
+  def this(function: Symbol, arguments: Seq[CSPOMExpression], params: Map[String, Any]) =
     this(CSPOMTrue, function, arguments, params)
 
-  def this(function: String, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
+  def this(function: Symbol, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
     this(CSPOMTrue, function, arguments.toSeq, params)
 
   //val scopeSet = scope.toSet

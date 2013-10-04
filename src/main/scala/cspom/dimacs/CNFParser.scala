@@ -56,7 +56,7 @@ final object CNFParser {
       (variables(math.abs(i) - 1), i == 0)
     } unzip
 
-    new CSPOMConstraint("or", clause, Map("revsign" -> parameters))
+    new CSPOMConstraint('or, clause, Map("revsign" -> parameters))
 
   }
 }

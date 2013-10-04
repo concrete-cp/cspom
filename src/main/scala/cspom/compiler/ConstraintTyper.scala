@@ -13,7 +13,7 @@ import cspom.variable.IntVariable
 
 final case class ConstraintSignature(
   val result: CSPOMType,
-  val function: String,
+  val function: Symbol,
   val arguments: CSPOMType*) {
   def fullScope = result +: arguments
 }

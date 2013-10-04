@@ -25,6 +25,8 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMTrue
 import cspom.variable.IntVariable
 import cspom.variable.FreeVariable
+import cspom.variable.BoolExpression
+import cspom.variable.CSPOMFalse
 
 /**
  *
@@ -153,8 +155,8 @@ final class CSPOM {
     _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
   }
 
-  def ctr(v: CSPOMVariable): CSPOMConstraint = {
-    require(v.isInstanceOf[BoolVariable] || v.isInstanceOf[FreeVariable])
+  def ctr(v: BoolVariable) = {
+
     // replace the variable by the CSPOMTrue constant
     val Seq(fc: CSPOMConstraint) = constraints(v)
     removeConstraint(fc)
@@ -162,51 +164,29 @@ final class CSPOM {
     val newConstraint = fc.replacedVar(v, CSPOMTrue)
     addConstraint(newConstraint)
 
-    //    val newConstraint = new GeneralConstraint(Predicate(fc.predicate.function, fc.predicate.parameters), fc.arguments)
-    //    addConstraint(newConstraint)
-    //removeVariable(v)
-
   }
 
-  @annotation.varargs
-  def ctr(name: String, scope: CSPOMExpression*): CSPOMConstraint = {
-    addConstraint(new CSPOMConstraint(name, scope: _*))
-  }
-
-  def ctr(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): CSPOMConstraint = {
+  def ctr(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMConstraint = {
     addConstraint(new CSPOMConstraint(name, scope, params))
   }
 
   @annotation.varargs
-  def ctr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
-    addConstraint(new CSPOMConstraint("extension", vars, Map("init" -> init, "relation" -> rel)))
+  def extCtr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
+    addConstraint(new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel)))
 
-  @annotation.varargs
-  def is(name: String, scope: CSPOMExpression*): CSPOMVariable = {
-    val result = aux()
-    addConstraint(new CSPOMConstraint(result, name, scope: _*))
-    result
-  }
-
-  def is(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): CSPOMVariable = {
+  def is(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMVariable = {
     val result = aux()
     addConstraint(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
-  @annotation.varargs
-  def isInt(name: String, scope: CSPOMExpression*): IntVariable = {
-    isInt(name, scope, Map[String, Any]())
-  }
-
-  def isInt(name: String, scope: Seq[CSPOMExpression], params: Map[String, Any]): IntVariable = {
+  def isInt(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): IntVariable = {
     val result = auxInt()
-    addConstraint(new CSPOMConstraint(result, name, scope: _*))
+    addConstraint(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
-  @annotation.varargs
-  def isReified(name: String, scope: CSPOMExpression*): BoolVariable = {
+  def isBool(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): BoolVariable = {
     val result = boolVar()
     addConstraint(new CSPOMConstraint(result, name, scope: _*))
     result
@@ -497,26 +477,15 @@ object CSPOM {
   //  def ctr(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
   //    problem.ctr(typ, vars: _*)
 
-  def ctr(v: CSPOMVariable)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
+  def ctr(v: BoolVariable)(implicit problem: CSPOM) = problem.ctr(v)
+  def ctr(c: CSPOMConstraint)(implicit problem: CSPOM) = c
 
   def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
-    problem.ctr(rel, init, vars: _*)
+    problem.extCtr(rel, init, vars: _*)
 
   //  def is(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) = {
   //    problem.is(typ, vars: _*)
   //  }
-
-  implicit class CSPOMSymbConstraint(typ: Symbol) {
-    def apply(vars: CSPOMExpression*)(implicit problem: CSPOM): CSPOMVariable = {
-      problem.is(typ.name, vars: _*)
-    }
-    def apply(params: Map[String, Any])(vars: CSPOMExpression*)(implicit problem: CSPOM): CSPOMVariable = {
-      problem.is(typ.name, vars, params)
-    }
-    def defInt(vars: CSPOMExpression*)(implicit problem: CSPOM): IntVariable = {
-      problem.isInt(typ.name, vars: _*)
-    }
-  }
 
   implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
 
