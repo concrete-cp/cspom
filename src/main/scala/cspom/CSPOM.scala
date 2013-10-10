@@ -489,6 +489,9 @@ object CSPOM {
 
   implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
 
+  implicit def constant(value: Boolean): CSPOMConstant with BoolExpression =
+    if (value) CSPOMTrue else CSPOMFalse
+
   implicit def auxInt()(implicit problem: CSPOM): IntVariable = problem.auxInt()
 
   implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
@@ -512,6 +515,8 @@ object CSPOM {
   def boolVar()(implicit problem: CSPOM) = problem.boolVar()
 
   def boolVar(name: String)(implicit problem: CSPOM) = problem.boolVar(name)
+
+  def freeInt(name: String)(implicit problem: CSPOM) = problem.addVariable(IntVariable.free(name))
 }
 
 
