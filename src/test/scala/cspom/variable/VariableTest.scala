@@ -11,9 +11,10 @@ class VariableTest {
     val v = CSPOMVariable.ofInterval(lb = 0, ub = 10)
     val c = new CSPOMConstraint('leq, v)
     val cspom = new CSPOM
-    cspom.addVariable(v)
-    cspom.addConstraint(c)
+    //cspom.addVariable(v)
+    cspom.ctr(c)
     //v registerConstraint c
+    assertTrue(cspom.variables sameElements List(v))
     assertTrue(cspom.constraints(v) sameElements List(c))
   }
 }

@@ -5,6 +5,13 @@ import scala.collection.mutable.WeakHashMap
 trait CSPOMConstant extends CSPOMExpression {
   def flattenVariables = Seq()
   final def replaceVar(which: CSPOMVariable, by: CSPOMExpression) = this
+  def contains(that: CSPOMConstant) = this == that
+  def intersected(that: CSPOMExpression) =
+    if (that.contains(this)) {
+      this
+    } else {
+      throw new IllegalArgumentException("Empty intersection")
+    }
 }
 
 final class IntConstant private (val value: Int) extends CSPOMConstant with IntExpression {
@@ -22,6 +29,12 @@ object IntConstant {
   def apply(value: Int) =
     cache.getOrElseUpdate(value, new IntConstant(value))
 
+  //  def unapply(c: CSPOMExpression): Option[Int] = c match {
+  //    case c: IntConstant => Some(c.value)
+  //    case _ => None
+  //  }
+
+  def unapply(c: IntConstant): Option[Int] = Some(c.value)
 }
 
 final class DoubleConstant private (val value: Double) extends CSPOMConstant {

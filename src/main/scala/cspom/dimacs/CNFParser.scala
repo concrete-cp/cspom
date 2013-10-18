@@ -12,6 +12,7 @@ import cspom.CSPOM
 import cspom.CSPParseException
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMVariable
+import CSPOM._
 
 final object CNFParser {
 
@@ -29,23 +30,25 @@ final object CNFParser {
       case e: Exception => throw new CSPParseException("Parameter line not found", e, -1)
     }
 
-    val problem = new CSPOM()
-
-    val variables = for (i <- 1 to nbVars.toInt) yield problem.addVariable(CSPOMVariable.bool("V" + i))
-
-    var currentClause: List[Int] = Nil;
     var countClauses = 0
-    for (line <- lines; value <- VAR.findAllIn(line).map(s => s.toInt)) {
-      if (value == 0) {
-        problem.addConstraint(clause(currentClause, variables));
-        countClauses += 1;
-        currentClause = Nil;
-      } else {
-        currentClause ::= value;
+    val problem = CSPOM {
+
+      val variables = for (i <- 1 to nbVars.toInt) yield CSPOMVariable.bool("V" + i)
+
+      var currentClause: List[Int] = Nil;
+
+      for (line <- lines; value <- VAR.findAllIn(line).map(s => s.toInt)) {
+        if (value == 0) {
+          ctr(clause(currentClause, variables));
+          countClauses += 1;
+          currentClause = Nil;
+        } else {
+          currentClause ::= value;
+        }
       }
     }
 
-    assume(countClauses == nbClauses.toInt)
+    require(countClauses == nbClauses.toInt)
 
     problem
   }

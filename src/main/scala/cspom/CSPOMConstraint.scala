@@ -14,6 +14,21 @@ final case class CSPOMConstraint(
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
+  def this(result: CSPOMExpression, function: String, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
+    this(result, Symbol(function), arguments.toSeq, params)
+
+  def this(result: CSPOMExpression, function: Symbol, arguments: CSPOMExpression*) =
+    this(result, function, arguments)
+
+  def this(function: Symbol, arguments: Seq[CSPOMExpression], params: Map[String, Any] = Map()) =
+    this(CSPOMTrue, function, arguments, params)
+
+  def this(function: String, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
+    this(Symbol(function), arguments, params)
+
+  def this(function: Symbol, arguments: CSPOMExpression*) =
+    this(function, arguments)
+
   /**
    *  Warning: scope is not ordered! Use fullScope to get ordered
    *  information.
@@ -26,18 +41,6 @@ final case class CSPOMConstraint(
 
   val id = CSPOMConstraint.id
   CSPOMConstraint.id += 1
-
-  def this(result: CSPOMExpression, function: Symbol, arguments: CSPOMExpression*) =
-    this(result, function, arguments)
-
-  def this(function: Symbol, arguments: CSPOMExpression*) =
-    this(CSPOMTrue, function, arguments)
-
-  def this(function: Symbol, arguments: Seq[CSPOMExpression], params: Map[String, Any]) =
-    this(CSPOMTrue, function, arguments, params)
-
-  def this(function: Symbol, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
-    this(CSPOMTrue, function, arguments.toSeq, params)
 
   //val scopeSet = scope.toSet
 

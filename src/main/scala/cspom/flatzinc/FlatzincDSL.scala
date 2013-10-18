@@ -73,8 +73,8 @@ object FlatzincDSL extends DebugJavaTokenParsers {
     case (varMap, seqMap) ~ constraints ~ goal =>
       val p = new CSPOM()
       val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables)).toSet
-      allVars.foreach(p.addVariable)
-      constraints.foreach(p.addConstraint)
+      //allVars.foreach(p.addVariable)
+      constraints.foreach(p.ctr)
       p
   }
 

@@ -38,9 +38,9 @@ final object XCSPParser {
     val declaredVariables = parseVariables(document);
     val (genVariables, constraints) = parseConstraints(document, declaredVariables);
     val problem = new CSPOM
-    declaredVariables.values.foreach(problem.addVariable)
-    genVariables.foreach(problem.addVariable)
-    constraints.foreach(problem.addConstraint)
+    //declaredVariables.values.foreach(problem.addVariable)
+    //genVariables.foreach(problem.addVariable)
+    constraints.foreach(problem.ctr)
     problem
 
   }

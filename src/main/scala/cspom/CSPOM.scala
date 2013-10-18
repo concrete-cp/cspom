@@ -49,7 +49,7 @@ import cspom.variable.CSPOMFalse
  * @see CSPOMVariable
  *
  */
-final class CSPOM {
+class CSPOM {
 
   /**
    * Map used to easily retrieve a variable according to its name.
@@ -87,17 +87,17 @@ final class CSPOM {
    * @throws DuplicateVariableException
    *             If a variable with the same name already exists.
    */
-  def addVariable[T <: CSPOMVariable](variable: T): T = {
-    val oldVariable = variableMap.put(variable.name, variable)
-    require(oldVariable.isEmpty, variable.name + ": a variable of the same name already exists");
-    variable
-  }
+  //  def addVariable[T <: CSPOMVariable](variable: T): T = {
+  //    val oldVariable = variableMap.put(variable.name, variable)
+  //    require(oldVariable.isEmpty, variable.name + ": a variable of the same name already exists");
+  //    variable
+  //  }
 
-  def addExpression(expression: CSPOMExpression): Seq[CSPOMVariable] = expression match {
-    case v: CSPOMVariable => Seq(addVariable(v))
-    case s: CSPOMSeq[_] => s.flatMap(addExpression)
-    case _ => throw new UnsupportedOperationException
-  }
+  //  def addExpression(expression: CSPOMExpression): Seq[CSPOMVariable] = expression match {
+  //    case v: CSPOMVariable => Seq(addVariable(v))
+  //    case s: CSPOMSeq[_] => s.flatMap(addExpression)
+  //    case _ => throw new UnsupportedOperationException
+  //  }
 
   def removeVariable(v: CSPOMVariable) {
     val variable = variableMap(v.name)
@@ -115,13 +115,13 @@ final class CSPOM {
    * @param constraint
    *            The constraint to add.
    */
-  def addConstraint(constraint: CSPOMConstraint) = {
+  private def addConstraint(constraint: CSPOMConstraint) = {
 
     require(!constraints.contains(constraint),
       "The constraint " + constraint + " already belongs to the problem");
 
     for (v <- constraint.scope) {
-      val variable = variableMap.getOrElse(v.name, throw new IllegalArgumentException(s"No variable named ${v.name} is referenced in the problem"))
+      val variable = variableMap.getOrElseUpdate(v.name, v)
       require(variable eq v, s"$variable (from problem) and $v (from $constraint) do not refer to the same instance")
     }
 
@@ -155,6 +155,14 @@ final class CSPOM {
     _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
   }
 
+  def ctr(c: CSPOMConstraint): CSPOMConstraint = {
+    if (constraints(c)) {
+      c
+    } else {
+      addConstraint(c)
+    }
+  }
+
   def ctr(v: BoolVariable) = {
 
     // replace the variable by the CSPOMTrue constant
@@ -166,79 +174,35 @@ final class CSPOM {
 
   }
 
-  def ctr(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMConstraint = {
-    addConstraint(new CSPOMConstraint(name, scope, params))
-  }
+  //  def ctr(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMConstraint = {
+  //    ctr(new CSPOMConstraint(name, scope, params))
+  //  }
 
   @annotation.varargs
   def extCtr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
-    addConstraint(new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel)))
+    ctr(new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel)))
 
   def is(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMVariable = {
-    val result = aux()
-    addConstraint(new CSPOMConstraint(result, name, scope, params))
+    val result = CSPOM.aux()
+    ctr(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
   def isInt(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): IntVariable = {
-    val result = auxInt()
-    addConstraint(new CSPOMConstraint(result, name, scope, params))
+    val result = CSPOM.auxInt()
+    ctr(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
   def isBool(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): BoolVariable = {
-    val result = boolVar()
-    addConstraint(new CSPOMConstraint(result, name, scope: _*))
+    val result = CSPOM.boolVar()
+    ctr(new CSPOMConstraint(result, name, scope: _*))
     result
   }
-
-  /**
-   * Adds a bounded, named variable in the problem.
-   *
-   * @param name
-   *            name of the variable
-   * @param lb
-   *            lower bound
-   * @param ub
-   *            upper bound
-   * @return The added variable.
-   * @throws DuplicateVariableException
-   *             if a variable of the same name already exists
-   */
-  def interVar(name: String, lb: Int, ub: Int) =
-    addVariable(CSPOMVariable.ofInterval(name, lb, ub))
-
-  /**
-   * Adds a bounded, unnamed variable in the problem.
-   *
-   * @param lb
-   *            lower bound
-   * @param ub
-   *            upper bound
-   * @return The added variable.
-   */
-  def interVar(lb: Int, ub: Int) =
-    addVariable(CSPOMVariable.ofInterval(lb = lb, ub = ub))
-
-  def aux(): FreeVariable = addVariable(CSPOMVariable.aux())
-
-  def auxInt(): IntVariable = addVariable(CSPOMVariable.auxInt())
-
-  @annotation.varargs
-  def varOf(values: Int*) = addVariable(CSPOMVariable.ofInt(values: _*))
-
-  @annotation.varargs
-  def varOf(name: String, values: Int*) = addVariable(CSPOMVariable.ofInt(name = name, values = values: _*))
-
-  def varOfSeq(values: Seq[Int], params: String*) = addVariable(CSPOMVariable.ofIntSeq(values, params: _*))
 
   private val constants = new HashMap[Int, IntConstant]()
 
   def constant(value: Int) = constants.getOrElseUpdate(value, IntConstant(value))
-
-  def boolVar() = addVariable(CSPOMVariable.bool())
-
-  def boolVar(name: String) = addVariable(CSPOMVariable.bool(name))
 
   override def toString = {
     val vars = variables.mkString("\n")
@@ -448,6 +412,46 @@ object CSPOM {
     s
   }
 
+  def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
+
+  def ctr(c: CSPOMConstraint)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(c)
+
+  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
+    problem.extCtr(rel, init, vars: _*)
+
+  implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
+
+  implicit def constant(value: Boolean): CSPOMConstant with BoolExpression =
+    if (value) CSPOMTrue else CSPOMFalse
+
+  implicit def seq2CSPOMSeq[T <: CSPOMExpression](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
+
+  implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq[T](s)
+  //    var l: List[CSPOMExpression] = Nil
+  //    for (i <- s) {
+  //      l ::= i
+  //    }
+  //    new CSPOMSeq(l)
+  //  }
+
+  implicit def aux(): FreeVariable = CSPOMVariable.aux()
+
+  implicit def auxInt(): IntVariable = CSPOMVariable.auxInt()
+
+  @annotation.varargs
+  def varOf(values: Int*) = CSPOMVariable.ofInt(values: _*)
+
+  @annotation.varargs
+  def varOf(name: String, values: Int*) = CSPOMVariable.ofInt(name = name, values = values: _*)
+
+  def varOfSeq(values: Seq[Int], params: String*) = CSPOMVariable.ofIntSeq(values, params: _*)
+
+  def boolVar() = CSPOMVariable.bool()
+
+  def boolVar(name: String) = CSPOMVariable.bool(name)
+
+  def freeInt(name: String)(implicit problem: CSPOM) = IntVariable.free(name)
+
   /**
    * Adds a bounded, named variable in the problem.
    *
@@ -461,7 +465,7 @@ object CSPOM {
    * @throws DuplicateVariableException
    *             if a variable of the same name already exists
    */
-  def interVar(name: String, lb: Int, ub: Int)(implicit problem: CSPOM) = problem.interVar(name, lb, ub)
+  def interVar(name: String, lb: Int, ub: Int) = CSPOMVariable.ofInterval(name, lb, ub)
 
   /**
    * Adds a bounded, unnamed variable in the problem.
@@ -472,51 +476,7 @@ object CSPOM {
    *            upper bound
    * @return The added variable.
    */
-  def interVar(lb: Int, ub: Int)(implicit problem: CSPOM) = problem.interVar(lb, ub)
-
-  //  def ctr(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
-  //    problem.ctr(typ, vars: _*)
-
-  def ctr(v: BoolVariable)(implicit problem: CSPOM) = problem.ctr(v)
-  def ctr(c: CSPOMConstraint)(implicit problem: CSPOM) = c
-
-  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
-    problem.extCtr(rel, init, vars: _*)
-
-  //  def is(typ: String)(vars: CSPOMVariable*)(implicit problem: CSPOM) = {
-  //    problem.is(typ, vars: _*)
-  //  }
-
-  implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
-
-  implicit def constant(value: Boolean): CSPOMConstant with BoolExpression =
-    if (value) CSPOMTrue else CSPOMFalse
-
-  implicit def auxInt()(implicit problem: CSPOM): IntVariable = problem.auxInt()
-
-  implicit def aux()(implicit problem: CSPOM): CSPOMVariable = problem.aux()
-
-  implicit def seq2CSPOMSeq[T <: CSPOMExpression](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
-
-  implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq[T](s)
-  //    var l: List[CSPOMExpression] = Nil
-  //    for (i <- s) {
-  //      l ::= i
-  //    }
-  //    new CSPOMSeq(l)
-  //  }
-
-  def varOf(values: Int*)(implicit problem: CSPOM) = problem.varOf(values: _*)
-
-  def varOf(name: String, values: Int*)(implicit problem: CSPOM) = problem.varOf(name, values: _*)
-
-  def varOfSeq(values: Seq[Int], params: String*)(implicit problem: CSPOM) = problem.varOfSeq(values, params: _*)
-
-  def boolVar()(implicit problem: CSPOM) = problem.boolVar()
-
-  def boolVar(name: String)(implicit problem: CSPOM) = problem.boolVar(name)
-
-  def freeInt(name: String)(implicit problem: CSPOM) = problem.addVariable(IntVariable.free(name))
+  def interVar(lb: Int, ub: Int) = CSPOMVariable.ofInterval(lb = lb, ub = ub)
 }
 
 

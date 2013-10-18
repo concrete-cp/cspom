@@ -12,13 +12,15 @@ trait CSPOMExpression {
   def cspomType: CSPOMType
 
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression): CSPOMExpression
+
+  def intersected(that: CSPOMExpression): CSPOMExpression
+
+  def contains(that: CSPOMConstant): Boolean
 }
 
 trait IntExpression extends CSPOMExpression
 
-trait BoolExpression extends CSPOMExpression {
-
-}
+trait BoolExpression extends CSPOMExpression
 
 final case class CSPOMSeq[T <: CSPOMExpression](
   val name: String,
@@ -44,6 +46,8 @@ final case class CSPOMSeq[T <: CSPOMExpression](
   def cspomType = CSPOMSeqType(innerType)
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
     new CSPOMSeq(name, innerType, values.map(_.replaceVar(which, by)), definedIndices, params)
+  def intersected(that: CSPOMExpression) = throw new UnsupportedOperationException
+  def contains(that: CSPOMConstant): Boolean = throw new UnsupportedOperationException
 }
 
 object CSPOMSeq {

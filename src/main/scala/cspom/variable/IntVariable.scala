@@ -9,6 +9,13 @@ final class IntVariable(name: String, val domain: IntDomain, params: Set[String]
 
   def cspomType = CSPOMInt
 
+  def contains(that: CSPOMConstant) = domain.contains(that)
+
+  def intersected(that: CSPOMExpression): CSPOMExpression = that match {
+    case IntConstant(v) => IntVariable.of(name, Seq(v), params)
+    case v: IntVariable => IntVariable.of(name, domain.intersect(v.domain), params)
+    case _ => throw new IllegalArgumentException
+  }
 }
 
 object IntVariable {

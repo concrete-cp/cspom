@@ -21,12 +21,11 @@ trait ConstraintCompiler {
     for (v <- which) {
       in.removeVariable(v)
     }
-    by.flattenVariables.distinct.foreach(in.addVariable)
 
     val newConstraints = oldConstraints.map { c =>
       val newC = which.foldLeft(c) { (c, v) => c.replacedVar(v, by) }
       //println(s"$c to $newC")
-      in.addConstraint(newC);
+      in.ctr(newC);
     }
 
     Delta(oldConstraints, newConstraints.flatMap(_.scope).toSet)
@@ -34,7 +33,7 @@ trait ConstraintCompiler {
 
   def replaceCtr(which: CSPOMConstraint, by: CSPOMConstraint, in: CSPOM): Delta = {
     in.removeConstraint(which)
-    in.addConstraint(by)
+    in.ctr(by)
     new Delta(Seq(which), which.scope ++ by.scope)
   }
 }

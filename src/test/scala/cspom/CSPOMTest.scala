@@ -15,7 +15,9 @@ class CSPOMTest {
       CSPOMVariable.ofInterval("test3", 20, 30),
       CSPOMVariable.ofInterval("test4", 30, 40))
 
-    vars foreach { cspom.addVariable(_) }
+    //vars foreach { cspom.addVariable(_) }
+
+    cspom.ctr(new CSPOMConstraint('dummy, vars))
 
     assertTrue(vars sameElements cspom.variables)
     assertEquals(Some(vars(0)), cspom.variable("test1"))
@@ -24,15 +26,16 @@ class CSPOMTest {
   @Test(expected = classOf[IllegalArgumentException])
   def duplicateVariable {
     val cspom = new CSPOM
-    cspom.addVariable(CSPOMVariable.ofInterval("Test", 0, 10))
-    cspom.addVariable(CSPOMVariable.ofInterval("Test", 0, 10))
+    cspom.ctr(new CSPOMConstraint('dummy, CSPOMVariable.ofInterval("Test", 0, 10)))
+    cspom.ctr(new CSPOMConstraint('dummy, CSPOMVariable.ofInterval("Test", 0, 10)))
+
   }
 
   @Test
   def boolVariables {
     val cspom = new CSPOM
-    cspom.addVariable(CSPOMVariable.bool())
-    cspom.addVariable(CSPOMVariable.bool())
+    cspom.ctr(new CSPOMConstraint('dummy, CSPOMVariable.bool()))
+    cspom.ctr(new CSPOMConstraint('dummy, CSPOMVariable.bool()))
     assertEquals(2, cspom.variables.size)
   }
 
@@ -42,10 +45,10 @@ class CSPOMTest {
     val v = List(CSPOMVariable.ofInterval("test1", 0, 10),
       CSPOMVariable.ofInterval("test2", 0, 10));
 
-    v foreach { cspom.addVariable(_) }
+    //v foreach { cspom.addVariable(_) }
 
     val leq = new CSPOMConstraint('leq, v(0), v(1))
-    cspom.addConstraint(leq);
+    cspom.ctr(leq);
 
     assertTrue(cspom.constraints(v(0)) contains leq)
     assertTrue(cspom.constraints(v(1)) contains leq)
@@ -66,10 +69,10 @@ class CSPOMTest {
       CSPOMVariable.ofInterval("test1", 0, 10),
       CSPOMVariable.ofInterval("test2", 0, 10));
 
-    v.foreach(cspom.addVariable)
+    //v.foreach(cspom.addVariable)
 
     val leq = new CSPOMConstraint('leq, v(0), v(1))
-    cspom.addConstraint(leq);
+    cspom.ctr(leq);
     cspom.removeVariable(v(1))
   }
 }
