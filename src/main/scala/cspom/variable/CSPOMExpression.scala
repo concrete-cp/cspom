@@ -18,9 +18,11 @@ trait CSPOMExpression {
   def contains(that: CSPOMConstant): Boolean
 }
 
-trait IntExpression extends CSPOMExpression
+trait SimpleExpression extends CSPOMExpression
 
-trait BoolExpression extends CSPOMExpression
+trait IntExpression extends SimpleExpression
+
+trait BoolExpression extends SimpleExpression
 
 final case class CSPOMSeq[T <: CSPOMExpression](
   val name: String,
@@ -68,7 +70,7 @@ object CSPOMExpression {
    *            The String domain to parse
    * @return The resulting Domain object
    */
-  def valueOf(desc: String): CSPOMExpression = {
+  def valueOf(desc: String): IntExpression = {
     val values: Seq[Int] = desc.trim.split(" +").flatMap { v =>
       if (v.contains("..")) {
         IntInterval.valueOf(v);

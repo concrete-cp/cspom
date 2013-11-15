@@ -4,7 +4,8 @@ import cspom.CSPOM
 
 final class BoolVariable(name: String, params: Set[String] = Set())
   extends CSPOMVariable(name, params) with BoolExpression {
-
+  def this(name: String, params: String*) = this(name, params.toSet)
+  
   override def toString = s"var $name: Boolean"
 
   def cspomType = CSPOMBool

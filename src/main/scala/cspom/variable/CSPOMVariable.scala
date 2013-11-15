@@ -10,9 +10,8 @@ import scala.collection.mutable.HashMap
  * @author vion
  *
  */
-abstract class CSPOMVariable(val name: String, val params: Set[String]) extends CSPOMExpression {
+abstract class CSPOMVariable(val name: String, val params: Set[String]) extends SimpleExpression {
   def this(name: String, params: String*) = this(name, params.toSet)
-
 
   //  def domain_=(d: CSPOMDomain[Any]) {
   //    require(_domain.isEmpty)
@@ -171,5 +170,7 @@ object CSPOMVariable {
   def aux() = new FreeVariable(VariableNameGenerator.generate(), "var_is_introduced")
 
   def auxInt() = IntVariable.free(VariableNameGenerator.generate(), "var_is_introduced")
+
+  def auxBool() = new BoolVariable(VariableNameGenerator.generate(), "var_is_introduced")
 
 }

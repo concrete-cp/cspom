@@ -2,7 +2,7 @@ package cspom.variable
 
 import scala.collection.mutable.WeakHashMap
 
-trait CSPOMConstant extends CSPOMExpression {
+trait CSPOMConstant extends SimpleExpression {
   def flattenVariables = Seq()
   final def replaceVar(which: CSPOMVariable, by: CSPOMExpression) = this
   def contains(that: CSPOMConstant) = this == that

@@ -195,7 +195,7 @@ class CSPOM {
   }
 
   def isBool(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): BoolVariable = {
-    val result = CSPOM.boolVar()
+    val result = CSPOM.auxBool()
     ctr(new CSPOMConstraint(result, name, scope: _*))
     result
   }
@@ -437,6 +437,8 @@ object CSPOM {
   implicit def aux(): FreeVariable = CSPOMVariable.aux()
 
   implicit def auxInt(): IntVariable = CSPOMVariable.auxInt()
+  
+  implicit def auxBool(): BoolVariable = CSPOMVariable.auxBool()
 
   @annotation.varargs
   def varOf(values: Int*) = CSPOMVariable.ofInt(values: _*)

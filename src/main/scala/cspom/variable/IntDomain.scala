@@ -65,8 +65,10 @@ final case class IntSeq(val values: Seq[Int]) extends IntDomain {
 
   def toXCSP = values.mkString(", ")
 
-  def intersect(domain: IntDomain) =
-    new IntSeq(this.values.intersect(domain))
+  def intersect(domain: IntDomain) = domain match {
+    case FreeInt => this
+    case _ => new IntSeq(this.values.intersect(domain))
+  }
 
   def iterator: Iterator[Int] = values.iterator
 
@@ -78,6 +80,7 @@ final case class IntInterval(val lb: Int, val ub: Int) extends Range.Inclusive(l
   require(lb <= ub, "lb <= ub required");
 
   def intersect(domain: IntDomain): IntDomain = domain match {
+    case FreeInt => this
     case m: IntInterval =>
       new IntInterval(math.max(head, m.head), math.min(last, m.last))
     case d => d.intersect(this)
