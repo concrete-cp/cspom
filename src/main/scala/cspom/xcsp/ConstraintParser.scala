@@ -63,7 +63,7 @@ final object ConstraintParser extends JavaTokenParsers {
 
         (genVars.flatten, genCons.flatten :+ new CSPOMConstraint(Symbol(operator), sub: _*))
 
-      case _ => throw new IllegalArgumentException("Constraint expected")
+      case _ => throw new IllegalArgumentException("Constraint expected, was " + expression)
     }
 
   }
