@@ -146,7 +146,7 @@ final object XCSPParser {
 
     if (reference startsWith "global:") {
 
-      val constraint = reference.substring(7) + scope.mkString("(", ", ", ")")
+      val constraint = reference.substring(7) + scope.map(_.name).mkString("(", ", ", ")")
 
       try {
         ConstraintParser.split(constraint, declaredVariables);
@@ -159,7 +159,7 @@ final object XCSPParser {
       relations.get(reference) match {
 
         case Some(extension: Extension) => (Seq(), Seq(new CSPOMConstraint(
-          'extension, Seq(new CSPOMSeq(scope)), Map("init" -> extension.init, "relation" -> extension.relation))))
+          'extension, scope, Map("init" -> extension.init, "relation" -> extension.relation))))
 
         case Some(predicate: XCSPPredicate) =>
           try {
