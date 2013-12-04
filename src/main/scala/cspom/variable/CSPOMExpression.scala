@@ -4,12 +4,10 @@ import cspom.CSPOM
 import scala.collection.mutable.WeakHashMap
 
 /*
- * An expression can be either a variable, a constant or a variable sequence
+ * An expression can be either simple (a variable or a constant) or a sequence of expressions
  */
-trait CSPOMExpression {
+sealed trait CSPOMExpression {
   def flattenVariables: Seq[CSPOMVariable]
-
-  def cspomType: CSPOMType
 
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression): CSPOMExpression
 
@@ -18,7 +16,10 @@ trait CSPOMExpression {
   def contains(that: CSPOMConstant): Boolean
 }
 
-trait SimpleExpression extends CSPOMExpression
+/*
+ * Simple expressions are typed (int or boolean)
+ */
+sealed trait SimpleExpression extends CSPOMExpression
 
 trait IntExpression extends SimpleExpression
 
@@ -26,18 +27,36 @@ trait BoolExpression extends SimpleExpression {
   def neg: BoolExpression
 }
 
+trait CSPOMConstant extends SimpleExpression {
+  def flattenVariables = Seq()
+  final def replaceVar(which: CSPOMVariable, by: CSPOMExpression) = this
+  def contains(that: CSPOMConstant) = this == that
+  def intersected(that: CSPOMExpression) =
+    if (that.contains(this)) {
+      this
+    } else {
+      throw new IllegalArgumentException("Empty intersection")
+    }
+}
+
+abstract class CSPOMVariable(val name: String, val params: Set[String]) extends SimpleExpression {
+  def this(name: String, params: String*) = this(name, params.toSet)
+
+  def flattenVariables = Seq(this)
+  def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
+    if (which == this) by else this
+}
+
 final case class CSPOMSeq[T <: CSPOMExpression](
   val name: String,
-  val innerType: CSPOMType,
   val values: Seq[T],
   val definedIndices: Range,
   val params: Set[String] = Set())
   extends Seq[T] with CSPOMExpression {
 
   require(values.nonEmpty)
-  require(values.forall(v => innerType.generalizes(v.cspomType)))
 
-  def this(name: String, seq: Seq[T]) = this(name, seq.head.cspomType, seq, seq.indices)
+  def this(name: String, seq: Seq[T]) = this(name, seq, seq.indices)
   def this(seq: Seq[T]) = this(VariableNameGenerator.generate() + "_array", seq)
 
   //def variables = seq
@@ -47,9 +66,9 @@ final case class CSPOMSeq[T <: CSPOMExpression](
   def apply(idx: Int): T = values(definedIndices.indexOf(idx))
   def length: Int = values.length
   def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
-  def cspomType = CSPOMSeqType(innerType)
+
   def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
-    new CSPOMSeq(name, innerType, values.map(_.replaceVar(which, by)), definedIndices, params)
+    new CSPOMSeq(name, values.map(_.replaceVar(which, by)), definedIndices, params)
   def intersected(that: CSPOMExpression) = throw new UnsupportedOperationException
   def contains(that: CSPOMConstant): Boolean = throw new UnsupportedOperationException
 }
@@ -88,4 +107,55 @@ object CSPOMExpression {
     }
 
   }
+}
+
+object CSPOMVariable {
+
+  /**
+   * Constructs a new variable with a domain defined by lower
+   * and upper bounds.
+   *
+   * @param <E>
+   *            Type of bounds.
+   * @param lB
+   *            Lower bound of the domain
+   * @param uB
+   *            Upper bound of the domain
+   */
+  def ofInterval(name: String = VariableNameGenerator.generate, lb: Int, ub: Int, params: Set[String] = Set()) = {
+    //val i = intervals.getOrElseUpdate((lb, ub), new IntInterval(lb, ub))
+
+    new IntVariable(name, new IntInterval(lb, ub), params);
+  }
+
+  /**
+   * Constructs a new variable with given name. Domain is defined by a list of
+   * values.
+   *
+   * @param <T>
+   *            Type of the values.
+   * @param name
+   *            Name of the variable.
+   * @param values
+   *            List of values defining the domain.
+   */
+  def ofInt(values: Int*) = ofIntSeq(values)
+
+  def ofInt(name: String, values: Int*) = ofIntSeq(name, values)
+
+  def ofIntSeq(name: String = VariableNameGenerator.generate(), values: Seq[Int], params: Set[String] = Set()): IntVariable =
+    IntVariable.of(name, IntDomain.of(values: _*), params)
+
+  def ofIntSeq(values: Seq[Int], params: String*): IntVariable =
+    ofIntSeq(values = values, params = params.toSet)
+
+  def bool(name: String = VariableNameGenerator.generate()) =
+    new BoolVariable(name)
+
+  def aux() = new FreeVariable(VariableNameGenerator.generate(), "var_is_introduced")
+
+  def auxInt() = IntVariable.free(VariableNameGenerator.generate(), "var_is_introduced")
+
+  def auxBool() = new BoolVariable(VariableNameGenerator.generate(), "var_is_introduced")
+
 }
