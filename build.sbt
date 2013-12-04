@@ -9,7 +9,7 @@ resolvers += "sonatype-releases" at "http://oss.sonatype.org/content/repositorie
 resolvers += "Concrete repository" at "http://scand1sk.github.io/concrete/repository"
 
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
 	"org.mozilla" % "rhino" % "1.7R4",
