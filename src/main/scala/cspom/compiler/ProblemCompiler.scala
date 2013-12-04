@@ -38,7 +38,8 @@ final class ProblemCompiler(
 
           constraints.remove(delta.removed: _*)
           for (v <- delta.altered) {
-            constraints.enqueue(problem.constraints(v): _*)
+            problem.constraints(v).foreach(constraints.enqueue(_))
+            //constraints.enqueue(problem.constraints(v): _*)
           }
           ch |= delta.nonEmpty
         }

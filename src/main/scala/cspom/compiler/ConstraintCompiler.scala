@@ -28,13 +28,13 @@ trait ConstraintCompiler {
       in.ctr(newC);
     }
 
-    Delta(oldConstraints, newConstraints.flatMap(_.scope).toSet)
+    Delta().removed(oldConstraints).added(newConstraints)
   }
 
   def replaceCtr(which: CSPOMConstraint, by: CSPOMConstraint, in: CSPOM): Delta = {
     in.removeConstraint(which)
     in.ctr(by)
-    new Delta(Seq(which), which.scope ++ by.scope)
+    Delta().removed(which).added(by)
   }
 }
 
@@ -47,18 +47,26 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
 }
 
-case class Delta(removed: Seq[CSPOMConstraint], altered: Set[CSPOMVariable]) {
-  /**
-   * One constraint removed, and several variables altered
-   */
-  def this(r: CSPOMConstraint, altered: Set[CSPOMVariable]) = this(Seq(r), altered)
+case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMVariable]) {
+  //  /**
+  //   * One constraint removed, and several variables altered
+  //   */
+  //  def this(r: CSPOMConstraint, altered: Set[CSPOMVariable]) = this(Seq(r), altered)
+  //
+  //  /**
+  //   *   Simply one constraint removed *
+  //   */
+  //  def this(r: CSPOMConstraint) = this(r, r.scope)
 
-  /**
-   *   Simply one constraint removed *
-   */
-  def this(r: CSPOMConstraint) = this(r, r.scope)
+  def removed(c: CSPOMConstraint): Delta = this ++ new Delta(Seq(c), c.scope)
+  def removed(c: Traversable[CSPOMConstraint]): Delta =
+    this ++ new Delta(c.toSeq, c.flatMap(_.scope).toSet)
 
-  def ++(d: Delta) = Delta(removed ++ d.removed, altered ++ d.altered)
+  def added(c: CSPOMConstraint): Delta = this ++ new Delta(Nil, c.scope)
+  def added(c: Traversable[CSPOMConstraint]): Delta =
+    this ++ new Delta(Nil, c.flatMap(_.scope).toSet)
+
+  def ++(d: Delta): Delta = Delta(removed ++ d.removed, altered ++ d.altered)
   def nonEmpty = removed.nonEmpty || altered.nonEmpty
 }
 
