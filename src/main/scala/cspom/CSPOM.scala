@@ -27,6 +27,7 @@ import cspom.variable.IntVariable
 import cspom.variable.FreeVariable
 import cspom.variable.BoolExpression
 import cspom.variable.CSPOMFalse
+import cspom.extension.Table
 
 /**
  *
@@ -107,7 +108,7 @@ class CSPOM {
     variableMap.remove(v.name);
   }
 
-  private val ctrV = collection.mutable.HashMap[CSPOMVariable, Seq[CSPOMConstraint]]().withDefault(_ => Nil)
+  private val ctrV = collection.mutable.HashMap[CSPOMVariable, Set[CSPOMConstraint]]().withDefault(_ => Set())
 
   /**
    * Adds a constraint to the problem.
@@ -128,7 +129,8 @@ class CSPOM {
     _constraints += constraint
 
     for (v <- constraint.scope) {
-      ctrV += v -> (constraint +: ctrV.getOrElseUpdate(v, Nil))
+      ctrV(v) += constraint
+      //      ctrV += v -> (constraint +: ctrV.getOrElseUpdate(v, Nil))
     }
     _neighbors --= constraint.scope
 
@@ -139,14 +141,15 @@ class CSPOM {
     //for (v <- c.scope) { v.removeConstraint(c) } 
     _constraints -= c
     for (v <- c.scope) {
-      ctrV += v -> (ctrV.getOrElseUpdate(v, Nil).filter(_ ne c))
+      ctrV(v) -= c
     }
     _neighbors --= c.scope
   }
 
   def constraints(v: CSPOMVariable) = {
-    ctrV.getOrElseUpdate(v,
-      _constraints.iterator.filter(_.scope.contains(v)).toList)
+    ctrV(v)
+//    .getOrElseUpdate(v,
+//      _constraints.iterator.filter(_.scope.contains(v)).toList)
   }
 
   private val _neighbors = collection.mutable.WeakHashMap[CSPOMVariable, Set[CSPOMVariable]]()
@@ -164,13 +167,13 @@ class CSPOM {
   }
 
   def ctr(v: BoolVariable) = {
-
-    // replace the variable by the CSPOMTrue constant
-    val Seq(fc: CSPOMConstraint) = constraints(v)
-    removeConstraint(fc)
-    removeVariable(v)
-    val newConstraint = fc.replacedVar(v, CSPOMTrue)
-    addConstraint(newConstraint)
+    addConstraint(new CSPOMConstraint(CSPOMTrue, 'eq, Seq(v, CSPOMTrue)))
+    //    // replace the variable by the CSPOMTrue constant
+    //    val Seq(fc: CSPOMConstraint) = constraints(v)
+    //    removeConstraint(fc)
+    //    removeVariable(v)
+    //    val newConstraint = fc.replacedVar(v, CSPOMTrue)
+    //    addConstraint(newConstraint)
 
   }
 
@@ -209,7 +212,7 @@ class CSPOM {
 
     val cons = constraints.mkString("\n")
 
-    s"$vars\n$cons"
+    s"$vars\n$cons\n${variables.size} variables and ${constraints.size} constraints"
   }
 
   /**
@@ -434,10 +437,12 @@ object CSPOM {
   //    new CSPOMSeq(l)
   //  }
 
+  implicit def seq2Rel(s: Seq[Array[Int]]) = new Table(s)
+
   implicit def aux(): FreeVariable = CSPOMVariable.aux()
 
   implicit def auxInt(): IntVariable = CSPOMVariable.auxInt()
-  
+
   implicit def auxBool(): BoolVariable = CSPOMVariable.auxBool()
 
   @annotation.varargs
