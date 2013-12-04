@@ -53,10 +53,12 @@ object CSPOMTrue extends CSPOMConstant with CSPOMType with BoolExpression {
   override def toString = "true"
   def cspomType = this
   def generalizes(other: CSPOMType) = other == CSPOMTrue
+  def neg = CSPOMFalse
 }
 
 object CSPOMFalse extends CSPOMConstant with CSPOMType with BoolExpression {
   override def toString = "false"
   def cspomType = this
   def generalizes(other: CSPOMType) = other == CSPOMFalse
+  def neg = CSPOMTrue
 }

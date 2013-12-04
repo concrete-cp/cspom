@@ -22,7 +22,9 @@ trait SimpleExpression extends CSPOMExpression
 
 trait IntExpression extends SimpleExpression
 
-trait BoolExpression extends SimpleExpression
+trait BoolExpression extends SimpleExpression {
+  def neg: BoolExpression
+}
 
 final case class CSPOMSeq[T <: CSPOMExpression](
   val name: String,
