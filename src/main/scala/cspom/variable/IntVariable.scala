@@ -7,14 +7,13 @@ final class IntVariable(name: String, val domain: IntDomain, params: Set[String]
 
   override def toString = s"var $name: Int ($domain)"
 
-  def cspomType = CSPOMInt
-
   def contains(that: CSPOMConstant) = domain.contains(that)
 
   def intersected(that: CSPOMExpression): CSPOMExpression = that match {
     case IntConstant(v) => IntVariable.of(name, Seq(v), params)
     case v: IntVariable => new IntVariable(name, domain.intersect(v.domain), params)
-    case _ => throw new IllegalArgumentException
+    case v: FreeVariable => this
+    case t: CSPOMExpression => throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
   }
 }
 

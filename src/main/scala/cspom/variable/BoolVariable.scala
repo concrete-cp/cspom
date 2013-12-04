@@ -8,8 +8,6 @@ final class BoolVariable(name: String, params: Set[String] = Set())
   
   override def toString = s"var $name: Boolean"
 
-  def cspomType = CSPOMBool
-
   def intersected(that: CSPOMExpression) = that match {
     case t: BoolVariable => this
     case t: BoolExpression with CSPOMConstant => t
