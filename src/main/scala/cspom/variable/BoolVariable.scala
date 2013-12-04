@@ -11,9 +11,12 @@ final class BoolVariable(name: String, params: Set[String] = Set())
   def cspomType = CSPOMBool
 
   def intersected(that: CSPOMExpression) = that match {
-    case t: BoolExpression => t
+    case t: BoolVariable => this
+    case t: BoolExpression with CSPOMConstant => t
     case _ => throw new IllegalArgumentException
   }
 
   def contains(that: CSPOMConstant) = that == CSPOMTrue || that == CSPOMFalse
+  
+  def neg = ???
 }
