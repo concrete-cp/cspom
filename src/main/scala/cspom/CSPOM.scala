@@ -148,8 +148,8 @@ class CSPOM {
 
   def constraints(v: CSPOMVariable) = {
     ctrV(v)
-//    .getOrElseUpdate(v,
-//      _constraints.iterator.filter(_.scope.contains(v)).toList)
+    //    .getOrElseUpdate(v,
+    //      _constraints.iterator.filter(_.scope.contains(v)).toList)
   }
 
   private val _neighbors = collection.mutable.WeakHashMap[CSPOMVariable, Set[CSPOMVariable]]()
@@ -264,7 +264,7 @@ class CSPOM {
     stb.append("]\n").toString
   }
 
-  def controlInt(solution: Map[String, Int]): Set[CSPOMConstraint] = ???
+  //def controlInt(solution: Map[String, Int]): Set[CSPOMConstraint] = ???
 
   //  def control(solution: Map[String, Number]) = {
   //    constraints filterNot { c =>
@@ -272,16 +272,31 @@ class CSPOM {
   //    }
   //  }
   //
-  //  def controlInt(solution: Map[String, Int]) = {
-  //    constraints flatMap { c =>
-  //      val values = c.scope.collect { case v: CSPOMVariable => solution(v.name) }
-  //      if (c.evaluate(values)) {
-  //        Nil
-  //      } else {
-  //        List((c, values))
-  //      }
-  //    }
-  //  }
+  def controlInt(solution: Map[String, Int]) = {
+    constraints flatMap { c =>
+      val result = exprToSol(c.result, solution)
+      val values = c.arguments.map(exprToSol(_, solution))
+      println(c.function)
+      val evaluation = c.function match {
+        case 'extension => result == 1 &&
+          (c.params("init").asInstanceOf[Boolean] ^ c.params("relation").asInstanceOf[Relation].contains(values))
+        case _ => c.evaluate(result, values)
+      }
+      if (evaluation) {
+        Nil
+      } else {
+        List((c, result, values))
+      }
+    }
+  }
+
+  private def exprToSol(e: CSPOMExpression, solution: Map[String, Int]): Int = e match {
+    case CSPOMTrue => 1
+    case CSPOMFalse => 0
+    case c: IntConstant => c.value
+    case v: CSPOMVariable => solution(v.name)
+    case e: CSPOMExpression => throw new IllegalArgumentException("Could not control expression " + e)
+  }
   //
   //  def controlInteger(solution: Map[String, java.lang.Integer]) = {
   //    constraints filterNot { c =>
