@@ -42,6 +42,14 @@ final case class CSPOMConstraint(
   val id = CSPOMConstraint.id
   CSPOMConstraint.id += 1
 
+  def getParam[A](name: String, typ: Class[A]): Option[A] =
+    try {
+      params.get(name).map(typ.cast)
+    } catch {
+      case e: ClassCastException =>
+        throw new IllegalArgumentException("Could not cast " + params(name) + ": " + params(name).getClass + " to " + typ)
+    }
+
   //val scopeSet = scope.toSet
 
   //val getScope = JavaConversions.seqAsJavaList(scope)
@@ -63,11 +71,11 @@ final case class CSPOMConstraint(
       arguments map { v => v.replaceVar(which, by) },
       params)
 
-  def evaluate(tuple: Seq[Any]): Boolean = {
+  def evaluate(result: Any, arguments: Seq[Any]): Boolean = {
     val stb = new StringBuilder
-    stb.append(tuple.head).append(" == ").append(function)
+    stb.append(result).append(" == ").append(function.name)
 
-    tuple.tail.addString(stb, "(", ", ", ")");
+    arguments.addString(stb, "(", ", ", ")");
 
     //    if (predicate.parameters.isDefined) {
     //      stb append ", " append predicate.parameters.get;
@@ -79,6 +87,9 @@ final case class CSPOMConstraint(
       case e: ScriptException =>
         throwing(Evaluator.getClass.getName, "evaluate", e);
         sys.error(stb.toString);
+      case e: Exception =>
+        logger.severe(stb.toString)
+        throw e
     }
 
   }
