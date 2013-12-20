@@ -13,11 +13,10 @@ public final class File {
 	private File() {
 	}
 
-	public static void main(final String[] args) throws IOException,
-			CSPParseException {
+	public static void main(final String[] args) throws IOException, CSPParseException {
 		final CSPOM cspom;
 		try {
-			cspom = CSPOM.load(scalaexamples.file.File.class.getResource(FILENAME));
+			cspom = CSPOM.load(scalaexamples.file.File.class.getResource(FILENAME))._1;
 
 		} catch (CSPParseException e) {
 			System.err.println(e.getMessage() + " at line " + e.lineNumber());

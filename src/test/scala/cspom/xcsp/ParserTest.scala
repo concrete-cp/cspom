@@ -4,7 +4,6 @@ import scala.collection.JavaConversions
 import cspom.CSPOM
 import org.junit.Assert._
 import org.junit.Test
-import cspom.compiler.ConstraintTyper
 import cspom.compiler.ProblemCompiler
 
 final class ParserTest {
@@ -12,13 +11,13 @@ final class ParserTest {
 
   @Test
   def test() {
-    val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME));
+    val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1;
     //println(cspom);
     assertEquals(25, cspom.variables.filterNot(_.params.contains("var_is_introduced")).size)
     assertTrue(cspom.constraints.size >= 55)
     //println(cspom)
 
-    ProblemCompiler.compile(cspom, Seq(new ConstraintTyper(XCSPConstraintSignatures.get)))
+    //ProblemCompiler.compile(cspom, Seq(new ConstraintTyper(XCSPConstraintSignatures.get)))
 
   }
 

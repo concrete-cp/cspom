@@ -16,7 +16,7 @@ final object File {
 
     val writer = new FileWriter(FILENAME + ".gml");
     try {
-      writer.append(cspom.toGML);
+      writer.append(cspom._1.toGML);
     } finally {
       writer.close();
     }

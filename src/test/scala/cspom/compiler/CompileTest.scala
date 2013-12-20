@@ -9,7 +9,7 @@ final class CompileTest {
 
   @Test
   def test() {
-    val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME));
+    val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1;
     ProblemCompiler.compile(cspom, Seq())
     //println(cspom);
 
