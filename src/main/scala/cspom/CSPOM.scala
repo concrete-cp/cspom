@@ -272,23 +272,23 @@ class CSPOM {
   //    }
   //  }
   //
-  def controlInt(solution: Map[String, Int]) = {
-    constraints flatMap { c =>
-      val result = exprToSol(c.result, solution)
-      val values = c.arguments.map(exprToSol(_, solution))
-      println(c.function)
-      val evaluation = c.function match {
-        case 'extension => result == 1 &&
-          (c.params("init").asInstanceOf[Boolean] ^ c.params("relation").asInstanceOf[Relation].contains(values))
-        case _ => c.evaluate(result, values)
-      }
-      if (evaluation) {
-        Nil
-      } else {
-        List((c, result, values))
-      }
-    }
-  }
+  //  def controlInt(solution: Map[String, Int]) = {
+  //    constraints flatMap { c =>
+  //      val result = exprToSol(c.result, solution)
+  //      val values = c.arguments.map(exprToSol(_, solution))
+  //      println(c.function)
+  //      val evaluation = c.function match {
+  //        case 'extension => result == 1 &&
+  //          (c.params("init").asInstanceOf[Boolean] ^ c.params("relation").asInstanceOf[Relation].contains(values))
+  //        case _ => c.evaluate(result, values)
+  //      }
+  //      if (evaluation) {
+  //        Nil
+  //      } else {
+  //        List((c, result, values))
+  //      }
+  //    }
+  //  }
 
   private def exprToSol(e: CSPOMExpression, solution: Map[String, Int]): Int = e match {
     case CSPOMTrue => 1
@@ -368,7 +368,7 @@ object CSPOM {
    */
   @throws(classOf[CSPParseException])
   @throws(classOf[IOException])
-  def load(xcspFile: String): CSPOM = {
+  def load(xcspFile: String): (CSPOM, Seq[String]) = {
     val uri = try { new URI(xcspFile) } catch {
       case e: URISyntaxException =>
         throw new IOException("Invalid URI", e);
@@ -388,7 +388,7 @@ object CSPOM {
    * @param url
    *            An URL locating the XCSP file. Filenames ending with .gz or
    *            .bz2 will be inflated accordingly.
-   * @return The loaded CSPOM
+   * @return The loaded CSPOM and the list of original variable names
    * @throws CSPParseException
    *             If the given file could not be parsed.
    * @throws IOException
@@ -397,7 +397,7 @@ object CSPOM {
    */
   @throws(classOf[CSPParseException])
   @throws(classOf[IOException])
-  def load(url: URL): CSPOM = {
+  def load(url: URL): (CSPOM, Seq[String]) = {
     val problemIS = problemInputStream(url);
 
     url.getFile match {

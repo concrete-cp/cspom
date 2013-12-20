@@ -33,15 +33,15 @@ final object XCSPParser {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def parse(is: InputStream) = {
+  def parse(is: InputStream): (CSPOM, Seq[String]) = {
     val document = XML.load(is)
     val declaredVariables = parseVariables(document);
-    val (genVariables, constraints) = parseConstraints(document, declaredVariables);
+    val (genVariables, constraints) = parseConstraints(document, declaredVariables.toMap);
     val problem = new CSPOM
     //declaredVariables.values.foreach(problem.addVariable)
     //genVariables.foreach(problem.addVariable)
     constraints.foreach(problem.ctr)
-    problem
+    (problem, declaredVariables.map(_._1))
 
   }
 
@@ -55,12 +55,12 @@ final object XCSPParser {
    * @throws CSPParseException
    *             If two variables have the same name.
    */
-  private def parseVariables(doc: NodeSeq): Map[String, CSPOMVariable] = {
+  private def parseVariables(doc: NodeSeq): Seq[(String, CSPOMVariable)] = {
     val domains = (doc \ "domains" \ "domain") map { node =>
       (node \ "@name").text -> IntDomain.valueOf(node.text)
     } toMap
 
-    val seq = for (node <- doc \ "variables" \ "variable") yield {
+    for (node <- doc \ "variables" \ "variable") yield {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
@@ -73,7 +73,7 @@ final object XCSPParser {
       //      }
 
     }
-    seq.toMap
+
   }
 
   /**
