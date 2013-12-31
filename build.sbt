@@ -13,7 +13,8 @@ scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
 	"org.mozilla" % "rhino" % "1.7R4",
-	"junit" % "junit" % "4.11" % "test"
+	"junit" % "junit" % "4.11" % "test",
+	"com.novocode" % "junit-interface" % "0.9" % "test" // For launching tests in SBT
 	)
 
 publishTo := Some(
