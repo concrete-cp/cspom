@@ -16,47 +16,9 @@ final class LazyRelation(private val text: Reader[Char], val arity: Int, overrid
 
   private object Parser extends RegexParsers {
     def parse: Parser[Seq[Array[Int]]] = repsep(tuple, "|")
-    def tuple: Parser[Array[Int]] = rep(wholeNumber) ^^ (_.toArray)
+    def tuple: Parser[Array[Int]] = rep1(wholeNumber) ^^ (_.toArray)
     def wholeNumber: Parser[Int] = """-?\d+""".r ^^ (_.toInt)
   }
-
-//  private def traversable = new Traversable[Array[Int]] {
-//    def foreach[A](f: Array[Int] => A) {
-//      //text.reset()
-//      val seq = Parser.parse(text).get
-//      require(seq.size == size, seq.size + " parsed, " + size + " declared")
-//      seq.foreach(f)
-//    }
-//    //      text.reset()
-//    //      val buf = new Array[Char](bl)
-//    //      var nt = 0
-//    //      var b = new StringBuilder()
-//    //      while (true) {
-//    //        val l = text.read(buf, 0, bl)
-//    //        if (l < 0) {
-//    //          if (b.nonEmpty) {
-//    //            f(b.toString.trim.split(" +").map(_.toInt))
-//    //            nt += 1
-//    //          }
-//    //          require(nt == nbTuples, nt + " parsed, " + nbTuples + " declared")
-//    //          return
-//    //        }
-//    //
-//    //        var i = 0
-//    //        while (i < l) {
-//    //          if (buf(i) == '|') {
-//    //            f(b.toString().trim.split(" +").map(_.toInt))
-//    //            nt += 1
-//    //            b.delete(0, b.length)
-//    //          } else {
-//    //            b.append(buf(i))
-//    //          }
-//    //          i += 1
-//    //        }
-//    //      }
-//    //
-//    //    }
-//  }
 
   val id = LazyRelation.id
   LazyRelation.id += 1
