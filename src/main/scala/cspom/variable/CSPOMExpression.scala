@@ -9,7 +9,7 @@ import scala.collection.mutable.WeakHashMap
 sealed trait CSPOMExpression {
   def flattenVariables: Seq[CSPOMVariable]
 
-  def replaceVar(which: CSPOMVariable, by: CSPOMExpression): CSPOMExpression
+  def replaceVar(which: CSPOMExpression, by: CSPOMExpression): CSPOMExpression
 
   def intersected(that: CSPOMExpression): CSPOMExpression
 
@@ -19,7 +19,10 @@ sealed trait CSPOMExpression {
 /*
  * Simple expressions are typed (int or boolean)
  */
-sealed trait SimpleExpression extends CSPOMExpression
+sealed trait SimpleExpression extends CSPOMExpression {
+  final def replaceVar(which: CSPOMExpression, by: CSPOMExpression) =
+    if (which == this) by else this
+}
 
 trait IntExpression extends SimpleExpression
 
@@ -29,8 +32,9 @@ trait BoolExpression extends SimpleExpression {
 
 trait CSPOMConstant extends SimpleExpression {
   def flattenVariables = Seq()
-  final def replaceVar(which: CSPOMVariable, by: CSPOMExpression) = this
+
   def contains(that: CSPOMConstant) = this == that
+  
   def intersected(that: CSPOMExpression) =
     if (that.contains(this)) {
       this
@@ -43,8 +47,7 @@ abstract class CSPOMVariable(val name: String, val params: Set[String]) extends 
   def this(name: String, params: String*) = this(name, params.toSet)
 
   def flattenVariables = Seq(this)
-  def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
-    if (which == this) by else this
+
 }
 
 final case class CSPOMSeq[T <: CSPOMExpression](
@@ -67,7 +70,7 @@ final case class CSPOMSeq[T <: CSPOMExpression](
   def length: Int = values.length
   def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
 
-  def replaceVar(which: CSPOMVariable, by: CSPOMExpression) =
+  def replaceVar(which: CSPOMExpression, by: CSPOMExpression) =
     new CSPOMSeq(name, values.map(_.replaceVar(which, by)), definedIndices, params)
   def intersected(that: CSPOMExpression) = throw new UnsupportedOperationException
   def contains(that: CSPOMConstant): Boolean = throw new UnsupportedOperationException

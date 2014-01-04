@@ -65,7 +65,7 @@ final case class CSPOMConstraint(
     case _ => false
   }
 
-  def replacedVar(which: CSPOMVariable, by: CSPOMExpression) =
+  def replacedVar(which: CSPOMExpression, by: CSPOMExpression) =
     new CSPOMConstraint(result.replaceVar(which, by),
       function,
       arguments map { v => v.replaceVar(which, by) },
