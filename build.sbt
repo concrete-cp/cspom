@@ -12,9 +12,8 @@ resolvers += "Concrete repository" at "http://scand1sk.github.io/concrete/reposi
 scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
-	"org.mozilla" % "rhino" % "1.7R4",
 	"junit" % "junit" % "4.11" % "test",
-	"com.novocode" % "junit-interface" % "0.9" % "test" // For launching tests in SBT
+	"com.novocode" % "junit-interface" % "0.10" % "test" // For launching tests in SBT
 	)
 
 publishTo := Some(
