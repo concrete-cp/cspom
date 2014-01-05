@@ -51,14 +51,7 @@ final case class CSPOMConstraint(
         throw new IllegalArgumentException("Could not cast " + params(name) + ": " + params(name).getClass + " to " + typ)
     }
 
-  //val scopeSet = scope.toSet
-
   def getArgs = JavaConversions.seqAsJavaList(arguments)
-  //TODO: val positions
-
-  //  def involves(variable: CSPOMVariable) = scopeSet.contains(variable)
-  //
-  //  final def getVariable(position: Int) = scope(position)
 
   override final def hashCode = id
   override final def equals(o: Any) = o match {
