@@ -63,11 +63,7 @@ object FlatzincDSL extends DebugJavaTokenParsers {
    */
   def flatzincModel = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
-
       val (varMap, seqMap) = mapVariables(variables)
-      //println(varMap)
-      //println(seqMap)
-
       success(varMap, seqMap) ~ rep(constraint(varMap, seqMap)) ~ solve_goal
   } ^^ {
     case (varMap, seqMap) ~ constraints ~ goal =>
