@@ -3,6 +3,7 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMTrue
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
+import scala.collection.JavaConversions
 
 final case class CSPOMConstraint(
   val result: CSPOMExpression,
@@ -52,7 +53,7 @@ final case class CSPOMConstraint(
 
   //val scopeSet = scope.toSet
 
-  //val getScope = JavaConversions.seqAsJavaList(scope)
+  def getArgs = JavaConversions.seqAsJavaList(arguments)
   //TODO: val positions
 
   //  def involves(variable: CSPOMVariable) = scopeSet.contains(variable)
@@ -70,29 +71,6 @@ final case class CSPOMConstraint(
       function,
       arguments map { v => v.replaceVar(which, by) },
       params)
-
-  def evaluate(result: Any, arguments: Seq[Any]): Boolean = {
-    val stb = new StringBuilder
-    stb.append(result).append(" == ").append(function.name)
-
-    arguments.addString(stb, "(", ", ", ")");
-
-    //    if (predicate.parameters.isDefined) {
-    //      stb append ", " append predicate.parameters.get;
-    //    }
-
-    try {
-      Evaluator.evaluate(stb.toString);
-    } catch {
-      case e: ScriptException =>
-        throwing(Evaluator.getClass.getName, "evaluate", e);
-        sys.error(stb.toString);
-      case e: Exception =>
-        logger.severe(stb.toString)
-        throw e
-    }
-
-  }
 
   override def toString = {
     val content = s"$function(${arguments.mkString(", ")})${if (params.isEmpty) "" else params.mkString(" :: ", " :: ", "")}"
