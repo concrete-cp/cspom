@@ -8,6 +8,8 @@ import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 import java.io.StringReader
 import cspom.CSPOM
+import cspom.compiler.ConstraintCompiler
+import cspom.compiler.ProblemCompiler
 
 class FlatZinc {
 
@@ -17,9 +19,11 @@ class FlatZinc {
     val in = StreamReader(url.reader)
     //val tokens = new FlatzincDSL.lexical.Scanner(in)
 
-    val r = FlatzincDSL.flatzincModel(in) //FlatzincDSL.flatzincModel)(tokens)
+    val cspom = FlatzincDSL.parse(url.reader).get //FlatzincDSL.flatzincModel)(tokens)
 
-    println(r.get)
+    ProblemCompiler.compile(cspom, FZPatterns())
+
+    println(cspom)
     //    r match {
     //      case Success(list, msg) => println(list)
     //      case e: NoSuccess => throw new IllegalArgumentException()

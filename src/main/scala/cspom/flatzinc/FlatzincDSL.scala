@@ -41,8 +41,8 @@ trait DebugJavaTokenParsers extends JavaTokenParsers {
 
 object FlatzincDSL extends DebugJavaTokenParsers {
 
-  def parse(is: InputStream) {
-    flatzincModel(StreamReader(new InputStreamReader(is)))
+  def parse(is: InputStreamReader) = {
+    flatzincModel(StreamReader(is))
   }
 
   private def mapVariables(variables: Seq[CSPOMExpression]) = {
