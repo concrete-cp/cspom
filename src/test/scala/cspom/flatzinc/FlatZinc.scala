@@ -10,6 +10,7 @@ import java.io.StringReader
 import cspom.CSPOM
 import cspom.compiler.ConstraintCompiler
 import cspom.compiler.ProblemCompiler
+import cspom.flatzinc.FZPatterns
 
 class FlatZinc {
 

@@ -6,7 +6,6 @@ import cspom.CSPOM
 import cspom.compiler.ConstraintCompilerNoData
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMTrue
-import cspom.variable.BoolVariable
 import cspom.variable.BoolExpression
 import cspom.variable.IntExpression
 
