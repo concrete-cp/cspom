@@ -28,6 +28,7 @@ import cspom.variable.FreeVariable
 import cspom.variable.BoolExpression
 import cspom.variable.CSPOMFalse
 import cspom.extension.Table
+import cspom.flatzinc.FlatZincParser
 
 /**
  *
@@ -338,17 +339,18 @@ object CSPOM {
   @throws(classOf[IOException])
   def problemInputStream(url: URL): InputStream = {
 
-    val path = url.getPath();
+    val path = url.getPath
+
+    val is = url.openStream
 
     if (path endsWith ".gz") {
-      new GZIPInputStream(url.openStream());
+      new GZIPInputStream(is)
     } else if (path endsWith ".bz2") {
-      val is = url.openStream();
-      is.read();
-      is.read();
-      new CBZip2InputStream(is);
+      is.read()
+      is.read()
+      new CBZip2InputStream(is)
     } else {
-      url.openStream();
+      is
     }
 
   }
@@ -367,12 +369,8 @@ object CSPOM {
    * @throws DimacsParseException
    */
   @throws(classOf[CSPParseException])
-  @throws(classOf[IOException])
   def load(xcspFile: String): (CSPOM, Seq[String]) = {
-    val uri = try { new URI(xcspFile) } catch {
-      case e: URISyntaxException =>
-        throw new IOException("Invalid URI", e);
-    }
+    val uri = new URI(xcspFile)
 
     if (uri.isAbsolute) {
       load(uri.toURL)
@@ -403,6 +401,7 @@ object CSPOM {
     url.getFile match {
       case name if name.contains(".xml") => XCSPParser.parse(problemIS)
       case name if name.contains(".cnf") => CNFParser.parse(problemIS)
+      case name if name.contains(".fzn") => FlatZincParser.parse(problemIS)
       case _ => throw new IllegalArgumentException("Unhandled file format");
     }
 

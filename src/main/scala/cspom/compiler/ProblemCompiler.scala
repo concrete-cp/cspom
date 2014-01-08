@@ -33,7 +33,7 @@ final class ProblemCompiler(
       while (constraints.nonEmpty) {
         val constraint = constraints.dequeue()
         //println(constraint)
-        for (data <- compiler.mtch(constraint, problem)) {
+        for (data <- compiler.mtch.lift(constraint, problem)) {
           val delta = compiler.compile(constraint, problem, data)
 
           constraints.remove(delta.removed: _*)

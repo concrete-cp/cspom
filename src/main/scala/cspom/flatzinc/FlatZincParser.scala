@@ -18,6 +18,8 @@ import cspom.variable.DoubleConstant
 import cspom.variable.IntConstant
 import cspom.variable.CSPOMSeq
 import scala.util.parsing.input.CharSequenceReader
+import cspom.CSPParseException
+import cspom.compiler.ProblemCompiler
 
 trait DebugJavaTokenParsers extends JavaTokenParsers {
   private val DEBUG = false
@@ -39,10 +41,16 @@ trait DebugJavaTokenParsers extends JavaTokenParsers {
   }
 }
 
-object FlatzincDSL extends DebugJavaTokenParsers {
+object FlatZincParser extends DebugJavaTokenParsers {
 
-  def parse(is: InputStreamReader) = {
-    flatzincModel(StreamReader(is))
+  def parse(is: InputStream): (CSPOM, Seq[String]) = {
+    val reader = new InputStreamReader(is)
+    flatzincModel(StreamReader(reader)) match {
+      case Success(cspom, _) =>
+        val v = cspom.variables.map(_.name).toSeq
+        ProblemCompiler.compile(cspom, FZPatterns()); (cspom, v)
+      case NoSuccess(msg, next) => throw new CSPParseException(msg, null, next.pos.line)
+    }
   }
 
   private def mapVariables(variables: Seq[CSPOMExpression]) = {
@@ -61,14 +69,14 @@ object FlatzincDSL extends DebugJavaTokenParsers {
   /*
    * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
-  def flatzincModel = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
+  def flatzincModel: Parser[CSPOM] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
       val (varMap, seqMap) = mapVariables(variables)
       success(varMap, seqMap) ~ rep(constraint(varMap, seqMap)) ~ solve_goal
   } ^^ {
     case (varMap, seqMap) ~ constraints ~ goal =>
       val p = new CSPOM()
-      val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables)).toSet
+      //val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables))
       //allVars.foreach(p.addVariable)
       constraints.foreach(p.ctr)
       p

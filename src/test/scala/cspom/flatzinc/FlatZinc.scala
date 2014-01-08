@@ -10,21 +10,22 @@ import java.io.StringReader
 import cspom.CSPOM
 import cspom.compiler.ConstraintCompiler
 import cspom.compiler.ProblemCompiler
-import cspom.flatzinc.FZPatterns
 
 class FlatZinc {
 
   @Test
   def test() {
-    val url = io.Source.fromURL(classOf[FlatZinc].getResource("1d_rubiks_cube.fzn"))
-    val in = StreamReader(url.reader)
+    val url = classOf[FlatZinc].getResource("1d_rubiks_cube.fzn")
+
     //val tokens = new FlatzincDSL.lexical.Scanner(in)
 
-    val cspom = FlatzincDSL.parse(url.reader).get //FlatzincDSL.flatzincModel)(tokens)
+    val (cspom, variables) = FlatZincParser.parse(url.openStream) //FlatzincDSL.flatzincModel)(tokens)
 
-    ProblemCompiler.compile(cspom, FZPatterns())
 
     println(cspom)
+    
+    println(variables)
+
     //    r match {
     //      case Success(list, msg) => println(list)
     //      case e: NoSuccess => throw new IllegalArgumentException()

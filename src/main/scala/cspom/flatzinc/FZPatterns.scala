@@ -12,8 +12,13 @@ import cspom.variable.IntExpression
 object FZPatterns {
   def apply() = Seq(
     ArrayBool,
-    IntEqReif,
-    new Renamer('int_ne, 'ne))
+    IntBinReif,
+    'int_ne ~> 'ne,
+    'int_eq ~> 'eq)
+
+  implicit class RenSymbol(s: Symbol) {
+    def ~>(s2: Symbol) = new Renamer(s, s2)
+  }
 }
 
 class Renamer(from: Symbol, to: Symbol) extends ConstraintCompilerNoData {
@@ -32,12 +37,11 @@ object ArrayBool extends ConstraintCompiler {
 
   type A = (Seq[BoolExpression], BoolExpression, Symbol)
 
-  def mtch(constraint: CSPOMConstraint, problem: CSPOM): Option[A] = constraint match {
+  def mtch = constraintMatch andThen {
     case CSPOMConstraint(CSPOMTrue, 'array_bool_and,
-      Seq(CSPOMSeq(_, args: Seq[BoolExpression], _, _), r: BoolExpression), _) => Some((args, r, 'and))
+      Seq(CSPOMSeq(_, args: Seq[BoolExpression], _, _), r: BoolExpression), _) => (args, r, 'and)
     case CSPOMConstraint(CSPOMTrue, 'array_bool_or,
-      Seq(CSPOMSeq(_, args: Seq[BoolExpression], _, _), r: BoolExpression), _) => Some((args, r, 'or))
-    case _ => None
+      Seq(CSPOMSeq(_, args: Seq[BoolExpression], _, _), r: BoolExpression), _) => (args, r, 'or)
   }
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: A) = {
@@ -48,19 +52,41 @@ object ArrayBool extends ConstraintCompiler {
   }
 }
 
-object IntEqReif extends ConstraintCompiler {
-  type A = (IntExpression, IntExpression, BoolExpression)
-  def mtch(constraint: CSPOMConstraint, problem: CSPOM) =
-    constraint match {
-      case CSPOMConstraint(CSPOMTrue, 'int_eq_reif, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), _) =>
-        Some((a, b, r))
-      case _ => None
+object IntBinReif extends ConstraintCompiler {
+
+  val pattern = """'int_([^_]+)_reif""".r
+
+  type A = (IntExpression, IntExpression, BoolExpression, String)
+
+  def mtch = {
+    val pf: PartialFunction[(CSPOMConstraint, CSPOM), A] = {
+      case (CSPOMConstraint(CSPOMTrue, s, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), _), _) =>
+        (a, b, r, s.toString)
     }
 
+    pf andThen {
+      case (a, b, r, pattern(s)) => (a, b, r, s)
+    }
+
+  }
+
   def compile(constraint: CSPOMConstraint, problem: CSPOM, data: A) = {
-    val (a, b, r) = data
+    val (a, b, r, s) = data
     replaceCtr(constraint,
-      new CSPOMConstraint(r, 'eq, Seq(a, b), constraint.params),
+      new CSPOMConstraint(r, Symbol(s), Seq(a, b), constraint.params),
       problem)
+  }
+}
+
+/**
+ * Boolean <= is definitely implication.
+ */
+object BoolLe extends ConstraintCompilerNoData {
+  def matchBool(constraint: CSPOMConstraint, problem: CSPOM) =
+    constraint.function == 'bool_le && constraint.arguments.size == 2
+
+  def compile(constraint: CSPOMConstraint, problem: CSPOM) = {
+    replaceCtr(constraint,
+      new CSPOMConstraint(CSPOMTrue, 'or, constraint.arguments, Map("revsign" -> Array(1, 0))), problem)
   }
 }
