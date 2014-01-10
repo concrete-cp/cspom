@@ -37,7 +37,7 @@ object ArrayBool extends ConstraintCompiler {
 
   type A = (Seq[BoolExpression], BoolExpression, Symbol)
 
-  def mtch = constraintMatch andThen {
+  override def constraintMatcher = {
     case CSPOMConstraint(CSPOMTrue, 'array_bool_and,
       Seq(CSPOMSeq(_, args: Seq[BoolExpression], _, _), r: BoolExpression), _) => (args, r, 'and)
     case CSPOMConstraint(CSPOMTrue, 'array_bool_or,
@@ -58,16 +58,13 @@ object IntBinReif extends ConstraintCompiler {
 
   type A = (IntExpression, IntExpression, BoolExpression, String)
 
-  def mtch = {
-    val pf: PartialFunction[(CSPOMConstraint, CSPOM), A] = {
-      case (CSPOMConstraint(CSPOMTrue, s, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), _), _) =>
-        (a, b, r, s.toString)
-    }
+  override def matchConstraint(constraint: CSPOMConstraint) = constraintMatcher.lift(constraint).collect {
+    case (a, b, r, pattern(s)) => (a, b, r, s)
+  }
 
-    pf andThen {
-      case (a, b, r, pattern(s)) => (a, b, r, s)
-    }
-
+  override def constraintMatcher = {
+    case CSPOMConstraint(CSPOMTrue, s, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), _) =>
+      (a, b, r, s.toString)
   }
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM, data: A) = {

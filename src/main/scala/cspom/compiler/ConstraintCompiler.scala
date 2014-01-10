@@ -9,15 +9,15 @@ import cspom.variable.CSPOMExpression
 trait ConstraintCompiler {
   type A
 
-  def mtch: PartialFunction[(CSPOMConstraint, CSPOM), A] //(constraint: CSPOMConstraint, problem: CSPOM): Option[A]
+  def mtch(c: CSPOMConstraint, p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
+
+  def matcher: PartialFunction[(CSPOMConstraint, CSPOM), A] = PartialFunction.empty
+
+  def matchConstraint(c: CSPOMConstraint) = constraintMatcher.lift(c)
+
+  def constraintMatcher: PartialFunction[CSPOMConstraint, A] = PartialFunction.empty
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: A): Delta
-
-  val constraintMatch: PartialFunction[(CSPOMConstraint, CSPOM), CSPOMConstraint] = {
-    case (const, _) => const
-  }
-
-  def functionMatch = constraintMatch andThen (_.function)
 
   def replaceVars(which: Seq[CSPOMVariable], by: CSPOMExpression, in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
@@ -49,9 +49,9 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   type A = Unit
   def matchBool(constraint: CSPOMConstraint, problem: CSPOM): Boolean
 
-  def mtch = {
-    case (constraint, problem) if matchBool(constraint, problem) => ()
-  }
+  override def mtch(constraint: CSPOMConstraint, problem: CSPOM) =
+    if (matchBool(constraint, problem)) Some()
+    else None
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM): Delta
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
