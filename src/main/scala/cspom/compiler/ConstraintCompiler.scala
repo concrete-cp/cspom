@@ -17,6 +17,8 @@ trait ConstraintCompiler {
     case (const, _) => const
   }
 
+  def functionMatch = constraintMatch andThen (_.function)
+
   def replaceVars(which: Seq[CSPOMVariable], by: CSPOMExpression, in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
     val oldConstraints = which.flatMap(in.constraints).distinct
