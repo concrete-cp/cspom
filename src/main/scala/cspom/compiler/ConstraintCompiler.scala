@@ -29,10 +29,10 @@ trait ConstraintCompiler {
       in.removeVariable(v)
     }
 
-    val newConstraints = oldConstraints.map { c =>
-      val newC = which.foldLeft(c) { (c, v) => c.replacedVar(v, by) }
-      //println(s"$c to $newC")
-      in.ctr(newC);
+    val newConstraints = for (c <- oldConstraints) yield {
+      in.ctr(which.foldLeft(c) { (c, v) =>
+        c.replacedVar(v, by)
+      })
     }
 
     Delta().removed(oldConstraints).added(newConstraints)
@@ -58,16 +58,6 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
 }
 
 case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMVariable]) {
-  //  /**
-  //   * One constraint removed, and several variables altered
-  //   */
-  //  def this(r: CSPOMConstraint, altered: Set[CSPOMVariable]) = this(Seq(r), altered)
-  //
-  //  /**
-  //   *   Simply one constraint removed *
-  //   */
-  //  def this(r: CSPOMConstraint) = this(r, r.scope)
-
   def removed(c: CSPOMConstraint): Delta = this ++ new Delta(Seq(c), c.scope)
   def removed(c: Traversable[CSPOMConstraint]): Delta =
     this ++ new Delta(c.toSeq, c.flatMap(_.scope).toSet)
