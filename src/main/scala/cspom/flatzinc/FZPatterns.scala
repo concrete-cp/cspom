@@ -8,13 +8,20 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMTrue
 import cspom.variable.BoolExpression
 import cspom.variable.IntExpression
+import cspom.variable.CSPOMExpression
+import cspom.variable.IntVariable
+import cspom.variable.IntConstant
 
 object FZPatterns {
   def apply() = Seq(
-    ArrayBool,
-    IntBinReif,
-    'int_ne ~> 'ne,
-    'int_eq ~> 'eq)
+    ArrayBool, //array_bool_and, array_bool_or
+    IntBinReif, //int_{any}_reif
+    BoolLe, // bool_le 
+    'int_ne ~> 'ne, // int_ne
+    'int_eq ~> 'eq, // int_eq
+    'all_different_int ~> 'allDifferent,
+    new Flattener('allDifferent), // all_different_int
+    IntLinEq)
 
   implicit class RenSymbol(s: Symbol) {
     def ~>(s2: Symbol) = new Renamer(s, s2)
@@ -30,6 +37,19 @@ class Renamer(from: Symbol, to: Symbol) extends ConstraintCompilerNoData {
     replaceCtr(constraint,
       new CSPOMConstraint(constraint.result, to, constraint.arguments, constraint.params),
       problem)
+  }
+}
+
+class Flattener(symbol: Symbol) extends ConstraintCompiler {
+  type A = Seq[CSPOMExpression]
+
+  override def constraintMatcher = {
+    case CSPOMConstraint(_, `symbol`, Seq(CSPOMSeq(_, args: Seq[CSPOMExpression], _, _)), _) => args
+  }
+
+  def compile(constraint: CSPOMConstraint, problem: CSPOM, args: A) = {
+    replaceCtr(constraint,
+      new CSPOMConstraint(constraint.result, symbol, args, constraint.params), problem)
   }
 }
 
@@ -84,6 +104,24 @@ object BoolLe extends ConstraintCompilerNoData {
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM) = {
     replaceCtr(constraint,
-      new CSPOMConstraint(CSPOMTrue, 'or, constraint.arguments, Map("revsign" -> Array(1, 0))), problem)
+      new CSPOMConstraint(CSPOMTrue, 'or, constraint.arguments, Map("revsign" -> Seq(true, false))), problem)
+  }
+}
+
+object IntLinEq extends ConstraintCompiler {
+  type A = (Seq[Int], Seq[IntVariable], IntExpression)
+
+  override def constraintMatcher = {
+    case CSPOMConstraint(CSPOMTrue, 'int_lin_eq, Seq(
+      CSPOMSeq(_, factors: Seq[IntConstant], _, _),
+      CSPOMSeq(_, variables: Seq[IntVariable], _, _),
+      result: IntExpression), _) => (factors.map(_.value), variables, result)
+  }
+
+  override def compile(constraint: CSPOMConstraint, problem: CSPOM, data: A) = {
+    val (factors, variables, result) = data
+    replaceCtr(constraint,
+      new CSPOMConstraint(result, 'sum, variables, constraint.params + ("coefficients" -> factors)),
+      problem)
   }
 }

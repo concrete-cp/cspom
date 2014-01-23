@@ -10,8 +10,8 @@ final class CSPParseException(
   message: String = null,
   cause: Throwable = null,
   val lineNumber: Int = -1) extends Exception(
-  if (message == null) {
-    if (cause == null) null
-    else cause.getMessage
-  } else message, cause) {}
+  message + (if (lineNumber < 0) "" else " at line " + lineNumber),
+  cause) {
+
+}
       

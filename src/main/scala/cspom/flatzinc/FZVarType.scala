@@ -33,11 +33,22 @@ final case class FZIntSeq(values: Seq[Int]) extends FZVarType {
   def genVariable(name: String, ann: Set[String]) = CSPOMVariable.ofIntSeq(name, values, ann)
 }
 
-final case class FZArray(indices: Range, typ: FZVarType) extends FZVarType {
+final case class FZArray(indices: IndexSet, typ: FZVarType) extends FZVarType {
   def genVariable(name: String, ann: Set[String]) = new CSPOMSeq(
     name,
-    indices.map(i => typ.genVariable(s"$name[$i]", Set())),
-    indices,
+    indices.toRange.map(i => typ.genVariable(s"$name[$i]", Set())),
+    indices.toRange,
     ann)
 
+}
+
+sealed trait IndexSet {
+  def toRange: Range
+}
+
+case class FZRange(to: Int) extends IndexSet {
+  def toRange = 1 to to
+}
+case object SomeIndexSet extends IndexSet {
+  def toRange = throw new UnsupportedOperationException
 }

@@ -148,14 +148,10 @@ object FlatZincParser extends DebugJavaTokenParsers {
       "var set of int" |
       "array [" ~ index_set ~ "] of var set of int"
 
-  def index_set: Parser[Range] =
-    int_const ~ ".." ~ int_const ^^ { case i ~ ".." ~ j => i to j } |
-      int_const ^^ { i => i to i }
+  def index_set: Parser[IndexSet] =
+    "1.." ~> int_const ^^ { FZRange(_) } |
+      "int" ^^^ SomeIndexSet
 
-  /**
-   *   TODO : vérifier la BNF de fzn, il semble que l'erreur rencontrée vienne du fait
-   *   que l'annotation ne soit pas confirme à la BNF
-   */
   def expr: Parser[Any] = "expr" !!! {
     bool_const |
       set_const |
