@@ -5,6 +5,7 @@ import cspom.variable.CSPOMTrue
 import cspom.CSPOM
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMSeq
 
 trait ConstraintCompiler {
   type A
@@ -75,3 +76,29 @@ object Delta {
   def apply(): Delta = empty
 }
 
+/**
+ * Facilities to write easy compilers easily
+ */
+class GlobalCompiler(val f: PartialFunction[CSPOMConstraint, CSPOMConstraint]) extends ConstraintCompiler {
+  type A = CSPOMConstraint
+
+  override def constraintMatcher = f
+
+  def compile(c: CSPOMConstraint, problem: CSPOM, data: A) = {
+    replaceCtr(c, data, problem)
+  }
+}
+
+object Ctr {
+  def unapply(c: CSPOMConstraint): Option[(Symbol, Seq[CSPOMExpression], Map[String, Any])] = {
+    if (c.result == CSPOMTrue) {
+      Some((c.function, c.arguments, c.params))
+    } else {
+      None
+    }
+  }
+}
+
+object CSeq {
+  def unapply[A <: CSPOMExpression](s: CSPOMSeq[A]): Option[Seq[A]] = Some(s.values)
+}

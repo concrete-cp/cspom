@@ -155,9 +155,9 @@ class CSPOM {
 
   private val _neighbors = collection.mutable.WeakHashMap[CSPOMVariable, Set[CSPOMVariable]]()
 
-  def neighbors(v: CSPOMVariable) = {
-    _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
-  }
+//  def neighbors(v: CSPOMVariable) = {
+//    _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
+//  }
 
   def ctr(c: CSPOMConstraint): CSPOMConstraint = {
     if (constraints(c)) {

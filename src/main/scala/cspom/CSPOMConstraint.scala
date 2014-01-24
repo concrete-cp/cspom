@@ -72,6 +72,7 @@ final case class CSPOMConstraint(
       case _ => s"constraint $result == $content"
     }
   }
+
 }
 
 object CSPOMConstraint {
