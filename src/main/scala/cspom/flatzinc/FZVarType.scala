@@ -26,7 +26,7 @@ object FZInt extends FZVarType {
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = CSPOMVariable.ofInterval(name, lb, ub)
+  def genVariable(name: String, ann: Set[String]) = CSPOMVariable.ofInterval(name, lb, ub, ann)
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType {
@@ -36,7 +36,7 @@ final case class FZIntSeq(values: Seq[Int]) extends FZVarType {
 final case class FZArray(indices: IndexSet, typ: FZVarType) extends FZVarType {
   def genVariable(name: String, ann: Set[String]) = new CSPOMSeq(
     name,
-    indices.toRange.map(i => typ.genVariable(s"$name[$i]", Set())),
+    indices.toRange.map(i => typ.genVariable(s"$name[$i]", Set("array_variable"))),
     indices.toRange,
     ann)
 

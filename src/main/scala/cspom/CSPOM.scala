@@ -369,7 +369,7 @@ object CSPOM {
    * @throws DimacsParseException
    */
   @throws(classOf[CSPParseException])
-  def load(xcspFile: String): (CSPOM, Seq[String]) = {
+  def load(xcspFile: String): (CSPOM, Map[Symbol, Any]) = {
     val uri = new URI(xcspFile)
 
     if (uri.isAbsolute) {
@@ -395,7 +395,7 @@ object CSPOM {
    */
   @throws(classOf[CSPParseException])
   @throws(classOf[IOException])
-  def load(url: URL): (CSPOM, Seq[String]) = {
+  def load(url: URL): (CSPOM, Map[Symbol, Any]) = {
     val problemIS = problemInputStream(url);
 
     url.getFile match {

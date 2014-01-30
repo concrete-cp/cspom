@@ -44,6 +44,7 @@ trait CSPOMConstant extends SimpleExpression {
 }
 
 abstract class CSPOMVariable(val name: String, val params: Set[String]) extends SimpleExpression {
+  require(params.nonEmpty)
   def this(name: String, params: String*) = this(name, params.toSet)
 
   def flattenVariables = Seq(this)

@@ -20,17 +20,18 @@ import cspom.variable.CSPOMSeq
 import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPParseException
 import cspom.compiler.ProblemCompiler
+import cspom.Loggable
 
 trait DebugJavaTokenParsers extends JavaTokenParsers {
   private val DEBUG = false
 
-  class Wrap[+T](name: String, parser: Parser[T]) extends Parser[T] {
+  class Wrap[+T](name: String, parser: Parser[T]) extends Parser[T] with Loggable {
     def apply(in: Input): ParseResult[T] = {
       val first = in.first
       val pos = in.pos
       val offset = in.offset
       val t = parser.apply(in)
-      println(name + ".apply for token " + first +
+      logger.fine(name + ".apply for token " + first +
         " at position " + pos + " offset " + offset + " returns " + t)
       t
     }
@@ -43,12 +44,13 @@ trait DebugJavaTokenParsers extends JavaTokenParsers {
 
 object FlatZincParser extends DebugJavaTokenParsers {
 
-  def parse(is: InputStream): (CSPOM, Seq[String]) = {
+  def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
     val reader = new InputStreamReader(is)
     flatzincModel(StreamReader(reader)) match {
       case Success(cspom, _) =>
-        val v = cspom.variables.map(_.name).toSeq
-        ProblemCompiler.compile(cspom, FZPatterns()); (cspom, v)
+        ProblemCompiler.compile(cspom, FZPatterns())
+        val v = cspom.variables.filter(_.params("output_var")).toSeq
+        (cspom, Map('output -> v))
       case NoSuccess(msg, next) => throw new CSPParseException(msg, null, next.pos.line)
     }
   }

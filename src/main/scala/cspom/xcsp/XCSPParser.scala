@@ -33,7 +33,7 @@ final object XCSPParser {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def parse(is: InputStream): (CSPOM, Seq[String]) = {
+  def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
     val document = XML.load(is)
     val declaredVariables = parseVariables(document);
     val (genVariables, constraints) = parseConstraints(document, declaredVariables.toMap);
@@ -41,7 +41,7 @@ final object XCSPParser {
     //declaredVariables.values.foreach(problem.addVariable)
     //genVariables.foreach(problem.addVariable)
     constraints.foreach(problem.ctr)
-    (problem, declaredVariables.map(_._1))
+    (problem, Map('variables -> declaredVariables.map(_._1)))
 
   }
 

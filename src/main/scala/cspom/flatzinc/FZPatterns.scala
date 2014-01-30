@@ -352,6 +352,7 @@ object FZPatterns {
      * a = b
      * int_ne(var int: a, var int: b)
      */
+    case Ctr('int_ne, Seq(a, b), p) => new CSPOMConstraint('ne, Seq(a, b), p)
     /**
      * (a = b) ↔ r
      * int_ne_reif(var int: a, var int: b, var bool: r)

@@ -19,7 +19,7 @@ final object CNFParser {
   private val PARAMETER = new Regex("""^p cnf (\d+) (\d+)$""");
   private val VAR = new Regex("""(-?\d+)""");
 
-  def parse(is: InputStream): (CSPOM, Seq[String]) = {
+  def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
     val reader = new BufferedReader(new InputStreamReader(is));
 
     val lines = Source.fromInputStream(is).getLines.filter(
@@ -31,7 +31,7 @@ final object CNFParser {
     }
 
     var countClauses = 0
-    val problem = CSPOM withResult {
+    val (problem, variables) = CSPOM withResult {
 
       val variables = for (i <- 1 to nbVars.toInt) yield CSPOMVariable.bool("V" + i)
 
@@ -46,13 +46,13 @@ final object CNFParser {
           currentClause ::= value;
         }
       }
-      
+
       variables.map(_.name)
     }
 
     require(countClauses == nbClauses.toInt)
 
-    problem
+    (problem, Map('variables -> variables))
   }
 
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMVariable]) = {
