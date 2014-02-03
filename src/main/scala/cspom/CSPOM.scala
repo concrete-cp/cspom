@@ -56,21 +56,27 @@ class CSPOM {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private val variableMap = collection.mutable.LinkedHashMap[String, CSPOMVariable]()
+  private var _namedExpressions = Map[String, CSPOMExpression]()
+
+  private var _expressionNames = Map[CSPOMExpression, String]()
 
   /**
-   * @return The variables of this problem.
+   * @return The named expressions of this problem.
    */
-  def variables = variableMap.values;
+  def namedExpressions = _namedExpressions
 
-  val getVariables = JavaConversions.asJavaCollection(variables)
+  def expressionNames = _expressionNames
+
+  val getExpressions = JavaConversions.asJavaCollection(namedExpressions)
 
   /**
    * @param variableName
    *            A variable name.
    * @return The variable with the corresponding name.
    */
-  def variable(name: String) = variableMap.get(name);
+  def expression(name: String) = namedExpressions.get(name);
+
+  def nameOf(expression: CSPOMExpression) = _expressionNames.get(expression)
 
   /**
    * Collection of all constraints of the problem.
@@ -81,35 +87,17 @@ class CSPOM {
 
   val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
-  /**
-   * Adds a variable to the problem.
-   *
-   * @param variable
-   *            The variable to add. It must have an unique name.
-   * @throws DuplicateVariableException
-   *             If a variable with the same name already exists.
-   */
-  //  def addVariable[T <: CSPOMVariable](variable: T): T = {
-  //    val oldVariable = variableMap.put(variable.name, variable)
-  //    require(oldVariable.isEmpty, variable.name + ": a variable of the same name already exists");
-  //    variable
-  //  }
-
-  //  def addExpression(expression: CSPOMExpression): Seq[CSPOMVariable] = expression match {
-  //    case v: CSPOMVariable => Seq(addVariable(v))
-  //    case s: CSPOMSeq[_] => s.flatMap(addExpression)
-  //    case _ => throw new UnsupportedOperationException
-  //  }
-
-  def removeVariable(v: CSPOMVariable) {
-    val variable = variableMap(v.name)
-    require(variable eq v, s"Variable $variable referenced as ${v.name} in the problem is not the same instance as $v")
-    require(constraints(v).isEmpty, v + " is still implied by constraints : " + constraints(v))
-
-    variableMap.remove(v.name);
+  def nameExpression(e: CSPOMExpression, n: String) {
+    val existingN = namedExpressions.get(n)
+    require(existingN.isEmpty, s"$existingN is already named $n")
+    val existingE = _expressionNames.get(e)
+    require(existingE.isEmpty, s"$e is already named $existingE")
+    _namedExpressions += n -> e
+    _expressionNames += e -> n
+    require(_namedExpressions.size == _expressionNames.size)
   }
 
-  private val ctrV = collection.mutable.HashMap[CSPOMVariable, Set[CSPOMConstraint]]().withDefault(_ => Set())
+  private val ctrV = collection.mutable.HashMap[CSPOMExpression, Set[CSPOMConstraint]]()
 
   /**
    * Adds a constraint to the problem.
@@ -122,42 +110,32 @@ class CSPOM {
     require(!constraints.contains(constraint),
       "The constraint " + constraint + " already belongs to the problem");
 
-    for (v <- constraint.scope) {
-      val variable = variableMap.getOrElseUpdate(v.name, v)
-      require(variable eq v, s"$variable (from problem) and $v (from $constraint) do not refer to the same instance")
-    }
-
     _constraints += constraint
 
-    for (v <- constraint.scope) {
-      ctrV(v) += constraint
-      //      ctrV += v -> (constraint +: ctrV.getOrElseUpdate(v, Nil))
+    for (v <- Iterator(constraint.result) ++ constraint.arguments) {
+      val cs = ctrV.getOrElse(v, Set()) + constraint
+      ctrV(v) = cs
     }
-    _neighbors --= constraint.scope
 
     constraint
   }
 
   def removeConstraint(c: CSPOMConstraint) {
-    //for (v <- c.scope) { v.removeConstraint(c) } 
+    require(_constraints(c))
     _constraints -= c
-    for (v <- c.scope) {
+
+    for (v <- Iterator(c.result) ++ c.arguments) {
+      require(ctrV(v)(c))
       ctrV(v) -= c
+      if (ctrV(v).isEmpty) {
+        ctrV -= v
+      }
     }
-    _neighbors --= c.scope
   }
 
-  def constraints(v: CSPOMVariable) = {
-    ctrV(v)
-    //    .getOrElseUpdate(v,
-    //      _constraints.iterator.filter(_.scope.contains(v)).toList)
+  def constraints(v: CSPOMExpression) = {
+    ctrV.getOrElse(v, Set())
   }
-
-  private val _neighbors = collection.mutable.WeakHashMap[CSPOMVariable, Set[CSPOMVariable]]()
-
-//  def neighbors(v: CSPOMVariable) = {
-//    _neighbors.getOrElseUpdate(v, constraints(v).flatMap(_.scope).toSet - v)
-//  }
 
   def ctr(c: CSPOMConstraint): CSPOMConstraint = {
     if (constraints(c)) {
@@ -169,18 +147,7 @@ class CSPOM {
 
   def ctr(v: BoolVariable) = {
     addConstraint(new CSPOMConstraint(CSPOMTrue, 'eq, Seq(v, CSPOMTrue)))
-    //    // replace the variable by the CSPOMTrue constant
-    //    val Seq(fc: CSPOMConstraint) = constraints(v)
-    //    removeConstraint(fc)
-    //    removeVariable(v)
-    //    val newConstraint = fc.replacedVar(v, CSPOMTrue)
-    //    addConstraint(newConstraint)
-
   }
-
-  //  def ctr(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMConstraint = {
-  //    ctr(new CSPOMConstraint(name, scope, params))
-  //  }
 
   @annotation.varargs
   def extCtr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
@@ -209,61 +176,61 @@ class CSPOM {
   def constant(value: Int) = constants.getOrElseUpdate(value, IntConstant(value))
 
   override def toString = {
-    val vars = variables.mkString("\n")
+    val vars = namedExpressions.toSeq.sortBy(_._1).mkString("\n")
 
     val cons = constraints.mkString("\n")
 
-    s"$vars\n$cons\n${variables.size} variables and ${constraints.size} constraints"
+    s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
 
-  /**
-   * Generates the constraint network graph in the GML format. N-ary
-   * constraints are represented as nodes.
-   *
-   * @return a String containing the GML representation of the constraint
-   *         network.
-   */
-  def toGML = {
-    val stb = new StringBuilder();
-    stb.append("graph [\n");
-    stb.append("directed 0\n");
-
-    for (v <- variableMap.values) {
-      stb.append("node [\n");
-      stb.append("id \"").append(v.name).append("\"\n");
-      stb.append("label \"").append(v.name).append("\"\n");
-      stb.append("]\n");
-    }
-
-    var gen = 0;
-    for (c <- constraints) {
-      c.scope.toSeq match {
-        case Seq(source, target) =>
-          stb.append("edge [\n");
-          stb.append("source \"").append(source).append("\"\n");
-          stb.append("target \"").append(target).append("\"\n");
-          stb.append("label \"").append(c.function).append("\"\n");
-          stb.append("]\n");
-        case s =>
-          stb.append("node [\n");
-          stb.append("id \"cons").append(gen).append("\"\n");
-          stb.append("label \"").append(c.function).append("\"\n");
-          stb.append("graphics [\n");
-          stb.append("fill \"#FFAA00\"\n");
-          stb.append("]\n");
-          stb.append("]\n");
-
-          for (v <- s) {
-            stb.append("edge [\n");
-            stb.append("source \"cons").append(gen).append("\"\n");
-            stb.append("target \"").append(v.name).append("\"\n");
-            stb.append("]\n");
-          }
-          gen += 1;
-      }
-    }
-    stb.append("]\n").toString
-  }
+  //  /**
+  //   * Generates the constraint network graph in the GML format. N-ary
+  //   * constraints are represented as nodes.
+  //   *
+  //   * @return a String containing the GML representation of the constraint
+  //   *         network.
+  //   */
+  //  def toGML = {
+  //    val stb = new StringBuilder();
+  //    stb.append("graph [\n");
+  //    stb.append("directed 0\n");
+  //
+  //    for ((k, e) <- namedExpressions) {
+  //      stb.append("node [\n");
+  //      stb.append("id \"").append(k).append("\"\n");
+  //      stb.append("label \"").append(k).append("\"\n");
+  //      stb.append("]\n");
+  //    }
+  //
+  //    var gen = 0;
+  //    for (c <- constraints) {
+  //      c.scope.toSeq match {
+  //        case Seq(source, target) =>
+  //          stb.append("edge [\n");
+  //          stb.append("source \"").append(source).append("\"\n");
+  //          stb.append("target \"").append(target).append("\"\n");
+  //          stb.append("label \"").append(c.function).append("\"\n");
+  //          stb.append("]\n");
+  //        case s =>
+  //          stb.append("node [\n");
+  //          stb.append("id \"cons").append(gen).append("\"\n");
+  //          stb.append("label \"").append(c.function).append("\"\n");
+  //          stb.append("graphics [\n");
+  //          stb.append("fill \"#FFAA00\"\n");
+  //          stb.append("]\n");
+  //          stb.append("]\n");
+  //
+  //          for (v <- s) {
+  //            stb.append("edge [\n");
+  //            stb.append("source \"cons").append(gen).append("\"\n");
+  //            stb.append("target \"").append(v.name).append("\"\n");
+  //            stb.append("]\n");
+  //          }
+  //          gen += 1;
+  //      }
+  //    }
+  //    stb.append("]\n").toString
+  //  }
 
   //def controlInt(solution: Map[String, Int]): Set[CSPOMConstraint] = ???
 
@@ -291,35 +258,23 @@ class CSPOM {
   //    }
   //  }
 
-  private def exprToSol(e: CSPOMExpression, solution: Map[String, Int]): Int = e match {
-    case CSPOMTrue => 1
-    case CSPOMFalse => 0
-    case c: IntConstant => c.value
-    case v: CSPOMVariable => solution(v.name)
-    case e: CSPOMExpression => throw new IllegalArgumentException("Could not control expression " + e)
-  }
-  //
-  //  def controlInteger(solution: Map[String, java.lang.Integer]) = {
-  //    constraints filterNot { c =>
-  //      val tuple = c.scope.collect { case v: CSPOMVariable => solution(v.name).toInt }
-  //      c.evaluate(tuple)
-  //    }
+  //  private def exprToSol(e: CSPOMExpression, solution: Map[String, Int]): Int = e match {
+  //    case CSPOMTrue => 1
+  //    case CSPOMFalse => 0
+  //    case c: IntConstant => c.value
+  //    case e: CSPOMExpression => solution(nameOf(e).get)
   //  }
 
-  //  def closeRelations() {
-  //    for (c <- constraints) c match {
-  //      case c: ExtensionConstraint => c.closeRelation()
-  //      case _ =>
-  //    }
-  //
-  //  }
-  //  def loadXML(is: InputStream) {
-  //    new XCSPParser(this).parse(is)
-  //  }
-  //
-  //  def loadCNF(is: InputStream) {
-  //    new CNFParser(this).parse(is)
-  //  }
+  def replaceExpression(name: String, by: CSPOMExpression) = {
+    val expression = namedExpressions(name)
+    _namedExpressions += name -> by
+    _expressionNames -= expression
+    _expressionNames += by -> name
+    require(_namedExpressions.size == _expressionNames.size)
+  }
+
+  def referencedExpressions = ctrV.keySet ++ namedExpressions.values
+
 }
 
 object CSPOM {
@@ -444,12 +399,6 @@ object CSPOM {
   implicit def seq2CSPOMSeq[T <: CSPOMExpression](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
 
   implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq[T](s)
-  //    var l: List[CSPOMExpression] = Nil
-  //    for (i <- s) {
-  //      l ::= i
-  //    }
-  //    new CSPOMSeq(l)
-  //  }
 
   implicit def seq2Rel(s: Seq[Array[Int]]) = new Table(s)
 
@@ -459,22 +408,29 @@ object CSPOM {
 
   implicit def auxBool(): BoolVariable = CSPOMVariable.auxBool()
 
-  @annotation.varargs
-  def varOf(values: Int*) = CSPOMVariable.ofInt(values: _*)
+  implicit class NameableExpr[A <: CSPOMExpression](e: A) {
+    def as(n: String)(implicit cspom: CSPOM): A = {
+      cspom.nameExpression(e, n)
+      e
+    }
+
+    def withName(n: String)(implicit cspom: CSPOM): (A, String) = {
+      as(n)(cspom)
+      (e, n)
+    }
+  }
 
   @annotation.varargs
-  def varOf(name: String, values: Int*) = CSPOMVariable.ofInt(name = name, values = values: _*)
+  def varOf(values: Int*) = IntVariable.ofSeq(values)
 
-  def varOfSeq(values: Seq[Int], params: String*) = CSPOMVariable.ofIntSeq(values, params: _*)
+  def varOfSeq(values: Seq[Int], params: String*) = IntVariable.ofSeq(values, params.toSet)
 
-  def boolVar() = CSPOMVariable.bool()
+  def boolVar() = new BoolVariable()
 
-  def boolVar(name: String) = CSPOMVariable.bool(name)
-
-  def freeInt(name: String)(implicit problem: CSPOM) = IntVariable.free(name)
+  def freeInt() = new FreeVariable()
 
   /**
-   * Adds a bounded, named variable in the problem.
+   * Creates a new bounded variable
    *
    * @param name
    *            name of the variable
@@ -486,18 +442,8 @@ object CSPOM {
    * @throws DuplicateVariableException
    *             if a variable of the same name already exists
    */
-  def interVar(name: String, lb: Int, ub: Int) = CSPOMVariable.ofInterval(name, lb, ub)
+  def interVar(lb: Int, ub: Int) = IntVariable.ofInterval(lb, ub)
 
-  /**
-   * Adds a bounded, unnamed variable in the problem.
-   *
-   * @param lb
-   *            lower bound
-   * @param ub
-   *            upper bound
-   * @return The added variable.
-   */
-  def interVar(lb: Int, ub: Int) = CSPOMVariable.ofInterval(lb = lb, ub = ub)
 }
 
 

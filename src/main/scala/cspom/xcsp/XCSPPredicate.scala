@@ -62,8 +62,7 @@ final class XCSPPredicate(parametersString: String, expressionString: String) ex
    *             predicate parameters.
    *
    */
-  def applyParameters(constraintParameters: String,
-    scope: Seq[CSPOMVariable]) = {
+  def applyParameters(constraintParameters: String) = {
     val stringParameters = constraintParameters.trim.split(" +");
 
     assume(stringParameters.length == this.parameters.size, "Incorrect parameter count");

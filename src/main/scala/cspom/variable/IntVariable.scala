@@ -2,30 +2,42 @@ package cspom.variable
 
 import cspom.CSPOM
 
-final class IntVariable(name: String, val domain: IntDomain, params: Set[String] = Set())
-  extends CSPOMVariable(name, params) with IntExpression {
+final class IntVariable(val domain: IntDomain, params: Set[String] = Set())
+  extends CSPOMVariable(params) with IntExpression {
 
-  override def toString = s"var $name: Int ($domain)"
+  override def toString = s"int variable ($domain)"
 
   def contains(that: CSPOMConstant) = domain.contains(that)
 
   def intersected(that: CSPOMExpression): CSPOMExpression = that match {
-    case IntConstant(v) => IntVariable.of(name, Seq(v), params)
-    case v: IntVariable => new IntVariable(name, domain.intersect(v.domain), params)
+    case IntConstant(v) => IntVariable.ofSeq(Seq(v), params)
+    case v: IntVariable => new IntVariable(domain.intersect(v.domain), params)
     case v: FreeVariable => this
     case t: CSPOMExpression => throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
   }
 }
 
 object IntVariable {
-  def of(name: String, values: Seq[Int], params: Set[String] = Set()) =
-    new IntVariable(name, IntDomain.of(values: _*), params)
+  def ofSeq(values: Seq[Int], params: Set[String] = Set()) =
+    new IntVariable(IntDomain.of(values: _*), params)
 
-  def valueOf(name: String, valueDesc: String, params: String*) =
-    new IntVariable(name, IntDomain.valueOf(valueDesc), params.toSet)
+  /**
+   * Constructs a new variable with a domain defined by lower
+   * and upper bounds.
+   *
+   * @param <E>
+   *            Type of bounds.
+   * @param lB
+   *            Lower bound of the domain
+   * @param uB
+   *            Upper bound of the domain
+   */
+  def ofInterval(lb: Int, ub: Int, params: Set[String] = Set()) = {
+    new IntVariable(new IntInterval(lb, ub), params);
+  }
 
-  def free(name: String, params: String*): IntVariable = free(name, params.toSet)
-  def free(name: String, params: Set[String]): IntVariable = new IntVariable(name, FreeInt, params)
+  def free(params: String*): IntVariable = free(params.toSet)
+  def free(params: Set[String]): IntVariable = new IntVariable(FreeInt, params)
 
-  def unapply(v: IntVariable) = Some(v.name, v.domain, v.params)
+  def unapply(v: IntVariable) = Some(v.domain, v.params)
 }

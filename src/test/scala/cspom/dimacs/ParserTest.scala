@@ -11,7 +11,7 @@ final class ParserTest {
 	@Test
 	def test()  {
 		val cspom = CNFParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1
-		assertEquals(90, cspom.variables.size)
+		assertEquals(90, cspom.namedExpressions.size)
 		assertEquals(300, cspom.constraints.size)
 		//println(cspom)
 	}

@@ -4,15 +4,14 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.util.Iterator
-
 import scala.io.Source
 import scala.util.matching.Regex
-
 import cspom.CSPOM
 import cspom.CSPParseException
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMVariable
 import CSPOM._
+import cspom.variable.BoolVariable
 
 final object CNFParser {
 
@@ -31,9 +30,11 @@ final object CNFParser {
     }
 
     var countClauses = 0
-    val (problem, variables) = CSPOM withResult {
+    val (problem, names) = CSPOM withResult {
 
-      val variables = for (i <- 1 to nbVars.toInt) yield CSPOMVariable.bool("V" + i)
+      val (variables, names) = (for (i <- 1 to nbVars.toInt) yield {
+        new BoolVariable() withName ("V" + i)
+      }) unzip
 
       var currentClause: List[Int] = Nil;
 
@@ -47,12 +48,12 @@ final object CNFParser {
         }
       }
 
-      variables.map(_.name)
+      names
     }
 
     require(countClauses == nbClauses.toInt)
 
-    (problem, Map('variables -> variables))
+    (problem, Map('variables -> names))
   }
 
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMVariable]) = {

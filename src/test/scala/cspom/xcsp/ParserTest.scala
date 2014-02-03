@@ -13,7 +13,8 @@ final class ParserTest {
   def test() {
     val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1;
     //println(cspom);
-    assertEquals(25, cspom.variables.filterNot(_.params.contains("var_is_introduced")).size)
+    assertEquals(25, cspom.namedExpressions.size)
+    assertFalse(cspom.namedExpressions.values.exists(_.params.contains("var_is_introduced")))
     assertTrue(cspom.constraints.size >= 55)
     //println(cspom)
 

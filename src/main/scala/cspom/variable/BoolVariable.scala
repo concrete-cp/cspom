@@ -2,11 +2,11 @@ package cspom.variable
 
 import cspom.CSPOM
 
-final class BoolVariable(name: String, params: Set[String] = Set())
-  extends CSPOMVariable(name, params) with BoolExpression {
-  def this(name: String, params: String*) = this(name, params.toSet)
-  
-  override def toString = s"var $name: Boolean"
+final class BoolVariable(params: Set[String] = Set())
+  extends CSPOMVariable(params) with BoolExpression {
+  def this(params: String*) = this(params.toSet)
+
+  override def toString = s"boolean variable"
 
   def intersected(that: CSPOMExpression) = that match {
     case t: BoolVariable => this
@@ -15,6 +15,6 @@ final class BoolVariable(name: String, params: Set[String] = Set())
   }
 
   def contains(that: CSPOMConstant) = that == CSPOMTrue || that == CSPOMFalse
-  
+
   def neg = ???
 }

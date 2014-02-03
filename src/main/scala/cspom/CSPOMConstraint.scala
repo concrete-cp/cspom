@@ -30,15 +30,7 @@ final case class CSPOMConstraint(
   def this(function: Symbol, arguments: CSPOMExpression*) =
     this(function, arguments)
 
-  /**
-   *  Warning: scope is not ordered! Use fullScope to get ordered
-   *  information.
-   */
-  lazy val scope = fullScope.flatMap(_.flattenVariables).toSet
-
   def fullScope = result +: arguments
-
-  def arity = scope.size
 
   val id = CSPOMConstraint.id
   CSPOMConstraint.id += 1

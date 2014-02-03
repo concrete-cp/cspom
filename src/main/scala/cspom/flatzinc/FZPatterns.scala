@@ -440,7 +440,7 @@ class Flattener(symbol: Symbol) extends ConstraintCompiler {
   type A = Seq[CSPOMExpression]
 
   override def constraintMatcher = {
-    case CSPOMConstraint(_, `symbol`, Seq(CSPOMSeq(_, args: Seq[CSPOMExpression], _, _)), _) => args
+    case CSPOMConstraint(_, `symbol`, Seq(CSPOMSeq(args: Seq[CSPOMExpression], _, _)), _) => args
   }
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM, args: A) = {

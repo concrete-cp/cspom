@@ -4,39 +4,39 @@ import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMVariable
+import cspom.variable.IntVariable
 
 sealed trait FZVarType {
-  def genVariable(name: String, ann: Set[String]): CSPOMExpression
+  def genVariable(ann: Set[String]): CSPOMExpression
 }
 
 object FZBoolean extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = new BoolVariable(name, ann)
+  def genVariable(ann: Set[String]) = new BoolVariable(ann)
 }
 
 object FZFloat extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = ???
+  def genVariable(ann: Set[String]) = ???
 }
 
 final case class FZFloatInterval(lb: Double, ub: Double) extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = ???
+  def genVariable(ann: Set[String]) = ???
 }
 
 object FZInt extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = ???
+  def genVariable(ann: Set[String]) = ???
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = CSPOMVariable.ofInterval(name, lb, ub, ann)
+  def genVariable(ann: Set[String]) = IntVariable.ofInterval(lb, ub, ann)
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = CSPOMVariable.ofIntSeq(name, values, ann)
+  def genVariable(ann: Set[String]) = IntVariable.ofSeq(values, ann)
 }
 
 final case class FZArray(indices: IndexSet, typ: FZVarType) extends FZVarType {
-  def genVariable(name: String, ann: Set[String]) = new CSPOMSeq(
-    name,
-    indices.toRange.map(i => typ.genVariable(s"$name[$i]", Set("array_variable"))),
+  def genVariable(ann: Set[String]) = new CSPOMSeq(
+    indices.toRange.map(i => typ.genVariable(Set("array_variable"))),
     indices.toRange,
     ann)
 

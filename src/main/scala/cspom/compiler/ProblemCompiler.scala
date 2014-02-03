@@ -37,10 +37,13 @@ final class ProblemCompiler(
           val delta = compiler.compile(constraint, problem, data)
 
           constraints.remove(delta.removed: _*)
-          for (v <- delta.altered) {
-            problem.constraints(v).foreach(constraints.enqueue(_))
-            //constraints.enqueue(problem.constraints(v): _*)
+          for (
+            v <- delta.altered;
+            c <- problem.constraints(v) if (c ne constraint)
+          ) {
+            constraints.enqueue(c)
           }
+
           ch |= delta.nonEmpty
         }
 
@@ -51,10 +54,10 @@ final class ProblemCompiler(
       }
     }
 
-    /* Removes disconnected auxiliary variables */
-    problem.variables.filter { v =>
-      v.params.contains("var_is_introduced") && problem.constraints(v).isEmpty
-    }.foreach(problem.removeVariable)
+    //    /* Removes disconnected auxiliary variables */
+    //    problem.variables.filter { v =>
+    //      v.params.contains("var_is_introduced") && problem.constraints(v).isEmpty
+    //    }.foreach(problem.removeVariable)
 
   }
 

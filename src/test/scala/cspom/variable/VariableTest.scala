@@ -8,13 +8,13 @@ import cspom.CSPOMConstraint
 class VariableTest {
   @Test
   def registerTest() {
-    val v = CSPOMVariable.ofInterval(lb = 0, ub = 10)
+    val v = IntVariable.ofInterval(lb = 0, ub = 10)
     val c = new CSPOMConstraint('leq, v)
     val cspom = new CSPOM
     //cspom.addVariable(v)
     cspom.ctr(c)
     //v registerConstraint c
-    assertTrue(cspom.variables sameElements List(v))
+    assertEquals(cspom.referencedExpressions, Set(CSPOMTrue, v))
     assertTrue(cspom.constraints(v) sameElements List(c))
   }
 }

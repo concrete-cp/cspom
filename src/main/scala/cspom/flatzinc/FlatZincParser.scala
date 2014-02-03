@@ -21,6 +21,7 @@ import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPParseException
 import cspom.compiler.ProblemCompiler
 import cspom.Loggable
+import CSPOM._
 
 trait DebugJavaTokenParsers extends JavaTokenParsers {
   private val DEBUG = false
@@ -47,22 +48,20 @@ object FlatZincParser extends DebugJavaTokenParsers {
   def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
     val reader = new InputStreamReader(is)
     flatzincModel(StreamReader(reader)) match {
-      case Success(cspom, _) =>
+      case Success((cspom, goal), _) =>
         ProblemCompiler.compile(cspom, FZPatterns())
-        val v = cspom.variables.filter(_.params("output_var")).toSeq
-        (cspom, Map('output -> v))
+        (cspom, Map('goal -> goal))
       case NoSuccess(msg, next) => throw new CSPParseException(msg, null, next.pos.line)
     }
   }
 
-  private def mapVariables(variables: Seq[CSPOMExpression]) = {
+  private def mapVariables(variables: Seq[(String, CSPOMExpression)]) = {
     val varMap = variables.collect {
-      case single: CSPOMVariable =>
-        single.name -> single
+      case (name, single: CSPOMVariable) => name -> single
     } toMap
 
     val seqMap = variables.collect {
-      case seq: CSPOMSeq[CSPOMExpression] => seq.name -> seq
+      case (name, seq: CSPOMSeq[CSPOMExpression]) => name -> seq
     } toMap
 
     (varMap, seqMap)
@@ -71,17 +70,28 @@ object FlatZincParser extends DebugJavaTokenParsers {
   /*
    * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
-  def flatzincModel: Parser[CSPOM] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
+  def flatzincModel: Parser[(CSPOM, Any)] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
       val (varMap, seqMap) = mapVariables(variables)
       success(varMap, seqMap) ~ rep(constraint(varMap, seqMap)) ~ solve_goal
   } ^^ {
     case (varMap, seqMap) ~ constraints ~ goal =>
-      val p = new CSPOM()
-      //val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables))
-      //allVars.foreach(p.addVariable)
-      constraints.foreach(p.ctr)
-      p
+      val p = CSPOM {
+        for ((name, expr) <- varMap.iterator ++ seqMap) {
+          expr as name
+        }
+        for (c <- constraints) {
+          ctr(c)
+        }
+      }
+      (p, goal)
+    //      val p = new CSPOM()
+    //      //val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables))
+    //      for ((name, expr) <- varMap.iterator ++ seqMap) {
+    //        p.nameExpression(expr, name)
+    //      }
+    //      constraints.foreach(p.ctr)
+    //      p
   }
 
   def pred_decl: Parser[Any] = "predicate" ~> ident ~ "(" ~ repsep(pred_param, ",") ~ ")" ~ ";"
@@ -197,9 +207,9 @@ object FlatZincParser extends DebugJavaTokenParsers {
     case t ~ ":" ~ id ~ "=" ~ expr => Parameter.getParamater(id, "int")
   }
 
-  def var_decl: Parser[CSPOMExpression] = "var_decl" !!! {
+  def var_decl: Parser[(String, CSPOMExpression)] = "var_decl" !!! {
     var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~ expr) <~ ";" ^? ({
-      case varType ~ ":" ~ varParId ~ ann ~ None => varType.genVariable(varParId, ann.toSet)
+      case varType ~ ":" ~ varParId ~ ann ~ None => (varParId, varType.genVariable(ann.toSet))
     }, _ => "Expressions not supported in var declaration")
 
   }

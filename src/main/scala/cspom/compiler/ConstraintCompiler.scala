@@ -20,14 +20,17 @@ trait ConstraintCompiler {
 
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: A): Delta
 
-  def replaceVars(which: Seq[CSPOMVariable], by: CSPOMExpression, in: CSPOM): Delta = {
+  def replace(which: Seq[CSPOMExpression], by: CSPOMExpression, in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
     val oldConstraints = which.flatMap(in.constraints).distinct
     for (c <- oldConstraints) {
       in.removeConstraint(c)
     }
-    for (v <- which) {
-      in.removeVariable(v)
+
+    which.collect(in.expressionNames) match {
+      case Seq() =>
+      case Seq(name) => in.replaceExpression(name, by)
+      case _ => "Sorry, cannot replace multiple named expressions by one"
     }
 
     val newConstraints = for (c <- oldConstraints) yield {
@@ -58,14 +61,14 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
 }
 
-case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMVariable]) {
-  def removed(c: CSPOMConstraint): Delta = this ++ new Delta(Seq(c), c.scope)
+case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMExpression]) {
+  def removed(c: CSPOMConstraint): Delta = this ++ new Delta(Seq(c), c.fullScope.toSet)
   def removed(c: Traversable[CSPOMConstraint]): Delta =
-    this ++ new Delta(c.toSeq, c.flatMap(_.scope).toSet)
+    this ++ new Delta(c.toSeq, c.flatMap(_.fullScope).toSet)
 
-  def added(c: CSPOMConstraint): Delta = this ++ new Delta(Nil, c.scope)
+  def added(c: CSPOMConstraint): Delta = this ++ new Delta(Nil, c.fullScope.toSet)
   def added(c: Traversable[CSPOMConstraint]): Delta =
-    this ++ new Delta(Nil, c.flatMap(_.scope).toSet)
+    this ++ new Delta(Nil, c.flatMap(_.fullScope).toSet)
 
   def ++(d: Delta): Delta = Delta(removed ++ d.removed, altered ++ d.altered)
   def nonEmpty = removed.nonEmpty || altered.nonEmpty
