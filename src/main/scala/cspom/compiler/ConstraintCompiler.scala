@@ -22,15 +22,16 @@ trait ConstraintCompiler {
 
   def replace(which: Seq[CSPOMExpression], by: CSPOMExpression, in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
-    val oldConstraints = which.flatMap(in.constraints).distinct
-    for (c <- oldConstraints) {
-      in.removeConstraint(c)
-    }
 
     which.collect(in.expressionNames) match {
       case Seq() =>
       case Seq(name) => in.replaceExpression(name, by)
-      case _ => "Sorry, cannot replace multiple named expressions by one"
+      case _ => throw new UnsupportedOperationException("Sorry, cannot replace multiple named expressions by one")
+    }
+
+    val oldConstraints = which.flatMap(in.constraints).distinct
+    for (c <- oldConstraints) {
+      in.removeConstraint(c)
     }
 
     val newConstraints = for (c <- oldConstraints) yield {
@@ -47,6 +48,16 @@ trait ConstraintCompiler {
     in.ctr(by)
     Delta().removed(which).added(by)
   }
+
+  def replaceCtr(which: Seq[CSPOMConstraint], by: CSPOMConstraint, in: CSPOM): Delta = {
+    val d = which.foldLeft(Delta()) {
+      case (delta, constraint) =>
+        in.removeConstraint(constraint)
+        delta.removed(constraint)
+    }
+    in.ctr(by)
+    d.added(by)
+  }
 }
 
 trait ConstraintCompilerNoData extends ConstraintCompiler {
@@ -61,7 +72,7 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
 }
 
-case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMExpression]) {
+final case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMExpression]) {
   def removed(c: CSPOMConstraint): Delta = this ++ new Delta(Seq(c), c.fullScope.toSet)
   def removed(c: Traversable[CSPOMConstraint]): Delta =
     this ++ new Delta(c.toSeq, c.flatMap(_.fullScope).toSet)
@@ -82,10 +93,10 @@ object Delta {
 /**
  * Facilities to write easy compilers easily
  */
-class GlobalCompiler(val f: PartialFunction[CSPOMConstraint, CSPOMConstraint]) extends ConstraintCompiler {
+final class GlobalCompiler(
+  override val constraintMatcher: PartialFunction[CSPOMConstraint, CSPOMConstraint])
+  extends ConstraintCompiler {
   type A = CSPOMConstraint
-
-  override def constraintMatcher = f
 
   def compile(c: CSPOMConstraint, problem: CSPOM, data: A) = {
     replaceCtr(c, data, problem)

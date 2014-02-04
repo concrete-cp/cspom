@@ -124,11 +124,15 @@ class CSPOM {
     require(_constraints(c))
     _constraints -= c
 
+    require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
+
     for (v <- Iterator(c.result) ++ c.arguments) {
-      require(ctrV(v)(c))
-      ctrV(v) -= c
-      if (ctrV(v).isEmpty) {
+      val s = ctrV.getOrElse(v, Set()) - c
+
+      if (s.isEmpty) {
         ctrV -= v
+      } else {
+        ctrV(v) = s
       }
     }
   }
@@ -153,7 +157,7 @@ class CSPOM {
   def extCtr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
     ctr(new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel)))
 
-  def is(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): CSPOMVariable = {
+  def is(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): FreeVariable = {
     val result = CSPOM.aux()
     ctr(new CSPOMConstraint(result, name, scope, params))
     result
@@ -176,9 +180,9 @@ class CSPOM {
   def constant(value: Int) = constants.getOrElseUpdate(value, IntConstant(value))
 
   override def toString = {
-    val vars = namedExpressions.toSeq.sortBy(_._1).mkString("\n")
+    val vars = namedExpressions.toSeq.sortBy(_._1).map { case (name, variable) => s"$name: $variable" }.mkString("\n")
 
-    val cons = constraints.mkString("\n")
+    val cons = constraints.map(_.toString(this)).mkString("\n")
 
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
@@ -230,39 +234,6 @@ class CSPOM {
   //      }
   //    }
   //    stb.append("]\n").toString
-  //  }
-
-  //def controlInt(solution: Map[String, Int]): Set[CSPOMConstraint] = ???
-
-  //  def control(solution: Map[String, Number]) = {
-  //    constraints filterNot { c =>
-  //      c.evaluate(c.scope.collect { case v: CSPOMVariable => solution(v.name) })
-  //    }
-  //  }
-  //
-  //  def controlInt(solution: Map[String, Int]) = {
-  //    constraints flatMap { c =>
-  //      val result = exprToSol(c.result, solution)
-  //      val values = c.arguments.map(exprToSol(_, solution))
-  //      println(c.function)
-  //      val evaluation = c.function match {
-  //        case 'extension => result == 1 &&
-  //          (c.params("init").asInstanceOf[Boolean] ^ c.params("relation").asInstanceOf[Relation].contains(values))
-  //        case _ => c.evaluate(result, values)
-  //      }
-  //      if (evaluation) {
-  //        Nil
-  //      } else {
-  //        List((c, result, values))
-  //      }
-  //    }
-  //  }
-
-  //  private def exprToSol(e: CSPOMExpression, solution: Map[String, Int]): Int = e match {
-  //    case CSPOMTrue => 1
-  //    case CSPOMFalse => 0
-  //    case c: IntConstant => c.value
-  //    case e: CSPOMExpression => solution(nameOf(e).get)
   //  }
 
   def replaceExpression(name: String, by: CSPOMExpression) = {

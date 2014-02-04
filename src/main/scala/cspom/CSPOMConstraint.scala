@@ -58,11 +58,32 @@ final case class CSPOMConstraint(
       params)
 
   override def toString = {
+    val args = arguments.map(_.toString)
+    result match {
+      case CSPOMTrue => toString(None, args)
+      case r: CSPOMExpression => toString(Some(r.toString), args)
+    }
+  }
+
+  private def name(e: CSPOMExpression, cspom: CSPOM): String = {
+    cspom.expressionNames.getOrElse(e, e.toString)
+  }
+
+  private def toString(result: Option[String], arguments: Seq[String]): String = {
     val content = s"$function(${arguments.mkString(", ")})${if (params.isEmpty) "" else params.mkString(" :: ", " :: ", "")}"
     result match {
-      case CSPOMTrue => s"constraint $content"
-      case _ => s"constraint $result == $content"
+      case None => s"constraint $content"
+      case Some(r) => s"constraint $r == $content"
     }
+  }
+
+  def toString(cspom: CSPOM): String = {
+    val args = arguments.map(name(_, cspom))
+    result match {
+      case CSPOMTrue => toString(None, args)
+      case r: CSPOMExpression => toString(Some(name(r, cspom)), args)
+    }
+
   }
 
 }

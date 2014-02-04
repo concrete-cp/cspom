@@ -177,7 +177,7 @@ object FlatZincParser extends DebugJavaTokenParsers {
   }
 
   def cspomExpr(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq[CSPOMExpression]]): Parser[CSPOMExpression] =
-    bool_const ^^ { case true => CSPOMTrue; case false => CSPOMFalse } |
+    bool_const ^^ { _.toCSPOM(vars, seqs) } |
       int_const ^^ { case value => IntConstant(value) } |
       float_const ^^ { case value => DoubleConstant(value) } |
       var_par_id ~ ("[" ~> int_const <~ "]") ^^ { case id ~ index => seqs(id)(index) } |
@@ -188,7 +188,7 @@ object FlatZincParser extends DebugJavaTokenParsers {
 
   def var_par_id: Parser[String] = ident //"_*[A-Za-z][A-Za-z0-9_]*".r
 
-  def bool_const: Parser[Boolean] = ("true" | "false") ^^ (_.toBoolean)
+  def bool_const: Parser[FZBoolConst] = "true" ^^^ FZBoolConst(true) | "false" ^^^ FZBoolConst(false)
 
   def float_const: Parser[Double] = floatingPointNumber ^^ (_.toDouble)
 

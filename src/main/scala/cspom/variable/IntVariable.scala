@@ -18,6 +18,9 @@ final class IntVariable(val domain: IntDomain, params: Set[String] = Set())
 }
 
 object IntVariable {
+  
+  def of(values: Int*) = ofSeq(values)
+  
   def ofSeq(values: Seq[Int], params: Set[String] = Set()) =
     new IntVariable(IntDomain.of(values: _*), params)
 

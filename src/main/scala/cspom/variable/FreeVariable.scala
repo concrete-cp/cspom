@@ -18,18 +18,5 @@ class FreeVariable(params: Set[String]) extends CSPOMVariable(params) {
   def contains(that: CSPOMConstant) = true
 }
 
-object VariableNameGenerator {
-  var unnamed = 0;
 
-  /**
-   * Generates an unique variable name.
-   *
-   * @return An unique variable name.
-   */
-  def generate() = {
-    val name = "_" + unnamed;
-    unnamed += 1;
-    name;
-  }
-}
 
