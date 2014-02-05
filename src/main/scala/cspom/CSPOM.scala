@@ -87,7 +87,7 @@ class CSPOM {
 
   val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
-  def nameExpression(e: CSPOMExpression, n: String) {
+  def nameExpression[A <: CSPOMExpression](e: A, n: String): A = {
     val existingN = namedExpressions.get(n)
     require(existingN.isEmpty, s"$existingN is already named $n")
     val existingE = _expressionNames.get(e)
@@ -95,6 +95,7 @@ class CSPOM {
     _namedExpressions += n -> e
     _expressionNames += e -> n
     require(_namedExpressions.size == _expressionNames.size)
+    e
   }
 
   private val ctrV = collection.mutable.HashMap[CSPOMExpression, Set[CSPOMConstraint]]()
@@ -152,10 +153,6 @@ class CSPOM {
   def ctr(v: BoolVariable) = {
     addConstraint(new CSPOMConstraint(CSPOMTrue, 'eq, Seq(v, CSPOMTrue)))
   }
-
-  @annotation.varargs
-  def extCtr(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
-    ctr(new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel)))
 
   def is(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): FreeVariable = {
     val result = CSPOM.aux()
@@ -359,8 +356,12 @@ object CSPOM {
 
   def ctr(c: CSPOMConstraint)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(c)
 
-  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
-    problem.extCtr(rel, init, vars: _*)
+//  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
+//    problem.extCtr(rel, init, vars: _*)
+
+  @annotation.varargs
+  def table(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
+    new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel))
 
   implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
 
