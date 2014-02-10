@@ -4,29 +4,14 @@ import java.util.logging.Logger
 import java.util.logging.Level
 trait Loggable {
 
-  lazy val logger: Logger = Logging.getLogger(this)
+  val logger: Logger = Logging.getLogger(this)
 
-  def checkFormat(msg: String, refs: Seq[_]): String =
-    if (!refs.isEmpty)
-      checkFormat(msg.replaceFirst("{}", refs.head.toString), refs.tail);
-    else msg
+  def logInfo = logger.isLoggable(Level.INFO)
 
-  def finer(msg: String, refs: Any*) = logger finer checkFormat(msg, refs)
+  def logFine = logger.isLoggable(Level.FINE)
 
-  def fine(msg: String, refs: Any*) = logger fine checkFormat(msg, refs)
-
-  def throwing(sourceClass: String, sourceMethod: String, t: Throwable) =
-    logger throwing (sourceClass, sourceMethod, t)
-
-  def info(msg: String, refs: Any*) = logger info checkFormat(msg, refs)
-
-  def warning(msg: String, refs: Any*) = logger warning checkFormat(msg, refs)
-
-  def severe(msg: String, refs: Any*) = logger severe checkFormat(msg, refs)
-    
   final def setLevel(level: Level) {
     logger.setLevel(level)
-    //logger.getHandlers()(0).setLevel(level)
   }
 }
 

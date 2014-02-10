@@ -16,7 +16,7 @@ import cspom.compiler.Ctr
 import cspom.compiler.CSeq
 
 object FZPatterns {
-  def apply() = Seq(new GlobalCompiler(mtch), new Flattener('allDifferent))
+  def apply() = Seq(new GlobalCompiler(mtch) { def selfPropagation = false }, new Flattener('allDifferent))
 
   val mtch: PartialFunction[CSPOMConstraint, CSPOMConstraint] = {
     /**
@@ -447,4 +447,6 @@ class Flattener(symbol: Symbol) extends ConstraintCompiler {
     replaceCtr(constraint,
       new CSPOMConstraint(constraint.result, symbol, args, constraint.params), problem)
   }
+  
+  def selfPropagation = false
 }

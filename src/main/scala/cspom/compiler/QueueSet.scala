@@ -10,6 +10,12 @@ final class QueueSet[A] {
 
   //def enqueue(e: A*): Unit = e.foreach(enqueue)
 
+  def this(init: Iterable[A]) = {
+    this()
+    present ++= init
+    queue ++= init
+  }
+
   def enqueue(c: A): Unit = {
     if (!present(c)) {
       queue.enqueue(c)
@@ -31,7 +37,13 @@ final class QueueSet[A] {
 
   def nonEmpty = present.nonEmpty
 
-  def remove(e: A*) {
+  def enqueueAll(c: Iterable[A]): Unit = {
+    c.foreach(enqueue)
+  }
+
+  def remove(e: A*): Unit = removeAll(e)
+
+  def removeAll(e: Iterable[A]): Unit = {
     present --= e
   }
 

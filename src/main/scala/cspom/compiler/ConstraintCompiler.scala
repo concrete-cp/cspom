@@ -60,6 +60,8 @@ trait ConstraintCompiler {
     in.ctr(by)
     d.added(by)
   }
+  
+  def selfPropagation: Boolean
 }
 
 trait ConstraintCompilerNoData extends ConstraintCompiler {
@@ -95,7 +97,7 @@ object Delta {
 /**
  * Facilities to write easy compilers easily
  */
-final class GlobalCompiler(
+abstract class GlobalCompiler(
   override val constraintMatcher: PartialFunction[CSPOMConstraint, CSPOMConstraint])
   extends ConstraintCompiler {
   type A = CSPOMConstraint

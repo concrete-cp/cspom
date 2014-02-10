@@ -6,6 +6,7 @@ import cspom.CSPOMConstraint
 import cspom.Statistic
 import cspom.variable.CSPOMExpression
 import scala.collection.mutable.HashMap
+import cspom.StatisticsManager
 
 /**
  * This class implements some known useful reformulation rules.
@@ -15,53 +16,56 @@ import scala.collection.mutable.HashMap
  */
 final class ProblemCompiler(
   private val problem: CSPOM,
-  private val constraintCompilers: Seq[ConstraintCompiler]) {
+  private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
 
   private def compile() {
     ProblemCompiler.compileTime -= System.nanoTime()
 
-    val compilers = new HashMap[ConstraintCompiler, Set[CSPOMConstraint]]()
+    val toCompile = Array.ofDim[QueueSet[CSPOMConstraint]](constraintCompilers.size)
 
-    val allConstraints = problem.constraints.toSet
-    for (cc <- constraintCompilers) {
-      compilers(cc) = allConstraints
-    }
+    var changed = true
+    var first = true
 
-    while (compilers.nonEmpty) {
-      val (compiler, constraints) = compilers.head
-      if (constraints.isEmpty) {
-        compilers -= compiler
-      } else {
-        val constraint = constraints.head
+    while (changed) {
+      changed = false
+      for (i <- toCompile.indices) {
 
-        compilers(compiler) -= constraint
+        val compiler = constraintCompilers(i)
 
-        ProblemCompiler.matches += 1
+        if (first) {
+          toCompile(i) = new QueueSet(problem.constraints)
+        }
 
-        for (data <- compiler.mtch(constraint, problem)) {
-          ProblemCompiler.compiles += 1
-          val delta = compiler.compile(constraint, problem, data)
+        while (toCompile(i).nonEmpty) {
 
-          //println(compiler + " : " + constraint + " -> " + delta)
+          val constraint = toCompile(i).dequeue()
+          ProblemCompiler.matches += 1
+          //println(compiler, constraint.id)
+          for (data <- compiler.mtch(constraint, problem)) {
+            ProblemCompiler.compiles += 1
+            changed = true
+            val delta = compiler.compile(constraint, problem, data)
 
-          for ((cc, queue) <- compilers) {
-            compilers(cc) = queue -- delta.removed
-          }
+            //println(compiler + " : " + constraint + " -> " + delta)
 
-          val enqueue = delta.altered.flatMap(problem.constraints)
-          for (cc <- constraintCompilers) {
-            if (cc eq compiler) {
-              compilers(cc) = compilers.getOrElse(cc, Set()) ++ enqueue.filter(_ ne constraint)
-            } else {
-              compilers(cc) = compilers.getOrElse(cc, Set()) ++ enqueue
+            val enqueue = delta.altered.view.flatMap(problem.constraints)
+
+            for (j <- if (first) { 0 to i } else { toCompile.indices }) {
+              toCompile(j).removeAll(delta.removed)
+              if (j != i || compiler.selfPropagation) {
+                toCompile(j).enqueueAll(enqueue)
+              }
             }
           }
+          toCompile(i).remove(constraint)
         }
+
       }
+      first = false
     }
     ProblemCompiler.compileTime += System.nanoTime()
-//    println(problem)
-//    ???
+    //    println(problem)
+    //    ???
     //    /* Removes disconnected auxiliary variables */
     //    problem.variables.filter { v =>
     //      v.params.contains("var_is_introduced") && problem.constraints(v).isEmpty
@@ -83,8 +87,11 @@ final class ProblemCompiler(
 
 object ProblemCompiler {
   def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]) {
-    new ProblemCompiler(problem, compilers).compile();
+    new ProblemCompiler(problem, compilers.toIndexedSeq).compile();
   }
+
+  val statistics = new StatisticsManager()
+  statistics.register("problemcompiler", this)
 
   @Statistic
   var matches = 0
