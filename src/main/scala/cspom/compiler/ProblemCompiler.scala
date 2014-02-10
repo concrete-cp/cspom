@@ -1,11 +1,11 @@
 package cspom.compiler;
 
-import scala.collection.mutable.HashSet
-import scala.collection.mutable.Queue
-
+import scala.collection.mutable.LinkedHashMap
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.variable.CSPOMVariable
+import cspom.Statistic
+import cspom.variable.CSPOMExpression
+import scala.collection.mutable.HashMap
 
 /**
  * This class implements some known useful reformulation rules.
@@ -17,43 +17,51 @@ final class ProblemCompiler(
   private val problem: CSPOM,
   private val constraintCompilers: Seq[ConstraintCompiler]) {
 
-  private val constraints = new QueueSet[CSPOMConstraint]()
-  private val compilers = new QueueSet[ConstraintCompiler]()
-
   private def compile() {
-    val compilers = new QueueSet[ConstraintCompiler]()
+    ProblemCompiler.compileTime -= System.nanoTime()
 
-    compilers.enqueue(constraintCompilers: _*)
+    val compilers = new HashMap[ConstraintCompiler, Set[CSPOMConstraint]]()
 
-    while (compilers.nonEmpty) {
-      val compiler = compilers.dequeue()
-      val constraints = new QueueSet[CSPOMConstraint]()
-      constraints.enqueue(problem.constraints.toSeq: _*)
-      var ch = false
-      while (constraints.nonEmpty) {
-        val constraint = constraints.dequeue()
-        //println(constraint)
-        for (data <- compiler.mtch(constraint, problem)) {
-          val delta = compiler.compile(constraint, problem, data)
-
-          constraints.remove(delta.removed: _*)
-          for (
-            v <- delta.altered;
-            c <- problem.constraints(v) if (c ne constraint)
-          ) {
-            constraints.enqueue(c)
-          }
-
-          ch |= delta.nonEmpty
-        }
-
-      }
-
-      if (ch) {
-        compilers.enqueue(constraintCompilers.filterNot(_ == compiler): _*)
-      }
+    val allConstraints = problem.constraints.toSet
+    for (cc <- constraintCompilers) {
+      compilers(cc) = allConstraints
     }
 
+    while (compilers.nonEmpty) {
+      val (compiler, constraints) = compilers.head
+      if (constraints.isEmpty) {
+        compilers -= compiler
+      } else {
+        val constraint = constraints.head
+
+        compilers(compiler) -= constraint
+
+        ProblemCompiler.matches += 1
+
+        for (data <- compiler.mtch(constraint, problem)) {
+          ProblemCompiler.compiles += 1
+          val delta = compiler.compile(constraint, problem, data)
+
+          //println(compiler + " : " + constraint + " -> " + delta)
+
+          for ((cc, queue) <- compilers) {
+            compilers(cc) = queue -- delta.removed
+          }
+
+          val enqueue = delta.altered.flatMap(problem.constraints)
+          for (cc <- constraintCompilers) {
+            if (cc eq compiler) {
+              compilers(cc) = compilers.getOrElse(cc, Set()) ++ enqueue.filter(_ ne constraint)
+            } else {
+              compilers(cc) = compilers.getOrElse(cc, Set()) ++ enqueue
+            }
+          }
+        }
+      }
+    }
+    ProblemCompiler.compileTime += System.nanoTime()
+//    println(problem)
+//    ???
     //    /* Removes disconnected auxiliary variables */
     //    problem.variables.filter { v =>
     //      v.params.contains("var_is_introduced") && problem.constraints(v).isEmpty
@@ -61,14 +69,31 @@ final class ProblemCompiler(
 
   }
 
-  private def hasChanged[A](l: Option[A], f: A => Boolean) = l.map(f).getOrElse(false)
-
+  private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint): Set[CSPOMExpression] = {
+    ProblemCompiler.matches += 1
+    compiler.mtch(constraint, problem).map { data =>
+      ProblemCompiler.compiles += 1
+      val delta = compiler.compile(constraint, problem, data)
+      delta.altered
+    } getOrElse {
+      Set()
+    }
+  }
 }
 
 object ProblemCompiler {
   def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]) {
     new ProblemCompiler(problem, compilers).compile();
   }
+
+  @Statistic
+  var matches = 0
+
+  @Statistic
+  var compiles = 0
+
+  @Statistic
+  var compileTime = 0L
 
 }
 

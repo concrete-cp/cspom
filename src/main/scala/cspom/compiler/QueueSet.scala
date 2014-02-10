@@ -8,8 +8,10 @@ final class QueueSet[A] {
 
   private val queue: Queue[A] = new Queue()
 
-  def enqueue(e: A*): Unit = {
-    for (c <- e if (!present(c))) {
+  //def enqueue(e: A*): Unit = e.foreach(enqueue)
+
+  def enqueue(c: A): Unit = {
+    if (!present(c)) {
       queue.enqueue(c)
       present += c
     }

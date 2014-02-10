@@ -6,6 +6,8 @@ import cspom.CSPOM
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
+import cspom.flatzinc.FZAnnotation
+import cspom.flatzinc.FZVarParId
 
 trait ConstraintCompiler {
   type A
@@ -105,6 +107,12 @@ final class GlobalCompiler(
 
 object Ctr {
   def unapply(c: CSPOMConstraint): Option[(Symbol, Seq[CSPOMExpression], Map[String, Any])] = {
+//    val ann = c.params.get("fzAnnotations").asInstanceOf[Option[Seq[FZAnnotation]]]
+//
+//    for (as <- ann; a <- as if a.expr.contains(FZVarParId("BOOL____00100"))) {
+//      println("matching " + c)
+//      println(c.arguments.map(_.getClass()))
+//    }
     if (c.result == CSPOMTrue) {
       Some((c.function, c.arguments, c.params))
     } else {

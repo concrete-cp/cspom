@@ -15,7 +15,7 @@ abstract class Parameter {
 }
 /**
  * Représentation d'un variable entier en paramètre
- * @apram name nmo de la variable paramètre
+ * @param name nmo de la variable paramètre
  */
 case class IntParameter(name: String) extends Parameter {
 
@@ -39,7 +39,7 @@ object Parameter {
 
   /**
    * @param pList list de paramèters
-   * @apram p paramètre à ajouter
+   * @param p paramètre à ajouter
    * @return p :: pList
    */
   def addParamater(pList: List[Parameter], p: Parameter): List[Parameter] = {

@@ -2,9 +2,9 @@ package cspom.variable
 
 import cspom.CSPOM
 
-final class BoolVariable(params: Set[String] = Set())
+final class BoolVariable(params: Set[Any] = Set())
   extends CSPOMVariable(params) with BoolExpression {
-  def this(params: String*) = this(params.toSet)
+  def this(params: Any*) = this(params.toSet)
 
   override def toString = s"boolean variable"
 

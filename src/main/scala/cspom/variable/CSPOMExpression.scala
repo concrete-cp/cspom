@@ -15,7 +15,7 @@ sealed trait CSPOMExpression {
 
   def contains(that: CSPOMConstant): Boolean
 
-  def params: Set[String]
+  def params: Set[Any]
 }
 
 /*
@@ -47,14 +47,14 @@ trait CSPOMConstant extends SimpleExpression {
   def params = ???
 }
 
-abstract class CSPOMVariable(val params: Set[String]) extends SimpleExpression {
+abstract class CSPOMVariable(val params: Set[Any]) extends SimpleExpression {
   def flattenVariables = Seq(this)
 }
 
 final case class CSPOMSeq[T <: CSPOMExpression](
   val values: Seq[T],
   val definedIndices: Range,
-  val params: Set[String] = Set())
+  val params: Set[Any] = Set())
   extends Seq[T] with CSPOMExpression {
 
   require(values.nonEmpty)
