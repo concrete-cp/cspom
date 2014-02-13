@@ -4,6 +4,7 @@ import cspom.variable.CSPOMTrue
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
 import scala.collection.JavaConversions
+import scala.collection.mutable.HashMap
 
 final case class CSPOMConstraint(
   val result: CSPOMExpression,
@@ -65,10 +66,6 @@ final case class CSPOMConstraint(
     }
   }
 
-  private def name(e: CSPOMExpression, cspom: CSPOM): String = {
-    cspom.expressionNames.getOrElse(e, e.toString)
-  }
-
   private def toString(result: Option[String], arguments: Seq[String]): String = {
     val content = s"$function(${arguments.mkString(", ")})${if (params.isEmpty) "" else params.mkString(" :: ", " :: ", "")}"
     result match {
@@ -77,15 +74,28 @@ final case class CSPOMConstraint(
     }
   }
 
-  def toString(cspom: CSPOM): String = {
-    val args = arguments.map(name(_, cspom))
+  def toString(vn: VariableNames): String = {
+    val args = arguments.map(vn.name)
     result match {
       case CSPOMTrue => toString(None, args)
-      case r: CSPOMExpression => toString(Some(name(r, cspom)), args)
+      case r: CSPOMExpression => toString(Some(vn.name(r)), args)
     }
 
   }
 
+}
+
+final class VariableNames(cspom: CSPOM) {
+  val names = HashMap[CSPOMExpression, String]()
+
+  var id = 0
+
+  def nextName() = {
+    id += 1
+    "_" + id
+  }
+
+  def name(expression: CSPOMExpression) = cspom.nameOf(expression).getOrElse(nextName() + ": " + expression)
 }
 
 object CSPOMConstraint {

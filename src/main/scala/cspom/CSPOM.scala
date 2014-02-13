@@ -178,8 +178,8 @@ class CSPOM {
 
   override def toString = {
     val vars = namedExpressions.toSeq.sortBy(_._1).map { case (name, variable) => s"$name: $variable" }.mkString("\n")
-
-    val cons = constraints.map(_.toString(this)).mkString("\n")
+    val vn = new VariableNames(this)
+    val cons = constraints.iterator.map(_.toString(vn)).mkString("\n")
 
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
@@ -356,8 +356,8 @@ object CSPOM {
 
   def ctr(c: CSPOMConstraint)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(c)
 
-//  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
-//    problem.extCtr(rel, init, vars: _*)
+  //  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
+  //    problem.extCtr(rel, init, vars: _*)
 
   @annotation.varargs
   def table(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =

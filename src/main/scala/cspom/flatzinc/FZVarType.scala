@@ -23,7 +23,7 @@ final case class FZFloatInterval(lb: Double, ub: Double) extends FZVarType {
 }
 
 object FZInt extends FZVarType {
-  def genVariable(ann: Seq[FZAnnotation]) = ???
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.free(ann: _*)
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType {

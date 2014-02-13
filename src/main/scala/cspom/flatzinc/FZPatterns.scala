@@ -14,6 +14,7 @@ import cspom.variable.IntConstant
 import cspom.compiler.GlobalCompiler
 import cspom.compiler.Ctr
 import cspom.compiler.CSeq
+import cspom.extension.Table
 
 object FZPatterns {
   def apply() = Seq(new GlobalCompiler(mtch) { def selfPropagation = false }, new Flattener('allDifferent))
@@ -55,6 +56,11 @@ object FZPatterns {
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_int_element(var int: b, array [int] of int: as, var int: c)
      */
+    case Ctr('array_int_element, Seq(b: IntExpression, as: CSPOMSeq[IntConstant], c: IntExpression), p) =>
+      new CSPOMConstraint('extension, Seq(b, c), Map("init" -> false, "relation" ->
+        new Table(as.zipWithIndex.map {
+          case (const, i) => Array(i, const.value)
+        })))
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_set_element(var int: b, array [int] of set of int: as, set of int: c)
@@ -79,6 +85,8 @@ object FZPatterns {
      * (a ↔ b = 1) ∧ (¬a ↔ b = 0)
      * bool2int(var bool: a, var int: b)
      */
+    case Ctr('bool2int, Seq(a: BoolExpression, b: IntExpression), p) =>
+      new CSPOMConstraint('eq, Seq(a, b), p)
     /**
      * (a ∧ b) ↔ r
      * bool_and(var bool: a, var bool: b, var bool: r)
@@ -91,10 +99,13 @@ object FZPatterns {
      * a = b
      * bool_eq(var bool: a, var bool: b)
      */
+    case Ctr('bool_eq, a: Seq[BoolExpression], p) => new CSPOMConstraint('eq, a, p)
     /**
      * (a = b) ↔ r
      * bool_eq_reif(var bool: a, var bool: b, var bool: r)
      */
+    case Ctr('bool_eq_reif, Seq(a: BoolExpression, b: BoolExpression, r: BoolExpression), p) =>
+      new CSPOMConstraint(r, 'eq, Seq(a, b), p)
     /**
      * ¬a ∨ b
      * bool_le(var bool: a, var bool: b)
@@ -105,6 +116,8 @@ object FZPatterns {
      * (¬a ∨ b) ↔ r
      * bool_le_reif(var bool: a, var bool: b, var bool: r)
      */
+    case Ctr('bool_le_reif, Seq(a: BoolExpression, b: BoolExpression, r: BoolExpression), p) =>
+      new CSPOMConstraint(r, 'or, Seq(a, b), p + ("revsign" -> Seq(true, false)))
     /**
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * bool_lin_eq(array [int] of int: as, array [int] of var bool: bs, var int: c)
@@ -292,6 +305,7 @@ object FZPatterns {
      * a ≤ b
      * int_le(var int: a, var int: b)
      */
+    case Ctr('int_le, a, p) => new CSPOMConstraint('le, a, p)
     /**
      * (a ≤ b) ↔ r
      * int_le_reif(var int: a, var int: b, var bool: r)
@@ -302,8 +316,8 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_eq(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[IntConstant]), CSeq(bs), c: IntExpression), p) =>
-      new CSPOMConstraint(c, 'sum, bs, p + ("coefficients" -> as.map(_.value)))
+    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[IntConstant]), bs, c: IntExpression), p) =>
+      new CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "eq"))
 
     /**
      * i ∈ 1..n : as[i].bs[i] = c) ↔ r where n is the common length of as and bs
@@ -312,8 +326,9 @@ object FZPatterns {
     /**
      * i ∈ 1..n : as[i].bs[i] ≤ c where n is the common length of as and bs
      * int_lin_le(array [int] of int: as, array [int] of var int: bs, int: c)
-     *
      */
+    case Ctr('int_lin_le, Seq(CSeq(as: Seq[IntConstant]), bs, c: IntExpression), p) =>
+      new CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
     /**
      * (i ∈ 1..n : as[i].bs[i] ≤ c) ↔ r where n is the common length of as and bs
      * int_lin_le_reif(array [int] of int: as, array [int] of var int: bs, int: c, var bool: r)
@@ -330,6 +345,8 @@ object FZPatterns {
      * a < b
      * int_lt(var int: a, var int: b)
      */
+    case Ctr('int_lt, Seq(a, b), p) =>
+      new CSPOMConstraint('gt, Seq(b, a), p)
     /**
      * (a < b) ↔ r
      * int_lt_reif(var int: a, var int: b, var bool: r)
@@ -447,6 +464,6 @@ class Flattener(symbol: Symbol) extends ConstraintCompiler {
     replaceCtr(constraint,
       new CSPOMConstraint(constraint.result, symbol, args, constraint.params), problem)
   }
-  
+
   def selfPropagation = false
 }
