@@ -34,11 +34,22 @@ final case class FZIntSeq(values: Seq[Int]) extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = IntVariable.ofSeq(values, ann.toSet)
 }
 
-final case class FZArray(indices: IndexSet, typ: FZVarType) extends FZVarType {
+final case class FZArray(indices: Seq[IndexSet], typ: FZVarType) extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = new CSPOMSeq(
-    indices.toRange.map(i => typ.genVariable(Seq(FZAnnotation("array_variable")))),
-    indices.toRange,
+    indices.head.toRange.map(i => generate(indices.tail)),
+    indices.head.toRange,
     ann.toSet)
+
+  private def generate(indices: Seq[IndexSet]): CSPOMExpression = {
+    if (indices.isEmpty) {
+      typ.genVariable(Seq(FZAnnotation("array_variable")))
+    } else {
+      new CSPOMSeq(
+        indices.head.toRange.map(i => generate(indices.tail)),
+        indices.head.toRange,
+        Set(FZAnnotation("array_seq")))
+    }
+  }
 
 }
 

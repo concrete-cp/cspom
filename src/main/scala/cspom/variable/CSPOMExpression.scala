@@ -64,6 +64,9 @@ final case class CSPOMSeq[T <: CSPOMExpression](
   //def variables = seq
   // Members declared in scala.collection.IterableLike 
   def iterator: Iterator[T] = values.iterator
+  
+  def withIndex = values zip definedIndices
+  
   // Members declared in scala.collection.SeqLike 
   def apply(idx: Int): T = values(definedIndices.indexOf(idx))
   def length: Int = values.length

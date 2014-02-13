@@ -15,6 +15,7 @@ import cspom.compiler.GlobalCompiler
 import cspom.compiler.Ctr
 import cspom.compiler.CSeq
 import cspom.extension.Table
+import cspom.variable.CSPOMVariable
 
 object FZPatterns {
   def apply() = Seq(new GlobalCompiler(mtch) { def selfPropagation = false }, new Flattener('allDifferent))
@@ -58,7 +59,7 @@ object FZPatterns {
      */
     case Ctr('array_int_element, Seq(b: IntExpression, as: CSPOMSeq[IntConstant], c: IntExpression), p) =>
       new CSPOMConstraint('extension, Seq(b, c), Map("init" -> false, "relation" ->
-        new Table(as.zipWithIndex.map {
+        new Table(as.withIndex.map {
           case (const, i) => Array(i, const.value)
         })))
     /**
@@ -449,6 +450,12 @@ object FZPatterns {
      * set_union(var set of int: a, var set of int: b, var set of int: c)
      */
 
+    /**
+     * It seems that FlatZinc flattens t.
+     * predicate table_int(array[int] of var int: x, array[int, int] of int: t)
+     */
+    case Ctr('table_int, Seq(x: CSPOMSeq[CSPOMVariable], t: CSPOMSeq[IntConstant]), p) =>
+      new CSPOMConstraint('extension, x, p ++ Map("init" -> false, "relation" -> new Table(t.map(_.value).grouped(x.size).map(_.toArray).toSeq)))
   }
 
 }
