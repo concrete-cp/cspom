@@ -1,6 +1,5 @@
 package cspom.compiler
 import cspom.CSPOM
-import cspom.compiler.ConstraintCompiler
 import cspom.CSPOMConstraint
 
 /**
@@ -22,7 +21,7 @@ object MergeSame extends ConstraintCompiler {
     replaceCtr(c, eqC, problem)
 
   }
-  
+
   def selfPropagation = false
 
 }

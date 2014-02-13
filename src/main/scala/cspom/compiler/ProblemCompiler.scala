@@ -19,7 +19,7 @@ final class ProblemCompiler(
   private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
 
   private def compile() {
-    ProblemCompiler.compileTime -= System.nanoTime()
+    var time = -System.nanoTime()
 
     val toCompile = Array.ofDim[QueueSet[CSPOMConstraint]](constraintCompilers.size)
 
@@ -63,7 +63,8 @@ final class ProblemCompiler(
       }
       first = false
     }
-    ProblemCompiler.compileTime += System.nanoTime()
+    time += System.nanoTime()
+    ProblemCompiler.compileTime += (time / 1e9d)
     //    println(problem)
     //    ???
     //    /* Removes disconnected auxiliary variables */
@@ -90,9 +91,6 @@ object ProblemCompiler {
     new ProblemCompiler(problem, compilers.toIndexedSeq).compile();
   }
 
-  val statistics = new StatisticsManager()
-  statistics.register("problemcompiler", this)
-
   @Statistic
   var matches = 0
 
@@ -100,7 +98,7 @@ object ProblemCompiler {
   var compiles = 0
 
   @Statistic
-  var compileTime = 0L
+  var compileTime = 0.0
 
 }
 

@@ -6,7 +6,7 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMTrue
 import cspom.variable.CSPOMVariable
-
+import cspom.variable.SimpleExpression
 
 /**
  * If given constraint is an all-equal constraint, merges and removes all
@@ -31,7 +31,9 @@ object MergeEq extends ConstraintCompiler {
     }
 
   override def matchConstraint(c: CSPOMConstraint) = c match {
-    case CSPOMConstraint(CSPOMTrue, 'eq, args, params) if !params.contains("neg") && params.get("offset").forall(_ == 0) =>
+    case CSPOMConstraint(CSPOMTrue, 'eq, args, params) if !params.contains("neg") &&
+      params.get("offset").forall(_ == 0) && args.forall(_.isInstanceOf[SimpleExpression]) =>
+        
       val (aux, full, const) = partition(c.arguments.toList)
       if (aux.nonEmpty) {
         Some((aux, full, const))
@@ -116,7 +118,7 @@ object MergeEq extends ConstraintCompiler {
     delta2
 
   }
-  
+
   def selfPropagation = false
 
 }

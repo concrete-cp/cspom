@@ -32,7 +32,7 @@ trait DebugJavaTokenParsers extends JavaTokenParsers {
       val pos = in.pos
       val offset = in.offset
       val t = parser.apply(in)
-      logger.fine(name + ".apply for token " + first +
+      println(name + ".apply for token " + first +
         " at position " + pos + " offset " + offset + " returns " + t)
       t
     }
@@ -55,16 +55,20 @@ object FlatZincParser extends DebugJavaTokenParsers {
     }
   }
 
-  private def mapVariables(variables: Seq[(String, CSPOMExpression)]) = {
+  private def mapVariables(variables: Seq[(String, CSPOMExpression, Option[FZExpr[_]])]) = {
     val varMap = variables.collect {
-      case (name, single: CSPOMVariable) => name -> single
+      case (name, single: CSPOMVariable, _) => name -> single
     } toMap
 
     val seqMap = variables.collect {
-      case (name, seq: CSPOMSeq[CSPOMExpression]) => name -> seq
+      case (name, seq: CSPOMSeq[CSPOMExpression], _) => name -> seq
     } toMap
 
-    (varMap, seqMap)
+    val affectations = variables.collect {
+      case (_, expr, Some(aff)) => expr -> aff.toCSPOM(varMap, seqMap)
+    }
+
+    (varMap, seqMap, affectations)
   }
 
   /*
@@ -72,16 +76,19 @@ object FlatZincParser extends DebugJavaTokenParsers {
    */
   def flatzincModel: Parser[(CSPOM, Any)] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
-      val (varMap, seqMap) = mapVariables(variables)
-      success(varMap, seqMap) ~ rep(constraint(varMap, seqMap)) ~ solve_goal
+      val (varMap, seqMap, affectations) = mapVariables(variables)
+      success(varMap, seqMap, affectations) ~ rep(constraint(varMap, seqMap)) ~ solve_goal
   } ^^ {
-    case (varMap, seqMap) ~ constraints ~ goal =>
+    case (varMap, seqMap, affectations) ~ constraints ~ goal =>
       val p = CSPOM {
         for ((name, expr) <- varMap.iterator ++ seqMap) {
           expr as name
         }
         for (c <- constraints) {
           ctr(c)
+        }
+        for ((e, a) <- affectations) {
+          ctr(new CSPOMConstraint('eq, Seq(e, a)))
         }
       }
       (p, goal)
@@ -173,10 +180,21 @@ object FlatZincParser extends DebugJavaTokenParsers {
         case varParId ~ index => varParId.index(index)
       } |
       var_par_id |
-      array_expr |
+      array_expr
+  }
+
+  def exprInAnn: Parser[FZExpr[_]] =
+    bool_const |
+      set_const |
+      int_const |
+      float_const |
+      var_par_id ~ ("[" ~> int_const <~ "]") ^^ {
+        case varParId ~ index => varParId.index(index)
+      } |
+      var_par_id |||
+      array_exprInAnn |||
       annotation |
       stringLiteral ^^ FZStringLiteral
-  }
 
   //  def cspomExpr(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq[CSPOMExpression]]): Parser[CSPOMExpression] =
   //    bool_const ^^ { _.toCSPOM(vars, seqs) } |
@@ -204,15 +222,19 @@ object FlatZincParser extends DebugJavaTokenParsers {
   def array_expr: Parser[FZArrayExpr[_]] = "array_expr" !!! {
     "[" ~> repsep(expr, ",") <~ "]" ^^ { case l: Seq[FZExpr[_]] => FZArrayExpr(l) }
   }
+  
+    def array_exprInAnn: Parser[FZArrayExpr[_]] = "array_expr" !!! {
+    "[" ~> repsep(exprInAnn, ",") <~ "]" ^^ { case l: Seq[FZExpr[_]] => FZArrayExpr(l) }
+  }
 
   def param_decl: Parser[Parameter] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
     case t ~ ":" ~ id ~ "=" ~ expr => Parameter.getParamater(id, "int")
   }
 
-  def var_decl: Parser[(String, CSPOMExpression)] = "var_decl" !!! {
-    var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~ expr) <~ ";" ^? ({
-      case varType ~ ":" ~ varParId ~ ann ~ None => (varParId, varType.genVariable(ann))
-    }, _ => "Expressions not supported in var declaration")
+  def var_decl: Parser[(String, CSPOMExpression, Option[FZExpr[_]])] = "var_decl" !!! {
+    var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~> expr) <~ ";" ^^ {
+      case varType ~ ":" ~ varParId ~ ann ~ aff => (varParId, varType.genVariable(ann), aff)
+    }
 
   }
 
@@ -232,7 +254,7 @@ object FlatZincParser extends DebugJavaTokenParsers {
   def annotations: Parser[Seq[FZAnnotation]] = "annotations" !!! rep("::" ~> annotation)
 
   def annotation: Parser[FZAnnotation] = "annotation" !!! {
-    pred_ann_id ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ {
+    pred_ann_id ~ ("(" ~> repsep(exprInAnn, ",") <~ ")") ^^ {
       case id ~ expressions => FZAnnotation(id, expressions)
     } |
       pred_ann_id ^^ (FZAnnotation(_, Seq()))

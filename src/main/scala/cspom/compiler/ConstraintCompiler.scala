@@ -60,7 +60,23 @@ trait ConstraintCompiler {
     in.ctr(by)
     d.added(by)
   }
-  
+
+  def replaceCtr(which: CSPOMConstraint, by: Seq[CSPOMConstraint], in: CSPOM): Delta = {
+    replaceCtr(Seq(which), by, in)
+  }
+
+  def replaceCtr(which: Seq[CSPOMConstraint], by: Seq[CSPOMConstraint], in: CSPOM): Delta = {
+    val d = which.foldLeft(Delta()) {
+      case (delta, constraint) =>
+        in.removeConstraint(constraint)
+        delta.removed(constraint)
+    }
+    by.foldLeft(d) {
+      case (delta, constraint) =>
+        delta.added(in.ctr(constraint))
+    }
+  }
+
   def selfPropagation: Boolean
 }
 
@@ -109,12 +125,12 @@ abstract class GlobalCompiler(
 
 object Ctr {
   def unapply(c: CSPOMConstraint): Option[(Symbol, Seq[CSPOMExpression], Map[String, Any])] = {
-//    val ann = c.params.get("fzAnnotations").asInstanceOf[Option[Seq[FZAnnotation]]]
-//
-//    for (as <- ann; a <- as if a.expr.contains(FZVarParId("BOOL____00100"))) {
-//      println("matching " + c)
-//      println(c.arguments.map(_.getClass()))
-//    }
+    //    val ann = c.params.get("fzAnnotations").asInstanceOf[Option[Seq[FZAnnotation]]]
+    //
+    //    for (as <- ann; a <- as if a.expr.contains(FZVarParId("BOOL____00100"))) {
+    //      println("matching " + c)
+    //      println(c.arguments.map(_.getClass()))
+    //    }
     if (c.result == CSPOMTrue) {
       Some((c.function, c.arguments, c.params))
     } else {
