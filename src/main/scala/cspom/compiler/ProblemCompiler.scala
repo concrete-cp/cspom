@@ -48,7 +48,7 @@ final class ProblemCompiler(
 
             //println(compiler + " : " + constraint + " -> " + delta)
 
-            val enqueue = delta.altered.view.flatMap(problem.constraints)
+            val enqueue = delta.altered.toStream.flatMap(problem.constraints)
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
               toCompile(j).removeAll(delta.removed)
