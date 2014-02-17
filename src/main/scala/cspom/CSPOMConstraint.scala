@@ -75,10 +75,10 @@ final case class CSPOMConstraint(
   }
 
   def toString(vn: VariableNames): String = {
-    val args = arguments.map(vn.name)
+    val args = arguments.map(vn.names(_).mkString("/"))
     result match {
       case CSPOMTrue => toString(None, args)
-      case r: CSPOMExpression => toString(Some(vn.name(r)), args)
+      case r: CSPOMExpression => toString(Some(vn.names(r).mkString("/")), args)
     }
 
   }
@@ -86,7 +86,10 @@ final case class CSPOMConstraint(
 }
 
 final class VariableNames(cspom: CSPOM) {
-  val names = HashMap[CSPOMExpression, String]()
+
+  val _names = cspom.namedExpressions.groupBy(_._2).mapValues(_.keySet)
+
+  val generatedNames = new HashMap[CSPOMExpression, String]
 
   var id = 0
 
@@ -95,7 +98,8 @@ final class VariableNames(cspom: CSPOM) {
     "_" + id
   }
 
-  def name(expression: CSPOMExpression) = cspom.nameOf(expression).getOrElse(nextName() + ": " + expression)
+  def names(expression: CSPOMExpression) =
+    _names.getOrElse(expression, Set(generatedNames.getOrElseUpdate(expression, nextName())))
 }
 
 object CSPOMConstraint {

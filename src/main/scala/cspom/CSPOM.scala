@@ -58,14 +58,10 @@ class CSPOM {
    */
   private var _namedExpressions = Map[String, CSPOMExpression]()
 
-  private var _expressionNames = Map[CSPOMExpression, String]()
-
   /**
    * @return The named expressions of this problem.
    */
   def namedExpressions = _namedExpressions
-
-  def expressionNames = _expressionNames
 
   val getExpressions = JavaConversions.asJavaCollection(namedExpressions)
 
@@ -75,8 +71,6 @@ class CSPOM {
    * @return The variable with the corresponding name.
    */
   def expression(name: String) = namedExpressions.get(name);
-
-  def nameOf(expression: CSPOMExpression) = _expressionNames.get(expression)
 
   /**
    * Collection of all constraints of the problem.
@@ -88,13 +82,8 @@ class CSPOM {
   val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
   def nameExpression[A <: CSPOMExpression](e: A, n: String): A = {
-    val existingN = namedExpressions.get(n)
-    require(existingN.isEmpty, s"$existingN is already named $n")
-    val existingE = _expressionNames.get(e)
-    require(existingE.isEmpty, s"$e is already named $existingE")
+    require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
     _namedExpressions += n -> e
-    _expressionNames += e -> n
-    require(_namedExpressions.size == _expressionNames.size)
     e
   }
 
@@ -234,11 +223,8 @@ class CSPOM {
   //  }
 
   def replaceExpression(name: String, by: CSPOMExpression) = {
-    val expression = namedExpressions(name)
+    require(_namedExpressions.contains(name))
     _namedExpressions += name -> by
-    _expressionNames -= expression
-    _expressionNames += by -> name
-    require(_namedExpressions.size == _expressionNames.size)
   }
 
   def referencedExpressions = ctrV.keySet ++ namedExpressions.values

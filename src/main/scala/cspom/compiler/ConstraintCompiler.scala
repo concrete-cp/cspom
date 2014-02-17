@@ -25,24 +25,24 @@ trait ConstraintCompiler {
   def replace(which: Seq[CSPOMExpression], by: CSPOMExpression, in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
 
-    which.collect(in.expressionNames) match {
-      case Seq() =>
-      case Seq(name) => in.replaceExpression(name, by)
-      case _ => throw new UnsupportedOperationException("Sorry, cannot replace multiple named expressions by one")
-    }
+    val names = in.namedExpressions.filter { case (name, expr) => which.contains(expr) }.keySet
+
+    names.foreach(in.replaceExpression(_, by))
+//    which.collect(in.expressionNames) match {
+//      case Seq() =>
+//      case Seq(name) => name.foreach(in.replaceExpression(_, by))
+//      case _ => throw new UnsupportedOperationException("Sorry, cannot replace multiple named expressions by one")
+//    }
 
     val oldConstraints = which.flatMap(in.constraints).distinct
-    for (c <- oldConstraints) {
-      in.removeConstraint(c)
-    }
 
     val newConstraints = for (c <- oldConstraints) yield {
-      in.ctr(which.foldLeft(c) { (c, v) =>
+      which.foldLeft(c) { (c, v) =>
         c.replacedVar(v, by)
-      })
+      }
     }
 
-    Delta().removed(oldConstraints).added(newConstraints)
+    replaceCtr(oldConstraints, newConstraints, in)
   }
 
   def replaceCtr(which: CSPOMConstraint, by: CSPOMConstraint, in: CSPOM): Delta = {

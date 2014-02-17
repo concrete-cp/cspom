@@ -57,7 +57,7 @@ final case class CSPOMSeq[T <: CSPOMExpression](
   val params: Set[Any] = Set())
   extends Seq[T] with CSPOMExpression {
 
-  require(values.nonEmpty)
+  require(values.size == definedIndices.size)
 
   def this(seq: Seq[T]) = this(seq, seq.indices)
 
