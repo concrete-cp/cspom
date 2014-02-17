@@ -26,7 +26,7 @@ case class FZBoolConst(value: Boolean) extends FZConstant[Boolean] {
 }
 
 case class FZSetConst(value: Seq[Int]) extends FZConstant[Seq[Int]] {
-  def asConstant = ???
+  def asConstant = CSPOMSeq(value.map(IntConstant(_)): _*)
 }
 
 case class FZFloatConst(value: Double) extends FZConstant[Double] {
@@ -37,8 +37,8 @@ case class FZIntConst(value: Int) extends FZConstant[Int] {
   def asConstant = IntConstant(value)
 }
 
-case class FZArrayIdx(array: String, index: Int) extends FZExpr[CSPOMVariable] {
-  def value = ???
+case class FZArrayIdx(array: String, index: Int) extends FZExpr[String] {
+  def value = s"$array[$index]"
 
   def toCSPOM(declared: Map[String, CSPOMExpression]) =
     declared.get(array).collect {
@@ -69,7 +69,7 @@ case class FZStringLiteral(value: String) extends FZConstant[String] {
 }
 
 case class FZAnnotation(predAnnId: String, expr: Seq[FZExpr[_]] = Seq()) extends FZExpr[String] {
-  def value = ???
+  def value = predAnnId + expr.mkString("(", ", ", ")")
   def toCSPOM(declared: Map[String, CSPOMExpression]) = ???
   def asConstant = ???
   def isConstant = ???

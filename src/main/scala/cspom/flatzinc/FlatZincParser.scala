@@ -113,9 +113,8 @@ object FlatZincParser extends DebugJavaTokenParsers {
       "set of int" ~> err("Unsupported") |
       "array [" ~> index_set <~ "] of bool" ^^ { FZArray(_, FZBoolean) } |
       "array [" ~> index_set <~ "] of float" ^^ { FZArray(_, FZFloat) } |
-      "array [" ~> index_set <~ "] of int" ^^ { FZArray(_, FZInt) }
-  //      |
-  //      "array [" ~> index_set <~ "] of set of int" ~> err("Unsupported")
+      "array [" ~> index_set <~ "] of int" ^^ { FZArray(_, FZInt) } |
+      "array [" ~> index_set <~ "] of set of int" ^^ { FZArray(_, FZIntSet) }
 
   def par_pred_param_type: Parser[Any] =
     par_type |
@@ -230,7 +229,16 @@ object FlatZincParser extends DebugJavaTokenParsers {
   }
 
   def param_decl: Parser[(String, CSPOMExpression)] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
-    case t ~ ":" ~ id ~ "=" ~ expr => id.value -> expr.asConstant
+    case t ~ ":" ~ id ~ "=" ~ expr =>
+
+      val e = (t, expr.asConstant) match {
+        case (FZArray(Seq(indices), typ), e: CSPOMSeq[_]) =>
+          new CSPOMSeq(e, indices.toRange, e.params)
+
+        case (_, e) => e
+      }
+
+      id.value -> e
   }
 
   def var_decl: Parser[(String, CSPOMExpression, Option[FZExpr[_]])] = "var_decl" !!! {

@@ -14,7 +14,7 @@ object FZBoolean extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = new BoolVariable(ann.toSet)
 }
 
-object FZFloat extends FZVarType {
+case object FZFloat extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = ???
 }
 
@@ -22,7 +22,7 @@ final case class FZFloatInterval(lb: Double, ub: Double) extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = ???
 }
 
-object FZInt extends FZVarType {
+case object FZInt extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = IntVariable.free(ann: _*)
 }
 
@@ -32,6 +32,10 @@ final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType {
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType {
   def genVariable(ann: Seq[FZAnnotation]) = IntVariable.ofSeq(values, ann.toSet)
+}
+
+case object FZIntSet extends FZVarType {
+  def genVariable(ann: Seq[FZAnnotation]) = ???
 }
 
 final case class FZArray(indices: Seq[IndexSet], typ: FZVarType) extends FZVarType {
