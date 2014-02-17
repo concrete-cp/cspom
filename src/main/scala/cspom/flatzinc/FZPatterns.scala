@@ -381,10 +381,14 @@ object FZPatterns {
      * a+b = c
      * int_plus(var int: a, var int: b, var int: c)
      */
+    case Ctr('int_plus, Seq(a: IntExpression, b: IntExpression, c: IntExpression), p) =>
+      new CSPOMConstraint(c, 'add, Seq(a, b), p)
     /**
      * a×b = c
      * int_times(var int: a, var int: b, var int: c)
      */
+    case Ctr('int_times, Seq(a: IntExpression, b: IntExpression, c: IntExpression), p) =>
+      new CSPOMConstraint(c, 'mul, Seq(a, b), p)
     /**
      * a = b
      * int2float(var int: a, var float: b)
