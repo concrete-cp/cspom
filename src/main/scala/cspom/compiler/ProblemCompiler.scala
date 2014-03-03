@@ -7,6 +7,7 @@ import cspom.Statistic
 import cspom.variable.CSPOMExpression
 import scala.collection.mutable.HashMap
 import cspom.StatisticsManager
+import cspom.TimedException
 
 /**
  * This class implements some known useful reformulation rules.
@@ -19,9 +20,8 @@ final class ProblemCompiler(
   private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
 
   private def compile() {
-    var time = -System.nanoTime()
-
-    val toCompile = Array.ofDim[QueueSet[CSPOMConstraint[_]]](constraintCompilers.size)
+    val toCompile = Array.ofDim[QueueSet[CSPOMConstraint[Any]]](
+      constraintCompilers.size)
 
     var changed = true
     var first = true
@@ -38,7 +38,7 @@ final class ProblemCompiler(
 
         while (toCompile(i).nonEmpty) {
 
-          val constraint = toCompile(i).dequeue().asInstanceOf[CSPOMConstraint[Any]]
+          val constraint = toCompile(i).dequeue()
           ProblemCompiler.matches += 1
           //println(compiler, constraint.id)
 
@@ -49,7 +49,7 @@ final class ProblemCompiler(
 
             //println(compiler + " : " + constraint + " -> " + delta)
 
-            val enqueue = delta.altered.toStream.flatMap(problem.constraints)
+            lazy val enqueue = delta.altered.iterator.flatMap(problem.constraints).toList
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
               toCompile(j).removeAll(delta.removed)
@@ -64,32 +64,22 @@ final class ProblemCompiler(
       }
       first = false
     }
-    time += System.nanoTime()
-    ProblemCompiler.compileTime += (time / 1e9d)
-    //    println(problem)
-    //    ???
-    //    /* Removes disconnected auxiliary variables */
-    //    problem.variables.filter { v =>
-    //      v.params.contains("var_is_introduced") && problem.constraints(v).isEmpty
-    //    }.foreach(problem.removeVariable)
 
   }
 
-  private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Set[CSPOMExpression[_]] = {
-    ProblemCompiler.matches += 1
-    compiler.mtch(constraint, problem).map { data =>
-      ProblemCompiler.compiles += 1
-      val delta = compiler.compile(constraint, problem, data)
-      delta.altered
-    } getOrElse {
-      Set()
-    }
-  }
 }
 
 object ProblemCompiler {
   def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]) {
-    new ProblemCompiler(problem, compilers.toIndexedSeq).compile();
+    val pbc = new ProblemCompiler(problem, compilers.toIndexedSeq)
+
+    val (_, t) = try StatisticsManager.time(pbc.compile())
+    catch {
+      case e: TimedException =>
+        compileTime += e.time
+        throw e.getCause()
+    }
+    compileTime += t
   }
 
   @Statistic
