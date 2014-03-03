@@ -1,22 +1,21 @@
 package cspom.xcsp;
 
 import java.io.InputStream
+import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
-import cspom.variable.CSPOMVariable
 import cspom.CSPOM
+import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.LazyRelation
 import cspom.extension.Relation
-import java.io.StringReader
+import cspom.variable.CSPOMVariable
 import cspom.variable.IntDomain
-import cspom.variable.IntVariable
-import scala.util.parsing.input.CharSequenceReader
-import cspom.CSPOMConstraint
-import cspom.variable.CSPOMSeq
-import cspom.variable.IntExpression
 import cspom.variable.IntInterval
-import cspom.variable.IntConstant
+import cspom.variable.IntVariable
+import CSPOM._
+import cspom.variable.CSPOMConstant
+import cspom.variable.CSPOMExpression
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -35,7 +34,7 @@ final object XCSPParser {
    *            The String domain to parse
    * @return The resulting Domain object
    */
-  def parseDomain(desc: String): IntExpression = {
+  def parseDomain(desc: String): CSPOMExpression[Int] = {
     val values: Seq[Int] = desc.trim.split(" +").flatMap { v =>
       if (v.contains("..")) {
         IntInterval.valueOf(v);
@@ -45,7 +44,7 @@ final object XCSPParser {
     }
 
     if (values.size == 1) {
-      IntConstant(values.head)
+      CSPOMConstant(values.head)
     } else {
       IntVariable.ofSeq(values)
     }
@@ -67,45 +66,35 @@ final object XCSPParser {
     val document = XML.load(is)
     val declaredVariables = parseVariables(document);
     val (genVariables, constraints) = parseConstraints(document, declaredVariables.toMap);
-    val problem = new CSPOM
+    val problem = CSPOM {
+      for ((name, variable) <- declaredVariables) {
+        variable as name
+      }
 
-    for ((name, variable) <- declaredVariables) {
-      problem.nameExpression(variable, name)
+      for (c <- constraints) {
+        ctr(c)
+      }
     }
-    //declaredVariables.values.foreach(problem.addVariable)
-    //genVariables.foreach(problem.addVariable)
-    constraints.foreach(problem.ctr)
     (problem, Map('variables -> declaredVariables.map(_._1)))
 
   }
 
   /**
-   * Parse variables and add them to the problem.
-   *
-   * @param domains
-   *            Domains to use for variables.
+   * Parse variables and domains
    * @param doc
    *            XCSP document
-   * @throws CSPParseException
-   *             If two variables have the same name.
    */
-  private def parseVariables(doc: NodeSeq): Seq[(String, CSPOMVariable)] = {
+  private def parseVariables(doc: NodeSeq): Seq[(String, IntVariable)] = {
     val domains = (doc \ "domains" \ "domain") map { node =>
       (node \ "@name").text -> IntDomain.valueOf(node.text)
     } toMap
 
-    for (node <- doc \ "variables" \ "variable") yield {
+    (doc \ "variables" \ "variable").map { node =>
+
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
       name -> new IntVariable(domain)
-      //      try {
-      //        problem.addVariable(new IntVariable(name, domain));
-      //      } catch {
-      //        case e: Exception =>
-      //          throw new CSPParseException(s"Could not add variable $name", e);
-      //      }
-
     }
 
   }
@@ -122,7 +111,7 @@ final object XCSPParser {
    * @throws CSPParseException
    *             If a relation or predicate could not be found or applied.
    */
-  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, CSPOMVariable]) = {
+  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, IntVariable]) = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
         val text = new CharSequenceReader(node.text) //new StringReader(node.text)
@@ -169,14 +158,14 @@ final object XCSPParser {
    */
   private def genConstraint(name: String, varNames: String,
     parameters: String, reference: String, relations: Map[String, AnyRef],
-    declaredVariables: Map[String, CSPOMVariable]): (Seq[CSPOMVariable], Seq[CSPOMConstraint]) = {
+    declaredVariables: Map[String, IntVariable]): (Seq[CSPOMVariable[_]], Seq[CSPOMConstraint[_]]) = {
 
-    val scope = varNames.split(" +") map { s =>
+    val scope = varNames.split(" +").iterator.map { s =>
       s -> declaredVariables.getOrElse(s, {
         throw new CSPParseException("Could not find variable " + s
           + " from the scope of " + name);
       })
-    }
+    } toSeq
 
     if (reference startsWith "global:") {
 
@@ -192,8 +181,9 @@ final object XCSPParser {
     } else {
       relations.get(reference) match {
 
-        case Some(extension: Extension) => (Seq(), Seq(new CSPOMConstraint(
-          'extension, scope.map(_._2), Map("init" -> extension.init, "relation" -> extension.relation))))
+        case Some(extension: Extension) => (Seq(), Seq(CSPOMConstraint(
+          'extension, scope.map(_._2),
+          Map("init" -> extension.init, "relation" -> extension.relation))))
 
         case Some(predicate: XCSPPredicate) =>
           try {

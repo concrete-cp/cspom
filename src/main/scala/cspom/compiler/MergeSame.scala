@@ -7,17 +7,27 @@ import cspom.CSPOMConstraint
  */
 object MergeSame extends ConstraintCompiler {
 
-  type A = CSPOMConstraint
+  type A = CSPOMConstraint[Any]
 
-  override def mtch(c: CSPOMConstraint, problem: CSPOM): Option[A] = {
+  override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[A] = {
     c.fullScope.iterator.flatMap(problem.constraints).filter(_ ne c).collectFirst {
-      case same @ CSPOMConstraint(_, c.function, c.arguments, c.params) => same
+      case (same @ CSPOMConstraint(_, c.function, args, c.params)) if (isSame(args, c.arguments)) =>
+        same.asInstanceOf[CSPOMConstraint[Any]]
     }
   }
 
-  def compile(c: CSPOMConstraint, problem: CSPOM, same: CSPOMConstraint) = {
+  @annotation.tailrec
+  private def isSame[A <: AnyRef](a: Seq[A], b: Seq[A]): Boolean = {
+    if (a.isEmpty) {
+      b.isEmpty
+    } else {
+      b.nonEmpty && (a.head eq b.head) && isSame(a.tail, b.tail)
+    }
+  }
 
-    val eqC = new CSPOMConstraint('eq, c.result, same.result)
+  def compile(c: CSPOMConstraint[_], problem: CSPOM, same: CSPOMConstraint[Any]) = {
+
+    val eqC = CSPOMConstraint('eq, c.result, same.result)
     replaceCtr(c, eqC, problem)
 
   }

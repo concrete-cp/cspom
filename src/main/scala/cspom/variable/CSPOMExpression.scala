@@ -6,89 +6,101 @@ import scala.collection.mutable.WeakHashMap
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
  */
-sealed trait CSPOMExpression {
-  def flattenVariables: Seq[CSPOMVariable]
+sealed trait CSPOMExpression[+T] {
 
-  def replaceVar(which: CSPOMExpression, by: CSPOMExpression): CSPOMExpression
-
-  def intersected(that: CSPOMExpression): CSPOMExpression
-
-  def contains(that: CSPOMConstant): Boolean
+  def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R]
 
   def params: Set[Any]
+
 }
 
 /*
  * Simple expressions are typed (int or boolean)
  */
-sealed trait SimpleExpression extends CSPOMExpression {
-  final def replaceVar(which: CSPOMExpression, by: CSPOMExpression) =
+sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
+  final def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) =
     if (which == this) by else this
+
+  def intersected(that: SimpleExpression[_ >: T]): SimpleExpression[T]
+
+  def contains[S >: T](that: S): Boolean
+
 }
 
-trait IntExpression extends SimpleExpression
+class CSPOMConstant[+T](val value: T) extends SimpleExpression[T] {
+  def contains[S >: T](that: S) = this == that
 
-trait BoolExpression extends SimpleExpression {
-  def neg: BoolExpression
-}
-
-trait CSPOMConstant extends SimpleExpression {
-  def flattenVariables = Seq()
-
-  def contains(that: CSPOMConstant) = this == that
-
-  def intersected(that: CSPOMExpression) =
-    if (that.contains(this)) {
+  def intersected(that: SimpleExpression[_ >: T]) =
+    if (that.contains(value)) {
       this
     } else {
       throw new IllegalArgumentException("Empty intersection")
     }
 
+  override def toString = value.toString
+
+  override def equals(o: Any) = o match {
+    case i: CSPOMConstant[_] => i.value == value
+    case i: Any => i == value
+  }
+
   def params = ???
 }
 
-abstract class CSPOMVariable(val params: Set[Any]) extends SimpleExpression {
+object CSPOMConstant {
+  val cache = new WeakHashMap[Any, CSPOMConstant[Any]]
+  
+  cache.put(true, CSPOMTrue)
+  cache.put(false, CSPOMFalse)
+
+  def apply[A](value: A): CSPOMConstant[A] =
+    cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[A]]
+
+  def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
+}
+
+abstract class CSPOMVariable[+T](val params: Set[Any]) extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
 }
 
-final case class CSPOMSeq[T <: CSPOMExpression](
-  val values: Seq[T],
+final case class CSPOMSeq[+T](
+  val values: Seq[CSPOMExpression[T]],
   val definedIndices: Range,
   val params: Set[Any] = Set())
-  extends Seq[T] with CSPOMExpression {
+  extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
+
+  def this(seq: Seq[CSPOMExpression[T]]) = this(seq, seq.indices)
 
   require(values.size == definedIndices.size)
 
-  def this(seq: Seq[T]) = this(seq, seq.indices)
-
   //def variables = seq
   // Members declared in scala.collection.IterableLike 
-  def iterator: Iterator[T] = values.iterator
-  
+  def iterator: Iterator[CSPOMExpression[T]] = values.iterator
+
   def withIndex = values zip definedIndices
-  
+
   // Members declared in scala.collection.SeqLike 
-  def apply(idx: Int): T = values(definedIndices.indexOf(idx))
+  def apply(idx: Int): CSPOMExpression[T] = values(definedIndices.indexOf(idx))
   def length: Int = values.length
-  def flattenVariables: Seq[CSPOMVariable] = values.flatMap(_.flattenVariables)
 
-  def replaceVar(which: CSPOMExpression, by: CSPOMExpression) =
-    new CSPOMSeq(values.map(_.replaceVar(which, by)), definedIndices, params)
+  def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) = {
+    if (which == this) {
+      by
+    } else {
+      val replaced = values.map(_.replaceVar(which, by))
+      new CSPOMSeq(replaced, definedIndices, params)
+    }
+  }
 
-  def intersected(that: CSPOMExpression) = throw new UnsupportedOperationException
-  def contains(that: CSPOMConstant): Boolean = throw new UnsupportedOperationException
+  List(1, 2)
 }
 
-object CSPOMSeq {
-  @annotation.varargs
-  def apply(s: CSPOMExpression*) = new CSPOMSeq(s)
-  @annotation.varargs
-  def applyVar(s: CSPOMVariable*) = new CSPOMSeq(s)
-}
-
-object CSPOMExpression {
-
-}
+//object CSPOMSeq {
+//  @annotation.varargs
+//  def apply[A](s: CSPOMExpression[A]*) = new CSPOMSeq[A](s)
+//  @annotation.varargs
+//  def applyVar[T](s: CSPOMExpression[T]*) = new CSPOMSeq(s)
+//}
 
 object CSPOMVariable {
 

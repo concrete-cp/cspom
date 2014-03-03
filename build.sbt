@@ -20,3 +20,5 @@ publishTo := Some(
 		new File(Path.userHome.absolutePath+"/concrete/repository")))
 
 EclipseKeys.withSource := true
+
+org.scalastyle.sbt.ScalastylePlugin.Settings

@@ -12,32 +12,34 @@ import cspom.flatzinc.FZVarParId
 trait ConstraintCompiler {
   type A
 
-  def mtch(c: CSPOMConstraint, p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
+  def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
 
-  def matcher: PartialFunction[(CSPOMConstraint, CSPOM), A] = PartialFunction.empty
+  def matcher: PartialFunction[(CSPOMConstraint[_], CSPOM), A] = PartialFunction.empty
 
-  def matchConstraint(c: CSPOMConstraint) = constraintMatcher.lift(c)
+  def matchConstraint(c: CSPOMConstraint[_]) = constraintMatcher.lift(c)
 
-  def constraintMatcher: PartialFunction[CSPOMConstraint, A] = PartialFunction.empty
+  def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = PartialFunction.empty
 
-  def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: A): Delta
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
 
-  def replace(which: Seq[CSPOMExpression], by: CSPOMExpression, in: CSPOM): Delta = {
+  def replace[T, S <: T](which: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
 
-    val names = in.namedExpressions.filter { case (name, expr) => which.contains(expr) }.keySet
+    val names = in.namedExpressions.filter {
+      case (name, expr) => which.contains(expr)
+    }.keySet
 
     names.foreach(in.replaceExpression(_, by))
-//    which.collect(in.expressionNames) match {
-//      case Seq() =>
-//      case Seq(name) => name.foreach(in.replaceExpression(_, by))
-//      case _ => throw new UnsupportedOperationException("Sorry, cannot replace multiple named expressions by one")
-//    }
+    //    which.collect(in.expressionNames) match {
+    //      case Seq() =>
+    //      case Seq(name) => name.foreach(in.replaceExpression(_, by))
+    //      case _ => throw new UnsupportedOperationException("Sorry, cannot replace multiple named expressions by one")
+    //    }
 
     val oldConstraints = which.flatMap(in.constraints).distinct
 
     val newConstraints = for (c <- oldConstraints) yield {
-      which.foldLeft(c) { (c, v) =>
+      which.foldLeft[CSPOMConstraint[_]](c) { (c, v) =>
         c.replacedVar(v, by)
       }
     }
@@ -45,36 +47,30 @@ trait ConstraintCompiler {
     replaceCtr(oldConstraints, newConstraints, in)
   }
 
-  def replaceCtr(which: CSPOMConstraint, by: CSPOMConstraint, in: CSPOM): Delta = {
+  def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta = {
     in.removeConstraint(which)
     in.ctr(by)
     Delta().removed(which).added(by)
   }
 
-  def replaceCtr(which: Seq[CSPOMConstraint], by: CSPOMConstraint, in: CSPOM): Delta = {
-    val d = which.foldLeft(Delta()) {
-      case (delta, constraint) =>
-        in.removeConstraint(constraint)
-        delta.removed(constraint)
-    }
+  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: CSPOMConstraint[_], in: CSPOM): Delta = {
+    which.foreach(in.removeConstraint)
+    val d = Delta().removed(which)
     in.ctr(by)
     d.added(by)
   }
 
-  def replaceCtr(which: CSPOMConstraint, by: Seq[CSPOMConstraint], in: CSPOM): Delta = {
+  def replaceCtr(which: CSPOMConstraint[_], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     replaceCtr(Seq(which), by, in)
   }
 
-  def replaceCtr(which: Seq[CSPOMConstraint], by: Seq[CSPOMConstraint], in: CSPOM): Delta = {
-    val d = which.foldLeft(Delta()) {
-      case (delta, constraint) =>
-        in.removeConstraint(constraint)
-        delta.removed(constraint)
-    }
-    by.foldLeft(d) {
-      case (delta, constraint) =>
-        delta.added(in.ctr(constraint))
-    }
+  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+    which.foreach(in.removeConstraint)
+    val dr = Delta().removed(which)
+
+    by.foreach(in.ctr(_))
+
+    dr.added(by)
   }
 
   def selfPropagation: Boolean
@@ -82,24 +78,26 @@ trait ConstraintCompiler {
 
 trait ConstraintCompilerNoData extends ConstraintCompiler {
   type A = Unit
-  def matchBool(constraint: CSPOMConstraint, problem: CSPOM): Boolean
+  def matchBool(constraint: CSPOMConstraint[_], problem: CSPOM): Boolean
 
-  override def mtch(constraint: CSPOMConstraint, problem: CSPOM) =
+  override def mtch(constraint: CSPOMConstraint[_], problem: CSPOM) =
     if (matchBool(constraint, problem)) Some()
     else None
 
-  def compile(constraint: CSPOMConstraint, problem: CSPOM): Delta
-  def compile(constraint: CSPOMConstraint, problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM): Delta
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
 }
 
-final case class Delta private (removed: Seq[CSPOMConstraint], altered: Set[CSPOMExpression]) {
-  def removed(c: CSPOMConstraint): Delta = this ++ new Delta(Seq(c), c.fullScope.toSet)
-  def removed(c: Traversable[CSPOMConstraint]): Delta =
-    this ++ new Delta(c.toSeq, c.flatMap(_.fullScope).toSet)
+final case class Delta private (removed: Seq[CSPOMConstraint[_]], altered: Set[CSPOMExpression[_]]) {
+  def removed(c: CSPOMConstraint[_]) =
+    new Delta(Seq(c), c.fullScope.toSet) ++ this
+  def removed(c: Traversable[CSPOMConstraint[_]]): Delta =
+    new Delta(c.toSeq, c.flatMap(_.fullScope).toSet) ++ this
 
-  def added(c: CSPOMConstraint): Delta = this ++ new Delta(Nil, c.fullScope.toSet)
-  def added(c: Traversable[CSPOMConstraint]): Delta =
-    this ++ new Delta(Nil, c.flatMap(_.fullScope).toSet)
+  def added(c: CSPOMConstraint[_]): Delta =
+    new Delta(Nil, c.fullScope.toSet) ++ this
+  def added(c: Traversable[CSPOMConstraint[_]]): Delta =
+    new Delta(Nil, c.flatMap(_.fullScope).toSet) ++ this
 
   def ++(d: Delta): Delta = Delta(removed ++ d.removed, altered ++ d.altered)
   def nonEmpty = removed.nonEmpty || altered.nonEmpty
@@ -114,17 +112,17 @@ object Delta {
  * Facilities to write easy compilers easily
  */
 abstract class GlobalCompiler(
-  override val constraintMatcher: PartialFunction[CSPOMConstraint, CSPOMConstraint])
+  override val constraintMatcher: PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]])
   extends ConstraintCompiler {
-  type A = CSPOMConstraint
+  type A = CSPOMConstraint[_]
 
-  def compile(c: CSPOMConstraint, problem: CSPOM, data: A) = {
+  def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {
     replaceCtr(c, data, problem)
   }
 }
 
 object Ctr {
-  def unapply(c: CSPOMConstraint): Option[(Symbol, Seq[CSPOMExpression], Map[String, Any])] = {
+  def unapply(c: CSPOMConstraint[Boolean]): Option[(Symbol, Seq[CSPOMExpression[_]], Map[String, Any])] = {
     //    val ann = c.params.get("fzAnnotations").asInstanceOf[Option[Seq[FZAnnotation]]]
     //
     //    for (as <- ann; a <- as if a.expr.contains(FZVarParId("BOOL____00100"))) {
@@ -140,5 +138,5 @@ object Ctr {
 }
 
 object CSeq {
-  def unapply[A <: CSPOMExpression](s: CSPOMSeq[A]): Option[Seq[A]] = Some(s.values)
+  def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[_ >: A]]] = Some(s.values)
 }

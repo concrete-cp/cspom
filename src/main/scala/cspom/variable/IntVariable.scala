@@ -3,24 +3,24 @@ package cspom.variable
 import cspom.CSPOM
 
 final class IntVariable(val domain: IntDomain, params: Set[Any] = Set())
-  extends CSPOMVariable(params) with IntExpression {
+  extends CSPOMVariable[Int](params) {
 
   override def toString = s"int variable ($domain)"
 
-  def contains(that: CSPOMConstant) = domain.contains(that)
+  def contains[S >: Int](that: S): Boolean = domain.contains(that)
 
-  def intersected(that: CSPOMExpression): CSPOMExpression = that match {
-    case IntConstant(v) => IntVariable.ofSeq(Seq(v), params)
+  def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] = that match {
+    case CSPOMConstant(v: Int) => IntVariable.ofSeq(Seq(v), params)
     case v: IntVariable => new IntVariable(domain.intersect(v.domain), params)
     case v: FreeVariable => this
-    case t: CSPOMExpression => throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
+    case t: CSPOMExpression[_] => throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
   }
 }
 
 object IntVariable {
-  
+
   def of(values: Int*) = ofSeq(values)
-  
+
   def ofSeq(values: Seq[Int], params: Set[Any] = Set()) =
     new IntVariable(IntDomain.of(values: _*), params)
 

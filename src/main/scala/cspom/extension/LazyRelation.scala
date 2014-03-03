@@ -49,7 +49,7 @@ final class LazyRelation(private val reader: Reader[Char], val arity: Int, overr
       readerToString(r.rest, stb.append(r.first))
     }
 
-  def iterator = new Iterator[Array[Int]] {
+  def iterator = new Iterator[Seq[Int]] {
     val text = readerToString(reader)
 
     val st = new StringTokenizer(text, "|")
@@ -64,4 +64,7 @@ final class LazyRelation(private val reader: Reader[Char], val arity: Int, overr
 
   def contains(t: Seq[Int]) = exists(_ sameElements t)
 
+  def filter(f: (Int, Int) => Boolean) = new Table(iterator.filter(t => t.zipWithIndex.forall { case (k, v) => f(k, v) }).toSeq)
+
+  def project(c: Seq[Int]) = new Table(iterator.toSeq).project(c)
 }

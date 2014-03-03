@@ -5,19 +5,17 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMFalse
 import cspom.variable.CSPOMTrue
-import cspom.variable.DoubleConstant
-import cspom.variable.IntConstant
 import cspom.variable.CSPOMConstant
 
-sealed trait FZExpr[A] {
-  def toCSPOM(declared: Map[String, CSPOMExpression]): CSPOMExpression
-  def asConstant: CSPOMExpression
+sealed trait FZExpr[+A] {
+  def toCSPOM(declared: Map[String, CSPOMExpression[Any]]): CSPOMExpression[_]
+  def asConstant: CSPOMExpression[_]
   def isConstant: Boolean
   def value: A
 }
 
-sealed trait FZConstant[A] extends FZExpr[A] {
-  def toCSPOM(declared: Map[String, CSPOMExpression]) = asConstant
+sealed trait FZConstant[+A] extends FZExpr[A] {
+  def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) = asConstant
   def isConstant = true
 }
 
@@ -26,21 +24,21 @@ case class FZBoolConst(value: Boolean) extends FZConstant[Boolean] {
 }
 
 case class FZSetConst(value: Seq[Int]) extends FZConstant[Seq[Int]] {
-  def asConstant = CSPOMSeq(value.map(IntConstant(_)): _*)
+  def asConstant = new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
 }
 
 case class FZFloatConst(value: Double) extends FZConstant[Double] {
-  def asConstant = DoubleConstant(value)
+  def asConstant = CSPOMConstant(value)
 }
 
 case class FZIntConst(value: Int) extends FZConstant[Int] {
-  def asConstant = IntConstant(value)
+  def asConstant = CSPOMConstant(value)
 }
 
 case class FZArrayIdx(array: String, index: Int) extends FZExpr[String] {
   def value = s"$array[$index]"
 
-  def toCSPOM(declared: Map[String, CSPOMExpression]) =
+  def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) =
     declared.get(array).collect {
       case s: CSPOMSeq[_] => s(index)
     } get
@@ -50,17 +48,17 @@ case class FZArrayIdx(array: String, index: Int) extends FZExpr[String] {
 }
 
 case class FZVarParId(value: String) extends FZExpr[String] {
-  def toCSPOM(declared: Map[String, CSPOMExpression]) = declared(value)
+  def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) = declared(value)
   def index(i: Int) = FZArrayIdx(value, i)
   def asConstant = ???
   def isConstant = false
 }
 
-case class FZArrayExpr[A](value: Seq[FZExpr[A]]) extends FZExpr[Seq[FZExpr[A]]] {
-  def toCSPOM(declared: Map[String, CSPOMExpression]) =
-    CSPOMSeq(value.map(_.toCSPOM(declared)): _*)
+case class FZArrayExpr[+A](value: Seq[FZExpr[A]]) extends FZExpr[Seq[FZExpr[A]]] {
+  def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) =
+    new CSPOMSeq(value.map(_.toCSPOM(declared)))
 
-  def asConstant = CSPOMSeq(value.map(_.asConstant): _*)
+  def asConstant = new CSPOMSeq(value.map(_.asConstant))
   def isConstant = value.forall(_.isConstant)
 }
 
@@ -70,7 +68,7 @@ case class FZStringLiteral(value: String) extends FZConstant[String] {
 
 case class FZAnnotation(predAnnId: String, expr: Seq[FZExpr[_]] = Seq()) extends FZExpr[String] {
   def value = predAnnId + expr.mkString("(", ", ", ")")
-  def toCSPOM(declared: Map[String, CSPOMExpression]) = ???
+  def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) = ???
   def asConstant = ???
   def isConstant = ???
 

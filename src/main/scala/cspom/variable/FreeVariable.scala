@@ -11,11 +11,11 @@ import scala.collection.mutable.HashMap
  *
  */
 
-class FreeVariable(params: Set[Any]) extends CSPOMVariable(params) {
+class FreeVariable(params: Set[Any]) extends CSPOMVariable[Any](params) {
   def this(params: Any*) = this(params.toSet)
   override def toString = s"free variable"
-  def intersected(other: CSPOMExpression) = other
-  def contains(that: CSPOMConstant) = true
+  def intersected(other: SimpleExpression[_ >: Any]) = other
+  def contains[S >: Any](that: S) = true
 }
 
 

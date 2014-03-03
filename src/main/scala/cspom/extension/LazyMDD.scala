@@ -7,7 +7,7 @@ class LazyMDD(val f: Unit => MDD) extends Relation {
   def apply = {
     val m = f()
     _arity = m.arity
-    
+
     m
   }
 
@@ -22,4 +22,8 @@ class LazyMDD(val f: Unit => MDD) extends Relation {
   }
 
   def contains(t: Seq[Int]) = apply.contains(t)
+
+  def filter(filt: (Int, Int) => Boolean) = new LazyMDD(f.andThen(_.filter(filt)))
+
+  def project(c: Seq[Int]) = new LazyMDD(f.andThen(_.project(c)))
 }

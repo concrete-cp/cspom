@@ -19,13 +19,11 @@ import cspom.xcsp.Extension
 import cspom.xcsp.XCSPParser
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
-import cspom.variable.IntConstant
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMTrue
 import cspom.variable.IntVariable
 import cspom.variable.FreeVariable
-import cspom.variable.BoolExpression
 import cspom.variable.CSPOMFalse
 import cspom.extension.Table
 import cspom.flatzinc.FlatZincParser
@@ -56,14 +54,14 @@ class CSPOM {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private var _namedExpressions = Map[String, CSPOMExpression]()
+  private var _namedExpressions = Map[String, CSPOMExpression[_]]()
 
   /**
    * @return The named expressions of this problem.
    */
   def namedExpressions = _namedExpressions
 
-  val getExpressions = JavaConversions.asJavaCollection(namedExpressions)
+  def getExpressions = JavaConversions.asJavaCollection(namedExpressions)
 
   /**
    * @param variableName
@@ -75,19 +73,19 @@ class CSPOM {
   /**
    * Collection of all constraints of the problem.
    */
-  private val _constraints = collection.mutable.Set[CSPOMConstraint]()
+  private val _constraints = collection.mutable.Set[CSPOMConstraint[_]]()
 
   def constraints = _constraints
 
   val getConstraints = JavaConversions.setAsJavaSet(constraints)
 
-  def nameExpression[A <: CSPOMExpression](e: A, n: String): A = {
+  def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
     _namedExpressions += n -> e
     e
   }
 
-  private val ctrV = collection.mutable.HashMap[CSPOMExpression, Set[CSPOMConstraint]]()
+  private val ctrV = collection.mutable.HashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]()
 
   /**
    * Adds a constraint to the problem.
@@ -95,7 +93,7 @@ class CSPOM {
    * @param constraint
    *            The constraint to add.
    */
-  private def addConstraint(constraint: CSPOMConstraint) = {
+  private def addConstraint[A](constraint: CSPOMConstraint[A]) = {
 
     require(!constraints.contains(constraint),
       "The constraint " + constraint + " already belongs to the problem");
@@ -110,14 +108,18 @@ class CSPOM {
     constraint
   }
 
-  def removeConstraint(c: CSPOMConstraint) {
+  def removeConstraint(c: CSPOMConstraint[_]) {
     require(_constraints(c))
     _constraints -= c
 
-    require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
+    //require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
 
-    for (v <- Iterator(c.result) ++ c.arguments) {
-      val s = ctrV.getOrElse(v, Set()) - c
+    for (
+      v <- Iterator(c.result) ++ c.arguments;
+      oc <- ctrV.get(v)
+    ) {
+
+      val s = oc - c
 
       if (s.isEmpty) {
         ctrV -= v
@@ -127,11 +129,11 @@ class CSPOM {
     }
   }
 
-  def constraints(v: CSPOMExpression) = {
+  def constraints(v: CSPOMExpression[_]) = {
     ctrV.getOrElse(v, Set())
   }
 
-  def ctr(c: CSPOMConstraint): CSPOMConstraint = {
+  def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
     if (constraints(c)) {
       c
     } else {
@@ -140,30 +142,26 @@ class CSPOM {
   }
 
   def ctr(v: BoolVariable) = {
-    addConstraint(new CSPOMConstraint(CSPOMTrue, 'eq, Seq(v, CSPOMTrue)))
+    addConstraint(CSPOMConstraint('eq, v, CSPOMTrue))
   }
 
-  def is(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): FreeVariable = {
+  def is(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
     val result = CSPOM.aux()
     ctr(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
-  def isInt(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): IntVariable = {
+  def isInt(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): IntVariable = {
     val result = CSPOM.auxInt()
     ctr(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
-  def isBool(name: Symbol, scope: Seq[CSPOMExpression], params: Map[String, Any] = Map()): BoolVariable = {
+  def isBool(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): BoolVariable = {
     val result = CSPOM.auxBool()
-    ctr(new CSPOMConstraint(result, name, scope: _*))
+    ctr(CSPOMConstraint(result, name, scope, params))
     result
   }
-
-  private val constants = new HashMap[Int, IntConstant]()
-
-  def constant(value: Int) = constants.getOrElseUpdate(value, IntConstant(value))
 
   override def toString = {
     val vars = namedExpressions.toSeq.sortBy(_._1).map { case (name, variable) => s"$name: $variable" }.mkString("\n")
@@ -222,7 +220,7 @@ class CSPOM {
   //    stb.append("]\n").toString
   //  }
 
-  def replaceExpression(name: String, by: CSPOMExpression) = {
+  def replaceExpression(name: String, by: CSPOMExpression[_]) = {
     require(_namedExpressions.contains(name))
     _namedExpressions += name -> by
   }
@@ -338,27 +336,22 @@ object CSPOM {
     s
   }
 
-  def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(v)
+  def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint[Boolean] = problem.ctr(v)
 
-  def ctr(c: CSPOMConstraint)(implicit problem: CSPOM): CSPOMConstraint = problem.ctr(c)
+  def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
   //  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
   //    problem.extCtr(rel, init, vars: _*)
 
-  @annotation.varargs
-  def table(rel: Relation, init: Boolean, vars: CSPOMVariable*): CSPOMConstraint =
-    new CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel))
+  //@annotation.varargs
+  def table(rel: Relation, init: Boolean, vars: Array[IntVariable]): CSPOMConstraint[Boolean] =
+    CSPOMConstraint('extension, vars.toSeq, Map("init" -> init, "relation" -> rel))
 
-  implicit def constant(value: Int)(implicit problem: CSPOM): IntConstant = problem.constant(value)
+  //  implicit def seq2CSPOMSeq[T <: CSPOMExpression[_]](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
+  //
+  //  implicit def array2CSPOMSeq[T <: CSPOMExpression[_]](s: Array[T]) = new CSPOMSeq[T](s)
 
-  implicit def constant(value: Boolean): CSPOMConstant with BoolExpression =
-    if (value) CSPOMTrue else CSPOMFalse
-
-  implicit def seq2CSPOMSeq[T <: CSPOMExpression](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
-
-  implicit def array2CSPOMSeq[T <: CSPOMExpression](s: Array[T]) = new CSPOMSeq[T](s)
-
-  implicit def seq2Rel(s: Seq[Array[Int]]) = new Table(s)
+  implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)
 
   implicit def aux(): FreeVariable = CSPOMVariable.aux()
 
@@ -366,7 +359,7 @@ object CSPOM {
 
   implicit def auxBool(): BoolVariable = CSPOMVariable.auxBool()
 
-  implicit class NameableExpr[A <: CSPOMExpression](e: A) {
+  implicit class NameableExpr[A <: CSPOMExpression[_]](e: A) {
     def as(n: String)(implicit cspom: CSPOM): A = {
       cspom.nameExpression(e, n)
       e
@@ -385,7 +378,9 @@ object CSPOM {
 
   def boolVar() = new BoolVariable()
 
-  def freeInt() = new FreeVariable()
+  def freeInt() = IntVariable.free()
+
+  implicit def constant[A](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
   /**
    * Creates a new bounded variable

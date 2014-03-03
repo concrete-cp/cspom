@@ -56,7 +56,7 @@ final class HashTrieTest {
 
     s += (2, 3, 5)
 
-    assertEquals(t, s)
+    assertEquals(t.toSet, s.toSet)
 
     var u = MDD(
       Seq(1, 2, 3),
@@ -64,7 +64,7 @@ final class HashTrieTest {
       Seq(1, 2, 5),
       Seq(2, 3, 5))
 
-    assertEquals(t, u)
+    assertEquals(t.toSet, u.toSet)
 
   }
 }

@@ -6,27 +6,25 @@ import cspom.CSPOM
 import cspom.compiler.ConstraintCompilerNoData
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMTrue
-import cspom.variable.BoolExpression
-import cspom.variable.IntExpression
 import cspom.variable.CSPOMExpression
 import cspom.variable.IntVariable
-import cspom.variable.IntConstant
 import cspom.compiler.GlobalCompiler
 import cspom.compiler.Ctr
 import cspom.compiler.CSeq
 import cspom.extension.Table
 import cspom.variable.CSPOMVariable
+import cspom.variable.CSPOMConstant
 
 object FZPatterns {
   def apply() = Seq(new GlobalCompiler(mtch) { def selfPropagation = false }, new Flattener('allDifferent))
 
-  val mtch: PartialFunction[CSPOMConstraint, CSPOMConstraint] = {
+  val mtch: PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]] = {
     /**
      *  (∀ i ∈ 1..n : as[i]) ↔ r where n is the length of as
      * array_bool_and(array [int] of var bool: as, var bool: r)
      */
-    case Ctr('array_bool_and, Seq(CSeq(as), r: BoolExpression), p) =>
-      new CSPOMConstraint(r, 'and, as, p)
+    case Ctr('array_bool_and, Seq(CSeq(as), r: CSPOMExpression[Boolean]), p) =>
+      CSPOMConstraint(r, 'and, as, p)
 
     /**
      *  b ∈ 1..n ∧ as[b] = c where n is the length of as
@@ -34,14 +32,14 @@ object FZPatterns {
      *
      * TODO: b as variable
      */
-    case Ctr('array_bool_element, Seq(b: IntConstant, CSeq(as), c: BoolExpression), p) =>
-      new CSPOMConstraint('eq, Seq(as(b.value), c), p)
+    case Ctr('array_bool_element, Seq(b: CSPOMConstant[Int], CSeq(as), c: CSPOMExpression[Boolean]), p) =>
+      CSPOMConstraint('eq, Seq(as(b.value), c), p)
 
     /**
      * (∃ i ∈ 1..n : as[i]) ↔ r where n is the length of as
      * array_bool_or(array [int] of var bool: as, var bool: r)
      */
-    case Ctr('array_bool_or, Seq(CSeq(as), v: BoolExpression), p) =>
+    case Ctr('array_bool_or, Seq(CSeq(as), v: CSPOMExpression[Boolean]), p) =>
       new CSPOMConstraint(v, 'or, as, p)
 
     /**
@@ -57,10 +55,10 @@ object FZPatterns {
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_int_element(var int: b, array [int] of int: as, var int: c)
      */
-    case Ctr('array_int_element, Seq(b: IntExpression, as: CSPOMSeq[IntConstant], c: IntExpression), p) =>
-      new CSPOMConstraint('extension, Seq(b, c), Map("init" -> false, "relation" ->
+    case Ctr('array_int_element, Seq(b: CSPOMExpression[Int], as: CSPOMSeq[Int], c: CSPOMExpression[Int]), p) =>
+      CSPOMConstraint('extension, Seq(b, c), Map("init" -> false, "relation" ->
         new Table(as.withIndex.map {
-          case (const, i) => Array(i, const.value)
+          case (const: CSPOMConstant[Int], i) => Seq(i, const.value)
         })))
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
@@ -86,8 +84,8 @@ object FZPatterns {
      * (a ↔ b = 1) ∧ (¬a ↔ b = 0)
      * bool2int(var bool: a, var int: b)
      */
-    case Ctr('bool2int, Seq(a: BoolExpression, b: IntExpression), p) =>
-      new CSPOMConstraint('eq, Seq(a, b), p)
+    case Ctr('bool2int, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Int]), p) =>
+      CSPOMConstraint('eq, Seq(a, b), p)
     /**
      * (a ∧ b) ↔ r
      * bool_and(var bool: a, var bool: b, var bool: r)
@@ -100,24 +98,24 @@ object FZPatterns {
      * a = b
      * bool_eq(var bool: a, var bool: b)
      */
-    case Ctr('bool_eq, a: Seq[BoolExpression], p) => new CSPOMConstraint('eq, a, p)
+    case Ctr('bool_eq, a: Seq[CSPOMExpression[Boolean]], p) => CSPOMConstraint('eq, a, p)
     /**
      * (a = b) ↔ r
      * bool_eq_reif(var bool: a, var bool: b, var bool: r)
      */
-    case Ctr('bool_eq_reif, Seq(a: BoolExpression, b: BoolExpression, r: BoolExpression), p) =>
+    case Ctr('bool_eq_reif, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Boolean], r: CSPOMExpression[Boolean]), p) =>
       new CSPOMConstraint(r, 'eq, Seq(a, b), p)
     /**
      * ¬a ∨ b
      * bool_le(var bool: a, var bool: b)
      */
-    case Ctr('bool_le, Seq(a: BoolExpression, b: BoolExpression), p) =>
-      new CSPOMConstraint('or, Seq(a, b), p + ("revsign" -> Seq(true, false)))
+    case Ctr('bool_le, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Boolean]), p) =>
+      CSPOMConstraint('or, Seq(a, b), p + ("revsign" -> Seq(true, false)))
     /**
      * (¬a ∨ b) ↔ r
      * bool_le_reif(var bool: a, var bool: b, var bool: r)
      */
-    case Ctr('bool_le_reif, Seq(a: BoolExpression, b: BoolExpression, r: BoolExpression), p) =>
+    case Ctr('bool_le_reif, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Boolean], r: CSPOMExpression[Boolean]), p) =>
       new CSPOMConstraint(r, 'or, Seq(a, b), p + ("revsign" -> Seq(true, false)))
     /**
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
@@ -295,30 +293,30 @@ object FZPatterns {
      * a = b
      * int_eq(var int: a, var int: b)
      */
-    case Ctr('int_eq, args, p) => new CSPOMConstraint('eq, args, p)
+    case Ctr('int_eq, args, p) => CSPOMConstraint('eq, args, p)
     /**
      * (a = b) ↔ r
      * int_eq_reif(var int: a, var int: b, var bool: r)
      */
-    case Ctr('int_eq_reif, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), p) =>
-      new CSPOMConstraint(r, 'eq, Seq(a, b), p)
+    case Ctr('int_eq_reif, Seq(a: CSPOMExpression[Int], b: CSPOMExpression[Int], r: CSPOMExpression[Boolean]), p) =>
+      CSPOMConstraint(r, 'eq, Seq(a, b), p)
     /**
      * a ≤ b
      * int_le(var int: a, var int: b)
      */
-    case Ctr('int_le, a, p) => new CSPOMConstraint('le, a, p)
+    case Ctr('int_le, a, p) => CSPOMConstraint('le, a, p)
     /**
      * (a ≤ b) ↔ r
      * int_le_reif(var int: a, var int: b, var bool: r)
      */
-    case Ctr('int_le_reif, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), p) =>
+    case Ctr('int_le_reif, Seq(a: CSPOMExpression[Int], b: CSPOMExpression[Int], r: CSPOMExpression[Boolean]), p) =>
       new CSPOMConstraint(r, 'le, Seq(a, b), p)
     /**
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_eq(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[IntConstant]), bs, c: IntExpression), p) =>
-      new CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "eq"))
+    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMExpression[Int]), p) =>
+      CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "eq"))
 
     /**
      * i ∈ 1..n : as[i].bs[i] = c) ↔ r where n is the common length of as and bs
@@ -328,8 +326,8 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] ≤ c where n is the common length of as and bs
      * int_lin_le(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_le, Seq(CSeq(as: Seq[IntConstant]), bs, c: IntExpression), p) =>
-      new CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
+    case Ctr('int_lin_le, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMExpression[Int]), p) =>
+      CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
     /**
      * (i ∈ 1..n : as[i].bs[i] ≤ c) ↔ r where n is the common length of as and bs
      * int_lin_le_reif(array [int] of int: as, array [int] of var int: bs, int: c, var bool: r)
@@ -347,13 +345,13 @@ object FZPatterns {
      * int_lt(var int: a, var int: b)
      */
     case Ctr('int_lt, Seq(a, b), p) =>
-      new CSPOMConstraint('gt, Seq(b, a), p)
+      CSPOMConstraint('gt, Seq(b, a), p)
     /**
      * (a < b) ↔ r
      * int_lt_reif(var int: a, var int: b, var bool: r)
      */
-    case Ctr('int_lt_reif, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), p) =>
-      new CSPOMConstraint(r, 'lt, Seq(a, b), p)
+    case Ctr('int_lt_reif, Seq(a: CSPOMExpression[Int], b: CSPOMExpression[Int], r: CSPOMExpression[Boolean]), p) =>
+      CSPOMConstraint(r, 'lt, Seq(a, b), p)
     /**
      * max(a, b) = c
      * int_max(var int: a, var int: b, var int: c)
@@ -370,24 +368,24 @@ object FZPatterns {
      * a = b
      * int_ne(var int: a, var int: b)
      */
-    case Ctr('int_ne, Seq(a, b), p) => new CSPOMConstraint('ne, Seq(a, b), p)
+    case Ctr('int_ne, Seq(a, b), p) => CSPOMConstraint('ne, Seq(a, b), p)
     /**
      * (a = b) ↔ r
      * int_ne_reif(var int: a, var int: b, var bool: r)
      */
-    case Ctr('int_ne_reif, Seq(a: IntExpression, b: IntExpression, r: BoolExpression), p) =>
+    case Ctr('int_ne_reif, Seq(a: CSPOMExpression[Int], b: CSPOMExpression[Int], r: CSPOMExpression[Boolean]), p) =>
       new CSPOMConstraint(r, 'ne, Seq(a, b), p)
     /**
      * a+b = c
      * int_plus(var int: a, var int: b, var int: c)
      */
-    case Ctr('int_plus, Seq(a: IntExpression, b: IntExpression, c: IntExpression), p) =>
+    case Ctr('int_plus, Seq(a: CSPOMExpression[Int], b: CSPOMExpression[Int], c: CSPOMExpression[Int]), p) =>
       new CSPOMConstraint(c, 'add, Seq(a, b), p)
     /**
      * a×b = c
      * int_times(var int: a, var int: b, var int: c)
      */
-    case Ctr('int_times, Seq(a: IntExpression, b: IntExpression, c: IntExpression), p) =>
+    case Ctr('int_times, Seq(a: CSPOMExpression[Int], b: CSPOMExpression[Int], c: CSPOMExpression[Int]), p) =>
       new CSPOMConstraint(c, 'mul, Seq(a, b), p)
     /**
      * a = b
@@ -455,23 +453,26 @@ object FZPatterns {
      */
 
     /**
-     * It seems that FlatZinc flattens t.
+     * FlatZinc flattens t.
      * predicate table_int(array[int] of var int: x, array[int, int] of int: t)
      */
-    case Ctr('table_int, Seq(x: CSPOMSeq[CSPOMVariable], t: CSPOMSeq[IntConstant]), p) =>
-      new CSPOMConstraint('extension, x, p ++ Map("init" -> false, "relation" -> new Table(t.map(_.value).grouped(x.size).map(_.toArray).toSeq)))
+    case Ctr('table_int, Seq(x: CSPOMSeq[Int], t: CSPOMSeq[Int]), p) =>
+      CSPOMConstraint('extension, x, p ++ Map("init" -> false,
+        "relation" -> new Table(t.map {
+          case v: CSPOMConstant[Int] => v.value
+        }.grouped(x.size).toSeq)))
   }
 
 }
 
 class Flattener(symbol: Symbol) extends ConstraintCompiler {
-  type A = Seq[CSPOMExpression]
+  type A = Seq[CSPOMExpression[_]]
 
   override def constraintMatcher = {
-    case CSPOMConstraint(_, `symbol`, Seq(CSPOMSeq(args: Seq[CSPOMExpression], _, _)), _) => args
+    case CSPOMConstraint(_, `symbol`, Seq(CSeq(args)), _) => args
   }
 
-  def compile(constraint: CSPOMConstraint, problem: CSPOM, args: A) = {
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, args: A) = {
     replaceCtr(constraint,
       new CSPOMConstraint(constraint.result, symbol, args, constraint.params), problem)
   }

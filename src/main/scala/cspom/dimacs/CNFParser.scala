@@ -56,13 +56,13 @@ final object CNFParser {
     (problem, Map('variables -> names))
   }
 
-  private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMVariable]) = {
+  private def clause(currentClause: List[Int], variables: IndexedSeq[BoolVariable]) = {
 
     val (clause, parameters) = currentClause map { i =>
       (variables(math.abs(i) - 1), i == 0)
     } unzip
 
-    new CSPOMConstraint('or, clause, Map("revsign" -> parameters))
+    CSPOMConstraint('or, clause, Map("revsign" -> parameters))
 
   }
 }

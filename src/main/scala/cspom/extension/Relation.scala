@@ -1,6 +1,6 @@
 package cspom.extension
 
-trait Relation extends Iterable[Array[Int]] {
+trait Relation extends Iterable[Seq[Int]] {
 
   /**
    * This method returns a copy of this extension with permuted tuples. New
@@ -23,6 +23,9 @@ trait Relation extends Iterable[Array[Int]] {
 
   def arity: Int
 
+  def filter(f: (Int, Int) => Boolean): Relation
   //def close()
+  
+  def project(c: Seq[Int]): Relation
 
 }

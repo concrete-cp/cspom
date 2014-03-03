@@ -14,9 +14,6 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMTrue
 import cspom.variable.CSPOMFalse
-import cspom.variable.DoubleConstant
-import cspom.variable.IntConstant
-import cspom.variable.CSPOMSeq
 import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPParseException
 import cspom.compiler.ProblemCompiler
@@ -55,14 +52,14 @@ object FlatZincParser extends DebugJavaTokenParsers {
     }
   }
 
-  private def mapVariables(params: Map[String, CSPOMExpression], variables: Seq[(String, CSPOMExpression, Option[FZExpr[_]])]) = {
+  private def mapVariables(params: Map[String, CSPOMExpression[_]], variables: Seq[(String, CSPOMExpression[_], Option[FZExpr[_]])]) = {
 
-    val decl = variables.map {
-      case (name, single: CSPOMVariable, _) => name -> single
-      case (name, seq: CSPOMSeq[CSPOMExpression], _) => name -> seq
+    val decl: Map[String, CSPOMExpression[Any]] = variables.map {
+      case (name, single: CSPOMVariable[_], _) => name -> single
+      case (name, seq: CSPOMSeq[_], _) => name -> seq
     } toMap
 
-    val affectations = variables.collect {
+    val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
       case (_, expr, Some(aff)) => expr -> aff.toCSPOM(decl)
     }
 
@@ -86,8 +83,9 @@ object FlatZincParser extends DebugJavaTokenParsers {
         for (c <- constraints) {
           ctr(c)
         }
-        for ((e, a) <- affectations) {
-          ctr(new CSPOMConstraint('eq, Seq(e, a)))
+
+        for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
+          ctr(CSPOMConstraint('eq, e, a))
         }
       }
       (p, goal)
@@ -106,15 +104,15 @@ object FlatZincParser extends DebugJavaTokenParsers {
 
   def pred_param_type: Parser[Any] = par_pred_param_type | var_pred_param_type
 
-  def par_type: Parser[FZVarType] =
+  def par_type: Parser[FZVarType[_]] =
     "bool" ^^^ FZBoolean |
       "float" ^^^ FZFloat |
       "int" ^^^ FZInt |
       "set of int" ~> err("Unsupported") |
-      "array [" ~> index_set <~ "] of bool" ^^ { FZArray(_, FZBoolean) } |
-      "array [" ~> index_set <~ "] of float" ^^ { FZArray(_, FZFloat) } |
-      "array [" ~> index_set <~ "] of int" ^^ { FZArray(_, FZInt) } |
-      "array [" ~> index_set <~ "] of set of int" ^^ { FZArray(_, FZIntSet) }
+      "array [" ~> index_set <~ "] of bool" ^^ { FZArray[Boolean](_, FZBoolean) } |
+      "array [" ~> index_set <~ "] of float" ^^ { FZArray[Double](_, FZFloat) } |
+      "array [" ~> index_set <~ "] of int" ^^ { FZArray[Int](_, FZInt) } |
+      "array [" ~> index_set <~ "] of set of int" ^^ { FZArray[Int](_, FZIntSet) }
 
   def par_pred_param_type: Parser[Any] =
     par_type |
@@ -138,14 +136,14 @@ object FlatZincParser extends DebugJavaTokenParsers {
   //      "array [" ~ index_set ~ "] of float" |
   //      "set of int"
 
-  def var_type: Parser[FZVarType] = "var_type" !!! {
+  def var_type: Parser[FZVarType[_]] = "var_type" !!! {
     single_var_type |
       ("array [" ~> index_set <~ "] of ") ~ single_var_type ^^ {
         case indices ~ vartype => FZArray(indices, vartype)
       }
   }
 
-  def single_var_type: Parser[FZVarType] =
+  def single_var_type: Parser[FZVarType[_]] =
     "var bool" ^^^ FZBoolean |
       "var float" ^^^ FZFloat |
       ("var" ~> float_const <~ "..") ~ float_const ^^ {
@@ -172,7 +170,7 @@ object FlatZincParser extends DebugJavaTokenParsers {
     "1.." ~> int_const ^^ { FZRange(_) } |
       "int" ^^^ SomeIndexSet
 
-  def expr: Parser[FZExpr[_]] = "expr" !!! {
+  def expr: Parser[FZExpr[Any]] = "expr" !!! {
     bool_const |
       set_const |
       int_const |
@@ -220,15 +218,15 @@ object FlatZincParser extends DebugJavaTokenParsers {
       "{" ~> repsep(int_const, ",") <~ "}" ^^ (i => FZSetConst(i map (_.value)))
   }
 
-  def array_expr: Parser[FZArrayExpr[_]] = "array_expr" !!! {
-    "[" ~> repsep(expr, ",") <~ "]" ^^ { case l: Seq[FZExpr[_]] => FZArrayExpr(l) }
+  def array_expr: Parser[FZArrayExpr[Any]] = "array_expr" !!! {
+    "[" ~> repsep(expr, ",") <~ "]" ^^ { case l: Seq[FZExpr[Any]] => FZArrayExpr(l) }
   }
 
   def array_exprInAnn: Parser[FZArrayExpr[_]] = "array_expr" !!! {
     "[" ~> repsep(exprInAnn, ",") <~ "]" ^^ { case l: Seq[FZExpr[_]] => FZArrayExpr(l) }
   }
 
-  def param_decl: Parser[(String, CSPOMExpression)] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
+  def param_decl: Parser[(String, CSPOMExpression[_])] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
     case t ~ ":" ~ id ~ "=" ~ expr =>
 
       val e = (t, expr.asConstant) match {
@@ -241,18 +239,18 @@ object FlatZincParser extends DebugJavaTokenParsers {
       id.value -> e
   }
 
-  def var_decl: Parser[(String, CSPOMExpression, Option[FZExpr[_]])] = "var_decl" !!! {
+  def var_decl: Parser[(String, CSPOMExpression[_], Option[FZExpr[_]])] = "var_decl" !!! {
     var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~> expr) <~ ";" ^^ {
       case varType ~ ":" ~ varParId ~ ann ~ aff => (varParId, varType.genVariable(ann), aff)
     }
 
   }
 
-  def constraint(declared: Map[String, CSPOMExpression]): Parser[CSPOMConstraint] =
+  def constraint(declared: Map[String, CSPOMExpression[Any]]): Parser[CSPOMConstraint[Boolean]] =
     "constraint" !!! {
       "constraint" ~> pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ~ annotations ~ ";" ^^ {
         case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
-          new CSPOMConstraint(Symbol(predAnnId), expr.map(_.toCSPOM(declared)), Map("fzAnnotations" -> annotations))
+          CSPOMConstraint(Symbol(predAnnId), expr.map(_.toCSPOM(declared)), Map("fzAnnotations" -> annotations))
       }
     }
 

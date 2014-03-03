@@ -21,7 +21,7 @@ final class ProblemCompiler(
   private def compile() {
     var time = -System.nanoTime()
 
-    val toCompile = Array.ofDim[QueueSet[CSPOMConstraint]](constraintCompilers.size)
+    val toCompile = Array.ofDim[QueueSet[CSPOMConstraint[_]]](constraintCompilers.size)
 
     var changed = true
     var first = true
@@ -38,9 +38,10 @@ final class ProblemCompiler(
 
         while (toCompile(i).nonEmpty) {
 
-          val constraint = toCompile(i).dequeue()
+          val constraint = toCompile(i).dequeue().asInstanceOf[CSPOMConstraint[Any]]
           ProblemCompiler.matches += 1
           //println(compiler, constraint.id)
+
           for (data <- compiler.mtch(constraint, problem)) {
             ProblemCompiler.compiles += 1
             changed = true
@@ -74,7 +75,7 @@ final class ProblemCompiler(
 
   }
 
-  private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint): Set[CSPOMExpression] = {
+  private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Set[CSPOMExpression[_]] = {
     ProblemCompiler.matches += 1
     compiler.mtch(constraint, problem).map { data =>
       ProblemCompiler.compiles += 1

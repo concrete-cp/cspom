@@ -5,31 +5,17 @@ import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
 import scala.collection.JavaConversions
 import scala.collection.mutable.HashMap
+import cspom.variable.IntVariable
 
-final case class CSPOMConstraint(
-  val result: CSPOMExpression,
+final case class CSPOMConstraint[+T](
+  val result: CSPOMExpression[T],
   val function: Symbol,
-  val arguments: Seq[CSPOMExpression],
+  val arguments: Seq[CSPOMExpression[Any]],
   val params: Map[String, Any] = Map()) extends Loggable {
 
   require(result != null)
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
-
-  def this(result: CSPOMExpression, function: String, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
-    this(result, Symbol(function), arguments.toSeq, params)
-
-  def this(result: CSPOMExpression, function: Symbol, arguments: CSPOMExpression*) =
-    this(result, function, arguments)
-
-  def this(function: Symbol, arguments: Seq[CSPOMExpression], params: Map[String, Any] = Map()) =
-    this(CSPOMTrue, function, arguments, params)
-
-  def this(function: String, arguments: Array[CSPOMExpression], params: Map[String, Any]) =
-    this(Symbol(function), arguments, params)
-
-  def this(function: Symbol, arguments: CSPOMExpression*) =
-    this(function, arguments)
 
   def fullScope = result +: arguments
 
@@ -52,17 +38,27 @@ final case class CSPOMConstraint(
     case _ => false
   }
 
-  def replacedVar(which: CSPOMExpression, by: CSPOMExpression) =
-    new CSPOMConstraint(result.replaceVar(which, by),
+  def replacedVar[R, S <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
+    val newResult = result match {
+      case r: CSPOMExpression[R] => result.replaceVar(which, by)
+      case r => r
+    }
+    val newArgs: Seq[CSPOMExpression[Any]] = arguments map {
+      case a: CSPOMExpression[R] => a.replaceVar(which, by)
+      case a => a
+    }
+    new CSPOMConstraint(newResult,
       function,
-      arguments map { v => v.replaceVar(which, by) },
+      newArgs,
       params)
+  }
 
   override def toString = {
     val args = arguments.map(_.toString)
-    result match {
-      case CSPOMTrue => toString(None, args)
-      case r: CSPOMExpression => toString(Some(r.toString), args)
+    if (result == CSPOMTrue) {
+      toString(None, args)
+    } else {
+      toString(Some(result.toString), args)
     }
   }
 
@@ -76,20 +72,45 @@ final case class CSPOMConstraint(
 
   def toString(vn: VariableNames): String = {
     val args = arguments.map(vn.names(_).mkString("/"))
-    result match {
-      case CSPOMTrue => toString(None, args)
-      case r: CSPOMExpression => toString(Some(vn.names(r).mkString("/")), args)
+    if (result == CSPOMTrue) {
+      toString(None, args)
+    } else {
+      toString(Some(vn.names(result).mkString("/")), args)
     }
 
   }
 
 }
 
+object CSPOMConstraint {
+  var id = 0
+
+  def param(key: String, v: Any) = ConstraintParameters(Map(key -> v))
+
+  def apply[T](result: CSPOMExpression[T], function: Symbol, arguments: CSPOMExpression[Any]*): CSPOMConstraint[T] =
+    new CSPOMConstraint(result, function, arguments)
+
+  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): CSPOMConstraint[Boolean] =
+    new CSPOMConstraint(CSPOMTrue, function, arguments, params)
+
+  def apply(function: Symbol, arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
+    apply(function, arguments)
+
+  /**
+   *  For Java interop
+   */
+  def apply(function: String, arguments: Array[CSPOMExpression[_]], params: ConstraintParameters): CSPOMConstraint[Boolean] =
+    apply(Symbol(function), arguments, params)
+
+  def apply[T](result: CSPOMExpression[T], function: String, arguments: Array[CSPOMExpression[Any]], params: Map[String, Any]): CSPOMConstraint[T] =
+    new CSPOMConstraint(result, Symbol(function), arguments.toSeq, params)
+}
+
 final class VariableNames(cspom: CSPOM) {
 
   val _names = cspom.namedExpressions.groupBy(_._2).mapValues(_.keySet)
 
-  val generatedNames = new HashMap[CSPOMExpression, String]
+  val generatedNames = new HashMap[CSPOMExpression[_], String]
 
   var id = 0
 
@@ -98,14 +119,8 @@ final class VariableNames(cspom: CSPOM) {
     "_" + id
   }
 
-  def names(expression: CSPOMExpression) =
+  def names(expression: CSPOMExpression[_]) =
     _names.getOrElse(expression, Set(generatedNames.getOrElseUpdate(expression, nextName())))
-}
-
-object CSPOMConstraint {
-  var id = 0
-
-  def param(key: String, v: Any) = ConstraintParameters(Map(key -> v))
 }
 
 case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {

@@ -10,17 +10,17 @@ import cspom.variable.CSPOMExpression
 
 object SplitEqVec extends ConstraintCompiler {
 
-  type A = (CSPOMSeq[CSPOMExpression], CSPOMSeq[CSPOMExpression])
+  type A = (CSPOMSeq[CSPOMExpression[Any]], CSPOMSeq[CSPOMExpression[Any]])
 
-  override def constraintMatcher: PartialFunction[CSPOMConstraint, A] = {
-    case CSPOMConstraint(CSPOMTrue, 'eq, Seq(a: CSPOMSeq[CSPOMExpression], b: CSPOMSeq[CSPOMExpression]), p) if (a.size == b.size) &&
+  override def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = {
+    case CSPOMConstraint(CSPOMTrue, 'eq, Seq(a: CSPOMSeq[CSPOMExpression[Any]], b: CSPOMSeq[CSPOMExpression[Any]]), p) if (a.size == b.size) &&
       !p.contains("neg") && !p.contains("offset") => (a, b)
   }
 
-  def compile(constraint: CSPOMConstraint, problem: CSPOM, data: A) = {
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, data: A) = {
 
     val (a, b) = data
-    val newConstraints = (a zip b).map { case (a, b) => new CSPOMConstraint('eq, a, b) }
+    val newConstraints = (a zip b).map { case (a, b) => CSPOMConstraint('eq, a, b) }
 
     replaceCtr(constraint, newConstraints, problem)
 

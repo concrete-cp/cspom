@@ -7,8 +7,9 @@ import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPOM
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMExpression
-import cspom.variable.IntConstant
 import cspom.CSPOMConstraint
+import cspom.variable.IntVariable
+import cspom.variable.CSPOMConstant
 
 sealed trait PredicateNode
 
@@ -56,26 +57,26 @@ final object ConstraintParser extends JavaTokenParsers {
       ident ^^ (map(_)) |
       integer ^^ (_.toString)
 
-  def split(expression: String, declaredVariables: Map[String, CSPOMVariable]): (Seq[CSPOMVariable], Seq[CSPOMConstraint]) = {
+  def split(expression: String, declaredVariables: Map[String, IntVariable]): (Seq[CSPOMVariable[_]], Seq[CSPOMConstraint[_]]) = {
     func(new CharSequenceReader(expression)).get match {
       case PredicateConstraint(operator, arguments) =>
         val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
 
-        (genVars.flatten, genCons.flatten :+ new CSPOMConstraint(Symbol(operator), sub: _*))
+        (genVars.flatten, genCons.flatten :+ CSPOMConstraint(Symbol(operator), sub: _*))
 
       case _ => throw new IllegalArgumentException("Constraint expected, was " + expression)
     }
 
   }
 
-  private def toVariable(node: PredicateNode, declaredVariables: Map[String, CSPOMVariable]): (CSPOMExpression, Seq[CSPOMVariable], Seq[CSPOMConstraint]) = {
+  private def toVariable(node: PredicateNode, declaredVariables: Map[String, IntVariable]): (CSPOMExpression[_], Seq[CSPOMVariable[_]], Seq[CSPOMConstraint[_]]) = {
     node match {
-      case PredicateConstant(value) => (IntConstant(value), Seq(), Seq())
+      case PredicateConstant(value) => (CSPOMConstant(value), Seq(), Seq())
       case PredicateVariable(variableId) => (declaredVariables(variableId), Seq(), Seq())
       case PredicateConstraint(operator, arguments) => {
         val result = CSPOMVariable.aux()
         val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
-        (result, genVars.flatten :+ result, genCons.flatten :+ new CSPOMConstraint(result, Symbol(operator), sub: _*))
+        (result, genVars.flatten :+ result, genCons.flatten :+ CSPOMConstraint(result, Symbol(operator), sub: _*))
       }
     }
   }
