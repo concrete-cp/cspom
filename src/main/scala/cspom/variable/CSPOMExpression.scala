@@ -49,7 +49,7 @@ class CSPOMConstant[+T](val value: T) extends SimpleExpression[T] {
 
 object CSPOMConstant {
   val cache = new WeakHashMap[Any, CSPOMConstant[Any]]
-  
+
   cache.put(true, CSPOMTrue)
   cache.put(false, CSPOMFalse)
 
@@ -73,14 +73,12 @@ final case class CSPOMSeq[+T](
 
   require(values.size == definedIndices.size)
 
-  //def variables = seq
-  // Members declared in scala.collection.IterableLike 
   def iterator: Iterator[CSPOMExpression[T]] = values.iterator
 
   def withIndex = values zip definedIndices
 
-  // Members declared in scala.collection.SeqLike 
   def apply(idx: Int): CSPOMExpression[T] = values(definedIndices.indexOf(idx))
+
   def length: Int = values.length
 
   def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) = {
@@ -91,8 +89,6 @@ final case class CSPOMSeq[+T](
       new CSPOMSeq(replaced, definedIndices, params)
     }
   }
-
-  List(1, 2)
 }
 
 //object CSPOMSeq {

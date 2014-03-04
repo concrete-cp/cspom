@@ -10,11 +10,10 @@ final class BoolVariable(params: Set[Any] = Set())
 
   def intersected(that: SimpleExpression[_ >: Boolean]): SimpleExpression[Boolean] = that match {
     case t: BoolVariable => this
-    case t: CSPOMConstant[Boolean] => t
+    case t @ CSPOMConstant(_: Boolean) => t.asInstanceOf[CSPOMConstant[Boolean]]
     case _ => throw new IllegalArgumentException
   }
 
   def contains[S >: Boolean](that: S) = that == CSPOMTrue || that == CSPOMFalse
 
-  def neg = ???
 }

@@ -20,8 +20,14 @@ final class ProblemCompiler(
   private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
 
   private def compile() {
-    val toCompile = Array.ofDim[QueueSet[CSPOMConstraint[Any]]](
+    val toCompile = Array.ofDim[QueueSet](
       constraintCompilers.size)
+
+    val constraints = new HashMap[Int, CSPOMConstraint[_]]
+
+    for (c <- problem.constraints) {
+      constraints.put(c.id, c)
+    }
 
     var changed = true
     var first = true
@@ -33,12 +39,12 @@ final class ProblemCompiler(
         val compiler = constraintCompilers(i)
 
         if (first) {
-          toCompile(i) = new QueueSet(problem.constraints)
+          toCompile(i) = new QueueSet(constraints.keys)
         }
 
         while (toCompile(i).nonEmpty) {
 
-          val constraint = toCompile(i).dequeue()
+          val constraint = constraints(toCompile(i).dequeue())
           ProblemCompiler.matches += 1
           //println(compiler, constraint.id)
 
@@ -49,22 +55,35 @@ final class ProblemCompiler(
 
             //println(compiler + " : " + constraint + " -> " + delta)
 
-            lazy val enqueue = delta.altered.iterator.flatMap(problem.constraints).toList
+            val enqueue = delta.altered.iterator.flatMap(problem.constraints).toList
+
+            for (rc <- delta.removed) {
+              constraints.remove(rc.id)
+            }
+
+            for (ac <- enqueue) {
+              constraints.put(ac.id, ac)
+            }
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
-              toCompile(j).removeAll(delta.removed)
+              for (rc <- delta.removed) {
+                toCompile(j).remove(rc.id)
+              }
+
               if (j != i || compiler.selfPropagation) {
-                toCompile(j).enqueueAll(enqueue)
+                for (ac <- enqueue) {
+                  toCompile(j).enqueue(ac.id)
+                }
               }
             }
           }
-          toCompile(i).remove(constraint)
+          toCompile(i).remove(constraint.id)
         }
 
       }
       first = false
     }
-
+    //require(constraints.values.toSet == problem.constraints)
   }
 
 }

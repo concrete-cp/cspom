@@ -25,16 +25,13 @@ trait ConstraintCompiler {
   def replace[T, S <: T](which: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
 
+    
+    
     val names = in.namedExpressions.filter {
       case (name, expr) => which.contains(expr)
     }.keySet
 
     names.foreach(in.replaceExpression(_, by))
-    //    which.collect(in.expressionNames) match {
-    //      case Seq() =>
-    //      case Seq(name) => name.foreach(in.replaceExpression(_, by))
-    //      case _ => throw new UnsupportedOperationException("Sorry, cannot replace multiple named expressions by one")
-    //    }
 
     val oldConstraints = which.flatMap(in.constraints).distinct
 
@@ -89,17 +86,24 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
 }
 
 final case class Delta private (removed: Seq[CSPOMConstraint[_]], altered: Set[CSPOMExpression[_]]) {
-  def removed(c: CSPOMConstraint[_]) =
-    new Delta(Seq(c), c.fullScope.toSet) ++ this
-  def removed(c: Traversable[CSPOMConstraint[_]]): Delta =
-    new Delta(c.toSeq, c.flatMap(_.fullScope).toSet) ++ this
+  def removed(c: CSPOMConstraint[_]): Delta = {
+    new Delta(c +: removed, altered ++ c.fullScope)
+  }
 
-  def added(c: CSPOMConstraint[_]): Delta =
-    new Delta(Nil, c.fullScope.toSet) ++ this
-  def added(c: Traversable[CSPOMConstraint[_]]): Delta =
-    new Delta(Nil, c.flatMap(_.fullScope).toSet) ++ this
+  def removed(c: Traversable[CSPOMConstraint[_]]): Delta = {
+    new Delta(c ++: removed, altered ++ c.flatMap(_.fullScope))
+  }
+
+  def added(c: CSPOMConstraint[_]): Delta = {
+    new Delta(removed, altered ++ c.fullScope)
+  }
+
+  def added(c: Traversable[CSPOMConstraint[_]]): Delta = {
+    new Delta(removed, altered ++ c.flatMap(_.fullScope))
+  }
 
   def ++(d: Delta): Delta = Delta(removed ++ d.removed, altered ++ d.altered)
+
   def nonEmpty = removed.nonEmpty || altered.nonEmpty
 }
 
@@ -123,12 +127,6 @@ abstract class GlobalCompiler(
 
 object Ctr {
   def unapply(c: CSPOMConstraint[Boolean]): Option[(Symbol, Seq[CSPOMExpression[_]], Map[String, Any])] = {
-    //    val ann = c.params.get("fzAnnotations").asInstanceOf[Option[Seq[FZAnnotation]]]
-    //
-    //    for (as <- ann; a <- as if a.expr.contains(FZVarParId("BOOL____00100"))) {
-    //      println("matching " + c)
-    //      println(c.arguments.map(_.getClass()))
-    //    }
     if (c.result == CSPOMTrue) {
       Some((c.function, c.arguments, c.params))
     } else {
@@ -138,5 +136,6 @@ object Ctr {
 }
 
 object CSeq {
-  def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[_ >: A]]] = Some(s.values)
+  def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[_ >: A]]] =
+    Some(s.values)
 }

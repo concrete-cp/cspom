@@ -2,49 +2,48 @@ package cspom.compiler
 
 import scala.collection.mutable.Queue
 import scala.collection.mutable.HashSet
+import java.util.BitSet
 
-final class QueueSet[A] {
-  private val present = collection.mutable.Set[A]()
+final class QueueSet {
+  private val present = new BitSet()
 
-  private val queue: Queue[A] = new Queue()
+  private var first = -1
 
   //def enqueue(e: A*): Unit = e.foreach(enqueue)
 
-  def this(init: Iterable[A]) = {
+  def this(init: Iterable[Int]) = {
     this()
-    present ++= init
-    queue ++= init
+    enqueueAll(init)
   }
 
-  def enqueue(c: A): Unit = {
-    if (!present(c)) {
-      queue.enqueue(c)
-      present += c
+  def enqueue(c: Int): Unit = {
+    present.set(c)
+  }
+
+  def dequeue(): Int = {
+    assume(nonEmpty)
+    first = present.nextSetBit(first + 1)
+    if (first < 0) {
+      first = present.nextSetBit(0)
+    }
+    present.clear(first)
+    first
+  }
+
+  def nonEmpty = !present.isEmpty()
+
+  def enqueueAll(init: Iterable[Int]): Unit = {
+    for (c <- init) {
+      present.set(c)
     }
   }
 
-  @annotation.tailrec
-  def dequeue(): A = {
-    val a = queue.dequeue();
-    if (present(a)) {
-      present -= a
-      a
-    } else {
-      dequeue()
+  def remove(e: Int*): Unit = removeAll(e)
+
+  def removeAll(e: Iterable[Int]): Unit = {
+    for (c <- e) {
+      present.clear(c)
     }
-
-  }
-
-  def nonEmpty = present.nonEmpty
-
-  def enqueueAll(c: Iterable[A]): Unit = {
-    c.foreach(enqueue)
-  }
-
-  def remove(e: A*): Unit = removeAll(e)
-
-  def removeAll(e: Iterable[A]): Unit = {
-    present --= e
   }
 
 }

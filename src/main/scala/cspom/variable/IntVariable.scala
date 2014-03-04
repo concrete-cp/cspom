@@ -9,12 +9,14 @@ final class IntVariable(val domain: IntDomain, params: Set[Any] = Set())
 
   def contains[S >: Int](that: S): Boolean = domain.contains(that)
 
-  def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] = that match {
-    case CSPOMConstant(v: Int) => IntVariable.ofSeq(Seq(v), params)
-    case v: IntVariable => new IntVariable(domain.intersect(v.domain), params)
-    case v: FreeVariable => this
-    case t: CSPOMExpression[_] => throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
-  }
+  def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
+    that match {
+      case CSPOMConstant(v: Int) => IntVariable.ofSeq(Seq(v), params)
+      case v: IntVariable => new IntVariable(domain.intersect(v.domain), params)
+      case v: FreeVariable => this
+      case t: CSPOMExpression[_] =>
+        throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
+    }
 }
 
 object IntVariable {
