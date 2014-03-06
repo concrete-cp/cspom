@@ -229,11 +229,10 @@ object FlatZincParser extends DebugJavaTokenParsers {
   def param_decl: Parser[(String, CSPOMExpression[_])] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
     case t ~ ":" ~ id ~ "=" ~ expr =>
 
-      val e = (t, expr.asConstant) match {
-        case (FZArray(Seq(indices), typ), e: CSPOMSeq[_]) =>
-          new CSPOMSeq(e, indices.toRange, e.params)
-
-        case (_, e) => e
+      val e = (t, expr) match {
+        case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.toRange)
+        case (_, c: FZConstant[_]) => c.asConstant
+        case _ => err("Constant expected")
       }
 
       id.value -> e
@@ -250,7 +249,10 @@ object FlatZincParser extends DebugJavaTokenParsers {
     "constraint" !!! {
       "constraint" ~> pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ~ annotations ~ ";" ^^ {
         case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
-          CSPOMConstraint(Symbol(predAnnId), expr.map(_.toCSPOM(declared)), Map("fzAnnotations" -> annotations))
+          new CSPOMConstraint(
+            CSPOMTrue,
+            Symbol(predAnnId), expr.map(_.toCSPOM(declared)),
+            if (annotations.nonEmpty) Map("fzAnnotations" -> annotations) else Map())
       }
     }
 

@@ -315,7 +315,7 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_eq(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMExpression[Int]), p) =>
+    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMConstant[Int]), p) =>
       CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "eq"))
 
     /**
@@ -326,7 +326,7 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] ≤ c where n is the common length of as and bs
      * int_lin_le(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_le, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMExpression[Int]), p) =>
+    case Ctr('int_lin_le, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMConstant[Int]), p) =>
       CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
     /**
      * (i ∈ 1..n : as[i].bs[i] ≤ c) ↔ r where n is the common length of as and bs

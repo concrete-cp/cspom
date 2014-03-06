@@ -6,6 +6,8 @@ import cspom.variable.CSPOMVariable
 import scala.collection.JavaConversions
 import scala.collection.mutable.HashMap
 import cspom.variable.IntVariable
+import cspom.variable.CSPOMConstant
+import cspom.variable.CSPOMSeq
 
 final case class CSPOMConstraint[+T](
   val result: CSPOMExpression[T],
@@ -71,11 +73,11 @@ final case class CSPOMConstraint[+T](
   }
 
   def toString(vn: VariableNames): String = {
-    val args = arguments.map(vn.names(_).mkString("/"))
+    val args = arguments.map(vn.names(_))
     if (result == CSPOMTrue) {
       toString(None, args)
     } else {
-      toString(Some(vn.names(result).mkString("/")), args)
+      toString(Some(vn.names(result)), args)
     }
 
   }
@@ -108,19 +110,38 @@ object CSPOMConstraint {
 
 final class VariableNames(cspom: CSPOM) {
 
-  val _names = cspom.namedExpressions.groupBy(_._2).mapValues(_.keySet)
-
   val generatedNames = new HashMap[CSPOMExpression[_], String]
+
+  generatedNames ++= cspom.namedExpressions.groupBy(_._2).map {
+    case (n, v) => n -> v.map(_._1).mkString("/")
+  }
+
+  for (
+    (n, seq) <- cspom.namedExpressions.collect { case (n, CSPOMSeq(v, i, _)) => n -> (v zip i) };
+    (v, i) <- seq
+  ) {
+    add(v, s"$n[$i]")
+  }
+
+  def add(e: CSPOMExpression[_], n: String) {
+    generatedNames(e) = generatedNames.get(e) match {
+      case Some(ns) => s"$ns/$n"
+      case None => n
+    }
+  }
 
   var id = 0
 
-  def nextName() = {
-    id += 1
-    "_" + id
+  def nextName(e: CSPOMExpression[_]) = e match {
+    case CSPOMConstant(v) => v.toString
+    case CSPOMSeq(v, _, _) => v.map(names).mkString("CSPOMSeq(", ", ", ")")
+    case _ =>
+      id += 1
+      "_" + id
   }
 
-  def names(expression: CSPOMExpression[_]) =
-    _names.getOrElse(expression, Set(generatedNames.getOrElseUpdate(expression, nextName())))
+  def names(expression: CSPOMExpression[_]): String =
+    generatedNames.getOrElseUpdate(expression, nextName(expression))
 }
 
 case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {

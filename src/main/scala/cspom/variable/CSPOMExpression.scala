@@ -27,12 +27,12 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
 }
 
-class CSPOMConstant[+T](val value: T) extends SimpleExpression[T] {
+class CSPOMConstant[+T](val value: T, val params: Set[Any] = Set()) extends SimpleExpression[T] {
   def contains[S >: T](that: S) = this == that
 
   def intersected(that: SimpleExpression[_ >: T]) =
     if (that.contains(value)) {
-      this
+      CSPOMConstant(value, params ++ that.params)
     } else {
       throw new IllegalArgumentException("Empty intersection")
     }
@@ -44,17 +44,16 @@ class CSPOMConstant[+T](val value: T) extends SimpleExpression[T] {
     case i: Any => i == value
   }
 
-  def params = ???
 }
 
 object CSPOMConstant {
-  val cache = new WeakHashMap[Any, CSPOMConstant[Any]]
+  val cache = new WeakHashMap[(Any, Set[Any]), CSPOMConstant[Any]]
 
-  cache.put(true, CSPOMTrue)
-  cache.put(false, CSPOMFalse)
+  cache.put((true, Set()), CSPOMTrue)
+  cache.put((false, Set()), CSPOMFalse)
 
-  def apply[A](value: A): CSPOMConstant[A] =
-    cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[A]]
+  def apply[A](value: A, params: Set[Any] = Set()): CSPOMConstant[A] =
+    cache.getOrElseUpdate((value, params), new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[A]]
 
   def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
 }

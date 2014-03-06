@@ -5,15 +5,15 @@ import cspom.CSPOM
 final class IntVariable(val domain: IntDomain, params: Set[Any] = Set())
   extends CSPOMVariable[Int](params) {
 
-  override def toString = s"int variable ($domain)"
+  override def toString = s"int variable ($domain)" + params.map(" :: " + _).mkString
 
   def contains[S >: Int](that: S): Boolean = domain.contains(that)
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
-      case CSPOMConstant(v: Int) => IntVariable.ofSeq(Seq(v), params)
-      case v: IntVariable => new IntVariable(domain.intersect(v.domain), params)
-      case v: FreeVariable => this
+      case c: CSPOMConstant[Int] => CSPOMConstant(c.value, c.params ++ params)
+      case v: IntVariable => new IntVariable(domain.intersect(v.domain), v.params ++ params)
+      case v: FreeVariable => new IntVariable(domain, params ++ v.params)
       case t: CSPOMExpression[_] =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
