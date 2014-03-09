@@ -13,10 +13,10 @@ class CSPOMTest {
   def variables(): Unit = {
     val (cspom: CSPOM, vars) = CSPOM withResult {
       val vars = List(
-        IntVariable.ofInterval(0, 10) as "test1",
-        IntVariable.ofInterval(10, 20) as "test2",
-        IntVariable.ofInterval(20, 30) as "test3",
-        IntVariable.ofInterval(30, 40) as "test4")
+        IntVariable(0 to 10) as "test1",
+        IntVariable(10 to 20) as "test2",
+        IntVariable(20 to 30) as "test3",
+        IntVariable(30 to 40) as "test4")
 
       //vars foreach { cspom.addVariable(_) }
 
@@ -31,8 +31,8 @@ class CSPOMTest {
   @Test(expected = classOf[IllegalArgumentException])
   def duplicateVariable(): Unit = {
     CSPOM {
-      IntVariable.ofInterval(0, 10) as "Test"
-      IntVariable.ofInterval(0, 10) as "Test"
+      IntVariable(0 to 10) as "Test"
+      IntVariable(0 to 10) as "Test"
     }
   }
 
@@ -50,8 +50,8 @@ class CSPOMTest {
   def constraints(): Unit = {
     val (cspom, (v, leq)) = CSPOM withResult {
       val v = List(
-        IntVariable.ofInterval(0, 10),
-        IntVariable.ofInterval(0, 10));
+        IntVariable(0 to 10),
+        IntVariable(0 to 10));
 
       //v foreach { cspom.addVariable(_) }
 

@@ -371,31 +371,22 @@ object CSPOM {
     }
   }
 
-  @annotation.varargs
-  def varOf(values: Int*) = IntVariable.ofSeq(values)
-
-  def varOfSeq(values: Seq[Int], params: String*) = IntVariable.ofSeq(values, params.toSet)
-
-  def boolVar() = new BoolVariable()
-
-  def freeInt() = IntVariable.free()
-
   implicit def constant[A](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
-  /**
-   * Creates a new bounded variable
-   *
-   * @param name
-   *            name of the variable
-   * @param lb
-   *            lower bound
-   * @param ub
-   *            upper bound
-   * @return The added variable.
-   * @throws DuplicateVariableException
-   *             if a variable of the same name already exists
-   */
-  def interVar(lb: Int, ub: Int) = IntVariable.ofInterval(lb, ub)
+  //  /**
+  //   * Creates a new bounded variable
+  //   *
+  //   * @param name
+  //   *            name of the variable
+  //   * @param lb
+  //   *            lower bound
+  //   * @param ub
+  //   *            upper bound
+  //   * @return The added variable.
+  //   * @throws DuplicateVariableException
+  //   *             if a variable of the same name already exists
+  //   */
+  //  def interVar(lb: Int, ub: Int) = IntVariable.ofInterval(lb, ub)
 
 }
 

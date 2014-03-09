@@ -1,6 +1,6 @@
 package cspom.variable
 
-import cspom.CSPOM
+import scala.collection.JavaConversions
 
 final class IntVariable(val domain: IntDomain, params: Set[Any] = Set())
   extends CSPOMVariable[Int](params) {
@@ -21,25 +21,26 @@ final class IntVariable(val domain: IntDomain, params: Set[Any] = Set())
 
 object IntVariable {
 
-  def of(values: Int*) = ofSeq(values)
+  def apply(values: java.util.List[Int]): IntVariable =
+    apply(JavaConversions.asScalaBuffer(values))
 
-  def ofSeq(values: Seq[Int], params: Set[Any] = Set()) =
-    new IntVariable(IntDomain.of(values: _*), params)
+  def apply(values: Seq[Int], params: Set[Any] = Set()): IntVariable =
+    new IntVariable(IntDomain(values), params)
 
-  /**
-   * Constructs a new variable with a domain defined by lower
-   * and upper bounds.
-   *
-   * @param <E>
-   *            Type of bounds.
-   * @param lB
-   *            Lower bound of the domain
-   * @param uB
-   *            Upper bound of the domain
-   */
-  def ofInterval(lb: Int, ub: Int, params: Set[Any] = Set()) = {
-    new IntVariable(new IntInterval(lb, ub), params);
-  }
+  //  /**
+  //   * Constructs a new variable with a domain defined by lower
+  //   * and upper bounds.
+  //   *
+  //   * @param <E>
+  //   *            Type of bounds.
+  //   * @param lB
+  //   *            Lower bound of the domain
+  //   * @param uB
+  //   *            Upper bound of the domain
+  //   */
+  //  def ofInterval(lb: Int, ub: Int, params: Set[Any] = Set()) = {
+  //    new IntVariable(new IntInterval(lb, ub), params);
+  //  }
 
   def free(params: Any*): IntVariable = free(params.toSet)
   def free(params: Set[Any]): IntVariable = new IntVariable(FreeInt, params)

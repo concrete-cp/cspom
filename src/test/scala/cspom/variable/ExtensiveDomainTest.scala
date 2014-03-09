@@ -11,7 +11,7 @@ final class ExtensiveDomainTest {
 
   @Before
   def setUp() {
-    intDomain = IntDomain.of(1, 7, 9);
+    intDomain = IntDomain(Seq(1, 7, 9));
     //anyDomain = ExtensiveDomain.of(8.9d, 1, intDomain);
   }
 

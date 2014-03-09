@@ -27,11 +27,11 @@ case object FZInt extends FZVarType[Int] {
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.ofInterval(lb, ub, ann.toSet)
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(lb to ub, ann.toSet)
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.ofSeq(values, ann.toSet)
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(values, ann.toSet)
 }
 
 case object FZIntSet extends FZVarType[Int] {
