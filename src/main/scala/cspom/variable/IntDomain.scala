@@ -2,15 +2,14 @@ package cspom.variable
 import scala.collection.JavaConversions
 
 sealed trait IntDomain extends Seq[Int] {
-  //def values: Seq[Int]
+
   def getValues = JavaConversions.asJavaCollection(this)
   def intersect(domain: IntDomain): IntDomain
-  def toXCSP: String
+
 }
 
 object IntDomain {
   def of(values: Int*) = {
-    //require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
     values match {
       case r: Range => new IntInterval(r.head, r.last)
       case s: Seq[Int] if (values.last - values.head == values.size - 1) => new IntInterval(s.head, s.last)
@@ -38,32 +37,17 @@ object IntDomain {
     }
 
     of(values: _*)
-    //        //        if (values.size == 1) {
-    //        //          new Constant(values.head)
-    //        //        } else 
-    //        if (values == (values.head to values.last)) {
-    //          new IntInterval(values.head, values.last)
-    //        } else {
-    //          new ExtensiveDomain(values)
-    //        }
-
   }
 
 }
 
 final case class IntSeq(val values: Seq[Int]) extends IntDomain {
-  //  override def equals(obj: Any) = obj match {
-  //    case ed: IntSeq => ed.values == values
-  //    case _ => false
-  //  }
-
   override def toString =
-    if (size > 5)
+    if (size > 5) {
       values.take(5).mkString("{", ", ", "...}")
-    else
+    } else {
       values.mkString("{", ", ", "}")
-
-  def toXCSP = values.mkString(", ")
+    }
 
   def intersect(domain: IntDomain) = domain match {
     case FreeInt => this
@@ -86,23 +70,6 @@ final case class IntInterval(val lb: Int, val ub: Int) extends Range.Inclusive(l
     case d => d.intersect(this)
   }
 
-  //  def contains(value: Any) = value match {
-  //    case v: Int => lb <= v && v <= ub
-  //    case _ => false
-  //  }
-
-  override def toString = "[" + toXCSP + "]"
-  //override val hashCode = 31 * lb + ub;
-  //override val size = 1 + ub - lb
-
-  //  override def equals(obj: Any) = obj match {
-  //    case i: IntInterval => lb == i.lb && ub == i.ub
-  //    case d: IntDomain => values == d.values
-  //    case _ => false
-  //  }
-
-  def toXCSP = head + ".." + last
-
 }
 
 object IntInterval {
@@ -117,10 +84,11 @@ object FreeInt extends IntDomain {
   def iterator: Iterator[Int] = throw new UnsupportedOperationException
   def apply(idx: Int): Int = throw new UnsupportedOperationException
   def length: Int = throw new UnsupportedOperationException
-  def toXCSP = throw new UnsupportedOperationException
+
   override def equals(o: Any) = o match {
     case ar: AnyRef => FreeInt eq ar
     case _ => false
   }
   override def toString = "?"
+  override def contains(o: Any) = o.isInstanceOf[Int]
 }

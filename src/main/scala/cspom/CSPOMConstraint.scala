@@ -13,7 +13,7 @@ final case class CSPOMConstraint[+T](
   val result: CSPOMExpression[T],
   val function: Symbol,
   val arguments: Seq[CSPOMExpression[Any]],
-  val params: Map[String, Any] = Map()) extends Loggable {
+  val params: Map[String, Any] = Map()) extends Parameterized with Loggable {
 
   require(result != null)
   require(arguments != null)
@@ -23,14 +23,6 @@ final case class CSPOMConstraint[+T](
 
   val id = CSPOMConstraint.id
   CSPOMConstraint.id += 1
-
-  def getParam[A](name: String, typ: Class[A]): Option[A] =
-    try {
-      params.get(name).map(typ.cast)
-    } catch {
-      case e: ClassCastException =>
-        throw new IllegalArgumentException("Could not cast " + params(name) + ": " + params(name).getClass + " to " + typ)
-    }
 
   def getArgs = JavaConversions.seqAsJavaList(arguments)
 
@@ -65,7 +57,7 @@ final case class CSPOMConstraint[+T](
   }
 
   private def toString(result: Option[String], arguments: Seq[String]): String = {
-    val content = s"$function(${arguments.mkString(", ")})${if (params.isEmpty) "" else params.mkString(" :: ", " :: ", "")}"
+    val content = s"$function(${arguments.mkString(", ")})$displayParams"
     result match {
       case None => s"constraint $content"
       case Some(r) => s"constraint $r == $content"
