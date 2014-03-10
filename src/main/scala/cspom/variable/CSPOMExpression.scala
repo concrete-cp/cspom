@@ -2,6 +2,7 @@ package cspom.variable
 
 import cspom.CSPOM
 import scala.collection.mutable.WeakHashMap
+import cspom.Parameterized
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -41,8 +42,8 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
 }
 
-class CSPOMConstant[+T](val value: T, val params: Set[Any] = Set()) extends SimpleExpression[T] {
-  def contains[S >: T](that: S) = this == that
+class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
+  def contains[S >: T](that: S) = value == that
 
   def intersected(that: SimpleExpression[_ >: T]) =
     if (that.contains(value)) {
@@ -51,35 +52,39 @@ class CSPOMConstant[+T](val value: T, val params: Set[Any] = Set()) extends Simp
       throw new IllegalArgumentException("Empty intersection")
     }
 
-  override def toString = value.toString
+  override def toString = value.toString + displayParams
 
   override def equals(o: Any) = o match {
-    case i: CSPOMConstant[_] => i.value == value
-    case i: Any => i == value
+    case i: CSPOMConstant[_] => i.value == value && i.params == params
+    case i: Any => i == value && params.isEmpty
   }
 
 }
 
 object CSPOMConstant {
-  val cache = new WeakHashMap[(Any, Set[Any]), CSPOMConstant[Any]]
+  val cache = new WeakHashMap[(Any, Map[String, Any]), CSPOMConstant[Any]]
 
-  cache.put((true, Set()), CSPOMTrue)
-  cache.put((false, Set()), CSPOMFalse)
+  cache.put((true, Map()), CSPOMTrue)
+  cache.put((false, Map()), CSPOMFalse)
 
-  def apply[A](value: A, params: Set[Any] = Set()): CSPOMConstant[A] =
-    cache.getOrElseUpdate((value, params), new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[A]]
+  def apply[A](value: A, params: Map[String, Any] = Map()): CSPOMConstant[A] =
+    cache.getOrElseUpdate((value, params), new CSPOMConstant(value, params)).asInstanceOf[CSPOMConstant[A]]
 
   def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
 }
 
-abstract class CSPOMVariable[+T](val params: Set[Any]) extends SimpleExpression[T] {
+object CSPOMTrue extends CSPOMConstant(true)
+
+object CSPOMFalse extends CSPOMConstant(true)
+
+abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
 }
 
 final case class CSPOMSeq[+T](
   val values: Seq[CSPOMExpression[T]],
   val definedIndices: Range,
-  val params: Set[Any] = Set())
+  val params: Map[String, Any] = Map())
   extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
 
   def this(seq: Seq[CSPOMExpression[T]]) = this(seq, seq.indices)

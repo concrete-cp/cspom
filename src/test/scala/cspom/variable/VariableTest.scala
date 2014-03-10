@@ -29,7 +29,7 @@ class VariableTest {
     assertFalse(vb.contains(0))
     assertTrue(vb.contains(false))
 
-    val vi = IntVariable.ofInterval(0, 10)
+    val vi = IntVariable(0 to 10)
     
     assertTrue(vi.contains(5))
     assertFalse(vi.contains(15))

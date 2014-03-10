@@ -146,19 +146,19 @@ class CSPOM {
   }
 
   def is(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
-    val result = CSPOM.aux()
+    val result = new FreeVariable(Map("var_is_introduced" -> Unit))
     ctr(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
   def isInt(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): IntVariable = {
-    val result = CSPOM.auxInt()
+    val result = IntVariable.free(Map("var_is_introduced" -> Unit))
     ctr(new CSPOMConstraint(result, name, scope, params))
     result
   }
 
   def isBool(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): BoolVariable = {
-    val result = CSPOM.auxBool()
+    val result = new BoolVariable(Map("var_is_introduced" -> Unit))
     ctr(CSPOMConstraint(result, name, scope, params))
     result
   }
@@ -340,24 +340,10 @@ object CSPOM {
 
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
-  //  def ctr(rel: Relation, init: Boolean)(vars: CSPOMVariable*)(implicit problem: CSPOM) =
-  //    problem.extCtr(rel, init, vars: _*)
-
-  //@annotation.varargs
   def table(rel: Relation, init: Boolean, vars: Array[IntVariable]): CSPOMConstraint[Boolean] =
     CSPOMConstraint('extension, vars.toSeq, Map("init" -> init, "relation" -> rel))
 
-  //  implicit def seq2CSPOMSeq[T <: CSPOMExpression[_]](s: Seq[T]): CSPOMSeq[T] = new CSPOMSeq[T](s)
-  //
-  //  implicit def array2CSPOMSeq[T <: CSPOMExpression[_]](s: Array[T]) = new CSPOMSeq[T](s)
-
   implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)
-
-  implicit def aux(): FreeVariable = CSPOMVariable.aux()
-
-  implicit def auxInt(): IntVariable = CSPOMVariable.auxInt()
-
-  implicit def auxBool(): BoolVariable = CSPOMVariable.auxBool()
 
   implicit def constant[A](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 

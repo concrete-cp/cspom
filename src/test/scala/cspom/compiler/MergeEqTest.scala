@@ -14,7 +14,7 @@ class MergeEqTest {
   @Test
   def test1() {
     val problem = CSPOM {
-      val v1 = IntVariable.ofInterval(0, 10, Map("output_var" -> Unit)) as "V1"
+      val v1 = IntVariable(0 to 10, Map("output_var" -> Unit)) as "V1"
       val v2 = CSPOMConstant(0)
 
       ctr(CSPOMConstraint('eq, v1, v2))
@@ -32,9 +32,9 @@ class MergeEqTest {
   def testExt() {
 
     val cspom = CSPOM {
-      val v0 = IntVariable.of(1, 2, 3) as "V0"
+      val v0 = IntVariable(Seq(1, 2, 3)) as "V0"
       ctr(CSPOMConstraint('dummy, v0))
-      val v1 = IntVariable.ofSeq(Seq(2, 3, 4), Map("var_is_introduced" -> Unit))
+      val v1 = IntVariable(Seq(2, 3, 4), Map("var_is_introduced" -> Unit))
       ctr(v0 === v1)
     }
 
