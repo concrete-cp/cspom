@@ -12,6 +12,7 @@ import cspom.CSPOMConstraint
 import cspom.variable.CSPOMVariable
 import CSPOM._
 import cspom.variable.BoolVariable
+import cspom.variable.CSPOMExpression
 
 final object CNFParser {
 
@@ -56,7 +57,7 @@ final object CNFParser {
     (problem, Map('variables -> names))
   }
 
-  private def clause(currentClause: List[Int], variables: IndexedSeq[BoolVariable]) = {
+  private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMExpression[Boolean]]) = {
 
     val (clause, parameters) = currentClause map { i =>
       (variables(math.abs(i) - 1), i == 0)

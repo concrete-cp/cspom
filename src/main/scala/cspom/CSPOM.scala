@@ -359,34 +359,7 @@ object CSPOM {
 
   implicit def auxBool(): BoolVariable = CSPOMVariable.auxBool()
 
-  implicit class NameableExpr[A <: CSPOMExpression[_]](e: A) {
-    def as(n: String)(implicit cspom: CSPOM): A = {
-      cspom.nameExpression(e, n)
-      e
-    }
-
-    def withName(n: String)(implicit cspom: CSPOM): (A, String) = {
-      as(n)(cspom)
-      (e, n)
-    }
-  }
-
   implicit def constant[A](c: A): CSPOMConstant[A] = CSPOMConstant(c)
-
-  //  /**
-  //   * Creates a new bounded variable
-  //   *
-  //   * @param name
-  //   *            name of the variable
-  //   * @param lb
-  //   *            lower bound
-  //   * @param ub
-  //   *            upper bound
-  //   * @return The added variable.
-  //   * @throws DuplicateVariableException
-  //   *             if a variable of the same name already exists
-  //   */
-  //  def interVar(lb: Int, ub: Int) = IntVariable.ofInterval(lb, ub)
 
 }
 
