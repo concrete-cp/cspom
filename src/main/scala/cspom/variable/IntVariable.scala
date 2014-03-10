@@ -1,6 +1,6 @@
 package cspom.variable
 
-import cspom.CSPOM
+import scala.collection.JavaConversions
 
 final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) {
@@ -20,30 +20,8 @@ final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
 }
 
 object IntVariable {
-
-  def of(values: Int*) = ofSeq(values)
-
-  def ofSeq(values: Seq[Int], params: Map[String, Any] = Map()) =
-    new IntVariable(IntDomain.of(values: _*), params)
-
-  /**
-   * Constructs a new variable with a domain defined by lower
-   * and upper bounds.
-   *
-   * @param <E>
-   *            Type of bounds.
-   * @param lB
-   *            Lower bound of the domain
-   * @param uB
-   *            Upper bound of the domain
-   */
-  def ofInterval(lb: Int, ub: Int, params: Map[String, Any]): IntVariable = {
-    new IntVariable(new IntInterval(lb, ub), params);
-  }
-
-  def ofInterval(lb: Int, ub: Int): IntVariable = {
-    ofInterval(lb, ub, Map())
-  }
+  def apply(values: Seq[Int], params: Map[String, Any] = Map()): IntVariable =
+    new IntVariable(IntDomain(values), params)
 
   def free(params: Map[String, Any] = Map()): IntVariable = new IntVariable(FreeInt, params)
 

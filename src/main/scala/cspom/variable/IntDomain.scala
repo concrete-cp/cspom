@@ -1,44 +1,18 @@
 package cspom.variable
-import scala.collection.JavaConversions
 
 sealed trait IntDomain extends Seq[Int] {
-
-  def getValues = JavaConversions.asJavaCollection(this)
   def intersect(domain: IntDomain): IntDomain
-
 }
 
 object IntDomain {
-  def of(values: Int*) = {
+  def apply(values: Seq[Int]) = {
+    //require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
     values match {
-      case r: Range => new IntInterval(r.head, r.last)
+      case r: Range if r.step == 1 => new IntInterval(r.head, r.last)
       case s: Seq[Int] if (values.last - values.head == values.size - 1) => new IntInterval(s.head, s.last)
       case s => new IntSeq(values)
     }
   }
-
-  /**
-   * Parse the given domain given as a String. Domains are usually sequence of
-   * values separated by spaces such as "1 3 -4 5" or intervals in the format
-   * "a..b". Sequences of values and intervals such as "1 3..10 18..30" are
-   * allowed and converted to a sequence of values.
-   *
-   * @param domain
-   *            The String domain to parse
-   * @return The resulting Domain object
-   */
-  def valueOf(desc: String) = {
-    val values = desc.trim.split(" +").flatMap { v =>
-      if (v.contains("..")) {
-        IntInterval.valueOf(v);
-      } else {
-        Seq(v.trim.toInt);
-      }
-    }
-
-    of(values: _*)
-  }
-
 }
 
 final case class IntSeq(val values: Seq[Int]) extends IntDomain {
@@ -60,8 +34,12 @@ final case class IntSeq(val values: Seq[Int]) extends IntDomain {
   def length: Int = values.length
 }
 
-final case class IntInterval(val lb: Int, val ub: Int) extends Range.Inclusive(lb, ub, 1) with IntDomain {
+final case class IntInterval(lb: Int, ub: Int) extends Range.Inclusive(lb, ub, 1) with IntDomain {
   require(lb <= ub, "lb <= ub required");
+
+  def lb = head
+
+  def ub = last
 
   def intersect(domain: IntDomain): IntDomain = domain match {
     case FreeInt => this
@@ -70,16 +48,10 @@ final case class IntInterval(val lb: Int, val ub: Int) extends Range.Inclusive(l
     case d => d.intersect(this)
   }
 
+  override def toString = s"[$head..$last]"
 }
 
-object IntInterval {
-  def valueOf(interval: String) = interval.trim().split("\\.\\.") match {
-    case Array(a, b) => new IntInterval(a.toInt, b.toInt)
-    case _ => throw new NumberFormatException("Interval format must be a..b");
-  }
-}
-
-object FreeInt extends IntDomain {
+case object FreeInt extends IntDomain {
   def intersect(domain: IntDomain) = domain
   def iterator: Iterator[Int] = throw new UnsupportedOperationException
   def apply(idx: Int): Int = throw new UnsupportedOperationException

@@ -5,17 +5,16 @@ import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
 import cspom.CSPOM
+import cspom.CSPOM._
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.LazyRelation
 import cspom.extension.Relation
+import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
-import cspom.variable.IntDomain
 import cspom.variable.IntInterval
 import cspom.variable.IntVariable
-import CSPOM._
-import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMExpression
+import cspom.variable.IntDomain
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -34,21 +33,22 @@ final object XCSPParser {
    *            The String domain to parse
    * @return The resulting Domain object
    */
-  def parseDomain(desc: String): CSPOMExpression[Int] = {
-    val values: Seq[Int] = desc.trim.split(" +").flatMap { v =>
+  def parseDomain(desc: String): IntDomain = {
+    val d = desc.trim.split(" +").toSeq.flatMap { v =>
       if (v.contains("..")) {
-        IntInterval.valueOf(v);
+        parseItv(v);
       } else {
         List(v.trim.toInt);
       }
     }
 
-    if (values.size == 1) {
-      CSPOMConstant(values.head)
-    } else {
-      IntVariable.ofSeq(values)
-    }
+    IntDomain(d)
 
+  }
+
+  def parseItv(interval: String) = interval.trim().split("\\.\\.") match {
+    case Array(a, b) => new IntInterval(a.toInt, b.toInt)
+    case _ => throw new NumberFormatException("Interval format must be a..b");
   }
 
   /**
@@ -86,7 +86,7 @@ final object XCSPParser {
    */
   private def parseVariables(doc: NodeSeq): Seq[(String, IntVariable)] = {
     val domains = (doc \ "domains" \ "domain") map { node =>
-      (node \ "@name").text -> IntDomain.valueOf(node.text)
+      (node \ "@name").text -> parseDomain(node.text)
     } toMap
 
     (doc \ "variables" \ "variable").map { node =>
