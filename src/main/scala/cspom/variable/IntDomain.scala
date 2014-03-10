@@ -35,7 +35,7 @@ final case class IntSeq(val values: Seq[Int]) extends IntDomain {
 }
 
 final case class IntInterval(_lb: Int, _ub: Int) extends Range.Inclusive(_lb, _ub, 1) with IntDomain {
-  require(lb <= ub, "lb <= ub required");
+  require(nonEmpty, "lb <= ub required");
 
   def lb = head
 

@@ -30,10 +30,11 @@ final object CNFParser {
       case e: Exception => throw new CSPParseException("Parameter line not found", e, -1)
     }
 
+    var names: Seq[String] = null
     var countClauses = 0
-    val (problem, names) = CSPOM withResult {
+    val problem = CSPOM {
 
-      val (variables, names) = (for (i <- 1 to nbVars.toInt) yield {
+      val (variables, ns) = (for (i <- 1 to nbVars.toInt) yield {
         new BoolVariable() withName ("V" + i)
       }) unzip
 
@@ -49,7 +50,7 @@ final object CNFParser {
         }
       }
 
-      names
+      names = ns
     }
 
     require(countClauses == nbClauses.toInt)

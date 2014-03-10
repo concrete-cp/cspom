@@ -5,7 +5,6 @@ import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
 import cspom.CSPOM
-import cspom.CSPOM._
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.LazyRelation
@@ -65,15 +64,13 @@ final object XCSPParser {
   def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
     val document = XML.load(is)
     val declaredVariables = parseVariables(document);
-    val (genVariables, constraints) = parseConstraints(document, declaredVariables.toMap);
-    val problem = CSPOM {
+
+    val problem = CSPOM { implicit cspom: CSPOM =>
       for ((name, variable) <- declaredVariables) {
         variable as name
       }
 
-      for (c <- constraints) {
-        ctr(c)
-      }
+      parseConstraints(document, declaredVariables.toMap, cspom)
     }
     (problem, Map('variables -> declaredVariables.map(_._1)))
 
@@ -111,7 +108,7 @@ final object XCSPParser {
    * @throws CSPParseException
    *             If a relation or predicate could not be found or applied.
    */
-  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, IntVariable]) = {
+  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, IntVariable], cspom: CSPOM) = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
         val text = new CharSequenceReader(node.text) //new StringReader(node.text)
@@ -128,16 +125,15 @@ final object XCSPParser {
 
     val gen = for (
       node <- doc \ "constraints" \ "constraint"
-    ) yield genConstraint(
-      (node \ "@name").text,
-      (node \ "@scope").text,
-      node.text,
-      (node \ "@reference").text,
-      relations,
-      declaredVariables)
-
-    val (genVars, genCons) = gen.unzip
-    (genVars.flatten, genCons.flatten)
+    ) {
+      genConstraint(
+        (node \ "@name").text,
+        (node \ "@scope").text,
+        node.text,
+        (node \ "@reference").text,
+        relations,
+        declaredVariables, cspom)
+    }
 
   }
 
@@ -158,7 +154,7 @@ final object XCSPParser {
    */
   private def genConstraint(name: String, varNames: String,
     parameters: String, reference: String, relations: Map[String, AnyRef],
-    declaredVariables: Map[String, IntVariable]): (Seq[CSPOMVariable[_]], Seq[CSPOMConstraint[_]]) = {
+    declaredVariables: Map[String, IntVariable], cspom: CSPOM): Unit = {
 
     val scope = varNames.split(" +").iterator.map { s =>
       s -> declaredVariables.getOrElse(s, {
@@ -172,7 +168,7 @@ final object XCSPParser {
       val constraint = reference.substring(7) + scope.map(_._1).mkString("(", ", ", ")")
 
       try {
-        ConstraintParser.split(constraint, declaredVariables);
+        ConstraintParser.split(constraint, declaredVariables, cspom);
       } catch {
         case e: Exception =>
           throw new CSPParseException(s"Error parsing constraint $constraint", e);
@@ -187,7 +183,7 @@ final object XCSPParser {
 
         case Some(predicate: XCSPPredicate) =>
           try {
-            ConstraintParser.split(predicate.applyParameters(parameters), declaredVariables)
+            ConstraintParser.split(predicate.applyParameters(parameters), declaredVariables, cspom)
           } catch {
             case e: Exception =>
               throw new CSPParseException("Error parsing predicate " + predicate

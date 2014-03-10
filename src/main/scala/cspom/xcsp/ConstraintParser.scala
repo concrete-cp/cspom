@@ -10,6 +10,7 @@ import cspom.variable.CSPOMExpression
 import cspom.CSPOMConstraint
 import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
+import cspom.variable.FreeVariable
 
 sealed trait PredicateNode
 
@@ -17,27 +18,8 @@ final case class PredicateConstraint(val operator: String, val arguments: Seq[Pr
   require(arguments.nonEmpty)
 }
 final case class PredicateConstant(val constant: Int) extends PredicateNode
-final case class PredicateVariable(val variableId: String) extends PredicateNode
 
-//final class PredicateNode(val operator: String, val child: Seq[PredicateNode]) {
-//
-//  def isLeaf = child.isEmpty
-//
-//  def tree(stb: StringBuilder): StringBuilder = {
-//    stb.append(operator);
-//    //    for (p <- parameters) {
-//    //      stb.append('{').append(p).append('}');
-//    //    }
-//    stb.append('\n');
-//    for (c <- child) {
-//      stb.append("(")
-//      c.tree(stb)
-//      stb.append(")")
-//    }
-//    stb
-//  }
-//
-//}
+final case class PredicateVariable(val variableId: String) extends PredicateNode
 
 final object ConstraintParser extends JavaTokenParsers {
 
@@ -45,10 +27,10 @@ final object ConstraintParser extends JavaTokenParsers {
 
   def func: Parser[PredicateNode] =
     ident ~ ("(" ~> repsep(func, ",") <~ ")") ^^ {
-      case ident ~ children => new PredicateConstraint(ident, children)
+      case ident ~ children => PredicateConstraint(ident, children)
     } |
-      ident ^^ (new PredicateVariable(_)) |
-      integer ^^ (new PredicateConstant(_))
+      ident ^^ (PredicateVariable(_)) |
+      integer ^^ (PredicateConstant(_))
 
   def mapFunc(map: Map[String, String]): Parser[String] =
     ident ~ ("(" ~> repsep(mapFunc(map), ",") <~ ")") ^^ {
@@ -57,27 +39,23 @@ final object ConstraintParser extends JavaTokenParsers {
       ident ^^ (map(_)) |
       integer ^^ (_.toString)
 
-  def split(expression: String, declaredVariables: Map[String, IntVariable]): (Seq[CSPOMVariable[_]], Seq[CSPOMConstraint[_]]) = {
+  def split(expression: String, declaredVariables: Map[String, IntVariable], cspom: CSPOM): Unit = {
     func(new CharSequenceReader(expression)).get match {
       case PredicateConstraint(operator, arguments) =>
-        val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
-
-        (genVars.flatten, genCons.flatten :+ CSPOMConstraint(Symbol(operator), sub: _*))
+        cspom.ctr(CSPOMConstraint(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom)): _*))
 
       case _ => throw new IllegalArgumentException("Constraint expected, was " + expression)
     }
 
   }
 
-  private def toVariable(node: PredicateNode, declaredVariables: Map[String, IntVariable]): (CSPOMExpression[_], Seq[CSPOMVariable[_]], Seq[CSPOMConstraint[_]]) = {
+  private def toVariable(node: PredicateNode, declaredVariables: Map[String, IntVariable], cspom: CSPOM): CSPOMExpression[_] = {
     node match {
-      case PredicateConstant(value) => (CSPOMConstant(value), Seq(), Seq())
-      case PredicateVariable(variableId) => (declaredVariables(variableId), Seq(), Seq())
-      case PredicateConstraint(operator, arguments) => {
-        val result = CSPOMVariable.aux()
-        val (sub, genVars, genCons) = arguments.map(toVariable(_, declaredVariables)).unzip3
-        (result, genVars.flatten :+ result, genCons.flatten :+ CSPOMConstraint(result, Symbol(operator), sub: _*))
-      }
+      case PredicateConstant(value) => CSPOMConstant(value)
+      case PredicateVariable(variableId) => declaredVariables(variableId)
+      case PredicateConstraint(operator, arguments) =>
+        cspom.is(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom)))
+
     }
   }
 

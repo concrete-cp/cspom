@@ -316,16 +316,15 @@ object CSPOM {
 
   private val dyn = new DynamicVariable[CSPOM](null)
 
-  def apply[T](f: => T): CSPOM = withResult(f)._1
-
-  def apply[T](f: CSPOM => T): CSPOM = withResult(f)._1
-
-  def withResult[T](f: CSPOM => T): (CSPOM, T) = {
-    val p = new CSPOM()
-    (p, f(p))
+  def apply(f: => Any): CSPOM = {
+    apply { p: CSPOM => dyn.withValue(p)(f) }
   }
 
-  def withResult[T](f: => T): (CSPOM, T) = withResult { cspom => dyn.withValue(cspom)(f) }
+  def apply(f: CSPOM => Any): CSPOM = {
+    val p = new CSPOM()
+    f(p)
+    p
+  }
 
   /**
    * An implicit function that returns the thread-local problem in a model block

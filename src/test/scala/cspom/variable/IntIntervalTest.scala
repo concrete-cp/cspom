@@ -3,6 +3,7 @@ package cspom.variable;
 import org.junit.Test
 import org.junit.Before
 import org.junit.Assert._
+import cspom.xcsp.XCSPParser
 
 final class IntIntervalTest {
 
@@ -41,6 +42,6 @@ final class IntIntervalTest {
 
   @Test
   def testValueOf() {
-    assertEquals(intInterval, IntInterval.valueOf("10..15"));
+    assertEquals(intInterval, XCSPParser.parseItv("10..15"));
   }
 }

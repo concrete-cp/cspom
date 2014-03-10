@@ -11,8 +11,11 @@ class CSPOMTest {
 
   @Test
   def variables(): Unit = {
-    val (cspom: CSPOM, vars) = CSPOM withResult {
-      val vars = List(
+
+    var vars: List[CSPOMVariable[Int]] = null
+
+    val cspom = CSPOM {
+      vars = List(
         IntVariable(0 to 10) as "test1",
         IntVariable(10 to 20) as "test2",
         IntVariable(20 to 30) as "test3",
@@ -48,17 +51,18 @@ class CSPOMTest {
 
   @Test
   def constraints(): Unit = {
-    val (cspom, (v, leq)) = CSPOM withResult {
-      val v = List(
+
+    var leq: CSPOMConstraint[Boolean] = null
+    var v: List[CSPOMVariable[Int]] = null
+
+    val cspom = CSPOM {
+      v = List(
         IntVariable(0 to 10),
         IntVariable(0 to 10));
 
       //v foreach { cspom.addVariable(_) }
 
-      val leq = ctr(CSPOMConstraint('leq, v(0), v(1)))
-
-      (v, leq)
-
+      leq = ctr(CSPOMConstraint('leq, v(0), v(1)))
     }
 
     assertTrue(cspom.constraints(v(0)) contains leq)
@@ -73,17 +77,17 @@ class CSPOMTest {
     assertTrue(cspom.referencedExpressions.isEmpty)
   }
 
-//  @Test(expected = classOf[IllegalArgumentException])
-//  def protectedVariable(): Unit = {
-//    val cspom = new CSPOM
-//    val v = List(
-//      CSPOMVariable.ofInterval("test1", 0, 10),
-//      CSPOMVariable.ofInterval("test2", 0, 10));
-//
-//    //v.foreach(cspom.addVariable)
-//
-//    val leq = new CSPOMConstraint('leq, v(0), v(1))
-//    cspom.ctr(leq);
-//    cspom.removeVariable(v(1))
-//  }
+  //  @Test(expected = classOf[IllegalArgumentException])
+  //  def protectedVariable(): Unit = {
+  //    val cspom = new CSPOM
+  //    val v = List(
+  //      CSPOMVariable.ofInterval("test1", 0, 10),
+  //      CSPOMVariable.ofInterval("test2", 0, 10));
+  //
+  //    //v.foreach(cspom.addVariable)
+  //
+  //    val leq = new CSPOMConstraint('leq, v(0), v(1))
+  //    cspom.ctr(leq);
+  //    cspom.removeVariable(v(1))
+  //  }
 }
