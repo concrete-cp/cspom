@@ -19,6 +19,13 @@ sealed trait CSPOMExpression[+T] extends Parameterized {
     as(n)(cspom)
     (this, n)
   }
+
+  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = problem.isBool('ne, Seq(this, other))
+
+  def ≠(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = this !== other
+
+  def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = problem.isBool('eq, Seq(this, other))
+
 }
 
 /*
