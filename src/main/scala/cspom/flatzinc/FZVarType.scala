@@ -11,7 +11,7 @@ sealed trait FZVarType[T] {
 }
 
 object FZBoolean extends FZVarType[Boolean] {
-  def genVariable(ann: Seq[FZAnnotation]) = new BoolVariable(ann.toSet)
+  def genVariable(ann: Seq[FZAnnotation]) = new BoolVariable(Map("fzAnnotations" -> ann))
 }
 
 case object FZFloat extends FZVarType[Double] {
@@ -23,15 +23,15 @@ final case class FZFloatInterval(lb: Double, ub: Double) extends FZVarType[Doubl
 }
 
 case object FZInt extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.free(ann: _*)
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.free(Map("fzAnnotations" -> ann))
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(lb to ub, ann.toSet)
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(lb to ub, Map("fzAnnotations" -> ann))
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(values, ann.toSet)
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(values, Map("fzAnnotations" -> ann))
 }
 
 case object FZIntSet extends FZVarType[Int] {
@@ -42,7 +42,7 @@ final case class FZArray[T](indices: Seq[IndexSet], typ: FZVarType[T]) extends F
   def genVariable(ann: Seq[FZAnnotation]) = new CSPOMSeq(
     indices.head.toRange.map(i => generate(indices.tail)),
     indices.head.toRange,
-    ann.toSet)
+    Map("fzAnnotations" -> ann))
 
   private def generate(indices: Seq[IndexSet]): CSPOMExpression[T] = {
     if (indices.isEmpty) {
@@ -50,8 +50,7 @@ final case class FZArray[T](indices: Seq[IndexSet], typ: FZVarType[T]) extends F
     } else {
       new CSPOMSeq(
         indices.head.toRange.map(i => generate(indices.tail)),
-        indices.head.toRange,
-        Set(FZAnnotation("array_seq")))
+        indices.head.toRange)
     }
   }
 

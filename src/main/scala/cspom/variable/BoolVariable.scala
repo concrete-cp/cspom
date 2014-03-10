@@ -2,18 +2,19 @@ package cspom.variable
 
 import cspom.CSPOM
 
-final class BoolVariable(params: Set[Any] = Set())
+final class BoolVariable(params: Map[String, Any] = Map())
   extends CSPOMVariable[Boolean](params) {
-  def this(params: Any*) = this(params.toSet)
 
-  override def toString = s"boolean variable"
+  override def toString = s"boolean variable$displayParams"
 
   def intersected(that: SimpleExpression[_ >: Boolean]): SimpleExpression[Boolean] = that match {
-    case t: BoolVariable => this
-    case t @ CSPOMConstant(_: Boolean) => t.asInstanceOf[CSPOMConstant[Boolean]]
+    case t: BoolVariable => new BoolVariable(t.params ++ params)
+    case t: CSPOMConstant[Boolean] => CSPOMConstant(t.value, t.params ++ params)
     case _ => throw new IllegalArgumentException
   }
 
-  def contains[S >: Boolean](that: S) = that == CSPOMTrue || that == CSPOMFalse
+  def contains[S >: Boolean](that: S) = {
+    that.isInstanceOf[Boolean]
+  }
 
 }

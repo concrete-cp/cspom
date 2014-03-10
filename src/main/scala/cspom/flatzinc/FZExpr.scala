@@ -58,7 +58,7 @@ case class FZArrayExpr[+A](value: Seq[FZExpr[A]]) extends FZExpr[Seq[FZExpr[A]]]
     case c: FZConstant[_] => c.asConstant
     case a: FZArrayExpr[_] => a.asConstant(indices)
     case _ => throw new IllegalArgumentException
-  }, indices, Set())
+  }, indices, Map())
 }
 
 case class FZStringLiteral(value: String) extends FZConstant[String] {

@@ -6,11 +6,9 @@ import scala.collection.mutable.WeakHashMap
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
  */
-sealed trait CSPOMExpression[+T] { 
+sealed trait CSPOMExpression[+T] extends Parameterized {
 
   def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R]
-
-  def params: Set[Any]
 
   def as(n: String)(implicit cspom: CSPOM): this.type = {
     cspom.nameExpression(this, n)
@@ -97,21 +95,4 @@ final case class CSPOMSeq[+T](
       new CSPOMSeq(replaced, definedIndices, params)
     }
   }
-}
-
-//object CSPOMSeq {
-//  @annotation.varargs
-//  def apply[A](s: CSPOMExpression[A]*) = new CSPOMSeq[A](s)
-//  @annotation.varargs
-//  def applyVar[T](s: CSPOMExpression[T]*) = new CSPOMSeq(s)
-//}
-
-object CSPOMVariable {
-
-  def aux() = new FreeVariable("var_is_introduced")
-
-  def auxInt() = IntVariable.free("var_is_introduced")
-
-  def auxBool() = new BoolVariable("var_is_introduced")
-
 }
