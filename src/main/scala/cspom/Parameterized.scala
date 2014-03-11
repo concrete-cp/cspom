@@ -12,7 +12,23 @@ trait Parameterized {
         throw new IllegalArgumentException("Could not cast " + params(name) + ": " + params(name).getClass + " to " + typ)
     }
 
-  def displayParams: String = if (params.isEmpty) { "" } else { params.mkString(" :: ", " :: ", "") }
-  
+  def getSeqParam[A](name: String, typ: Class[A]): Seq[A] = {
+    try {
+      params.get(name) match {
+        case None => Seq()
+        case Some(s: Seq[_]) => s.map(typ.cast)
+        case _ => throw new IllegalArgumentException
+      }
+    }
+  }
+
+  def displayParams: String =
+    params map {
+      case (k, Unit) => k
+      case (k, v) => s"$k: $v"
+    } map {
+      s => s" :: $s"
+    } mkString
+
   def hasParam = params.contains(_)
 }

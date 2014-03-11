@@ -1,7 +1,7 @@
 package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMConstant
 import cspom.extension.Relation
 import cspom.variable.CSPOMConstant
 

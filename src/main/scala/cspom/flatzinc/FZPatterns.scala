@@ -5,7 +5,7 @@ import cspom.CSPOMConstraint
 import cspom.CSPOM
 import cspom.compiler.ConstraintCompilerNoData
 import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.IntVariable
 import cspom.compiler.GlobalCompiler
@@ -84,8 +84,8 @@ object FZPatterns {
      * (a ↔ b = 1) ∧ (¬a ↔ b = 0)
      * bool2int(var bool: a, var int: b)
      */
-    case Ctr('bool2int, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Int]), p) =>
-      CSPOMConstraint('eq, Seq(a, b), p)
+//    case Ctr('bool2int, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Int]), p) =>
+//      CSPOMConstraint('eq, Seq(a, b), p)
     /**
      * (a ∧ b) ↔ r
      * bool_and(var bool: a, var bool: b, var bool: r)
@@ -336,6 +336,8 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_ne(array [int] of int: as, array [int] of var int: bs, int: c)
      */
+    case Ctr('int_lin_ne, Seq(CSeq(as: Seq[CSPOMConstant[Int]]), bs, c: CSPOMConstant[Int]), p) =>
+      CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "ne"))
     /**
      * (i ∈ 1..n : as[i].bs[i] = c) ↔ r where n is the common length of as and bs
      * int_lin_ne_reif(array [int] of int: as, array [int] of var int: bs, int: c, var bool: r)

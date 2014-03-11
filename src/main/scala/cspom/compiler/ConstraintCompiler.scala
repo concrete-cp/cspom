@@ -1,7 +1,7 @@
 package cspom.compiler
 
 import cspom.CSPOMConstraint
-import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMConstant
 import cspom.CSPOM
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMExpression
@@ -25,13 +25,7 @@ trait ConstraintCompiler {
   def replace[T, S <: T](which: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
 
-    
-    
-    val names = in.namedExpressions.filter {
-      case (name, expr) => which.contains(expr)
-    }.keySet
-
-    names.foreach(in.replaceExpression(_, by))
+    which.foreach(in.replaceExpression(_, by))
 
     val oldConstraints = which.flatMap(in.constraints).distinct
 
@@ -127,7 +121,7 @@ abstract class GlobalCompiler(
 
 object Ctr {
   def unapply(c: CSPOMConstraint[Boolean]): Option[(Symbol, Seq[CSPOMExpression[_]], Map[String, Any])] = {
-    if (c.result == CSPOMTrue) {
+    if (c.result == CSPOMConstant(true)) {
       Some((c.function, c.arguments, c.params))
     } else {
       None

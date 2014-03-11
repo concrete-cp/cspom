@@ -12,8 +12,7 @@ import java.io.InputStreamReader
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMTrue
-import cspom.variable.CSPOMFalse
+import cspom.variable.CSPOMConstant
 import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPParseException
 import cspom.compiler.ProblemCompiler
@@ -250,7 +249,7 @@ object FlatZincParser extends DebugJavaTokenParsers {
       "constraint" ~> pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ~ annotations ~ ";" ^^ {
         case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
           new CSPOMConstraint(
-            CSPOMTrue,
+            CSPOMConstant(true),
             Symbol(predAnnId), expr.map(_.toCSPOM(declared)),
             if (annotations.nonEmpty) Map("fzAnnotations" -> annotations) else Map())
       }

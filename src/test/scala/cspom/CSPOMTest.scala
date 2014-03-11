@@ -45,7 +45,7 @@ class CSPOMTest {
       ctr(CSPOMConstraint('dummy, new BoolVariable()))
       ctr(CSPOMConstraint('dummy, new BoolVariable()))
     }
-    // Third is CSPOMTrue !
+    // Third is CSPOMConstant(true) !
     assertEquals(3, cspom.referencedExpressions.size)
   }
 

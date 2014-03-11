@@ -8,6 +8,7 @@ import cspom.variable.CSPOMExpression
 import scala.collection.mutable.HashMap
 import cspom.StatisticsManager
 import cspom.TimedException
+import cspom.VariableNames
 
 /**
  * This class implements some known useful reformulation rules.
@@ -19,6 +20,8 @@ final class ProblemCompiler(
   private val problem: CSPOM,
   private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
 
+  val vn = new VariableNames(problem)
+  
   private def compile() {
     val toCompile = Array.ofDim[QueueSet](
       constraintCompilers.size)
@@ -51,9 +54,10 @@ final class ProblemCompiler(
           for (data <- compiler.mtch(constraint, problem)) {
             ProblemCompiler.compiles += 1
             changed = true
+            print(compiler + " : " + constraint.toString(vn) + " -> ")
             val delta = compiler.compile(constraint, problem, data)
 
-            //println(compiler + " : " + constraint + " -> " + delta)
+            println(delta)
 
             val enqueue = delta.altered.iterator.flatMap(problem.constraints).toList
 
@@ -85,6 +89,8 @@ final class ProblemCompiler(
     }
     //require(constraints.values.toSet == problem.constraints)
   }
+  
+ // println(problem)
 
 }
 

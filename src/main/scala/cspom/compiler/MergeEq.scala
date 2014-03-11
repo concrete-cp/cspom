@@ -4,7 +4,7 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
 
@@ -35,14 +35,6 @@ object MergeEq extends ConstraintCompilerNoData {
     }
 
     val merged = se.reduceLeft(_ intersected _)
-
-    val names = problem.namedExpressions.filter {
-      case (n, v) => se.contains(v)
-    } map (_._1)
-
-    for (v <- se; n <- names) {
-      problem.replaceExpression(n, v)
-    }
 
     /**
      * Update the constraints of the problem

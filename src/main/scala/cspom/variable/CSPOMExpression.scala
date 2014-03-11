@@ -27,6 +27,9 @@ sealed trait CSPOMExpression[+T] extends Parameterized {
 
   def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = problem.isBool('eq, Seq(this, other))
 
+  def flatten: Seq[SimpleExpression[T]]
+
+  def isTrue: Boolean
 }
 
 /*
@@ -40,6 +43,7 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
   def contains[S >: T](that: S): Boolean
 
+  def flatten = Seq(this)
 }
 
 class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
@@ -59,13 +63,12 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
     case i: Any => i == value && params.isEmpty
   }
 
+  def isTrue = value == true
+
 }
 
 object CSPOMConstant {
   val cache = new WeakHashMap[(Any, Map[String, Any]), CSPOMConstant[Any]]
-
-  cache.put((true, Map()), CSPOMTrue)
-  cache.put((false, Map()), CSPOMFalse)
 
   def apply[A](value: A, params: Map[String, Any] = Map()): CSPOMConstant[A] =
     cache.getOrElseUpdate((value, params), new CSPOMConstant(value, params)).asInstanceOf[CSPOMConstant[A]]
@@ -73,12 +76,13 @@ object CSPOMConstant {
   def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
 }
 
-object CSPOMTrue extends CSPOMConstant(true)
-
-object CSPOMFalse extends CSPOMConstant(true)
+//object CSPOMConstant(true) extends CSPOMConstant(true)
+//
+//object CSPOMConstant(false) extends CSPOMConstant(false)
 
 abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
+  def isTrue = false
 }
 
 final case class CSPOMSeq[+T](
@@ -107,4 +111,8 @@ final case class CSPOMSeq[+T](
       new CSPOMSeq(replaced, definedIndices, params)
     }
   }
+
+  def flatten = values.flatMap(_.flatten)
+
+  def isTrue = false
 }

@@ -17,7 +17,7 @@ class VariableTest {
     //cspom.addVariable(v)
     cspom.ctr(c)
     //v registerConstraint c
-    assertEquals(cspom.referencedExpressions, Set(CSPOMTrue, v))
+    assertEquals(cspom.referencedExpressions, Set(CSPOMConstant(true), v))
     assertTrue(cspom.constraints(v) sameElements List(c))
   }
 

@@ -3,8 +3,6 @@ package cspom.flatzinc
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMFalse
-import cspom.variable.CSPOMTrue
 import cspom.variable.CSPOMConstant
 
 sealed trait FZExpr[+A] {
@@ -19,7 +17,7 @@ sealed trait FZConstant[+A] extends FZExpr[A] {
 }
 
 case class FZBoolConst(value: Boolean) extends FZConstant[Boolean] {
-  def asConstant = if (value) CSPOMTrue else CSPOMFalse
+  def asConstant = CSPOMConstant(value)
 }
 
 case class FZSetConst(value: Seq[Int]) extends FZConstant[Seq[Int]] {

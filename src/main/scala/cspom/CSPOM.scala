@@ -21,12 +21,21 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMTrue
 import cspom.variable.IntVariable
 import cspom.variable.FreeVariable
-import cspom.variable.CSPOMFalse
 import cspom.extension.Table
 import cspom.flatzinc.FlatZincParser
+import cspom.variable.SimpleExpression
+import scala.util.parsing.combinator.JavaTokenParsers
+import java.io.StringReader
+import scala.util.parsing.input.CharSequenceReader
+
+object NameParser extends JavaTokenParsers {
+
+  def parse: Parser[(String, Seq[Int])] = ident ~ rep("[" ~> wholeNumber <~ "]") ^^ {
+    case n ~ i => (n, i.map(_.toInt))
+  }
+}
 
 /**
  *
@@ -68,7 +77,22 @@ class CSPOM {
    *            A variable name.
    * @return The variable with the corresponding name.
    */
-  def expression(name: String) = namedExpressions.get(name);
+  def expression(name: String) = {
+    NameParser.parse(new CharSequenceReader(name)).map(Some(_)).getOrElse(None).flatMap {
+      case (n, s) => getInSeq(namedExpressions.get(n), s)
+    }
+
+  }
+
+  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = {
+    if (s.isEmpty) {
+      e
+    } else {
+      e.collect {
+        case v: CSPOMSeq[_] => getInSeq(Some(v(s.head)), s.tail)
+      } flatten
+    }
+  }
 
   /**
    * Collection of all constraints of the problem.
@@ -100,7 +124,10 @@ class CSPOM {
 
     _constraints += constraint
 
-    for (v <- Iterator(constraint.result) ++ constraint.arguments) {
+    for (
+      e <- Iterator(constraint.result) ++ constraint.arguments;
+      v <- e.flatten
+    ) {
       val cs = ctrV.getOrElse(v, Set()) + constraint
       ctrV(v) = cs
     }
@@ -115,7 +142,8 @@ class CSPOM {
     //require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
 
     for (
-      v <- Iterator(c.result) ++ c.arguments;
+      e <- Iterator(c.result) ++ c.arguments;
+      v <- e.flatten;
       oc <- ctrV.get(v)
     ) {
 
@@ -142,7 +170,7 @@ class CSPOM {
   }
 
   def ctr(v: BoolVariable) = {
-    addConstraint(CSPOMConstraint('eq, v, CSPOMTrue))
+    addConstraint(CSPOMConstraint('eq, v, CSPOMConstant(true)))
   }
 
   def is(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
@@ -220,9 +248,10 @@ class CSPOM {
   //    stb.append("]\n").toString
   //  }
 
-  def replaceExpression(name: String, by: CSPOMExpression[_]) = {
-    require(_namedExpressions.contains(name))
-    _namedExpressions += name -> by
+  def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]) = {
+    _namedExpressions = _namedExpressions.map {
+      case (n, e) => n -> e.replaceVar(which, by)
+    }
   }
 
   def referencedExpressions = ctrV.keySet ++ namedExpressions.values

@@ -2,10 +2,9 @@ package cspom.compiler
 
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMConstant
 import cspom.variable.BoolVariable
 
-import cspom.variable.CSPOMFalse
 
 
 object SplitAllEq extends ConstraintCompilerNoData {
@@ -17,12 +16,12 @@ object SplitAllEq extends ConstraintCompilerNoData {
     problem.removeConstraint(constraint)
     val delta = Delta().removed(constraint)
     constraint.result match {
-      case CSPOMTrue =>
+      case CSPOMConstant(true) =>
         val c = for (Seq(a, b) <- constraint.arguments.sliding(2)) yield {
           problem.ctr(CSPOMConstraint('eq, a, b))
         }
         c.foldLeft(delta)(_ added _)
-      case CSPOMFalse =>
+      case CSPOMConstant(false) =>
         var d = delta
         val rs = for (Seq(a, b) <- constraint.arguments.sliding(2)) yield {
           val r = new BoolVariable()

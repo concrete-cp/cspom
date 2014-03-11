@@ -1,6 +1,6 @@
 package cspom
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMTrue
+import cspom.variable.CSPOMConstant
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
 import scala.collection.JavaConversions
@@ -8,6 +8,7 @@ import scala.collection.mutable.HashMap
 import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMSeq
+import cspom.variable.SimpleExpression
 
 final case class CSPOMConstraint[+T](
   val result: CSPOMExpression[T],
@@ -18,6 +19,11 @@ final case class CSPOMConstraint[+T](
   require(result != null)
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
+
+  require(function != 'or || !arguments.forall {
+    case CSPOMConstant(c: Boolean) => !c
+    case _ => false
+  })
 
   def fullScope = result +: arguments
 
@@ -33,14 +39,9 @@ final case class CSPOMConstraint[+T](
   }
 
   def replacedVar[R, S <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
-    val newResult = result match {
-      case r: CSPOMExpression[R] => result.replaceVar(which, by)
-      case r => r
-    }
-    val newArgs: Seq[CSPOMExpression[Any]] = arguments map {
-      case a: CSPOMExpression[R] => a.replaceVar(which, by)
-      case a => a
-    }
+    val newResult = result.replaceVar(which, by)
+    val newArgs: Seq[CSPOMExpression[Any]] = arguments.map(_.replaceVar(which, by))
+
     new CSPOMConstraint(newResult,
       function,
       newArgs,
@@ -49,7 +50,7 @@ final case class CSPOMConstraint[+T](
 
   override def toString = {
     val args = arguments.map(_.toString)
-    if (result == CSPOMTrue) {
+    if (result == CSPOMConstant(true)) {
       toString(None, args)
     } else {
       toString(Some(result.toString), args)
@@ -66,7 +67,7 @@ final case class CSPOMConstraint[+T](
 
   def toString(vn: VariableNames): String = {
     val args = arguments.map(vn.names(_))
-    if (result == CSPOMTrue) {
+    if (result == CSPOMConstant(true)) {
       toString(None, args)
     } else {
       toString(Some(vn.names(result)), args)
@@ -85,7 +86,7 @@ object CSPOMConstraint {
     new CSPOMConstraint(result, function, arguments)
 
   def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): CSPOMConstraint[Boolean] =
-    new CSPOMConstraint(CSPOMTrue, function, arguments, params)
+    new CSPOMConstraint(CSPOMConstant(true), function, arguments, params)
 
   def apply(function: Symbol, arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
     apply(function, arguments)
@@ -104,27 +105,31 @@ final class VariableNames(cspom: CSPOM) {
 
   val generatedNames = new HashMap[CSPOMExpression[_], String]
 
-  generatedNames ++= cspom.namedExpressions.groupBy(_._2).map {
-    case (n, v) => n -> v.map(_._1).mkString("/")
+  for ((n, v) <- cspom.namedExpressions) {
+    name(v, n)
   }
 
-  for (
-    (n, seq) <- cspom.namedExpressions.collect { case (n, CSPOMSeq(v, i, _)) => n -> (v zip i) };
-    (v, i) <- seq
-  ) {
-    add(v, s"$n[$i]")
-  }
-
-  def add(e: CSPOMExpression[_], n: String) {
+  private def add(e: CSPOMExpression[_], n: String) {
     generatedNames(e) = generatedNames.get(e) match {
-      case Some(ns) => s"$ns/$n"
+      case Some(ns) => s"$ns||$n"
       case None => n
+    }
+  }
+
+  private def name(e: CSPOMExpression[_], root: String): Unit = {
+    add(e, root)
+
+    e match {
+      case CSPOMSeq(v, i, _) => for ((v, i) <- (v zip i)) {
+        name(v, s"$root[$i]")
+      }
+      case _ =>
     }
   }
 
   var id = 0
 
-  def nextName(e: CSPOMExpression[_]) = e match {
+  private def nextName(e: CSPOMExpression[_]) = e match {
     case CSPOMConstant(v) => v.toString
     case CSPOMSeq(v, _, _) => v.map(names).mkString("CSPOMSeq(", ", ", ")")
     case _ =>

@@ -3,8 +3,6 @@ package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMFalse
-import cspom.variable.CSPOMTrue
 import cspom.variable.CSPOMVariable
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
@@ -25,9 +23,9 @@ object RemoveUselessEq extends ConstraintCompiler {
     val delta = Delta().removed(c)
 
     val result = if (allEqual(c.arguments)) {
-      CSPOMTrue
+      CSPOMConstant(true)
     } else {
-      CSPOMFalse
+      CSPOMConstant(false)
     }
 
     res match {
