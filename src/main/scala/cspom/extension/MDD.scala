@@ -11,11 +11,6 @@ object MDD {
 
 trait MDD extends Relation {
 
-  /**
-   * For Java interop
-   */
-  final def add(t: Array[Int]) = this + (t: _*)
-
   def +(t: Int*): MDD
 
   def iterator: Iterator[List[Int]]
