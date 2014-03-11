@@ -38,7 +38,7 @@ class MergeEqTest {
       ctr(v0 === v1)
     }
 
-    ProblemCompiler.compile(cspom, Seq(MergeEq))
+    ProblemCompiler.compile(cspom, Seq(MergeSame, MergeEq))
 
     val nv0 = cspom.expression("V0") collect {
       case v: IntVariable => v

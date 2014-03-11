@@ -15,7 +15,7 @@ import cspom.variable.SimpleExpression
 object MergeEq extends ConstraintCompilerNoData {
 
   override def matchBool(c: CSPOMConstraint[_], p: CSPOM) = c match {
-    case CSPOMConstraint(CSPOMTrue, 'eq, args: Seq[SimpleExpression[Any]], params) if !params.contains("neg") &&
+    case CSPOMConstraint(CSPOMConstant(true), 'eq, args: Seq[_], params) if !params.contains("neg") &&
       params.get("offset").forall(_ == 0) && args.forall(_.isInstanceOf[SimpleExpression[_]]) =>
 
       true

@@ -11,9 +11,9 @@ final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
-      case c: CSPOMConstant[Int] if domain.contains(c.value) => CSPOMConstant(c.value, c.params ++ params)
-      case v: IntVariable => new IntVariable(domain.intersect(v.domain), v.params ++ params)
-      case v: FreeVariable => new IntVariable(domain, params ++ v.params)
+      case c: CSPOMConstant[Int] if domain.contains(c.value) => CSPOMConstant(c.value, Map("intersection" -> (this, c)))
+      case v: IntVariable => new IntVariable(domain.intersect(v.domain), Map("intersection" -> (this, v)))
+      case v: FreeVariable => new IntVariable(domain, Map("intersection" -> (this, v)))
       case t: CSPOMExpression[_] =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
