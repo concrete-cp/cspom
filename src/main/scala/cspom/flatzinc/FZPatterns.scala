@@ -16,7 +16,18 @@ import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMConstant
 
 object FZPatterns {
-  def apply() = Seq(new GlobalCompiler(mtch) { def selfPropagation = false }, new Flattener('allDifferent))
+  def apply() = Seq(
+    new GlobalCompiler(mtch) { def selfPropagation = false },
+    new Flattener('allDifferent))
+
+  //  val debug = new PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]] {
+  //    def isDefinedAt(c: CSPOMConstraint[_]) = {
+  //      println(c)
+  //      false
+  //    }
+  //
+  //    def apply(c: CSPOMConstraint[_]) = sys.error("")
+  //  }
 
   val mtch: PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]] = {
     /**
@@ -55,11 +66,13 @@ object FZPatterns {
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_int_element(var int: b, array [int] of int: as, var int: c)
      */
-    case Ctr('array_int_element, Seq(b: CSPOMExpression[Int], as: CSPOMSeq[Int], c: CSPOMExpression[Int]), p) =>
-      CSPOMConstraint('extension, Seq(b, c), Map("init" -> false, "relation" ->
+    case Ctr('array_int_element, args, p) => {
+      val Seq(b: CSPOMExpression[_], as: CSPOMSeq[_], c: CSPOMExpression[_]) = args
+      CSPOMConstraint('extension, Seq(b, c), p ++ Map("init" -> false, "relation" ->
         new Table(as.withIndex.map {
-          case (const: CSPOMConstant[Int], i) => Seq(i, const.value)
+          case (CSPOMConstant(const: Int), i) => Seq(i, const)
         })))
+    }
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_set_element(var int: b, array [int] of set of int: as, set of int: c)
@@ -84,8 +97,8 @@ object FZPatterns {
      * (a ↔ b = 1) ∧ (¬a ↔ b = 0)
      * bool2int(var bool: a, var int: b)
      */
-//    case Ctr('bool2int, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Int]), p) =>
-//      CSPOMConstraint('eq, Seq(a, b), p)
+    //    case Ctr('bool2int, Seq(a: CSPOMExpression[Boolean], b: CSPOMExpression[Int]), p) =>
+    //      CSPOMConstraint('eq, Seq(a, b), p)
     /**
      * (a ∧ b) ↔ r
      * bool_and(var bool: a, var bool: b, var bool: r)
@@ -98,7 +111,8 @@ object FZPatterns {
      * a = b
      * bool_eq(var bool: a, var bool: b)
      */
-    case Ctr('bool_eq, a: Seq[CSPOMExpression[Boolean]], p) => CSPOMConstraint('eq, a, p)
+    case Ctr('bool_eq, a: Seq[CSPOMExpression[Boolean]], p) =>
+      CSPOMConstraint('eq, a, p)
     /**
      * (a = b) ↔ r
      * bool_eq_reif(var bool: a, var bool: b, var bool: r)

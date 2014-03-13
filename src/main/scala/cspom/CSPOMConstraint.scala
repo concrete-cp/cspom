@@ -20,10 +20,12 @@ final case class CSPOMConstraint[+T](
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
-  require(function != 'or || !arguments.forall {
-    case CSPOMConstant(c: Boolean) => !c
-    case _ => false
-  })
+//  require(function != 'or || !arguments.forall {
+//    case CSPOMConstant(c: Boolean) => !c
+//    case _ => false
+//  })
+  
+  def nonReified = result.isTrue
 
   def fullScope = result +: arguments
 
@@ -50,7 +52,7 @@ final case class CSPOMConstraint[+T](
 
   override def toString = {
     val args = arguments.map(_.toString)
-    if (result == CSPOMConstant(true)) {
+    if (result.isTrue) {
       toString(None, args)
     } else {
       toString(Some(result.toString), args)
@@ -67,7 +69,7 @@ final case class CSPOMConstraint[+T](
 
   def toString(vn: VariableNames): String = {
     val args = arguments.map(vn.names(_))
-    if (result == CSPOMConstant(true)) {
+    if (result.isTrue) {
       toString(None, args)
     } else {
       toString(Some(vn.names(result)), args)

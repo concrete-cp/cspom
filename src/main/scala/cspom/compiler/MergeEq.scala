@@ -12,27 +12,29 @@ import cspom.variable.SimpleExpression
  * If given constraint is an all-equal constraint, merges and removes all
  * auxiliary variables.
  */
-object MergeEq extends ConstraintCompilerNoData {
+object MergeEq extends ConstraintCompiler {
 
-  override def matchBool(c: CSPOMConstraint[_], p: CSPOM) = c match {
+  type A = Seq[SimpleExpression[Any]]
+
+  override def mtch(c: CSPOMConstraint[_], p: CSPOM) = c match {
     case CSPOMConstraint(CSPOMConstant(true), 'eq, args: Seq[_], params) if !params.contains("neg") &&
       params.get("offset").forall(_ == 0) && args.forall(_.isInstanceOf[SimpleExpression[_]]) =>
+      val se = args.asInstanceOf[Seq[SimpleExpression[_]]].distinct
 
-      true
+      if (se.tail.nonEmpty) {
+        Some(se)
+      } else {
+        None
+      }
 
-    case _ => false
-
+    case _ => None
   }
 
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM) = {
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, se: A) = {
+
     problem.removeConstraint(constraint)
 
     val delta = Delta().removed(constraint)
-
-    val se = constraint.arguments.map {
-      case s: SimpleExpression[_] => s
-      case _ => throw new IllegalStateException
-    }
 
     val merged = se.reduceLeft(_ intersected _)
 

@@ -163,6 +163,7 @@ class CSPOM {
 
   def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
     if (constraints(c)) {
+      println(s"WARNING : $c already belongs to the problem")
       c
     } else {
       addConstraint(c)

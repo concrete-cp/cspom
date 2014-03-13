@@ -1,7 +1,5 @@
 package cspom.flatzinc
-
 import scala.util.parsing.combinator.JavaTokenParsers
-import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 import scala.util.parsing.combinator.RegexParsers
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntInterval
@@ -17,33 +15,25 @@ import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPParseException
 import cspom.compiler.ProblemCompiler
 import cspom.Loggable
-import CSPOM._
+import cspom.StatisticsManager
+//import CSPOM._
 
-trait DebugJavaTokenParsers extends JavaTokenParsers {
-  private val DEBUG = false
+object FlatZincParser extends RegexParsers {
 
-  class Wrap[+T](name: String, parser: Parser[T]) extends Parser[T] with Loggable {
-    def apply(in: Input): ParseResult[T] = {
-      val first = in.first
-      val pos = in.pos
-      val offset = in.offset
-      val t = parser.apply(in)
-      println(name + ".apply for token " + first +
-        " at position " + pos + " offset " + offset + " returns " + t)
-      t
+  def fzAnnotations(ann: Seq[FZAnnotation]): Map[String, Seq[FZAnnotation]] = {
+    if (ann.isEmpty) {
+      Map()
+    } else {
+      Map("fzAnnotations" -> ann)
     }
   }
 
-  implicit def toWrapped(name: String) = new {
-    def !!![T](p: Parser[T]) = if (DEBUG) new Wrap(name, p) else p
-  }
-}
-
-object FlatZincParser extends DebugJavaTokenParsers {
-
   def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
     val reader = new InputStreamReader(is)
-    flatzincModel(StreamReader(reader)) match {
+
+    val (parseResult, time) = StatisticsManager.time(flatzincModel(StreamReader(reader)))
+
+    parseResult match {
       case Success((cspom, goal), _) =>
         ProblemCompiler.compile(cspom, FZPatterns())
         (cspom, Map('goal -> goal))
@@ -80,38 +70,32 @@ object FlatZincParser extends DebugJavaTokenParsers {
           expr as name
         }
         for (c <- constraints) {
-          ctr(c)
+          CSPOM.ctr(c)
         }
 
         for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
-          ctr(CSPOMConstraint('eq, e, a))
+          CSPOM.ctr(CSPOMConstraint('eq, e, a))
         }
       }
       (p, goal)
-    //      val p = new CSPOM()
-    //      //val allVars = (varMap.values ++ seqMap.values.flatMap(_.flattenVariables))
-    //      for ((name, expr) <- varMap.iterator ++ seqMap) {
-    //        p.nameExpression(expr, name)
-    //      }
-    //      constraints.foreach(p.ctr)
-    //      p
   }
 
-  def pred_decl: Parser[Any] = "predicate" ~> ident ~ "(" ~ repsep(pred_param, ",") ~ ")" <~ ";"
+  def pred_decl: Parser[Any] = "predicate" ~> pred_ann_id ~ "(" ~ repsep(pred_param, ",") ~ ")" <~ ";"
 
   def pred_param: Parser[Any] = pred_param_type ~ ":" ~ pred_ann_id
 
   def pred_param_type: Parser[Any] = par_pred_param_type | var_pred_param_type
 
-  def par_type: Parser[FZVarType[_]] =
+  def par_type: Parser[FZVarType[_]] = {
     "bool" ^^^ FZBoolean |
       "float" ^^^ FZFloat |
       "int" ^^^ FZInt |
       "set of int" ~> err("Unsupported") |
       "array [" ~> index_set <~ "] of bool" ^^ { FZArray[Boolean](_, FZBoolean) } |
-      "array [" ~> index_set <~ "] of float" ^^ { FZArray[Double](_, FZFloat) } |
+      "array [" ~> index_set <~ "] of float" ^^ { s => FZArray[Double](s, FZFloat) } |
       "array [" ~> index_set <~ "] of int" ^^ { FZArray[Int](_, FZInt) } |
       "array [" ~> index_set <~ "] of set of int" ^^ { FZArray[Int](_, FZIntSet) }
+  }
 
   def par_pred_param_type: Parser[Any] =
     par_type |
@@ -125,17 +109,8 @@ object FlatZincParser extends DebugJavaTokenParsers {
       "array [" ~ index_set ~ "] of " ~ "{" ~ repsep(int_const, ",") ~ "}" |
       "array [" ~ index_set ~ "] of set of " ~ int_const ~ ".." ~ int_const |
       "array [" ~ index_set ~ "] of set of " ~ int_const ~ ".." ~ int_const
-  //    "true" ^^ (_.toBoolean) |
-  //      "false" ^^ (_.toBoolean) |
-  //      float_const ^^ (_.toDouble) |
-  //      "set of int" |
-  //      int_const ^^ (_.toInt) |
-  //      "array [" ~ index_set ~ "] of bool" |
-  //      "array [" ~ index_set ~ "] of int" |
-  //      "array [" ~ index_set ~ "] of float" |
-  //      "set of int"
 
-  def var_type: Parser[FZVarType[_]] = "var_type" !!! {
+  def var_type: Parser[FZVarType[_]] = {
     single_var_type |
       ("array [" ~> index_set <~ "] of ") ~ single_var_type ^^ {
         case indices ~ vartype => FZArray(indices, vartype)
@@ -166,92 +141,82 @@ object FlatZincParser extends DebugJavaTokenParsers {
   def index_set: Parser[Seq[IndexSet]] = rep1sep(index_set1, ",")
 
   def index_set1: Parser[IndexSet] =
-    "1.." ~> int_const ^^ { FZRange(_) } |
+    "1.." ~> int_const ^^ { i => FZRange(1 to i.value) } |
       "int" ^^^ SomeIndexSet
 
-  def expr: Parser[FZExpr[Any]] = "expr" !!! {
+  def expr: Parser[FZExpr[Any]] = {
     bool_const |
       set_const |
-      int_const |
       float_const |
+      int_const |
       var_par_id ~ ("[" ~> int_const <~ "]") ^^ {
-        case varParId ~ index => varParId.index(index)
+        case varParId ~ index => varParId.index(index.value)
       } |
       var_par_id |
       array_expr
   }
 
-  def exprInAnn: Parser[FZExpr[_]] =
-    bool_const |
-      set_const |
-      int_const |
-      float_const |
-      var_par_id ~ ("[" ~> int_const <~ "]") ^^ {
-        case varParId ~ index => varParId.index(index)
-      } |
-      var_par_id |||
+  def exprInAnn: Parser[FZExpr[Any]] =
+    expr |||
       array_exprInAnn |||
       annotation |
       stringLiteral ^^ FZStringLiteral
 
-  //  def cspomExpr(vars: Map[String, CSPOMVariable], seqs: Map[String, CSPOMSeq[CSPOMExpression]]): Parser[CSPOMExpression] =
-  //    bool_const ^^ { _.toCSPOM(vars, seqs) } |
-  //      int_const ^^ { _.toCSPOM(vars, seqs) } |
-  //      float_const ^^ { _.toCSPOM(vars, seqs) } |
-  //      var_par_id ~ ("[" ~> int_const <~ "]") ^^ { case id ~ index => id.index(index).toCSPOM(vars, seqs) } |
-  //      var_par_id ^^ { _.toCSPOM(vars, seqs) } |
-  //      "[" ~> repsep(cspomExpr(vars, seqs), ",") <~ "]" ^^ { case seq => new CSPOMSeq(seq) }
+  def stringLiteral: Parser[String] = ("\"" + """([^"\p{Cntrl}\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""" + "\"").r
 
-  def pred_ann_id: Parser[String] = ident //"[A-Za-z][A-Za-z0-9_]*".r
+  def pred_ann_id: Parser[String] = """[A-Za-z][A-Za-z0-9_]*""".r
 
-  def var_par_id: Parser[FZVarParId] = ident ^^ FZVarParId //"_*[A-Za-z][A-Za-z0-9_]*".r
+  def var_par_id: Parser[FZVarParId] = """_*[A-Za-z][A-Za-z0-9_]*""".r ^^ FZVarParId
 
   def bool_const: Parser[FZBoolConst] = "true" ^^^ FZBoolConst(true) | "false" ^^^ FZBoolConst(false)
 
-  def float_const: Parser[FZFloatConst] = floatingPointNumber ^^ (f => FZFloatConst(f.toDouble))
+  def float_const: Parser[FZFloatConst] = """[+-]?[0-9][0-9]*\.[0-9][0-9]*[[eE][+-]?[0-9][0-9]*]?""".r ^^ {
+    f => FZFloatConst(f.toDouble)
+  }
 
-  def int_const: Parser[FZIntConst] = wholeNumber ^^ (i => FZIntConst(i.toInt))
+  def int_const: Parser[FZIntConst] = """[+-]?[0-9][0-9]*""".r ^^ (i => FZIntConst(i.toInt))
 
-  def set_const: Parser[FZSetConst] = "set_const" !!! {
+  def set_const: Parser[FZSetConst] = {
     int_const ~ ".." ~ int_const ^^ { case i ~ ".." ~ j => FZSetConst(i.value to j.value) } |
       "{" ~> repsep(int_const, ",") <~ "}" ^^ (i => FZSetConst(i map (_.value)))
   }
 
-  def array_expr: Parser[FZArrayExpr[Any]] = "array_expr" !!! {
-    "[" ~> repsep(expr, ",") <~ "]" ^^ { case l: Seq[FZExpr[Any]] => FZArrayExpr(l) }
+  def array_expr: Parser[FZArrayExpr[Any]] = {
+    "[" ~> repsep(expr, ",") <~ "]" ^^ {
+      case l: Seq[FZExpr[Any]] => FZArrayExpr(l)
+    }
   }
 
-  def array_exprInAnn: Parser[FZArrayExpr[_]] = "array_expr" !!! {
-    "[" ~> repsep(exprInAnn, ",") <~ "]" ^^ { case l: Seq[FZExpr[_]] => FZArrayExpr(l) }
+  def array_exprInAnn: Parser[FZArrayExpr[Any]] = {
+    "[" ~> repsep(exprInAnn, ",") <~ "]" ^^ { case l: Seq[FZExpr[Any]] => FZArrayExpr(l) }
   }
 
-  def param_decl: Parser[(String, CSPOMExpression[_])] = par_type ~ ":" ~ var_par_id ~ "=" ~ expr <~ ";" ^^ {
-    case t ~ ":" ~ id ~ "=" ~ expr =>
-
-      val e = (t, expr) match {
-        case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.toRange)
+  def param_decl: Parser[(String, CSPOMExpression[_])] = (par_type <~ ":") ~ (var_par_id <~ "=") ~ expr <~ ";" ^^ {
+    case t ~ id ~ expr =>
+      val e: CSPOMExpression[_] = (t, expr) match {
+        case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.range)
         case (_, c: FZConstant[_]) => c.asConstant
-        case _ => err("Constant expected")
+        case _ => throw new IllegalArgumentException("Constant expected")
       }
 
       id.value -> e
   }
 
-  def var_decl: Parser[(String, CSPOMExpression[_], Option[FZExpr[_]])] = "var_decl" !!! {
+  def var_decl: Parser[(String, CSPOMExpression[_], Option[FZExpr[_]])] = {
     var_type ~ ":" ~ var_par_id ~ annotations ~ opt("=" ~> expr) <~ ";" ^^ {
-      case varType ~ ":" ~ varParId ~ ann ~ aff => (varParId, varType.genVariable(ann), aff)
+      case varType ~ ":" ~ varParId ~ ann ~ aff => (varParId.value, varType.genVariable(ann), aff)
     }
 
   }
 
   def constraint(declared: Map[String, CSPOMExpression[Any]]): Parser[CSPOMConstraint[Boolean]] =
-    "constraint" !!! {
-      "constraint" ~> pred_ann_id ~ "(" ~ repsep(expr, ",") ~ ")" ~ annotations ~ ";" ^^ {
-        case predAnnId ~ "(" ~ expr ~ ")" ~ annotations ~ ";" =>
-          new CSPOMConstraint(
-            CSPOMConstant(true),
-            Symbol(predAnnId), expr.map(_.toCSPOM(declared)),
-            if (annotations.nonEmpty) Map("fzAnnotations" -> annotations) else Map())
+    {
+      "constraint" ~> pred_ann_id ~ ("(" ~> repsep(expr, ",") <~ ")") ~ annotations <~ ";" ^^ {
+        case predAnnId ~ expr ~ annotations =>
+          CSPOMConstraint(
+            Symbol(predAnnId),
+            expr.map(_.toCSPOM(declared)),
+            fzAnnotations(annotations))
       }
     }
 
@@ -260,15 +225,15 @@ object FlatZincParser extends DebugJavaTokenParsers {
       "solve" ~ annotations ~ "minimize" ~ expr ~ ";" |
       "solve" ~ annotations ~ "maximize" ~ expr ~ ";"
 
-  def annotations: Parser[Seq[FZAnnotation]] = "annotations" !!! rep("::" ~> annotation)
+  def annotations: Parser[Seq[FZAnnotation]] = rep("::" ~> annotation)
 
-  def annotation: Parser[FZAnnotation] = "annotation" !!! {
+  def annotation: Parser[FZAnnotation] = {
     pred_ann_id ~ ("(" ~> repsep(exprInAnn, ",") <~ ")") ^^ {
       case id ~ expressions => FZAnnotation(id, expressions)
     } |
       pred_ann_id ^^ (FZAnnotation(_, Seq()))
   }
 
-  implicit def FZExpr2Scala[A](a: FZExpr[A]): A = a.value
+  //implicit def FZExpr2Scala[A](a: FZExpr[A]): A = a.value
 
 }

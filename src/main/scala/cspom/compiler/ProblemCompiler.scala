@@ -21,7 +21,7 @@ final class ProblemCompiler(
   private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
 
   val vn = new VariableNames(problem)
-  
+
   private def compile() {
     val toCompile = Array.ofDim[QueueSet](
       constraintCompilers.size)
@@ -40,7 +40,7 @@ final class ProblemCompiler(
       for (i <- toCompile.indices) {
 
         val compiler = constraintCompilers(i)
-
+        //println(compiler)
         if (first) {
           toCompile(i) = new QueueSet(constraints.keys)
         }
@@ -50,14 +50,14 @@ final class ProblemCompiler(
           val constraint = constraints(toCompile(i).dequeue())
           ProblemCompiler.matches += 1
           //println(compiler, constraint.id)
-
+          //print(constraint)
           for (data <- compiler.mtch(constraint, problem)) {
             ProblemCompiler.compiles += 1
             changed = true
-            print(compiler + " : " + constraint.toString(vn) + " -> ")
+            //print(compiler + " : " + constraint.toString(vn) + " -> ")
             val delta = compiler.compile(constraint, problem, data)
 
-            println(delta)
+            //print(" match")
 
             val enqueue = delta.altered.iterator.flatMap(problem.constraints).toList
 
@@ -82,6 +82,7 @@ final class ProblemCompiler(
             }
           }
           toCompile(i).remove(constraint.id)
+          //println
         }
 
       }
@@ -89,8 +90,8 @@ final class ProblemCompiler(
     }
     //require(constraints.values.toSet == problem.constraints)
   }
-  
- // println(problem)
+
+  // println(problem)
 
 }
 

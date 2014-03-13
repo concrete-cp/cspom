@@ -5,17 +5,10 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
+import FlatZincParser.fzAnnotations
 
 sealed trait FZVarType[T] {
   def genVariable(ann: Seq[FZAnnotation]): CSPOMExpression[T]
-
-  def fzAnnotations(ann: Seq[FZAnnotation]): Map[String, Seq[FZAnnotation]] = {
-    if (ann.isEmpty) {
-      Map()
-    } else {
-      Map("fzAnnotations" -> ann)
-    }
-  }
 }
 
 object FZBoolean extends FZVarType[Boolean] {
@@ -48,8 +41,8 @@ case object FZIntSet extends FZVarType[Int] {
 
 final case class FZArray[T](indices: Seq[IndexSet], typ: FZVarType[T]) extends FZVarType[T] {
   def genVariable(ann: Seq[FZAnnotation]) = new CSPOMSeq(
-    indices.head.toRange.map(i => generate(indices.tail)),
-    indices.head.toRange,
+    indices.head.range.map(i => generate(indices.tail)),
+    indices.head.range,
     fzAnnotations(ann))
 
   private def generate(indices: Seq[IndexSet]): CSPOMExpression[T] = {
@@ -57,20 +50,19 @@ final case class FZArray[T](indices: Seq[IndexSet], typ: FZVarType[T]) extends F
       typ.genVariable(Seq())
     } else {
       new CSPOMSeq(
-        indices.head.toRange.map(i => generate(indices.tail)),
-        indices.head.toRange)
+        indices.head.range.map(i => generate(indices.tail)),
+        indices.head.range)
     }
   }
 
 }
 
 sealed trait IndexSet {
-  def toRange: Range
+  def range: Range
 }
 
-case class FZRange(to: Int) extends IndexSet {
-  def toRange = 1 to to
-}
+case class FZRange(range: Range) extends IndexSet
+
 case object SomeIndexSet extends IndexSet {
-  def toRange = throw new UnsupportedOperationException
+  def range = throw new UnsupportedOperationException
 }

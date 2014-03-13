@@ -15,7 +15,7 @@ object MergeSame extends ConstraintCompiler {
         same.asInstanceOf[CSPOMConstraint[Any]]
     }
     if (s.nonEmpty) {
-      Some(s)
+      Some(s.toSeq)
     } else {
       None
     }

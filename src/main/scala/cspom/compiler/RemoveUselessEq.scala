@@ -22,16 +22,12 @@ object RemoveUselessEq extends ConstraintCompiler {
     problem.removeConstraint(c)
     val delta = Delta().removed(c)
 
-    val result = if (allEqual(c.arguments)) {
-      CSPOMConstant(true)
-    } else {
-      CSPOMConstant(false)
-    }
+    val result = allEqual(c.arguments)
 
     res match {
-      case b: BoolVariable => delta ++ replace(Seq(b), result, problem)
-      case c: CSPOMConstant[Boolean] =>
-        require(c == result); delta
+      case b: BoolVariable => delta ++ replace(Seq(b), CSPOMConstant(result), problem)
+      case CSPOMConstant(c: Boolean) =>
+        require(c == result, s"$c != $result"); delta
       case _ => throw new IllegalArgumentException
     }
 
