@@ -69,9 +69,7 @@ object FZPatterns {
     case Ctr('array_int_element, args, p) => {
       val Seq(b: CSPOMExpression[_], as: CSPOMSeq[_], c: CSPOMExpression[_]) = args
       CSPOMConstraint('extension, Seq(b, c), p ++ Map("init" -> false, "relation" ->
-        new Table(as.withIndex.map {
-          case (CSPOMConstant(const: Int), i) => Seq(i, const)
-        })))
+        Tables.element(as)))
     }
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
@@ -89,6 +87,11 @@ object FZPatterns {
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_var_int_element(var int: b, array [int] of var int: as, var int: c)
      */
+    case Ctr('array_var_int_element, args, p) => {
+      val Seq(b: CSPOMExpression[_], as: CSPOMSeq[_], c: CSPOMExpression[_]) = args
+      CSPOMConstraint('extension, b +: c +: as.values, p ++ Map("init" -> false, "relation" ->
+        Tables.elementVar(as)))
+    }
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
      * array_var_set_element(var int: b, array [int] of var set of int: as, var set of int: c)

@@ -31,6 +31,8 @@ trait MDD extends Relation {
 
   final def project(c: Seq[Int]): MDD = project(c.toSet, 0, new HashMap())
   def project(c: Set[Int], k: Int, mdds: HashMap[MDD, MDD]): MDD
+  
+  override def size = lambda.toInt
 
 }
 
