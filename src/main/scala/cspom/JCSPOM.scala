@@ -11,9 +11,11 @@ object JCSPOM {
 
   def domainValues(d: IntDomain) = JavaConversions.seqAsJavaList(d)
 
-  def emptyMDD(): MDD = MDD.empty
+  def emptyMDD(): MDD[Nothing] = MDD.empty
 
-  def mddAdd(mdd: MDD, t: Array[Int]) = mdd + (t: _*)
+  def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + (t: _*)
+
+  def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toSeq): _*)
 
   // Required to avoid incompatibility between Int and Integer
   def constant(a: Int) = CSPOMConstant(a)

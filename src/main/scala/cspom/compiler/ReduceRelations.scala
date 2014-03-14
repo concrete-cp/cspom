@@ -10,12 +10,12 @@ import cspom.variable.CSPOMConstant
  */
 object ReduceRelations extends ConstraintCompiler {
 
-  type A = Map[Int, Int]
+  type A = Map[Int, Any]
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[A] = c match {
     case CSPOMConstraint(CSPOMConstant(true), 'extension, args, _) =>
       val constants = args.zipWithIndex.collect {
-        case (v: CSPOMConstant[Int], i) => (i, v.value)
+        case (CSPOMConstant(value: Any), i) => i -> value
       }
       if (constants.nonEmpty) {
         Some(constants.toMap)
@@ -29,7 +29,7 @@ object ReduceRelations extends ConstraintCompiler {
   }
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {
-    val Some(relation: Relation) = c.params.get("relation")
+    val Some(relation: Relation[_]) = c.params.get("relation")
 
     val filtered = relation.filter((k, i) => data.get(k).forall(_ == i))
 

@@ -7,11 +7,11 @@ import org.hamcrest.CoreMatchers._
 
 final class ExtensionConstraintTest {
 
-  var relation: MDD = null;
+  var relation: MDD[Int] = null;
 
   @Before
   def setUp() {
-    relation = EmptyMDD
+    relation = MDD.empty
     relation += (2, 5, 5);
     relation += (3, 5, 5);
   }

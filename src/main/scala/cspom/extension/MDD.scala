@@ -1,102 +1,81 @@
 package cspom.extension
 
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 import scala.collection.mutable.HashSet
+import scala.collection.mutable.HashMap
 
 object MDD {
-  def empty = EmptyMDD
-  def apply(t: Seq[Int]*): MDD = t.foldLeft[MDD](empty)(_ + (_: _*))
+  def leaf[A] = MDDLeaf.asInstanceOf[MDD[A]]
+
+  val _empty = MDDNode[Nothing](Map())
+
+  def empty[A] = _empty.asInstanceOf[MDD[A]]
+  def apply[A](t: Seq[A]*): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + (_: _*))
 
 }
 
-trait MDD extends Relation {
+sealed trait MDD[A] extends Relation[A] {
 
-  def +(t: Int*): MDD
+  def +(t: A*): MDD[A]
 
-  def iterator: Iterator[List[Int]]
+  def iterator: Iterator[List[A]]
 
-  final def edges: Int = edges(new HashSet[MDD]())
-  def edges(es: HashSet[MDD]): Int
+  final def edges: Int = edges(mutable.Set[MDD[A]]())
+  def edges(es: mutable.Set[MDD[A]]): Int
 
-  final def lambda: BigInt = lambda(new HashMap[MDD, BigInt]())
-  def lambda(ls: HashMap[MDD, BigInt]): BigInt
+  final def lambda: BigInt = lambda(mutable.Map[MDD[A], BigInt]())
+  def lambda(ls: mutable.Map[MDD[A], BigInt]): BigInt
 
-  final def reduce: MDD = reduce(new HashMap[Map[Int, MDD], MDD]())
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD
+  final def reduce: MDD[A] = reduce(mutable.Map[Map[A, MDD[A]], MDD[A]]())
+  def reduce(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A]
 
   override def toString = s"MDD with $edges edges representing $lambda tuples"
 
-  final def filter(f: (Int, Int) => Boolean): MDD = filter(f, 0, new HashMap())
-  def filter(f: (Int, Int) => Boolean, k: Int, mdds: HashMap[MDD, MDD]): MDD
+  final def filter(f: (Int, A) => Boolean): MDD[A] = filter(f, 0, mutable.Map[MDD[A], MDD[A]]())
+  def filter(f: (Int, A) => Boolean, k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A]
 
-  final def project(c: Seq[Int]): MDD = project(c.toSet, 0, new HashMap())
-  def project(c: Set[Int], k: Int, mdds: HashMap[MDD, MDD]): MDD
-  
+  final def project(c: Seq[Int]): MDD[A] = project(c.toSet, 0, mutable.Map[MDD[A], MDD[A]]())
+  def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A]
+
   override def size = lambda.toInt
 
 }
 
-object EmptyMDD extends MDD {
-  override def isEmpty = true
-  def +(t: Int*) =
-    if (t.isEmpty) {
-      MDDLeaf
-    } else {
-      new MDDNode(Map(t.head -> (EmptyMDD + (t.tail: _*))))
-    }
-  def iterator = Iterator.empty
-  def arity = throw new UnsupportedOperationException
-  def contains(t: Seq[Int]) = false
-  def edges(e: HashSet[MDD]) = 0
-  def lambda(ls: HashMap[MDD, BigInt]) = BigInt(0)
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = throw new UnsupportedOperationException
-  def filter(f: (Int, Int) => Boolean, k: Int, mdds: HashMap[MDD, MDD]) = this
-  def project(c: Set[Int], k: Int, mdds: HashMap[MDD, MDD]) = this
-
-  def main(args: Array[String]) = {
-    val m = MDD(Seq(1, 2, 3), Seq(1, 3, 3), Seq(1, 3, 2), Seq(2, 5, 3)).filter { (k, i) => k != 1 || i != 3 }
-
-    println(m)
-    m.foreach(t => println(t.toSeq))
-
-    val m2 = m.project(Seq(0, 2))
-    println(m2)
-    m2.foreach(t => println(t.toSeq))
-  }
-}
-
-object MDDLeaf extends MDD {
+case object MDDLeaf extends MDD[Any] {
   override def isEmpty = false
-  def +(t: Int*) = {
+  def +(t: Any*) = {
     require(t.isEmpty)
     this
   }
   def iterator = Iterator(Nil)
   def arity = 0
-  def contains(t: Seq[Int]) = t.isEmpty
-  def edges(e: HashSet[MDD]) = 0
-  def lambda(ls: HashMap[MDD, BigInt]) = BigInt(1)
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = this
-  def filter(f: (Int, Int) => Boolean, k: Int, mdds: HashMap[MDD, MDD]) = this
-  def project(c: Set[Int], k: Int, mdds: HashMap[MDD, MDD]) = this
+  def contains(t: Seq[Any]) = {
+    require(t.isEmpty)
+    true
+  }
+  def edges(e: mutable.Set[MDD[Any]]) = 0
+  def lambda(ls: mutable.Map[MDD[Any], BigInt]) = BigInt(1)
+  def reduce(mdds: mutable.Map[Map[Any, MDD[Any]], MDD[Any]]) = this
+  def filter(f: (Int, Any) => Boolean, k: Int, mdds: mutable.Map[MDD[Any], MDD[Any]]) = this
+  def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[Any], MDD[Any]]) = this
 }
 
-final class MDDNode(val trie: Map[Int, MDD]) extends MDD {
+final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] {
   override def isEmpty = false
-  def +(t: Int*) = {
+  def +(t: A*) = {
     require(t.nonEmpty)
 
     val v = t.head
-    val newTrie = trie.updated(v, trie.getOrElse(v, EmptyMDD) + (t.tail: _*))
+    val newTrie = trie.updated(v, trie.getOrElse(v, MDD.empty) + (t.tail: _*))
     new MDDNode(newTrie)
 
   }
   def iterator = trie.iterator.flatMap { case (k, t) => t.iterator.map(k :: _) }
-  def arity = 1 + trie.head._2.arity
-  def contains(t: Seq[Int]) = {
-    trie.get(t.head).map(_.contains(t.tail)).getOrElse(false)
+  def arity = trie.headOption.map(_._2.arity + 1).getOrElse(0)
+  def contains(t: Seq[A]) = {
+    trie.get(t.head).exists(_.contains(t.tail))
   }
-  def edges(e: HashSet[MDD]) = {
+  def edges(e: mutable.Set[MDD[A]]) = {
     if (e.contains(this)) {
       0
     } else {
@@ -105,7 +84,7 @@ final class MDDNode(val trie: Map[Int, MDD]) extends MDD {
     }
   }
 
-  def lambda(ls: HashMap[MDD, BigInt]): BigInt = {
+  def lambda(ls: mutable.Map[MDD[A], BigInt]): BigInt = {
     ls.getOrElseUpdate(this, trie.values.map(_.lambda(ls)).sum)
     //trie.values.map(m => ls.getOrElseUpdate(m, m.lambda(ls))).sum
   }
@@ -113,32 +92,32 @@ final class MDDNode(val trie: Map[Int, MDD]) extends MDD {
   override lazy val hashCode: Int = trie.hashCode
 
   override def equals(o: Any): Boolean = o match {
-    case t: MDDNode =>
+    case t: MDDNode[A] =>
       trie.size == t.trie.size && trie.forall {
         case (k1, v1) => t.trie.get(k1).map(_ eq v1).exists(b => b)
       }
     case _ => false
   }
 
-  def reduce(mdds: HashMap[Map[Int, MDD], MDD]): MDD = {
+  def reduce(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A] = {
     mdds.getOrElseUpdate(trie,
       new MDDNode(trie.map(e => e._1 -> e._2.reduce(mdds))))
   }
 
-  def filter(f: (Int, Int) => Boolean, k: Int, mdds: HashMap[MDD, MDD]): MDD = mdds.getOrElseUpdate(this, {
-    val newTrie: Map[Int, MDD] = trie.filter(e => f(k, e._1)).map(e => e._1 -> e._2.filter(f, k + 1, mdds))
+  def filter(f: (Int, A) => Boolean, k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A] = mdds.getOrElseUpdate(this, {
+    val newTrie: Map[A, MDD[A]] = trie.filter(e => f(k, e._1)).map(e => e._1 -> e._2.filter(f, k + 1, mdds))
     if (newTrie.isEmpty) {
-      EmptyMDD
+      MDD.empty
     } else {
       new MDDNode(newTrie)
     }
   })
 
-  def project(c: Set[Int], k: Int, mdds: HashMap[MDD, MDD]): MDD = mdds.getOrElseUpdate(this, {
+  def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A] = mdds.getOrElseUpdate(this, {
     if (c(k)) {
       new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)))
     } else {
-      trie.values.map(_.project(c, k + 1, mdds)).flatten.foldLeft[MDD](EmptyMDD)(_ + (_: _*))
+      trie.values.map(_.project(c, k + 1, mdds)).flatten.foldLeft[MDD[A]](MDD.empty)(_ + (_: _*))
     }
   })
 }

@@ -11,6 +11,10 @@ import cspom.CSPOMConstraint
 import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.FreeVariable
+import java.util.StringTokenizer
+import scala.collection.mutable.ArrayBuffer
+import cspom.extension.Table
+import scala.util.parsing.input.Reader
 
 sealed trait PredicateNode
 
@@ -57,6 +61,31 @@ final object ConstraintParser extends JavaTokenParsers {
         cspom.is(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom)))
 
     }
+  }
+  
+    @annotation.tailrec
+  private def readerToString(r: Reader[Char], stb: StringBuilder = new StringBuilder): String =
+    if (r.atEnd) {
+      stb.toString
+    } else {
+      readerToString(r.rest, stb.append(r.first))
+    }
+  
+  def parseTable(reader: Reader[Char], arity: Int, size: Int): Table[Int] = {
+
+    val text = readerToString(reader)
+
+    val st = new StringTokenizer(text, "|")
+
+    var table = new ArrayBuffer[Seq[Int]]
+    
+    while(st.hasMoreTokens) {
+      val t = st.nextToken().trim.split(" +")
+      require(t.length == arity, t.toSeq.toString)
+      table += t.map(_.toInt)
+    }
+  
+    new Table(table.toSeq)
   }
 
 }

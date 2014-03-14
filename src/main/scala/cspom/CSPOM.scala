@@ -369,7 +369,7 @@ object CSPOM {
 
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
-  def table(rel: Relation, init: Boolean, vars: Array[IntVariable]): CSPOMConstraint[Boolean] =
+  def table[A](rel: Relation[A], init: Boolean, vars: Array[CSPOMVariable[A]]): CSPOMConstraint[Boolean] =
     CSPOMConstraint('extension, vars.toSeq, Map("init" -> init, "relation" -> rel))
 
   implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)

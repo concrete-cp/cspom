@@ -2,13 +2,13 @@ package cspom.extension
 
 import scala.collection.Seq
 
-class Table(val table: Seq[Seq[Int]]) extends Relation {
+class Table[A](val table: Seq[Seq[A]]) extends Relation[A] {
   // Members declared in scala.collection.IterableLike
-  def iterator: Iterator[Seq[Int]] = table.iterator
+  def iterator: Iterator[Seq[A]] = table.iterator
   // Members declared in cspom.extension.Relation
   def arity: Int = table.head.length
-  def contains(t: Seq[Int]): Boolean = table.exists(_ sameElements t)
-  def filter(f: (Int, Int) => Boolean): Relation = {
+  def contains(t: Seq[A]): Boolean = table.exists(_ sameElements t)
+  def filter(f: (Int, A) => Boolean) = {
     new Table(table.filter(t => t.zipWithIndex.forall { case (v, k) => f(k, v) }))
   }
 
