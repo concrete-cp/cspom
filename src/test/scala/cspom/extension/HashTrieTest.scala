@@ -8,11 +8,11 @@ import org.junit.Test
 
 final class HashTrieTest {
 
-  private var ts: MDD = null
+  private var ts: MDD[Int] = null
 
   @Before
   def setUp() {
-    ts = EmptyMDD;
+    ts = MDD.empty;
     ts += (0, 0)
     ts += (0, 1)
     ts += (1, 0)

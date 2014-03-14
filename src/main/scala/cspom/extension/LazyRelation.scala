@@ -1,70 +1,29 @@
 package cspom.extension
 
-import cspom.Loggable
-import java.util.StringTokenizer
-import scala.xml.Node
-import java.io.StringReader
-import scala.util.parsing.combinator.RegexParsers
-import scala.util.parsing.input.CharSequenceReader
-import scala.util.parsing.input.Reader
-import java.io.BufferedReader
+class LazyRelation[A](val f: Unit => Relation[A]) extends Relation[A] {
 
-object LazyRelation {
-  var id = 0
-}
+  var _arity = -1
 
-final class LazyRelation(private val reader: Reader[Char], val arity: Int, override val size: Int) extends Relation with Loggable {
+  def apply = {
+    val m = f()
+    _arity = m.arity
 
-  private object Parser extends RegexParsers {
-    def parse: Parser[Seq[Array[Int]]] = repsep(tuple, "|")
-    def tuple: Parser[Array[Int]] = rep1(wholeNumber) ^^ (_.toArray)
-    def wholeNumber: Parser[Int] = """-?\d+""".r ^^ (_.toInt)
+    m
   }
 
-  val id = LazyRelation.id
-  LazyRelation.id += 1
+  def iterator = apply.iterator
 
-  //  def iterator = {
-  //    val seq = text.toString.split("|").map(_.split(" ").map(_.toInt)) //Parser.parse(text).get
-  //    require(seq.size == size, seq.size + " parsed, " + size + " declared")
-  //    seq.iterator
-  //  }
-
-  override def toString = s"relation #${id} with $size tuples"
-
-  override def hashCode = id
-
-  override def equals(o: Any) = o match {
-    case a: AnyRef => this eq a
-    case _ => false
-  }
-
-  //  
-
-  @annotation.tailrec
-  private def readerToString(r: Reader[Char], stb: StringBuilder = new StringBuilder): String =
-    if (r.atEnd) {
-      stb.toString
+  def arity = {
+    if (_arity < 0) {
+      apply.arity
     } else {
-      readerToString(r.rest, stb.append(r.first))
-    }
-
-  def iterator = new Iterator[Seq[Int]] {
-    val text = readerToString(reader)
-
-    val st = new StringTokenizer(text, "|")
-
-    def hasNext = st.hasMoreTokens
-    def next() = {
-      val t = st.nextToken().trim.split(" +")
-      require(t.length == arity, t.toSeq.toString)
-      t.map(_.toInt)
+      _arity
     }
   }
 
-  def contains(t: Seq[Int]) = exists(_ sameElements t)
+  def contains(t: Seq[A]) = apply.contains(t)
 
-  def filter(f: (Int, Int) => Boolean) = new Table(iterator.filter(t => t.zipWithIndex.forall { case (k, v) => f(k, v) }).toSeq)
+  def filter(filt: (Int, A) => Boolean) = new LazyRelation(f.andThen(_.filter(filt)))
 
-  def project(c: Seq[Int]) = new Table(iterator.toSeq).project(c)
+  def project(c: Seq[Int]) = new LazyRelation(f.andThen(_.project(c)))
 }

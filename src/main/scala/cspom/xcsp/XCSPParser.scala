@@ -7,13 +7,13 @@ import scala.xml.XML
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
-import cspom.extension.LazyRelation
 import cspom.extension.Relation
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntInterval
 import cspom.variable.IntVariable
 import cspom.variable.IntDomain
+import cspom.extension.LazyRelation
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -115,7 +115,7 @@ final object XCSPParser {
         val arity = (node \ "@arity").text.toInt
         val nbTuples = (node \ "@nbTuples").text.toInt
         val init = "conflicts" == (node \ "@semantics").text
-        Extension(init, new LazyRelation(text, arity, nbTuples))
+        Extension(init, new LazyRelation(Unit=>ConstraintParser.parseTable(text, arity, nbTuples)))
       }
 
     }).toMap ++ ((doc \ "predicates" \ "predicate") map { node =>
@@ -196,4 +196,4 @@ final object XCSPParser {
   }
 }
 
-final case class Extension(val init: Boolean, val relation: Relation)
+final case class Extension(val init: Boolean, val relation: Relation[Int])
