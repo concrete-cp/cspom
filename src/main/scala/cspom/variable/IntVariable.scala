@@ -17,6 +17,7 @@ final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
       case t: CSPOMExpression[_] =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
+  
 }
 
 object IntVariable {

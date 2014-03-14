@@ -14,18 +14,18 @@ import scala.collection.mutable.HashMap
 
 object Tables {
 
-  def element(as: CSPOMSeq[_]): Relation = {
+  def element[A >: Int](as: CSPOMSeq[A]): Relation[A] = {
     new Table(as.withIndex.map {
-      case (CSPOMConstant(const: Int), i) => Seq(i, const)
+      case (CSPOMConstant(const: A), i) => Seq(i, const)
     })
   }
 
-  def elementVar(as: CSPOMSeq[_]): Relation = {
-    val scope = as.values.asInstanceOf[Seq[IntVariable]].toArray
+  def elementVar[A >: Int](as: CSPOMSeq[A]): Relation[A] = {
+    val scope = as.values.asInstanceOf[Seq[CSPOMVariable[A]]].toArray
 
-    val cache = new HashMap[(Int, Int, Int), MDD]()
+    val cache = new HashMap[(Int, Int, A), MDD[A]]()
 
-    val map = for (i <- scope.indices) yield {
+    val map: Seq[(A, MDD[A])] = for (i <- scope.indices) yield {
       as.definedIndices(i) -> new MDDNode(
         scope(i).domain.map {
           c => c -> elementVar(0, i, c, scope, cache)
@@ -36,9 +36,9 @@ object Tables {
 
   }
 
-  private def elementVar(current: Int, b: Int, c: Int, as: Array[IntVariable], cache: HashMap[(Int, Int, Int), MDD]): MDD = {
+  private def elementVar[A >: Int](current: Int, b: Int, c: A, as: Array[CSPOMVariable[A]], cache: HashMap[(Int, Int, A), MDD[A]]): MDD[A] = {
     if (current >= as.length) {
-      MDDLeaf
+      MDD.leaf
     } else cache.getOrElseUpdate((current, b, c), {
       if (current == b) {
         new MDDNode(Map(c -> elementVar(current + 1, b, c, as, cache)))

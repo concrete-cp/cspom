@@ -106,10 +106,15 @@ object FZPatterns {
      * (a ∧ b) ↔ r
      * bool_and(var bool: a, var bool: b, var bool: r)
      */
+    case Ctr('bool_and, Seq(a: CSPOMExpression[_], b: CSPOMExpression[_], r: CSPOMExpression[_]), p) =>
+      CSPOMConstraint(r, 'and, Seq(a, b), p)
     /**
      * (∃ i ∈ 1..nas : as[i]) ∨ (∃ i ∈ 1..nbs : ¬bs[i]) where n is the length of as
      * bool_clause(array [int] of var bool: as, array [int] of var bool: bs)
      */
+//    case Ctr('bool_clause, Seq(CSeq(as), CSeq(bs)), p) =>
+//      CSPOMConstraint('or, as ++ bs,
+//        p + ("revsign" -> (Seq.fill(as.length)(false) ++ Seq.fill(bs.length)(true))))
     /**
      * a = b
      * bool_eq(var bool: a, var bool: b)

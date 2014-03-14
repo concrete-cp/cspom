@@ -17,4 +17,6 @@ final class BoolVariable(params: Map[String, Any] = Map())
     that.isInstanceOf[Boolean]
   }
 
+  def domain = Seq(false, true)
+
 }

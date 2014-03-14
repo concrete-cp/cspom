@@ -85,6 +85,7 @@ object CSPOMConstant {
 abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
   def isTrue = false
+  def domain: Seq[T]
 }
 
 final case class CSPOMSeq[+T](
