@@ -28,13 +28,13 @@ object ReduceRelations extends ConstraintCompiler {
 
   }
 
-  def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {
+  def compile(c: CSPOMConstraint[_], problem: CSPOM, constants: A) = {
     val Some(relation: Relation[_]) = c.params.get("relation")
 
-    val filtered = relation.filter((k, i) => data.get(k).forall(_ == i))
+    val filtered = relation.filter((k, i) => constants.get(k).forall(_ == i))
 
     val (scope, pos) = c.arguments.zipWithIndex.filterNot {
-      case (_, i) => data.contains(i)
+      case (_, i) => constants.contains(i)
     }.unzip
 
     val projected = filtered.project(pos)

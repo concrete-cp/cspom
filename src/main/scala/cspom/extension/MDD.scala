@@ -3,6 +3,7 @@ package cspom.extension
 import scala.collection.mutable
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
+import cspom.Loggable
 
 object MDD {
   def leaf[A] = MDDLeaf.asInstanceOf[MDD[A]]
@@ -63,7 +64,7 @@ case object MDDLeaf extends MDD[Any] {
   def union(m: MDD[Any]) = this
 }
 
-final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] {
+final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with Loggable {
   override def isEmpty = false
   def +(t: A*) = {
     if (t.isEmpty) { MDD.leaf }
@@ -119,7 +120,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] {
 
   def union(m: MDD[A]) = {
     m match {
-      case l if l eq MDDLeaf => MDD.leaf
+      case l if l eq MDDLeaf => logger.warning("Union with shorter MDD"); l
       case MDDNode(t2) => {
         new MDDNode(trie ++ t2 map {
           case (k, m) => k -> trie.get(k).map(_ union m).getOrElse(m)
