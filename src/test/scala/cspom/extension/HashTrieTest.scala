@@ -58,11 +58,11 @@ final class HashTrieTest {
 
     assertEquals(t.toSet, s.toSet)
 
-    var u = MDD(
+    var u = MDD(Iterable(
       Seq(1, 2, 3),
       Seq(1, 3, 4),
       Seq(1, 2, 5),
-      Seq(2, 3, 5))
+      Seq(2, 3, 5)))
 
     assertEquals(t.toSet, u.toSet)
 

@@ -15,7 +15,7 @@ object JCSPOM {
 
   def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + (t: _*)
 
-  def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toSeq): _*)
+  def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toSeq))
 
   // Required to avoid incompatibility between Int and Integer
   def constant(a: Int) = CSPOMConstant(a)

@@ -38,7 +38,7 @@ object ReduceRelations extends ConstraintCompiler {
     }.unzip
 
     val projected = filtered.project(pos)
-
+    println(relation + " -> " + projected)
     replaceCtr(c,
       CSPOMConstraint('extension, scope, c.params.updated("relation", projected)), problem)
 

@@ -68,8 +68,7 @@ object FZPatterns {
      */
     case Ctr('array_int_element, args, p) => {
       val Seq(b: CSPOMExpression[_], as: CSPOMSeq[_], c: CSPOMExpression[_]) = args
-      CSPOMConstraint('extension, Seq(b, c), p ++ Map("init" -> false, "relation" ->
-        Tables.element(as)))
+      CSPOMConstraint(c, 'element, Seq(as, b), p)
     }
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
@@ -89,8 +88,7 @@ object FZPatterns {
      */
     case Ctr('array_var_int_element, args, p) => {
       val Seq(b: CSPOMExpression[_], as: CSPOMSeq[_], c: CSPOMExpression[_]) = args
-      CSPOMConstraint('extension, b +: c +: as.values, p ++ Map("init" -> false, "relation" ->
-        Tables.elementVar(as)))
+      CSPOMConstraint(c, 'element, Seq(as, b), p)
     }
     /**
      * b ∈ 1..n ∧ as[b] = c where n is the length of as
@@ -112,9 +110,9 @@ object FZPatterns {
      * (∃ i ∈ 1..nas : as[i]) ∨ (∃ i ∈ 1..nbs : ¬bs[i]) where n is the length of as
      * bool_clause(array [int] of var bool: as, array [int] of var bool: bs)
      */
-//    case Ctr('bool_clause, Seq(CSeq(as), CSeq(bs)), p) =>
-//      CSPOMConstraint('or, as ++ bs,
-//        p + ("revsign" -> (Seq.fill(as.length)(false) ++ Seq.fill(bs.length)(true))))
+    //    case Ctr('bool_clause, Seq(CSeq(as), CSeq(bs)), p) =>
+    //      CSPOMConstraint('or, as ++ bs,
+    //        p + ("revsign" -> (Seq.fill(as.length)(false) ++ Seq.fill(bs.length)(true))))
     /**
      * a = b
      * bool_eq(var bool: a, var bool: b)

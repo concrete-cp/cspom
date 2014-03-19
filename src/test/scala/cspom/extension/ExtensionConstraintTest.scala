@@ -38,6 +38,14 @@ final class ExtensionConstraintTest {
     relation += (2, 5, 5);
     assertEquals(2, relation.size);
   }
+
+  @Test
+  def testUnion() {
+    val r2 = MDD(Iterable(
+      Seq(1, 2, 3), Seq(2, 5, 6), Seq(3, 5, 5)))
+
+    (relation union r2).foreach(println)
+  }
   //
   //  @Test
   //  def testRemove() {
