@@ -14,6 +14,7 @@ import cspom.compiler.CSeq
 import cspom.extension.Table
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMConstant
+import cspom.variable.SimpleExpression
 
 object FZPatterns {
   def apply() = Seq(
@@ -378,10 +379,14 @@ object FZPatterns {
      * max(a, b) = c
      * int_max(var int: a, var int: b, var int: c)
      */
+    case Ctr('int_max, Seq(a: SimpleExpression[_], b: SimpleExpression[_], c: SimpleExpression[_]), p) =>
+      CSPOMConstraint(c, 'max, Seq(a, b), p)
     /**
      * min(a, b) = c
      * int_min(var int: a, var int: b, var int: c)
      */
+    case Ctr('int_min, Seq(a: SimpleExpression[_], b: SimpleExpression[_], c: SimpleExpression[_]), p) =>
+      CSPOMConstraint(c, 'min, Seq(a, b), p)
     /**
      * a − x.b = c where x = a/b rounding towards zero.
      * int_mod(var int: a, var int: b, var int: c)
