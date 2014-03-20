@@ -40,8 +40,9 @@ sealed trait MDD[A] extends Relation[A] {
 
   override def size = lambda.toInt
 
-  def union(m: MDD[A]): MDD[A]
+  final def union(m: MDD[A]): MDD[A] = union(m, mutable.Map())
 
+  def union(m: MDD[A], mdds: mutable.Map[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
 }
 
 case object MDDLeaf extends MDD[Any] {
@@ -61,7 +62,7 @@ case object MDDLeaf extends MDD[Any] {
   def reduce(mdds: mutable.Map[Map[Any, MDD[Any]], MDD[Any]]) = this
   def filter(f: (Int, Any) => Boolean, k: Int, mdds: mutable.Map[MDD[Any], MDD[Any]]) = this
   def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[Any], MDD[Any]]) = this
-  def union(m: MDD[Any]) = this
+  def union(m: MDD[Any], mdds: mutable.Map[(MDD[Any], MDD[Any]), MDD[Any]]) = this
 }
 
 final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with Loggable {
@@ -118,29 +119,29 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with Loggab
     }
   })
 
-  def union(m: MDD[A]) = {
-    m match {
-      case l if l eq MDDLeaf => logger.warning("Union with shorter MDD"); l
-      case MDDNode(t2) => {
+  def union(m: MDD[A], mdds: mutable.Map[(MDD[A], MDD[A]), MDD[A]]) =
+    mdds.getOrElseUpdate((this, m), m match {
+      case l if l eq MDDLeaf =>
+        logger.warning("Union with shorter MDD"); l
+      case MDDNode(t2) =>
         new MDDNode(trie ++ t2 map {
           case (k, m) => k -> trie.get(k).map(_ union m).getOrElse(m)
         })
-      }
-    }
 
-  }
+    })
 
-  def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A] = mdds.getOrElseUpdate(this, {
-    if (c(k)) {
-      new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)))
-    } else {
-      val t = trie.values.map(_.project(c, k + 1, mdds))
-      if (t.isEmpty) {
-        MDD.empty
+  def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A] =
+    mdds.getOrElseUpdate(this, {
+      if (c(k)) {
+        new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)))
       } else {
-        t.reduceLeft(_ union _)
+        val t = trie.values.map(_.project(c, k + 1, mdds))
+        if (t.isEmpty) {
+          MDD.empty
+        } else {
+          t.reduceLeft(_ union _)
+        }
       }
-    }
-  })
+    })
 }
 

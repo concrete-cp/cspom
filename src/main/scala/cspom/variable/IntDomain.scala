@@ -1,11 +1,13 @@
 package cspom.variable
 
-sealed trait IntDomain extends Seq[Int] {
+import scala.collection.SortedSet
+
+sealed trait IntDomain extends SortedSet[Int] {
   def intersect(domain: IntDomain): IntDomain
 }
 
 object IntDomain {
-  def apply(values: Seq[Int]) = {
+  def apply(values: SortedSet[Int]) = {
     //require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
     values match {
       case r: Range if r.step == 1 => new IntInterval(r.head, r.last)
@@ -15,7 +17,7 @@ object IntDomain {
   }
 }
 
-final case class IntSeq(val values: Seq[Int]) extends IntDomain {
+final case class IntSeq(val values: SortedSet[Int]) extends IntDomain {
   override def toString =
     if (size > 5) {
       values.take(5).mkString("{", ", ", "...}")
