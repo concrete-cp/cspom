@@ -14,9 +14,7 @@ import cspom.variable.CSPOMConstant
 import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPParseException
 import cspom.compiler.ProblemCompiler
-import cspom.Loggable
 import cspom.StatisticsManager
-//import CSPOM._
 
 object FlatZincParser extends RegexParsers {
 
@@ -74,7 +72,7 @@ object FlatZincParser extends RegexParsers {
         }
 
         for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
-          CSPOM.ctr(CSPOMConstraint('eq, e, a))
+          CSPOM.ctr(CSPOMConstraint('eq, Seq(e, a)))
         }
       }
       (p, goal)

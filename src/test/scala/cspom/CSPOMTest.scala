@@ -42,8 +42,8 @@ class CSPOMTest {
   @Test
   def boolVariables(): Unit = {
     val cspom = CSPOM {
-      ctr(CSPOMConstraint('dummy, new BoolVariable()))
-      ctr(CSPOMConstraint('dummy, new BoolVariable()))
+      ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
+      ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
     }
     // Third is CSPOMConstant(true) !
     assertEquals(3, cspom.referencedExpressions.size)
@@ -62,7 +62,7 @@ class CSPOMTest {
 
       //v foreach { cspom.addVariable(_) }
 
-      leq = ctr(CSPOMConstraint('leq, v(0), v(1)))
+      leq = ctr(CSPOMConstraint('leq, Seq(v(0), v(1))))
     }
 
     assertTrue(cspom.constraints(v(0)) contains leq)

@@ -8,8 +8,9 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.flatzinc.FZAnnotation
 import cspom.flatzinc.FZVarParId
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-trait ConstraintCompiler {
+trait ConstraintCompiler extends LazyLogging {
   type A
 
   def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
@@ -22,8 +23,10 @@ trait ConstraintCompiler {
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
 
-  def replace[T, S <: T](which: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
+  def replace[T, S <: T](wh: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
+
+    val which = wh.filterNot(_.isInstanceOf[CSPOMConstant[_]])
 
     which.foreach(in.replaceExpression(_, by))
 
@@ -34,6 +37,8 @@ trait ConstraintCompiler {
         c.replacedVar(v, by)
       }
     }
+
+    logger.debug("Replacing " + oldConstraints + " with " + newConstraints)
 
     replaceCtr(oldConstraints, newConstraints, in)
   }

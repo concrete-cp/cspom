@@ -12,7 +12,7 @@ class VariableTest {
   @Test
   def registerTest() {
     val v = IntVariable(0 to 10)
-    val c = CSPOMConstraint('leq, v)
+    val c = CSPOMConstraint('leq, Seq(v))
     val cspom = new CSPOM
     //cspom.addVariable(v)
     cspom.ctr(c)

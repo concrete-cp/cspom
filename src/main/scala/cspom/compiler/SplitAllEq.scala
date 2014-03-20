@@ -5,8 +5,6 @@ import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
 import cspom.variable.BoolVariable
 
-
-
 object SplitAllEq extends ConstraintCompilerNoData {
   def matchBool(constraint: CSPOMConstraint[_], problem: CSPOM) =
     constraint.function == 'eq && constraint.arguments.size > 2
@@ -18,26 +16,26 @@ object SplitAllEq extends ConstraintCompilerNoData {
     constraint.result match {
       case CSPOMConstant(true) =>
         val c = for (Seq(a, b) <- constraint.arguments.sliding(2)) yield {
-          problem.ctr(CSPOMConstraint('eq, a, b))
+          problem.ctr(CSPOMConstraint('eq, Seq(a, b)))
         }
         c.foldLeft(delta)(_ added _)
       case CSPOMConstant(false) =>
         var d = delta
         val rs = for (Seq(a, b) <- constraint.arguments.sliding(2)) yield {
           val r = new BoolVariable()
-          d = d.added(problem.ctr(CSPOMConstraint(r, 'ne, a, b)))
+          d = d.added(problem.ctr(CSPOMConstraint(r, 'ne, Seq(a, b))))
           r
         }
-        d.added(problem.ctr(CSPOMConstraint('or, rs.toSeq: _*)))
+        d.added(problem.ctr(CSPOMConstraint('or, rs.toSeq)))
 
       case r: BoolVariable =>
         var d = delta
         val rs = for (Seq(a, b) <- constraint.arguments.sliding(2)) yield {
           val r = new BoolVariable()
-          d = d.added(problem.ctr(CSPOMConstraint(r, 'eq, a, b)))
+          d = d.added(problem.ctr(CSPOMConstraint(r, 'eq, Seq(a, b))))
           r
         }
-        d.added(problem.ctr(CSPOMConstraint(r, 'and, rs.toSeq: _*)))
+        d.added(problem.ctr(CSPOMConstraint(r, 'and, rs.toSeq)))
 
       case _ => throw new IllegalArgumentException()
     }

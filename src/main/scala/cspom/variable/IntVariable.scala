@@ -7,7 +7,10 @@ final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
 
   override def toString = s"int variable ($domain)$displayParams"
 
-  def contains[S >: Int](that: S): Boolean = domain.contains(that)
+  def contains[S >: Int](that: S): Boolean = that match {
+    case t: Int => domain.contains(t)
+    case _ => false
+  }
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
@@ -17,7 +20,7 @@ final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
       case t: CSPOMExpression[_] =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
-  
+
 }
 
 object IntVariable {

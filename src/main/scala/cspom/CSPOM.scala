@@ -171,7 +171,7 @@ class CSPOM {
   }
 
   def ctr(v: BoolVariable) = {
-    addConstraint(CSPOMConstraint('eq, v, CSPOMConstant(true)))
+    addConstraint(CSPOMConstraint('eq, Seq(v, CSPOMConstant(true))))
   }
 
   def is(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {

@@ -3,7 +3,7 @@ package cspom.extension
 import scala.collection.mutable
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
-import cspom.Loggable
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 object MDD {
   def leaf[A] = MDDLeaf.asInstanceOf[MDD[A]]
@@ -32,10 +32,10 @@ sealed trait MDD[A] extends Relation[A] {
 
   override def toString = s"MDD with $edges edges representing $lambda tuples"
 
-  final def filter(f: (Int, A) => Boolean): MDD[A] = filter(f, 0, mutable.Map[MDD[A], MDD[A]]())
+  final def filter(f: (Int, A) => Boolean): MDD[A] = filter(f, 0, mutable.Map[MDD[A], MDD[A]]()).reduce
   def filter(f: (Int, A) => Boolean, k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A]
 
-  final def project(c: Seq[Int]): MDD[A] = project(c.toSet, 0, mutable.Map[MDD[A], MDD[A]]())
+  final def project(c: Seq[Int]): MDD[A] = project(c.toSet, 0, mutable.Map[MDD[A], MDD[A]]()).reduce
   def project(c: Set[Int], k: Int, mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A]
 
   override def size = lambda.toInt
@@ -65,7 +65,7 @@ case object MDDLeaf extends MDD[Any] {
   def union(m: MDD[Any], mdds: mutable.Map[(MDD[Any], MDD[Any]), MDD[Any]]) = this
 }
 
-final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with Loggable {
+final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLogging {
   override def isEmpty = false
   def +(t: A*) = {
     if (t.isEmpty) { MDD.leaf }
@@ -85,22 +85,22 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with Loggab
     if (e.contains(this)) {
       0
     } else {
-      e += this
-      trie.size + trie.values.map(t => t.edges(e)).sum
+      e.add(this)
+      trie.size + trie.values.iterator.map(t => t.edges(e)).sum
     }
   }
 
   def lambda(ls: mutable.Map[MDD[A], BigInt]): BigInt = {
-    ls.getOrElseUpdate(this, trie.values.map(_.lambda(ls)).sum)
+    ls.getOrElseUpdate(this, trie.values.iterator.map(_.lambda(ls)).sum)
     //trie.values.map(m => ls.getOrElseUpdate(m, m.lambda(ls))).sum
   }
 
-  override lazy val hashCode: Int = trie.hashCode
+  override val hashCode: Int = trie.hashCode
 
   override def equals(o: Any): Boolean = o match {
     case t: MDDNode[A] =>
       trie.size == t.trie.size && trie.forall {
-        case (k1, v1) => t.trie.get(k1).map(_ eq v1).exists(b => b)
+        case (k1, v1) => t.trie.get(k1).exists(_ eq v1)
       }
     case _ => false
   }
@@ -122,7 +122,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with Loggab
   def union(m: MDD[A], mdds: mutable.Map[(MDD[A], MDD[A]), MDD[A]]) =
     mdds.getOrElseUpdate((this, m), m match {
       case l if l eq MDDLeaf =>
-        logger.warning("Union with shorter MDD"); l
+        logger.warn("Union with shorter MDD"); l
       case MDDNode(t2) =>
         new MDDNode(trie ++ t2 map {
           case (k, m) => k -> trie.get(k).map(_ union m).getOrElse(m)

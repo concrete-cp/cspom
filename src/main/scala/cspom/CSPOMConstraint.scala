@@ -9,22 +9,23 @@ import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMSeq
 import cspom.variable.SimpleExpression
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 final case class CSPOMConstraint[+T](
   val result: CSPOMExpression[T],
   val function: Symbol,
   val arguments: Seq[CSPOMExpression[Any]],
-  val params: Map[String, Any] = Map()) extends Parameterized with Loggable {
+  val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
 
   require(result != null)
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
-//  require(function != 'or || !arguments.forall {
-//    case CSPOMConstant(c: Boolean) => !c
-//    case _ => false
-//  })
-  
+  //  require(function != 'or || !arguments.forall {
+  //    case CSPOMConstant(c: Boolean) => !c
+  //    case _ => false
+  //  })
+
   def nonReified = result.isTrue
 
   def fullScope = result +: arguments
@@ -84,23 +85,11 @@ object CSPOMConstraint {
 
   def param(key: String, v: Any) = ConstraintParameters(Map(key -> v))
 
-  def apply[T](result: CSPOMExpression[T], function: Symbol, arguments: CSPOMExpression[Any]*): CSPOMConstraint[T] =
-    new CSPOMConstraint(result, function, arguments)
+  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]]): CSPOMConstraint[Boolean] =
+    CSPOMConstraint(function, arguments, Map[String, Any]())
 
-  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): CSPOMConstraint[Boolean] =
+  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any]): CSPOMConstraint[Boolean] =
     new CSPOMConstraint(CSPOMConstant(true), function, arguments, params)
-
-  def apply(function: Symbol, arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
-    apply(function, arguments)
-
-  /**
-   *  For Java interop
-   */
-  def apply(function: String, arguments: Array[CSPOMExpression[_]], params: ConstraintParameters): CSPOMConstraint[Boolean] =
-    apply(Symbol(function), arguments, params)
-
-  def apply[T](result: CSPOMExpression[T], function: String, arguments: Array[CSPOMExpression[Any]], params: Map[String, Any]): CSPOMConstraint[T] =
-    new CSPOMConstraint(result, Symbol(function), arguments.toSeq, params)
 }
 
 final class VariableNames(cspom: CSPOM) {

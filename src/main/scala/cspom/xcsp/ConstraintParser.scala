@@ -46,7 +46,7 @@ final object ConstraintParser extends JavaTokenParsers {
   def split(expression: String, declaredVariables: Map[String, IntVariable], cspom: CSPOM): Unit = {
     func(new CharSequenceReader(expression)).get match {
       case PredicateConstraint(operator, arguments) =>
-        cspom.ctr(CSPOMConstraint(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom)): _*))
+        cspom.ctr(CSPOMConstraint(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom))))
 
       case _ => throw new IllegalArgumentException("Constraint expected, was " + expression)
     }

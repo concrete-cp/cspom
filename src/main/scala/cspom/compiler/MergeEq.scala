@@ -7,12 +7,13 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 /**
  * If given constraint is an all-equal constraint, merges and removes all
  * auxiliary variables.
  */
-object MergeEq extends ConstraintCompiler {
+object MergeEq extends ConstraintCompiler with LazyLogging {
 
   type A = Seq[SimpleExpression[Any]]
 
@@ -31,7 +32,7 @@ object MergeEq extends ConstraintCompiler {
   }
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM, se: A) = {
-
+    logger.debug("Merging " + se)
     problem.removeConstraint(constraint)
 
     val delta = Delta().removed(constraint)

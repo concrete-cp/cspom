@@ -166,6 +166,8 @@ object FZPatterns {
      * (a = b) ↔ r
      * bool_xor(var bool: a, var bool: b, var bool: r)
      */
+    case Ctr('bool_xor, Seq(a: SimpleExpression[_], b: SimpleExpression[_], r: SimpleExpression[_]), p) =>
+      new CSPOMConstraint(r, 'xor, Seq(a, b), p)
     /**
      * |a| = b
      * float_abs(var float: a, var float: b)

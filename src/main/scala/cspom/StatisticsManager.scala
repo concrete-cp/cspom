@@ -5,8 +5,9 @@ import scala.collection.mutable.HashMap
 import java.lang.reflect.Modifier
 import java.lang.reflect.Field
 import scala.annotation.tailrec
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-class StatisticsManager extends Loggable {
+class StatisticsManager extends LazyLogging {
 
   var objects: Map[String, AnyRef] = Map.empty
 

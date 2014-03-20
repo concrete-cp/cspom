@@ -6,36 +6,21 @@ import cspom.extension.Relation
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
-import cspom.Loggable
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 /**
  * Detects and removes constants from extensional constraints
  */
-object ReduceRelations extends ConstraintCompiler with Loggable {
+object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  type A = Seq[Int]
+  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = c.function == 'extension && c.nonReified
 
-  override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[A] = c match {
-    case CSPOMConstraint(CSPOMConstant(true), 'extension, args, _) =>
-      val variables = args.zipWithIndex.collect {
-        case (c: CSPOMVariable[_], i) => i
-      }
-      if (variables.size < args.size) {
-        Some(variables)
-      } else {
-        None
-      }
+  def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
 
-    case _ =>
-      None
-
-  }
-
-  def compile(c: CSPOMConstraint[_], problem: CSPOM, vars: A) = {
     val Some(relation: Relation[_]) = c.params.get("relation")
 
     val args = c.arguments.toIndexedSeq
-    
+
     val domains = args.map {
       case v: SimpleExpression[Any] => v.domain.toSet
       case _ => ???
@@ -43,8 +28,12 @@ object ReduceRelations extends ConstraintCompiler with Loggable {
 
     val filtered = relation.filter((k, i) => domains(k)(i))
 
-    val projected = filtered.project(vars)
-    logger.info(relation + " -> " + projected)
+    val vars = c.arguments.zipWithIndex.collect {
+      case (c: CSPOMVariable[_], i) => i
+    }
+    val projected = if (vars.size < c.arguments.size) { filtered.project(vars) } else { filtered }
+
+    logger.warn(relation + " -> " + projected)
     replaceCtr(c,
       CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", projected)), problem)
 
