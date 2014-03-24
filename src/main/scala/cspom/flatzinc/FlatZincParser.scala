@@ -56,7 +56,7 @@ object FlatZincParser extends RegexParsers {
   /*
    * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
-  def flatzincModel: Parser[(CSPOM, Any)] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
+  def flatzincModel: Parser[(CSPOM, FZSolve)] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
     case predicates ~ parameters ~ variables =>
       val params = parameters.toMap
       val (declared, affectations) = mapVariables(params, variables)
@@ -218,10 +218,10 @@ object FlatZincParser extends RegexParsers {
       }
     }
 
-  def solve_goal: Parser[Any] =
-    "solve" ~ annotations ~ "satisfy" ~ ";" |
-      "solve" ~ annotations ~ "minimize" ~ expr ~ ";" |
-      "solve" ~ annotations ~ "maximize" ~ expr ~ ";"
+  def solve_goal: Parser[FZSolve] =
+    "solve" ~> annotations <~ "satisfy" ~ ";" ^^ { ann => FZSolve(Satisfy, ann) } |
+      "solve" ~> annotations ~ ("minimize" ~> expr <~ ";") ^^ { case ann ~ expr => FZSolve(Minimize(expr), ann) } |
+      "solve" ~> annotations ~ ("maximize" ~> expr <~ ";") ^^ { case ann ~ expr => FZSolve(Maximize(expr), ann) }
 
   def annotations: Parser[Seq[FZAnnotation]] = rep("::" ~> annotation)
 
