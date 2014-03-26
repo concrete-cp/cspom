@@ -63,7 +63,8 @@ object FlatZincParser extends RegexParsers {
       success(declared, affectations) ~ rep(constraint(declared)) ~ solve_goal
   } ^^ {
     case (declared, affectations) ~ constraints ~ goal =>
-      val p = CSPOM {
+      val p = CSPOM { implicit problem =>
+        
         for ((name, expr) <- declared) {
           expr as name
         }

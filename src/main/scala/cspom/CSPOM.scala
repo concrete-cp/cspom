@@ -346,24 +346,12 @@ object CSPOM {
 
   private val dyn = new DynamicVariable[CSPOM](null)
 
-  def apply(f: => Any): CSPOM = {
-    apply { p: CSPOM => dyn.withValue(p)(f) }
-  }
-
   def apply(f: CSPOM => Any): CSPOM = {
     val p = new CSPOM()
     f(p)
     p
   }
 
-  /**
-   * An implicit function that returns the thread-local problem in a model block
-   */
-  implicit def threadLocalProblem: CSPOM = {
-    val s = dyn.value
-    require(s ne null, "No implicit problem available; threadLocalProblem can only be used within a problem block")
-    s
-  }
 
   def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint[Boolean] = problem.ctr(v)
 

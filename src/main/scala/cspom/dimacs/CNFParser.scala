@@ -32,7 +32,7 @@ final object CNFParser {
 
     var names: Seq[String] = null
     var countClauses = 0
-    val problem = CSPOM {
+    val problem = CSPOM { implicit problem =>
 
       val (variables, ns) = (for (i <- 1 to nbVars.toInt) yield {
         new BoolVariable() withName ("V" + i)

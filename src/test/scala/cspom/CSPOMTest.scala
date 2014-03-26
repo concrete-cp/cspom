@@ -14,7 +14,7 @@ class CSPOMTest {
 
     var vars: List[CSPOMVariable[Int]] = null
 
-    val cspom = CSPOM {
+    val cspom = CSPOM { implicit problem =>
       vars = List(
         IntVariable(0 to 10) as "test1",
         IntVariable(10 to 20) as "test2",
@@ -24,8 +24,6 @@ class CSPOMTest {
       //vars foreach { cspom.addVariable(_) }
 
       ctr(CSPOMConstraint('dummy, vars))
-
-      vars
     }
     assertTrue(vars sameElements cspom.namedExpressions.values)
     assertEquals(Some(vars(0)), cspom.expression("test1"))
@@ -33,7 +31,7 @@ class CSPOMTest {
 
   @Test(expected = classOf[IllegalArgumentException])
   def duplicateVariable(): Unit = {
-    CSPOM {
+    CSPOM { implicit problem =>
       IntVariable(0 to 10) as "Test"
       IntVariable(0 to 10) as "Test"
     }
@@ -41,7 +39,7 @@ class CSPOMTest {
 
   @Test
   def boolVariables(): Unit = {
-    val cspom = CSPOM {
+    val cspom = CSPOM { implicit problem =>
       ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
       ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
     }
@@ -55,7 +53,7 @@ class CSPOMTest {
     var leq: CSPOMConstraint[Boolean] = null
     var v: List[CSPOMVariable[Int]] = null
 
-    val cspom = CSPOM {
+    val cspom = CSPOM { implicit problem =>
       v = List(
         IntVariable(0 to 10),
         IntVariable(0 to 10));
