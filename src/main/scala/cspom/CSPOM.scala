@@ -3,32 +3,28 @@ package cspom
 import java.io.IOException
 import java.io.InputStream
 import java.net.URI
-import java.net.URISyntaxException
 import java.net.URL
 import java.util.zip.GZIPInputStream
+
+import scala.Iterator
 import scala.collection.JavaConversions
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.LinkedHashMap
-import scala.util.DynamicVariable
+import scala.util.parsing.combinator.JavaTokenParsers
+import scala.util.parsing.input.CharSequenceReader
+
 import org.apache.tools.bzip2.CBZip2InputStream
-import cspom.xcsp.ConstraintParser
+
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
-import cspom.variable.CSPOMVariable
-import cspom.xcsp.Extension
-import cspom.xcsp.XCSPParser
-import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMSeq
-import cspom.variable.BoolVariable
-import cspom.variable.CSPOMConstant
-import cspom.variable.IntVariable
-import cspom.variable.FreeVariable
 import cspom.extension.Table
 import cspom.flatzinc.FlatZincParser
+import cspom.variable.BoolVariable
+import cspom.variable.CSPOMConstant
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMSeq
+import cspom.variable.FreeVariable
+import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
-import scala.util.parsing.combinator.JavaTokenParsers
-import java.io.StringReader
-import scala.util.parsing.input.CharSequenceReader
+import cspom.xcsp.XCSPParser
 
 object NameParser extends JavaTokenParsers {
 
@@ -77,7 +73,7 @@ class CSPOM {
    *            A variable name.
    * @return The variable with the corresponding name.
    */
-  def expression(name: String) = {
+  def expression(name: String): Option[CSPOMExpression[_]] = {
     NameParser.parse(new CharSequenceReader(name)).map(Some(_)).getOrElse(None).flatMap {
       case (n, s) => getInSeq(namedExpressions.get(n), s)
     }
@@ -99,9 +95,9 @@ class CSPOM {
    */
   private val _constraints = collection.mutable.Set[CSPOMConstraint[_]]()
 
-  def constraints = _constraints
+  def constraints = _constraints.iterator
 
-  val getConstraints = JavaConversions.setAsJavaSet(constraints)
+  val getConstraints = JavaConversions.asJavaIterator(constraints)
 
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
@@ -162,7 +158,7 @@ class CSPOM {
   }
 
   def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
-    if (constraints(c)) {
+    if (_constraints(c)) {
       println(s"WARNING : $c already belongs to the problem")
       c
     } else {
@@ -195,7 +191,7 @@ class CSPOM {
   override def toString = {
     val vars = namedExpressions.toSeq.sortBy(_._1).map { case (name, variable) => s"$name: $variable" }.mkString("\n")
     val vn = new VariableNames(this)
-    val cons = constraints.iterator.map(_.toString(vn)).mkString("\n")
+    val cons = constraints.map(_.toString(vn)).mkString("\n")
 
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
@@ -344,14 +340,11 @@ object CSPOM {
 
   }
 
-  private val dyn = new DynamicVariable[CSPOM](null)
-
   def apply(f: CSPOM => Any): CSPOM = {
     val p = new CSPOM()
     f(p)
     p
   }
-
 
   def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint[Boolean] = problem.ctr(v)
 
