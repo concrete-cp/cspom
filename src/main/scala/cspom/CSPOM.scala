@@ -5,14 +5,11 @@ import java.io.InputStream
 import java.net.URI
 import java.net.URL
 import java.util.zip.GZIPInputStream
-
 import scala.Iterator
 import scala.collection.JavaConversions
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
-
 import org.apache.tools.bzip2.CBZip2InputStream
-
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
 import cspom.extension.Table
@@ -25,6 +22,7 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
+import cspom.variable.CSPOMVariable
 
 object NameParser extends JavaTokenParsers {
 
@@ -78,6 +76,15 @@ class CSPOM {
       case (n, s) => getInSeq(namedExpressions.get(n), s)
     }
 
+  }
+
+  def variable(name: String): CSPOMVariable[_] = {
+    expression(name).map {
+      case v: CSPOMVariable[_] => v
+      case e: CSPOMExpression[_] => throw new IllegalArgumentException(s"$e is not a variable")
+    } getOrElse {
+      throw new IllegalArgumentException(s"Could not find $name")
+    }
   }
 
   private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = {
