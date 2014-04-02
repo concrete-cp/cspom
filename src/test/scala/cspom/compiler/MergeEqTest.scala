@@ -22,7 +22,7 @@ class MergeEqTest {
 
     ProblemCompiler.compile(problem, StandardCompilers.improve() ++ StandardCompilers())
 
-    println(problem.namedExpressions("V1").params)
+    //println(problem.namedExpressions("V1").params)
 
     problem.namedExpressions.toSeq match {
       case Seq(("V1", CSPOMConstant(0))) =>
@@ -46,7 +46,7 @@ class MergeEqTest {
     val nv0 = cspom.expression("V0") collect {
       case v: IntVariable => v
     } getOrElse {
-      throw new AssertionFailedError()
+      fail()
     }
     assertEquals(1, cspom.namedExpressions.size)
     assertSame(nv0, cspom.namedExpressions.head._2)
