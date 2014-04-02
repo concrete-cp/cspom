@@ -17,7 +17,7 @@ final class ExtensiveDomainTest {
 
   @Test
   def testEquals() {
-    assertEquals(List(1, 7, 9), intDomain);
+    assertEquals(Set(1, 7, 9), intDomain);
   }
 
 

@@ -4,6 +4,7 @@ import scala.collection.immutable.SortedSet
 
 sealed trait IntDomain extends SortedSet[Int] {
   def intersect(domain: IntDomain): IntDomain
+  implicit def ordering = Ordering.Int
 }
 
 object IntDomain {
@@ -38,7 +39,6 @@ final case class IntSeq(val values: SortedSet[Int]) extends IntDomain {
   def -(elem: Int): SortedSet[Int] = IntSeq(values - elem)
   def +(elem: Int): SortedSet[Int] = IntSeq(values + elem)
   def contains(elem: Int): Boolean = values(elem)
-  implicit def ordering: Ordering[Int] = values.ordering
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = IntSeq(values.rangeImpl(from, until))
 }
 
@@ -58,7 +58,7 @@ final case class IntInterval(lb: Int, ub: Int) extends IntDomain {
   def -(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
   def +(elem: Int): SortedSet[Int] = IntDomain(elem +: range)
   def contains(elem: Int): Boolean = range.contains(elem)
-  implicit def ordering: Ordering[Int] = throw new UnsupportedOperationException
+  //implicit def ordering: Ordering[Int] = throw new UnsupportedOperationException
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = throw new UnsupportedOperationException
   def iterator: Iterator[Int] = range.iterator
   def keysIteratorFrom(start: Int): Iterator[Int] = ???
@@ -69,7 +69,6 @@ case object FreeInt extends IntDomain {
   def -(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
   def +(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
   def contains(elem: Int): Boolean = elem.isInstanceOf[Int]
-  implicit def ordering: Ordering[Int] = throw new UnsupportedOperationException
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = throw new UnsupportedOperationException
 
   def intersect(domain: IntDomain) = domain

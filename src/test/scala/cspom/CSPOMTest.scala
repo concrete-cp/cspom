@@ -68,7 +68,7 @@ class CSPOMTest {
 
     cspom.removeConstraint(leq)
 
-    assertEquals(Set(), cspom.constraints)
+    assertFalse(cspom.constraints.hasNext)
     assertFalse(cspom.constraints(v(0)) contains leq)
     assertFalse(cspom.constraints(v(1)) contains leq)
 

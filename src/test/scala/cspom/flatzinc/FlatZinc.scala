@@ -21,10 +21,10 @@ class FlatZinc {
 
     val (cspom, variables) = FlatZincParser.parse(url.openStream) //FlatzincDSL.flatzincModel)(tokens)
 
-
-    println(cspom)
-    
-    println(variables)
+//
+//    println(cspom)
+//    
+//    println(variables)
 
     //    r match {
     //      case Success(list, msg) => println(list)

@@ -37,7 +37,7 @@ final class IntIntervalTest {
 
   @Test
   def testGetValues() {
-    assertEquals(List(10, 11, 12, 13, 14, 15), intInterval);
+    assertEquals(Set(10, 11, 12, 13, 14, 15), intInterval);
   }
 
   @Test

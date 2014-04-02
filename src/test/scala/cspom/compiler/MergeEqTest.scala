@@ -24,7 +24,10 @@ class MergeEqTest {
 
     println(problem.namedExpressions("V1").params)
 
-    assertEquals(Map("V1" -> CSPOMConstant(0, Map("output_var" -> Unit))), problem.namedExpressions)
+    problem.namedExpressions.toSeq match {
+      case Seq(("V1", CSPOMConstant(0))) =>
+      case _ => fail()
+    }
 
   }
 
@@ -48,7 +51,7 @@ class MergeEqTest {
     assertEquals(1, cspom.namedExpressions.size)
     assertSame(nv0, cspom.namedExpressions.head._2)
     assertEquals(cspom.toString, 1, cspom.constraints.size)
-    assertEquals(List(2, 3), nv0.domain)
+    assertEquals(Set(2, 3), nv0.domain)
 
   }
 
