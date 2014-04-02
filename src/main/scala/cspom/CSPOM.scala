@@ -78,6 +78,10 @@ class CSPOM {
 
   }
 
+  def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
+    namedExpressions.filter(_._2 == e).map(_._1)
+  }
+
   def variable(name: String): CSPOMVariable[_] = {
     expression(name).map {
       case v: CSPOMVariable[_] => v
