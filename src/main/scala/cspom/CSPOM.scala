@@ -366,7 +366,7 @@ object CSPOM {
 
   implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)
 
-  implicit def constant[A](c: A): CSPOMConstant[A] = CSPOMConstant(c)
+  implicit def constant[A <: AnyVal](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
 }
 

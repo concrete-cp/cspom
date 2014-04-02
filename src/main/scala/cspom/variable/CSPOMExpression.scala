@@ -49,7 +49,7 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 }
 
 class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
-  require(!value.isInstanceOf[Seq[_]])
+  require(!value.isInstanceOf[CSPOMExpression[_]])
   
   def contains[S >: T](that: S) = value == that
 

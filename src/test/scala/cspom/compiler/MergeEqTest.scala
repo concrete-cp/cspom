@@ -43,10 +43,10 @@ class MergeEqTest {
 
     ProblemCompiler.compile(cspom, Seq(MergeSame, MergeEq))
 
-    val nv0 = cspom.expression("V0") collect {
+    val nv0: IntVariable = cspom.expression("V0") collect {
       case v: IntVariable => v
     } getOrElse {
-      fail()
+      throw new AssertionError()
     }
     assertEquals(1, cspom.namedExpressions.size)
     assertSame(nv0, cspom.namedExpressions.head._2)
