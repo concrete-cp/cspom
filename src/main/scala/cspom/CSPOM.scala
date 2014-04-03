@@ -368,6 +368,7 @@ object CSPOM {
 
   implicit def constant[A <: AnyVal](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
+  implicit def seq2CSPOMSeq[A](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = new CSPOMSeq(c)
 }
 
 
