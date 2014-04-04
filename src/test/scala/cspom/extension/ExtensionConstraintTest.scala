@@ -30,7 +30,6 @@ final class ExtensionConstraintTest {
   @Test
   def testSize() {
     assertEquals(2, relation.size)
-    assertEquals(3, relation.arity)
   }
 
   @Test

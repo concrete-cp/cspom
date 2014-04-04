@@ -115,7 +115,7 @@ final object XCSPParser {
         val arity = (node \ "@arity").text.toInt
         val nbTuples = (node \ "@nbTuples").text.toInt
         val init = "conflicts" == (node \ "@semantics").text
-        Extension(init, new LazyRelation(Unit=>ConstraintParser.parseTable(text, arity, nbTuples)))
+        Extension(init, new LazyRelation(Unit => ConstraintParser.parseTable(text, arity, nbTuples)))
       }
 
     }).toMap ++ ((doc \ "predicates" \ "predicate") map { node =>
@@ -177,9 +177,9 @@ final object XCSPParser {
     } else {
       relations.get(reference) match {
 
-        case Some(extension: Extension) => (Seq(), Seq(CSPOMConstraint(
+        case Some(extension: Extension) => cspom.ctr(CSPOMConstraint(
           'extension, scope.map(_._2),
-          Map("init" -> extension.init, "relation" -> extension.relation))))
+          Map("init" -> extension.init, "relation" -> extension.relation)))
 
         case Some(predicate: XCSPPredicate) =>
           try {

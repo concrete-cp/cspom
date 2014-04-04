@@ -52,7 +52,6 @@ case object MDDLeaf extends MDD[Any] {
     this
   }
   def iterator = Iterator(Nil)
-  def arity = 0
   def contains(t: Seq[Any]) = {
     require(t.isEmpty)
     true
@@ -77,7 +76,6 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
 
   }
   def iterator = trie.iterator.flatMap { case (k, t) => t.iterator.map(k :: _) }
-  def arity = trie.headOption.map(_._2.arity + 1).getOrElse(0)
   def contains(t: Seq[A]) = {
     trie.get(t.head).exists(_.contains(t.tail))
   }
