@@ -33,9 +33,10 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
     }
     val projected = if (vars.size < c.arguments.size) { filtered.project(vars) } else { filtered }
 
-    logger.warn(relation + " -> " + projected)
+    logger.info(relation + " -> " + projected)
     replaceCtr(c,
-      CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", projected)), problem)
+      CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", projected)),
+      problem)
 
   }
 
