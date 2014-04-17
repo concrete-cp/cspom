@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes.concrete"
 
-version := "2.0"
+version := "2.0.1"
 
 resolvers += "typesafe-relases" at "http://repo.typesafe.com/typesafe/releases"
 
