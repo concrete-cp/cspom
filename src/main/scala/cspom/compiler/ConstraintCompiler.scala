@@ -77,7 +77,7 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   def matchBool(constraint: CSPOMConstraint[_], problem: CSPOM): Boolean
 
   override def mtch(constraint: CSPOMConstraint[_], problem: CSPOM) =
-    if (matchBool(constraint, problem)) Some()
+    if (matchBool(constraint, problem)) Some(())
     else None
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM): Delta
