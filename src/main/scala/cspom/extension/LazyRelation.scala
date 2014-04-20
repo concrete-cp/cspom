@@ -13,4 +13,8 @@ class LazyRelation[A](val f: Unit => Relation[A]) extends Relation[A] {
   def project(c: Seq[Int]) = new LazyRelation(f.andThen(_.project(c)))
 
   override def toString = "Lazy relation: " + apply.toString
+
+  def -(elem: Seq[A]): Relation[A] = ???
+
+  def +(elem: Seq[A]): Relation[A] = ???
 }

@@ -2,7 +2,10 @@ package cspom.extension
 
 import scala.collection.Seq
 
-class Table[A](val table: Seq[Seq[A]]) extends Relation[A] {
+class Table[A](val table: Set[Seq[A]]) extends Relation[A] {
+
+  def this(table: Seq[Seq[A]]) = this(table.toSet)
+
   // Members declared in scala.collection.IterableLike
   def iterator: Iterator[Seq[A]] = table.iterator
   // Members declared in cspom.extension.Relation
@@ -14,5 +17,9 @@ class Table[A](val table: Seq[Seq[A]]) extends Relation[A] {
 
   override def toString = "Table(\n  " + table.map(_.mkString(", ")).mkString("\n  ") + ")"
 
-  def project(c: Seq[Int]) = new Table(table.map(t => c.map(t)).distinct)
+  def project(c: Seq[Int]) = new Table(table.map(t => c.map(t)))
+
+  def +(s: Seq[A]) = new Table(table + s)
+
+  def -(s: Seq[A]) = new Table(table - s)
 }

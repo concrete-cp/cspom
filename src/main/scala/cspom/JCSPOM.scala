@@ -14,7 +14,7 @@ object JCSPOM {
 
   def emptyMDD(): MDD[Nothing] = MDD.empty
 
-  def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + (t: _*)
+  def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + t
 
   def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toSeq))
 

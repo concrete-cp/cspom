@@ -1,26 +1,25 @@
 package cspom.compiler
 
-import org.junit.Test
 import cspom.CSPOM
 import CSPOM._
 import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
 import cspom.CSPOMConstraint
-import org.junit.Assert._
-import junit.framework.AssertionFailedError
+import org.scalatest.Matchers
+import org.scalatest.FlatSpec
 
-class MergeEqTest {
+class MergeEqTest extends FlatSpec with Matchers {
 
-  @Test
-  def test1() {
+  "MergeEq" should "simplify Variable = Constant" in {
+
     val problem = CSPOM { implicit problem =>
-      val v1 = IntVariable(0 to 10, Map("output_var" -> Unit)) as "V1"
+      val v1 = IntVariable(0 to 10) as "V1"
       val v2 = CSPOMConstant(0)
 
-      ctr(CSPOMConstraint('eq, Seq(v1, v2)))
+      ctr(v1 === v2)
     }
 
-    ProblemCompiler.compile(problem, StandardCompilers.improve() ++ StandardCompilers())
+    ProblemCompiler.compile(problem, Seq(MergeSame, MergeEq))
 
     //println(problem.namedExpressions("V1").params)
 
@@ -31,13 +30,12 @@ class MergeEqTest {
 
   }
 
-  @Test
-  def testExt() {
+  "MergeEq" should "simplify two Variables" in {
 
     val cspom = CSPOM { implicit problem =>
       val v0 = IntVariable(Seq(1, 2, 3)) as "V0"
       ctr(CSPOMConstraint('dummy, Seq(v0)))
-      val v1 = IntVariable(Seq(2, 3, 4), Map("var_is_introduced" -> Unit))
+      val v1 = IntVariable(Seq(2, 3, 4))
       ctr(v0 === v1)
     }
 
@@ -46,12 +44,13 @@ class MergeEqTest {
     val nv0: IntVariable = cspom.expression("V0") collect {
       case v: IntVariable => v
     } getOrElse {
-      throw new AssertionError()
+      fail()
     }
-    assertEquals(1, cspom.namedExpressions.size)
-    assertSame(nv0, cspom.namedExpressions.head._2)
-    assertEquals(cspom.toString, 1, cspom.constraints.size)
-    assertEquals(Set(2, 3), nv0.domain)
+
+    cspom.namedExpressions should have size 1
+    cspom.namedExpressions should be theSameInstanceAs nv0
+    cspom.constraints should have size 1
+    nv0.domain shouldBe Set(2, 3)
 
   }
 

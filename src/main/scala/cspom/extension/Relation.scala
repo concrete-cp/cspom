@@ -1,6 +1,6 @@
 package cspom.extension
 
-trait Relation[A] extends Iterable[Seq[A]] {
+trait Relation[A] extends Set[Seq[A]] {
 
   def tupleString = map { _.mkString(" ") } mkString "|"
 

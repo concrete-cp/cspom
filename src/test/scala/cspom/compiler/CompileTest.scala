@@ -2,17 +2,14 @@ package cspom.compiler;
 
 import cspom.xcsp.{ ParserTest, XCSPParser }
 import cspom.CSPOM
-import org.junit.Test
+import org.scalatest.FlatSpec
 
-final class CompileTest {
+final class CompileTest extends FlatSpec {
   val FILENAME = "crossword-m1-debug-05-01.xml";
 
-  @Test
-  def test() {
+  "ProblemCompiler" should s"compile $FILENAME" in {
     val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1;
     ProblemCompiler.compile(cspom, Seq())
-    //println(cspom);
-
   }
 
 }
