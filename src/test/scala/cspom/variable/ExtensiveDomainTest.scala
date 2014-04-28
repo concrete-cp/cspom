@@ -2,28 +2,47 @@ package cspom.variable;
 import org.junit.Test
 import org.junit.Before
 import org.junit.Assert._
+import org.scalatest.Matchers
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.FlatSpec
+import scala.collection.SortedSet
 
-final class ExtensiveDomainTest {
+final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChecks {
+  //
+  //  var intDomain: IntDomain = null;
+  //
+  //  //var anyDomain: ExtensiveDomain[_] = null;
+  //
+  //  @Before
+  //  def setUp() {
+  //    intDomain = IntDomain(Seq(1, 7, 9));
+  //    //anyDomain = ExtensiveDomain.of(8.9d, 1, intDomain);
+  //  }
+  //
+  //  @Test
+  //  def testEquals() {
+  //    assertEquals(Set(1, 7, 9), intDomain);
+  //  }
+  //
+  //  @Test
+  //  def testToString() {
+  //    assertEquals("{1, 7, 9}", intDomain.toString);
+  //    //assertEquals(anyDomain.toString, "{8.9, 1, {1, 7, 9}}");
+  //  }
 
-  var intDomain: IntDomain = null;
+  "Extensive domains" should "behave like sets" in {
+    forAll { s: SortedSet[Int] =>
 
-  //var anyDomain: ExtensiveDomain[_] = null;
+      whenever(s.nonEmpty && s.size != (s.max - s.min + 1)) {
 
-  @Before
-  def setUp() {
-    intDomain = IntDomain(Seq(1, 7, 9));
-    //anyDomain = ExtensiveDomain.of(8.9d, 1, intDomain);
+        val intDomain = IntDomain(s.toSeq)
+
+        s shouldBe intDomain
+        intDomain shouldBe s
+
+      }
+
+    }
   }
 
-  @Test
-  def testEquals() {
-    assertEquals(Set(1, 7, 9), intDomain);
-  }
-
-
-  @Test
-  def testToString() {
-    assertEquals("{1, 7, 9}", intDomain.toString);
-    //assertEquals(anyDomain.toString, "{8.9, 1, {1, 7, 9}}");
-  }
 }

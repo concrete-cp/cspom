@@ -76,13 +76,13 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
   it should "generate proper GML" in {
     val cspom = CSPOM { implicit problem =>
-      val v = List(
-        IntVariable(0 to 10),
-        IntVariable(0 to 10),
-        IntVariable(0 to 10));
+      val (x, y, z) = (
+        IntVariable(0 to 10) as "X",
+        IntVariable(0 to 10) as "Y",
+        IntVariable(0 to 10) as "Z");
 
-      ctr(CSPOMConstraint('leq, v.take(2)))
-      ctr(CSPOMConstraint('leq, v))
+      ctr(CSPOMConstraint('leq, Seq(x, y)))
+      ctr(CSPOMConstraint('leq, Seq(x, y, z)))
 
     }
 
@@ -90,23 +90,23 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 directed 0
 
           node [
-            id "_1"
-            label "_1"
+            id "X"
+            label "X"
           ]
           
           node [
-            id "_2"
-            label "_2"
+            id "Y"
+            label "Y"
           ]
           
           node [
-            id "_3"
-            label "_3"
+            id "Z"
+            label "Z"
           ]
           
           edge [
-            source "_3"
-            target "_1"
+            source "X"
+            target "Y"
             label "leq"
           ]
           
@@ -118,17 +118,17 @@ directed 0
           
           edge [
             source "cons1"
-            target "_3"
+            target "X"
           ]
           
           edge [
             source "cons1"
-            target "_1"
+            target "Y"
           ]
           
           edge [
             source "cons1"
-            target "_2"
+            target "Z"
           ]
           ]
 """

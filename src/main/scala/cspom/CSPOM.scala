@@ -226,7 +226,7 @@ class CSPOM extends LazyLogging {
       case e: CSPOMVariable[_] => e -> vn.names(e)
     } toMap
 
-    for (k <- variables.values) {
+    for (k <- variables.values.toSeq.sorted) {
       stb.append(s"""
           node [
             id "$k"
