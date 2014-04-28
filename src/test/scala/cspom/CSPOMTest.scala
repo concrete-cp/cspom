@@ -6,12 +6,13 @@ import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
 import CSPOM._
 import cspom.variable.BoolVariable
+import org.scalatest.Matchers
+import org.scalatest.FlatSpec
+import org.scalatest.OptionValues
 
-class CSPOMTest {
+class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
-  @Test
-  def variables(): Unit = {
-
+  "CSPOM" should "accept variables" in {
     var vars: List[CSPOMVariable[Int]] = null
 
     val cspom = CSPOM { implicit problem =>
@@ -21,35 +22,31 @@ class CSPOMTest {
         IntVariable(20 to 30) as "test3",
         IntVariable(30 to 40) as "test4")
 
-      //vars foreach { cspom.addVariable(_) }
-
-      ctr(CSPOMConstraint('dummy, vars))
     }
-    assertTrue(vars sameElements cspom.namedExpressions.values)
-    assertEquals(Some(vars(0)), cspom.expression("test1"))
+
+    vars should contain theSameElementsAs cspom.namedExpressions.values
+
+    cspom.expression("test1").value shouldBe vars(0)
   }
 
-  @Test(expected = classOf[IllegalArgumentException])
-  def duplicateVariable(): Unit = {
-    CSPOM { implicit problem =>
-      IntVariable(0 to 10) as "Test"
-      IntVariable(0 to 10) as "Test"
-    }
+  it should "throw exception in case of same names" in {
+    an[IllegalArgumentException] should be thrownBy
+      CSPOM { implicit problem =>
+        IntVariable(0 to 10) as "Test"
+        IntVariable(0 to 10) as "Test"
+      }
   }
 
-  @Test
-  def boolVariables(): Unit = {
+  it should "accept and reference bool variables" in {
     val cspom = CSPOM { implicit problem =>
       ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
       ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
     }
     // Third is CSPOMConstant(true) !
-    assertEquals(3, cspom.referencedExpressions.size)
+    cspom.referencedExpressions should have size 3
   }
 
-  @Test
-  def constraints(): Unit = {
-
+  it should "reference and dereference constraints" in {
     var leq: CSPOMConstraint[Boolean] = null
     var v: List[CSPOMVariable[Int]] = null
 
@@ -63,29 +60,77 @@ class CSPOMTest {
       leq = ctr(CSPOMConstraint('leq, Seq(v(0), v(1))))
     }
 
-    assertTrue(cspom.constraints(v(0)) contains leq)
-    assertTrue(cspom.constraints(v(1)) contains leq)
+    cspom.constraints(v(0)) should contain(leq)
+    cspom.constraints(v(1)) should contain(leq)
 
     cspom.removeConstraint(leq)
 
-    assertFalse(cspom.constraints.hasNext)
-    assertFalse(cspom.constraints(v(0)) contains leq)
-    assertFalse(cspom.constraints(v(1)) contains leq)
+    cspom.constraints should not be ('hasNext)
 
-    assertTrue(cspom.referencedExpressions.isEmpty)
+    cspom.constraints(v(0)) should not contain (leq)
+    cspom.constraints(v(1)) should not contain (leq)
+
+    cspom.referencedExpressions shouldBe empty
+
   }
 
-  //  @Test(expected = classOf[IllegalArgumentException])
-  //  def protectedVariable(): Unit = {
-  //    val cspom = new CSPOM
-  //    val v = List(
-  //      CSPOMVariable.ofInterval("test1", 0, 10),
-  //      CSPOMVariable.ofInterval("test2", 0, 10));
-  //
-  //    //v.foreach(cspom.addVariable)
-  //
-  //    val leq = new CSPOMConstraint('leq, v(0), v(1))
-  //    cspom.ctr(leq);
-  //    cspom.removeVariable(v(1))
-  //  }
+  it should "generate proper GML" in {
+    val cspom = CSPOM { implicit problem =>
+      val v = List(
+        IntVariable(0 to 10),
+        IntVariable(0 to 10),
+        IntVariable(0 to 10));
+
+      ctr(CSPOMConstraint('leq, v.take(2)))
+      ctr(CSPOMConstraint('leq, v))
+
+    }
+
+    cspom.toGML shouldBe """graph [
+directed 0
+
+          node [
+            id "_1"
+            label "_1"
+          ]
+          
+          node [
+            id "_2"
+            label "_2"
+          ]
+          
+          node [
+            id "_3"
+            label "_3"
+          ]
+          
+          edge [
+            source "_3"
+            target "_1"
+            label "leq"
+          ]
+          
+          node [
+            id "cons1"
+            label "leq"
+            graphics [ fill "#FFAA00" ]
+          ]
+          
+          edge [
+            source "cons1"
+            target "_3"
+          ]
+          
+          edge [
+            source "cons1"
+            target "_1"
+          ]
+          
+          edge [
+            source "cons1"
+            target "_2"
+          ]
+          ]
+"""
+  }
 }

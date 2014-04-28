@@ -9,31 +9,27 @@ import cspom.variable.CSPOMExpression
 
 object RemoveUselessEq extends ConstraintCompiler {
 
-  type A = CSPOMExpression[Boolean]
+  type A = Seq[CSPOMExpression[_]]
 
-  override def constraintMatcher = {
-    case CSPOMConstraint(res: A, 'eq, args, _) if allEqual(args) =>
-      res
-    case CSPOMConstraint(res: A, 'eq, args, _) if args.forall(_.isInstanceOf[CSPOMConstant[_]]) =>
-      res
+  override def matchConstraint(c: CSPOMConstraint[_]) = {
+    val distinct = c.arguments.distinct
+    val dsize = distinct.size
+    if (dsize <= 1 || distinct.size < c.arguments.size) {
+      Some(distinct)
+    } else {
+      None
+    }
   }
 
-  def compile(c: CSPOMConstraint[_], problem: CSPOM, res: A): Delta = {
-    problem.removeConstraint(c)
-    val delta = Delta().removed(c)
+  def compile(c: CSPOMConstraint[_], problem: CSPOM, distinct: A): Delta = {
 
-    val result = allEqual(c.arguments)
-
-    res match {
-      case b: BoolVariable => delta ++ replace(Seq(b), CSPOMConstant(result), problem)
-      case CSPOMConstant(c: Boolean) =>
-        require(c == result, s"$c != $result"); delta
-      case _ => throw new IllegalArgumentException
+    if (distinct.size > 1) {
+      replaceCtr(c, new CSPOMConstraint(c.result, 'eq, distinct, c.params), problem)
+    } else {
+      replaceCtr(c, Seq(), problem)
     }
 
   }
-
-  private def allEqual[A](s: Seq[A]) = s.forall(_ == s.head)
 
   def selfPropagation = false
 }

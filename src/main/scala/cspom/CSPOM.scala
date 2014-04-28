@@ -23,6 +23,7 @@ import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
 import cspom.variable.CSPOMVariable
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 object NameParser extends JavaTokenParsers {
 
@@ -52,7 +53,7 @@ object NameParser extends JavaTokenParsers {
  * @see CSPOMVariable
  *
  */
-class CSPOM {
+class CSPOM extends LazyLogging {
 
   /**
    * Map used to easily retrieve a variable according to its name.
@@ -170,7 +171,7 @@ class CSPOM {
 
   def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
     if (_constraints(c)) {
-      println(s"WARNING : $c already belongs to the problem")
+      logger.warn(s"$c already belongs to the problem")
       c
     } else {
       addConstraint(c)
@@ -207,54 +208,66 @@ class CSPOM {
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
 
-  //  /**
-  //   * Generates the constraint network graph in the GML format. N-ary
-  //   * constraints are represented as nodes.
-  //   *
-  //   * @return a String containing the GML representation of the constraint
-  //   *         network.
-  //   */
-  //  def toGML = {
-  //    val stb = new StringBuilder();
-  //    stb.append("graph [\n");
-  //    stb.append("directed 0\n");
-  //
-  //    for ((k, e) <- namedExpressions) {
-  //      stb.append("node [\n");
-  //      stb.append("id \"").append(k).append("\"\n");
-  //      stb.append("label \"").append(k).append("\"\n");
-  //      stb.append("]\n");
-  //    }
-  //
-  //    var gen = 0;
-  //    for (c <- constraints) {
-  //      c.scope.toSeq match {
-  //        case Seq(source, target) =>
-  //          stb.append("edge [\n");
-  //          stb.append("source \"").append(source).append("\"\n");
-  //          stb.append("target \"").append(target).append("\"\n");
-  //          stb.append("label \"").append(c.function).append("\"\n");
-  //          stb.append("]\n");
-  //        case s =>
-  //          stb.append("node [\n");
-  //          stb.append("id \"cons").append(gen).append("\"\n");
-  //          stb.append("label \"").append(c.function).append("\"\n");
-  //          stb.append("graphics [\n");
-  //          stb.append("fill \"#FFAA00\"\n");
-  //          stb.append("]\n");
-  //          stb.append("]\n");
-  //
-  //          for (v <- s) {
-  //            stb.append("edge [\n");
-  //            stb.append("source \"cons").append(gen).append("\"\n");
-  //            stb.append("target \"").append(v.name).append("\"\n");
-  //            stb.append("]\n");
-  //          }
-  //          gen += 1;
-  //      }
-  //    }
-  //    stb.append("]\n").toString
-  //  }
+  /**
+   * Generates the constraint network graph in the GML format. N-ary
+   * constraints are represented as nodes.
+   *
+   * @return a String containing the GML representation of the constraint
+   *         network.
+   */
+  def toGML = {
+    val stb = new StringBuilder();
+    stb.append("graph [\n");
+    stb.append("directed 0\n");
+
+    val vn = new VariableNames(this)
+
+    val variables = referencedExpressions.flatMap(_.flatten).collect {
+      case e: CSPOMVariable[_] => e -> vn.names(e)
+    } toMap
+
+    for (k <- variables.values) {
+      stb.append(s"""
+          node [
+            id "$k"
+            label "$k"
+          ]
+          """)
+
+    }
+
+    var gen = 0;
+
+    constraints.flatMap { c =>
+      c.fullScope.flatMap(_.flatten).collect {
+        case v: CSPOMVariable[_] => variables(v)
+      } match {
+        case Seq(source, target) => s"""
+          edge [
+            source "$source"
+            target "$target"
+            label "${c.function.name}"
+          ]
+          """
+        case s =>
+          gen += 1
+          s"""
+          node [
+            id "cons$gen"
+            label "${c.function.name}"
+            graphics [ fill "#FFAA00" ]
+          ]
+          """ ++ s.flatMap(v => s"""
+          edge [
+            source "cons$gen"
+            target "$v"
+          ]
+          """)
+      }
+    }.addString(stb)
+
+    stb.append("]\n").toString
+  }
 
   def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]) = {
     _namedExpressions = _namedExpressions.map {
