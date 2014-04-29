@@ -17,4 +17,12 @@ class LazyRelation[A](val f: Unit => Relation[A]) extends Relation[A] {
   def -(elem: Seq[A]): Relation[A] = ???
 
   def +(elem: Seq[A]): Relation[A] = ???
+
+  override def equals(o: Any) = {
+    o match {
+      case l: LazyRelation[A] => apply == l.apply
+      case r: Relation[A] => apply == r
+      case _ => false
+    }
+  }
 }
