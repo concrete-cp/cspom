@@ -15,6 +15,8 @@ import java.util.StringTokenizer
 import scala.collection.mutable.ArrayBuffer
 import cspom.extension.Table
 import scala.util.parsing.input.Reader
+import cspom.extension.MDD
+import cspom.extension.Relation
 
 sealed trait PredicateNode
 
@@ -71,13 +73,13 @@ final object ConstraintParser extends JavaTokenParsers {
       readerToString(r.rest, stb.append(r.first))
     }
   
-  def parseTable(reader: Reader[Char], arity: Int, size: Int): Table[Int] = {
+  def parseTable(reader: Reader[Char], arity: Int, size: Int): Relation[Int] = {
 
     val text = readerToString(reader)
 
     val st = new StringTokenizer(text, "|")
 
-    var table = new ArrayBuffer[Seq[Int]]
+    var table = MDD.empty[Int]
     
     while(st.hasMoreTokens) {
       val t = st.nextToken().trim.split(" +")
@@ -85,7 +87,7 @@ final object ConstraintParser extends JavaTokenParsers {
       table += t.map(_.toInt)
     }
   
-    new Table(table.toSeq)
+    table
   }
 
 }

@@ -4,5 +4,5 @@ object StandardCompilers {
 
   def apply() = Seq(SplitEqVec, SplitAllEq, ReduceRelations)
 
-  def improve() = Seq(MergeSame, MergeEq, RemoveUselessEq)
+  def improve() = Seq(RemoveAnd, MergeSame, MergeEq, RemoveUselessEq)
 }

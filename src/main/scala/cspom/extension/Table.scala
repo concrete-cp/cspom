@@ -22,4 +22,10 @@ class Table[A](val table: Set[Seq[A]]) extends Relation[A] {
   def +(s: Seq[A]) = new Table(table + s)
 
   def -(s: Seq[A]) = new Table(table - s)
+
+  override def equals(o: Any) = o match {
+    case t: Table[A] => t.table == table
+    case o => super.equals(o)
+
+  }
 }
