@@ -1,11 +1,10 @@
 package cspom.variable;
-import org.junit.Test
-import org.junit.Before
-import org.junit.Assert._
+
+import scala.collection.SortedSet
+
+import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.FlatSpec
-import scala.collection.SortedSet
 
 final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChecks {
   //

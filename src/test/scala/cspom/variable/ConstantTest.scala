@@ -1,13 +1,8 @@
 package cspom.variable;
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import scala.util.Random
-import org.junit.Before
-import org.junit.Test;
+import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.FlatSpec
 
 class ConstantTest extends FlatSpec with Matchers with PropertyChecks {
 

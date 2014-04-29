@@ -9,7 +9,7 @@ final class BoolVariable(params: Map[String, Any] = Map())
 
   def intersected(that: SimpleExpression[_ >: Boolean]): SimpleExpression[Boolean] = that match {
     case t: BoolVariable => new BoolVariable(t.params ++ params)
-    case t: CSPOMConstant[Boolean] => CSPOMConstant(t.value, t.params ++ params)
+    case c @ CSPOMConstant(t: Boolean) => CSPOMConstant(t, c.params ++ params)
     case _ => throw new IllegalArgumentException
   }
 

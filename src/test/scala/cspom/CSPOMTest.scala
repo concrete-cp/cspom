@@ -1,7 +1,5 @@
 package cspom
 
-import org.junit.Assert._
-import org.junit.Test
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
 import CSPOM._

@@ -1,16 +1,12 @@
 package cspom.flatzinc
 
-import java.text.ParseException
 import scala.util.parsing.combinator.JavaTokenParsers
-import scala.util.parsing.input.StreamReader
-import org.junit.Test
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
-import java.io.StringReader
+
+import org.scalatest.FlatSpec
+
 import cspom.CSPOM
 import cspom.compiler.ConstraintCompiler
 import cspom.compiler.ProblemCompiler
-import org.scalatest.FlatSpec
 
 class FlatZinc extends FlatSpec {
 
