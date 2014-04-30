@@ -1,11 +1,9 @@
 package cspom.xcsp;
 
 import java.io.InputStream
-
 import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
-
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
@@ -13,6 +11,8 @@ import cspom.extension.Relation
 import cspom.variable.IntDomain
 import cspom.variable.IntInterval
 import cspom.variable.IntVariable
+import cspom.variable.CSPOMConstant
+import cspom.variable.SimpleExpression
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -80,7 +80,7 @@ final object XCSPParser {
    * @param doc
    *            XCSP document
    */
-  private def parseVariables(doc: NodeSeq): Seq[(String, IntVariable)] = {
+  private def parseVariables(doc: NodeSeq): Seq[(String, SimpleExpression[Int])] = {
     val domains = (doc \ "domains" \ "domain") map { node =>
       (node \ "@name").text -> parseDomain(node.text)
     } toMap
@@ -90,7 +90,11 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      name -> new IntVariable(domain)
+      if (domain.size == 1) {
+        name -> CSPOMConstant(domain.head)
+      } else {
+        name -> new IntVariable(domain)
+      }
     }
 
   }
@@ -107,7 +111,7 @@ final object XCSPParser {
    * @throws CSPParseException
    *             If a relation or predicate could not be found or applied.
    */
-  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, IntVariable], cspom: CSPOM) = {
+  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM) = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
         val text = new CharSequenceReader(node.text) //new StringReader(node.text)
@@ -153,7 +157,7 @@ final object XCSPParser {
    */
   private def genConstraint(name: String, varNames: String,
     parameters: String, reference: String, relations: Map[String, AnyRef],
-    declaredVariables: Map[String, IntVariable], cspom: CSPOM): Unit = {
+    declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
 
     val scope = varNames.split(" +").iterator.map { s =>
       s -> declaredVariables.getOrElse(s, {

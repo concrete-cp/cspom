@@ -17,7 +17,7 @@ object MDD {
 
 }
 
-class IdMap[A, B] extends mutable.Map[A, B] {
+final class IdMap[A, B] extends mutable.Map[A, B] {
   val idMap = new IdentityHashMap[A, B]
 
   def +=(kv: (A, B)) = {
@@ -36,7 +36,7 @@ class IdMap[A, B] extends mutable.Map[A, B] {
 
 }
 
-class IdSet[A] extends mutable.Set[A] {
+final class IdSet[A] extends mutable.Set[A] {
   val idMap = new IdentityHashMap[A, Unit]
   def iterator: Iterator[A] = JavaConversions.asScalaSet(idMap.keySet).iterator
 

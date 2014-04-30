@@ -17,6 +17,7 @@ import cspom.extension.Table
 import scala.util.parsing.input.Reader
 import cspom.extension.MDD
 import cspom.extension.Relation
+import cspom.variable.SimpleExpression
 
 sealed trait PredicateNode
 
@@ -45,7 +46,7 @@ final object ConstraintParser extends JavaTokenParsers {
       ident ^^ (map(_)) |
       integer ^^ (_.toString)
 
-  def split(expression: String, declaredVariables: Map[String, IntVariable], cspom: CSPOM): Unit = {
+  def split(expression: String, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
     func(new CharSequenceReader(expression)).get match {
       case PredicateConstraint(operator, arguments) =>
         cspom.ctr(CSPOMConstraint(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom))))
@@ -55,24 +56,23 @@ final object ConstraintParser extends JavaTokenParsers {
 
   }
 
-  private def toVariable(node: PredicateNode, declaredVariables: Map[String, IntVariable], cspom: CSPOM): CSPOMExpression[_] = {
+  private def toVariable(node: PredicateNode, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): SimpleExpression[_] = {
     node match {
       case PredicateConstant(value) => CSPOMConstant(value)
       case PredicateVariable(variableId) => declaredVariables(variableId)
       case PredicateConstraint(operator, arguments) =>
         cspom.is(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom)))
-
     }
   }
-  
-    @annotation.tailrec
+
+  @annotation.tailrec
   private def readerToString(r: Reader[Char], stb: StringBuilder = new StringBuilder): String =
     if (r.atEnd) {
       stb.toString
     } else {
       readerToString(r.rest, stb.append(r.first))
     }
-  
+
   def parseTable(reader: Reader[Char], arity: Int, size: Int): Relation[Int] = {
 
     val text = readerToString(reader)
@@ -80,14 +80,14 @@ final object ConstraintParser extends JavaTokenParsers {
     val st = new StringTokenizer(text, "|")
 
     var table = MDD.empty[Int]
-    
-    while(st.hasMoreTokens) {
+
+    while (st.hasMoreTokens) {
       val t = st.nextToken().trim.split(" +")
       require(t.length == arity, t.toSeq.toString)
       table += t.map(_.toInt)
     }
-  
-    table
+
+    table.reduce
   }
 
 }

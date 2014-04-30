@@ -1,11 +1,14 @@
 package cspom.variable
 
+import scala.Ordering
 import scala.collection.immutable.SortedSet
+
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
 sealed trait IntDomain extends SortedSet[Int] {
   def intersect(domain: IntDomain): IntDomain
   implicit def ordering = Ordering.Int
+  def singleton: Boolean
 }
 
 object IntDomain extends LazyLogging {
@@ -13,10 +16,6 @@ object IntDomain extends LazyLogging {
     //require(values.take(2).size > 1, "constants not accepted, use appropriate constructor")
 
     require(isSorted(values), s"only ordered domains are supported")
-
-    if (values.take(2).size < 2) {
-      logger.warn(s"$values: a domain should be of size 2 or more")
-    }
 
     values match {
       case r: Range if r.step == 1 => new IntInterval(r.head, r.last)
@@ -34,6 +33,9 @@ object IntDomain extends LazyLogging {
 }
 
 final case class IntSeq(val values: SortedSet[Int]) extends IntDomain {
+  
+  def singleton = size == 1
+  
   override def toString =
     if (size > 5) {
       (values.take(4) ++: Seq("...", values.last)).mkString("{", ", ", "}")
@@ -58,11 +60,15 @@ final case class IntSeq(val values: SortedSet[Int]) extends IntDomain {
 
 final case class IntInterval(lb: Int, ub: Int) extends IntDomain {
 
+  
+  
   val range = lb to ub
 
   require(size > 0, "lb <= ub required, and intervals cannot contain more than Int.MaxValue elements.")
 
   override def size = range.size
+  
+  def singleton = size == 1
 
   def intersect(domain: IntDomain): IntDomain = domain match {
     case FreeInt => this
@@ -87,6 +93,7 @@ final case class IntInterval(lb: Int, ub: Int) extends IntDomain {
 }
 
 case object FreeInt extends IntDomain {
+  def singleton = false
   def -(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
   def +(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
   def contains(elem: Int): Boolean = elem.isInstanceOf[Int]
