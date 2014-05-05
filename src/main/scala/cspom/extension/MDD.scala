@@ -66,8 +66,16 @@ sealed trait MDD[A] extends Relation[A] {
   final def lambda: BigInt = lambda(new IdMap[MDD[A], BigInt]())
   def lambda(ls: IdMap[MDD[A], BigInt]): BigInt
 
-  final def reduce: MDD[A] = reduce(new IdMap[Map[A, MDD[A]], MDD[A]]())
-  def reduce(mdds: IdMap[Map[A, MDD[A]], MDD[A]]): MDD[A]
+  /*
+   * Do not use IdMap here as reduceable MDDs are equal but not ident
+   */
+  final def reduce = reduce2
+  
+  final def reduce1: MDD[A] = reduce1(new HashMap())
+  def reduce1(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A]
+
+  final def reduce2: MDD[A] = reduce2(new HashMap())
+  def reduce2(mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A]
 
   override def toString = s"MDD with $edges edges representing $lambda tuples"
 
@@ -82,7 +90,7 @@ sealed trait MDD[A] extends Relation[A] {
     lambda.toInt
   }
 
-  final def union(m: MDD[A]): MDD[A] = union(m, new IdMap())
+  final def union(m: MDD[A]): MDD[A] = union(m, new IdMap()).reduce
   def union(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
 
   override final def equals(m: Any) = m match {
@@ -90,7 +98,7 @@ sealed trait MDD[A] extends Relation[A] {
     case o => o equals this
   }
 
-  def equals(m: MDD[A], mdds: IdMap[MDD[A], Boolean]): Boolean
+  def equals(m: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean
 
 }
 
@@ -107,11 +115,12 @@ case object MDDLeaf extends MDD[Any] {
   }
   def edges(e: IdSet[MDD[Any]]) = 0
   def lambda(ls: IdMap[MDD[Any], BigInt]) = BigInt(1)
-  def reduce(mdds: IdMap[Map[Any, MDD[Any]], MDD[Any]]) = this
+  def reduce1(mdds: mutable.Map[Map[Any, MDD[Any]], MDD[Any]]) = this
+  def reduce2(mdds: mutable.Map[MDD[Any], MDD[Any]]) = this
   def filter(f: (Int, Any) => Boolean, k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def union(m: MDD[Any], mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = this
-  def equals(m: MDD[Any], mdds: IdMap[MDD[Any], Boolean]) = {
+  def equals(m: MDD[Any], mdds: mutable.Map[MDD[Any], Boolean]) = {
     m eq this
   }
 }
@@ -149,7 +158,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
 
   override val hashCode: Int = trie.hashCode
 
-  def equals(o: MDD[A], mdds: IdMap[MDD[A], Boolean]): Boolean =
+  def equals(o: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean =
     mdds.getOrElseUpdate(o, o match {
       case t: MDDNode[A] =>
         trie.size == t.trie.size && trie.forall {
@@ -158,9 +167,13 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
       case _ => false
     })
 
-  def reduce(mdds: IdMap[Map[A, MDD[A]], MDD[A]]): MDD[A] = {
+  def reduce1(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A] = {
     mdds.getOrElseUpdate(trie,
-      new MDDNode(trie.map(e => e._1 -> e._2.reduce(mdds))))
+      new MDDNode(trie.map(e => e._1 -> e._2.reduce1(mdds))))
+  }
+  def reduce2(mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A] = {
+    mdds.getOrElseUpdate(this,
+      new MDDNode(trie.map(e => e._1 -> e._2.reduce2(mdds))))
   }
 
   def filter(f: (Int, A) => Boolean, k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A] = mdds.getOrElseUpdate(this, {
