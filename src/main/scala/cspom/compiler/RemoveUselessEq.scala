@@ -12,13 +12,15 @@ object RemoveUselessEq extends ConstraintCompiler {
   type A = Seq[CSPOMExpression[_]]
 
   override def matchConstraint(c: CSPOMConstraint[_]) = {
-    val distinct = c.arguments.distinct
-    val dsize = distinct.size
-    if (dsize <= 1 || distinct.size < c.arguments.size) {
-      Some(distinct)
-    } else {
-      None
-    }
+    if (c.function == 'eq) {
+      val distinct = c.arguments.distinct
+      val dsize = distinct.size
+      if (dsize <= 1 || distinct.size < c.arguments.size) {
+        Some(distinct)
+      } else {
+        None
+      }
+    } else { None }
   }
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, distinct: A): Delta = {

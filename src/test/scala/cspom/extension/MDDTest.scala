@@ -2,8 +2,11 @@ package cspom.extension;
 
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
+import org.scalatest.time.Seconds
+import org.scalatest.concurrent.Timeouts
+import org.scalatest.time.Span
 
-final class MDDTest extends FlatSpec with Matchers {
+final class MDDTest extends FlatSpec with Matchers with Timeouts {
 
   val relation: MDD[Int] = MDD.empty + Seq(2, 5, 5) + Seq(3, 5, 5)
 
@@ -48,5 +51,25 @@ final class MDDTest extends FlatSpec with Matchers {
 
   it should "be projected" in {
     relation.project(Seq(1, 2)) should ===(Set(Seq(5, 5)))
+  }
+
+  it should "be reduced" in {
+    val r2 = relation.reduce
+    r2.edges shouldBe 4
+    r2 shouldBe relation
+    relation shouldBe r2
+  }
+
+  it should "be reduced quickly" in {
+    var mdd: MDD[Int] = MDD.empty
+    for (i <- 1 to 20; j <- 1 to 20; k <- 1 to 20; l <- 1 to 20; m <- 1 to 20) {
+      mdd += Seq(i, j, k, l, m)
+    }
+
+    val r2 = failAfter(Span(2, Seconds)) {
+      mdd.reduce
+    }
+
+    r2.edges shouldBe (100)
   }
 }

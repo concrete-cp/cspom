@@ -1,35 +1,31 @@
 package cspom.variable;
 
-import org.junit.Assert.assertEquals;
-import org.junit.Assert.assertFalse;
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.prop.PropertyChecks
 
-import scala.util.Random;
+class ConstantTest extends FlatSpec with Matchers with PropertyChecks {
 
-import org.junit.Before;
-import org.junit.Test;
+  "Int constants" should "behave like Ints" in {
 
-class ConstantTest() {
+    forAll { n: Int =>
+      val intConstant = CSPOMConstant(n)
 
-  val TEST_CONSTANT_INT = Random.nextInt;
-  val TEST_CONSTANT_DOUBLE = Random.nextDouble;
-  val intConstant = CSPOMConstant(TEST_CONSTANT_INT);
-  val doubleConstant = CSPOMConstant(TEST_CONSTANT_DOUBLE);
+      intConstant shouldBe CSPOMConstant(n)
+      intConstant.hashCode shouldBe CSPOMConstant(n).hashCode()
+      intConstant.value shouldBe n
+    }
 
-  @Test
-  def testEquals = {
-    assertEquals(intConstant, CSPOMConstant(TEST_CONSTANT_INT));
-    assertEquals(doubleConstant, CSPOMConstant(TEST_CONSTANT_DOUBLE));
   }
 
-  @Test
-  def testHashCode = {
-    assertEquals(intConstant.hashCode, CSPOMConstant(TEST_CONSTANT_INT).hashCode);
-    assertEquals(doubleConstant.hashCode, CSPOMConstant(TEST_CONSTANT_DOUBLE).hashCode);
+  "Double constants" should "behave like Doubles" in {
+    forAll { n: Double =>
+      val doubleConstant = CSPOMConstant(n)
+
+      doubleConstant shouldBe CSPOMConstant(n)
+      doubleConstant.hashCode shouldBe CSPOMConstant(n).hashCode()
+      doubleConstant.value shouldBe n
+    }
   }
 
-  @Test
-  def testGetValue() {
-    assertEquals(intConstant.value, TEST_CONSTANT_INT);
-    assertEquals(doubleConstant.value, TEST_CONSTANT_DOUBLE, 0.0);
-  }
 }

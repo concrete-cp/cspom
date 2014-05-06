@@ -1,25 +1,21 @@
 package cspom.xcsp;
 
-import scala.collection.JavaConversions
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+
 import cspom.CSPOM
-import org.junit.Assert._
-import org.junit.Test
 import cspom.compiler.ProblemCompiler
 
-final class ParserTest {
+final class ParserTest extends FlatSpec with Matchers {
   val FILENAME = "crossword-m1-debug-05-01.xml";
 
-  @Test
-  def test() {
+  "XCSPParser" should s"parse $FILENAME" in {
+
     val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1;
     //println(cspom);
-    assertEquals(25, cspom.namedExpressions.size)
-    assertFalse(cspom.namedExpressions.values.exists(_.params.contains("var_is_introduced")))
-    assertTrue(cspom.constraints.size >= 55)
-    //println(cspom)
+    cspom.namedExpressions should have size 25
+    assert(!cspom.namedExpressions.values.exists(_.params.contains("var_is_introduced")))
 
-    //ProblemCompiler.compile(cspom, Seq(new ConstraintTyper(XCSPConstraintSignatures.get)))
-
+    cspom.constraints.size should be >= 55
   }
-
 }

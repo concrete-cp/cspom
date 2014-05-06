@@ -1,42 +1,57 @@
 package cspom.variable
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
-
 import cspom.CSPOM
 import cspom.CSPOMConstraint
+import org.scalatest.Matchers
+import org.scalatest.FlatSpec
+import CSPOM._
+import org.scalatest.prop.PropertyChecks
 
-class VariableTest {
-  @Test
-  def registerTest() {
-    val v = IntVariable(0 to 10)
-    val c = CSPOMConstraint('leq, Seq(v))
-    val cspom = new CSPOM
-    //cspom.addVariable(v)
-    cspom.ctr(c)
-    //v registerConstraint c
-    assertEquals(cspom.referencedExpressions, Set(CSPOMConstant(true), v))
-    assertTrue(cspom.constraints(v) sameElements List(c))
+class VariableTest extends FlatSpec with Matchers with PropertyChecks {
+
+  "CSPOM" should "register variables" in {
+    var v: IntVariable = null
+    var c: CSPOMConstraint[_] = null
+    val cspom = CSPOM { implicit problem =>
+      v = IntVariable(0 to 10)
+      c = ctr(CSPOMConstraint('leq, Seq(v)))
+    }
+    cspom.referencedExpressions should contain theSameElementsAs Seq(CSPOMConstant(true), v)
+    cspom.constraints(v) should contain theSameElementsAs Seq(c)
+
   }
 
-  @Test
-  def containsTest() {
+  "Boolean variables" should "work as sets" in {
     val vb = new BoolVariable()
 
-    assertTrue(vb.contains(true))
-    assertFalse(vb.contains(0))
-    assertTrue(vb.contains(false))
+    forAll { i: Boolean => vb.contains(i) shouldBe true }
 
-    val vi = IntVariable(0 to 10)
-    
-    assertTrue(vi.contains(5))
-    assertFalse(vi.contains(15))
-    assertFalse(vi.contains(false))
-    
+    forAll { i: Int => vb.contains(i) shouldBe false }
+
+    forAll { i: Double => vb.contains(i) shouldBe false }
+  }
+
+  "Int variables" should "work as sets" in {
+
+    forAll(IntIntervalTest.validIntervals) { itv =>
+      val vi = new IntVariable(itv)
+
+      forAll { i: Int => vi.contains(i) shouldBe itv.contains(i) }
+
+      forAll { i: Boolean => vi.contains(i) shouldBe false }
+
+      forAll { i: Double => vi.contains(i) shouldBe false }
+    }
+
+  }
+
+  "Integer free variables" should "work as sets" in {
     val vf = IntVariable.free()
-    assertTrue(vf.contains(5))
-    assertFalse(vf.contains(true))
+
+    forAll { i: Boolean => vf.contains(i) shouldBe false }
+
+    forAll { i: Int => vf.contains(i) shouldBe true }
+
+    forAll { i: Double => vf.contains(i) shouldBe false }
   }
 }

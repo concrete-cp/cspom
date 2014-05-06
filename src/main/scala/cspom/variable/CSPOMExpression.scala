@@ -3,6 +3,7 @@ package cspom.variable
 import cspom.CSPOM
 import scala.collection.mutable.WeakHashMap
 import cspom.Parameterized
+import scala.collection.SetLike
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -44,13 +45,14 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   def contains[S >: T](that: S): Boolean
 
   def flatten = Seq(this)
-  
+
   def domain: Iterable[T]
+
 }
 
 class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
-  
+
   def contains[S >: T](that: S) = value == that
 
   def intersected(that: SimpleExpression[_ >: T]) =

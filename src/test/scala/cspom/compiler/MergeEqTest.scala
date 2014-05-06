@@ -7,8 +7,9 @@ import cspom.variable.IntVariable
 import cspom.CSPOMConstraint
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
+import org.scalatest.OptionValues
 
-class MergeEqTest extends FlatSpec with Matchers {
+class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
   "MergeEq" should "simplify Variable = Constant" in {
 
@@ -30,7 +31,7 @@ class MergeEqTest extends FlatSpec with Matchers {
 
   }
 
-  "MergeEq" should "simplify two Variables" in {
+  it should "simplify two Variables" in {
 
     val cspom = CSPOM { implicit problem =>
       val v0 = IntVariable(Seq(1, 2, 3)) as "V0"
@@ -41,16 +42,14 @@ class MergeEqTest extends FlatSpec with Matchers {
 
     ProblemCompiler.compile(cspom, Seq(MergeSame, MergeEq))
 
-    val nv0: IntVariable = cspom.expression("V0") collect {
+    val nv0 = cspom.expression("V0") collect {
       case v: IntVariable => v
-    } getOrElse {
-      fail()
     }
 
     cspom.namedExpressions should have size 1
-    cspom.namedExpressions should be theSameInstanceAs nv0
+    nv0.value should be theSameInstanceAs cspom.namedExpressions.head._2
     cspom.constraints should have size 1
-    nv0.domain shouldBe Set(2, 3)
+    nv0.value.domain shouldBe Set(2, 3)
 
   }
 
