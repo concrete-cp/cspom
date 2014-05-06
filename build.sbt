@@ -4,8 +4,7 @@ organization := "fr.univ-valenciennes.concrete"
 
 version := "2.0.4-SNAPSHOT"
 
-resolvers += "typesafe-relases" at "http://repo.typesafe.com/typesafe/releases"
-
+// For BZip2
 resolvers += "Concrete repository" at "http://concrete-cp.github.io/concrete/repository"
 
 scalaVersion := "2.11.0"
