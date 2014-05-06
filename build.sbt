@@ -29,5 +29,5 @@ EclipseKeys.withSource := true
 org.scalastyle.sbt.ScalastylePlugin.Settings
 
 testOptions in Test <+= (target in Test) map {
-  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports"))
+  t => Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${t / "test-reports"}")
 }
