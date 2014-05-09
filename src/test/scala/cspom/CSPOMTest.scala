@@ -84,7 +84,9 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
     }
 
-//    cspom.toGML shouldBe """graph [
+    val gml = cspom.toGML
+    
+    //shouldBe """graph [
 //directed 0
 //
 //          node [
