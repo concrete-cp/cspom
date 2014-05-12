@@ -144,7 +144,7 @@ class CSPOM extends LazyLogging {
   }
 
   def removeConstraint(c: CSPOMConstraint[_]) {
-    require(_constraints(c))
+    require(_constraints(c), s"$c does not involve $this (not in ${_constraints})")
     _constraints -= c
 
     //require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
