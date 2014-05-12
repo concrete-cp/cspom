@@ -18,5 +18,7 @@ final class BoolVariable(params: Map[String, Any] = Map())
   }
 
   def domain = Seq(false, true)
+  
+  def fullyDefined = true
 
 }

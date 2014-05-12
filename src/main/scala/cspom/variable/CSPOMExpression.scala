@@ -31,6 +31,8 @@ sealed trait CSPOMExpression[+T] extends Parameterized {
   def flatten: Seq[SimpleExpression[T]]
 
   def isTrue: Boolean
+  
+  def fullyDefined: Boolean
 }
 
 /*
@@ -72,6 +74,8 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
   def isTrue = value == true
 
   def domain = Iterable(value)
+  
+  def fullyDefined = true
 }
 
 object CSPOMConstant {
@@ -122,4 +126,6 @@ final case class CSPOMSeq[+T](
   def flatten = values.flatMap(_.flatten)
 
   def isTrue = false
+  
+  def fullyDefined = values.forall(_.fullyDefined)
 }

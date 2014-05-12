@@ -32,11 +32,13 @@ final class IntVariable(val domain: IntDomain, params: Map[String, Any] = Map())
       case t: CSPOMExpression[_] =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
+  
+  def fullyDefined = domain.fullyDefined
 
 }
 
 object IntVariable {
-  def apply(values: Seq[Int], params: Map[String, Any] = Map()): IntVariable =
+  def apply(values: Iterable[Int], params: Map[String, Any] = Map()): IntVariable =
     new IntVariable(IntDomain(values), params)
 
   def free(params: Map[String, Any] = Map()): IntVariable = new IntVariable(FreeInt, params)

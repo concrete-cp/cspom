@@ -16,6 +16,7 @@ class FreeVariable(params: Map[String, Any]) extends CSPOMVariable[Any](params) 
   def intersected(other: SimpleExpression[_ >: Any]) = other
   def contains[S >: Any](that: S) = true
   def domain = throw new UnsupportedOperationException
+  def fullyDefined = false
 }
 
 
