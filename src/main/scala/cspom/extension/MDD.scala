@@ -70,7 +70,7 @@ sealed trait MDD[A] extends Relation[A] {
    * Do not use IdMap here as reduceable MDDs are equal but not ident
    */
   final def reduce = reduce2
-  
+
   final def reduce1: MDD[A] = reduce1(new HashMap())
   def reduce1(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A]
 
@@ -181,12 +181,20 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
       .filter(e => f(k, e._1))
       .map(e => e._1 -> e._2.filter(f, k + 1, mdds))
       .filter(e => e._2.nonEmpty)
+
     if (newTrie.isEmpty) {
       MDD.empty
+    } else if (same(trie, newTrie)) {
+      this
     } else {
       new MDDNode(newTrie)
     }
   })
+
+  private def same(t1: Map[A, MDD[A]], t2: Map[A, MDD[A]]): Boolean =
+    t1.hashCode == t2.hashCode && t1.size == t2.size && t1.forall {
+      case (k1, v1) => t2.get(k1).exists(v1 eq _)
+    }
 
   def union(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]) =
     mdds.getOrElseUpdate((this, m), m match {
