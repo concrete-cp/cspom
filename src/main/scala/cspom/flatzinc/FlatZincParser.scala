@@ -1,20 +1,22 @@
 package cspom.flatzinc
+
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.text.ParseException
+
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.combinator.RegexParsers
-import cspom.variable.CSPOMVariable
-import cspom.variable.IntInterval
-import cspom.CSPOM
-import java.io.InputStream
 import scala.util.parsing.input.StreamReader
-import java.io.InputStreamReader
+
+import cspom.CSPOM
 import cspom.CSPOMConstraint
+import cspom.CSPParseException
+import cspom.StatisticsManager
+import cspom.compiler.ProblemCompiler
+import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMConstant
-import scala.util.parsing.input.CharSequenceReader
-import cspom.CSPParseException
-import cspom.compiler.ProblemCompiler
-import cspom.StatisticsManager
+import cspom.variable.CSPOMVariable
 
 object FlatZincParser extends RegexParsers {
 
@@ -44,6 +46,8 @@ object FlatZincParser extends RegexParsers {
     val decl: Map[String, CSPOMExpression[Any]] = variables.map {
       case (name, single: CSPOMVariable[_], _) => name -> single
       case (name, seq: CSPOMSeq[_], _) => name -> seq
+      case (name, c: CSPOMConstant[_], _) =>
+        throw new IllegalStateException(s"Unexpected constant $name: $c")
     } toMap
 
     val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
@@ -60,11 +64,11 @@ object FlatZincParser extends RegexParsers {
     case predicates ~ parameters ~ variables =>
       val params = parameters.toMap
       val (declared, affectations) = mapVariables(params, variables)
-      success(declared, affectations) ~ rep(constraint(declared)) ~ solve_goal
+      success((declared, affectations)) ~ rep(constraint(declared)) ~ solve_goal
   } ^^ {
     case (declared, affectations) ~ constraints ~ goal =>
       val p = CSPOM { implicit problem =>
-        
+
         for ((name, expr) <- declared) {
           expr as name
         }
