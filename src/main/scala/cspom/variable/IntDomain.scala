@@ -13,71 +13,35 @@ sealed trait IntDomain extends SortedSet[Int] {
 }
 
 object IntDomain extends LazyLogging {
-  def apply(values: Iterable[Int]) = {
-    values match {
-      case s: SortedSet[Int] => IntSeq(s)
-      case r: Range if r.step == 1 => new IntInterval(r.head, r.last)
-      case s: Seq[Int] if (s.min - s.max == s.size - 1) => new IntInterval(s.min, s.max)
-      case s => IntSeq(values.to[SortedSet])
-    }
-  }
+  def apply(values: Iterable[Int]) = new IntIntervals(Intervals(values))
+  def apply(itv: Interval) = new IntIntervals(Intervals(itv))
 }
 
-final case class IntSeq(val values: SortedSet[Int]) extends IntDomain {
-
-  def singleton = size == 1
-
-  override def toString =
-    if (size > 5) {
-      (values.take(4) ++: Seq("...", values.last)).mkString("{", ", ", "}")
-    } else {
-      values.mkString("{", ", ", "}")
-    }
-
-  def intersect(domain: IntDomain) = domain match {
-    case FreeInt => this
-    case _ => new IntSeq(this.values.intersect(domain))
-  }
-
-  def iterator: Iterator[Int] = values.iterator
-
-  def keysIteratorFrom(start: Int): Iterator[Int] = values.keysIteratorFrom(start)
-
-  def -(elem: Int): SortedSet[Int] = IntSeq(values - elem)
-  def +(elem: Int): SortedSet[Int] = IntSeq(values + elem)
-  def contains(elem: Int): Boolean = values(elem)
-  def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = IntSeq(values.rangeImpl(from, until))
-  def fullyDefined = true
-}
-
-final case class IntInterval(lb: Int, ub: Int) extends IntDomain {
-
-  val range = lb to ub
+final case class IntIntervals(intervals: Intervals) extends IntDomain {
 
   require(size > 0, "lb <= ub required, and intervals cannot contain more than Int.MaxValue elements.")
 
-  override def size = range.size
+  override def size = intervals.size
 
   def singleton = size == 1
 
   def intersect(domain: IntDomain): IntDomain = domain match {
     case FreeInt => this
-    case m: IntInterval =>
-      new IntInterval(math.max(head, m.head), math.min(last, m.last))
-    case d => d.intersect(this)
+    case m: IntIntervals => new IntIntervals(m.intervals intersect intervals)
   }
 
-  def -(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
-  def +(elem: Int): SortedSet[Int] = IntDomain(elem +: range)
-  def contains(elem: Int): Boolean = range.contains(elem)
+  def -(elem: Int): IntIntervals = throw new UnsupportedOperationException
+  def +(elem: Int): IntIntervals = new IntIntervals(intervals + elem)
+
+  def contains(elem: Int): Boolean = intervals.contains(elem)
   //implicit def ordering: Ordering[Int] = throw new UnsupportedOperationException
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = throw new UnsupportedOperationException
-  def iterator: Iterator[Int] = range.iterator
+  def iterator: Iterator[Int] = intervals.iterator
   def keysIteratorFrom(start: Int): Iterator[Int] = ???
-  override def toString = s"[$lb..$ub]"
+  override def toString = intervals.toString
 
   override def equals(o: Any) = o match {
-    case IntInterval(l, u) => lb == l && ub == u
+    case iv: IntIntervals => iv.intervals == intervals
     case _ => super.equals(o)
   }
   def fullyDefined = true

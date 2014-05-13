@@ -11,26 +11,14 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Second
 import org.scalatest.time.Span
 
-object IntIntervalTest {
-  def validInterval(i: Int, j: Int) = i <= j && j.toLong - i <= Int.MaxValue
+final class IntIntervalsTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
-  def validIntervals =
-    for (i <- Gen.choose(Int.MinValue, Int.MaxValue); j: Long <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + Int.MaxValue)))
-      yield new IntInterval(i, j.toInt)
+  import IntervalTest._
 
-  def smallIntervals =
-    for (i <- Gen.choose(Int.MinValue, Int.MaxValue); j: Long <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000)))
-      yield new IntInterval(i, j.toInt)
-}
-
-final class IntIntervalTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
-
-  import IntIntervalTest._
-  
   "IntInterval" should "not accept empty domains" in
     forAll { (i: Int, j: Int) =>
       whenever(!validInterval(i, j)) {
-        an[IllegalArgumentException] should be thrownBy new IntInterval(i, j)
+        an[IllegalArgumentException] should be thrownBy IntDomain(Interval(i, j))
       }
     }
 
@@ -62,10 +50,12 @@ final class IntIntervalTest extends FlatSpec with Matchers with PropertyChecks w
 
   }
 
-  it should "generate proper set of values" in forAll(smallIntervals) { intInterval =>
+  it should "generate proper set of values" in forAll(smallIntervals) { interval =>
     failAfter(Span(1, Second)) {
-      val IntInterval(i, j) = intInterval
+      val Interval(i, j) = interval
 
+      val intInterval = IntDomain(interval)
+      
       intInterval.toString shouldBe s"[$i..$j]"
       intInterval should contain theSameElementsAs (i to j)
     }

@@ -64,14 +64,14 @@ final class MDDTest extends FlatSpec with Matchers with Timeouts {
 
   it should "be reduced quickly" in {
     var mdd: MDD[Int] = MDD.empty
-    for (i <- 1 to 20; j <- 1 to 20; k <- 1 to 20; l <- 1 to 20; m <- 1 to 20) {
-      mdd += Seq(i, j, k, l, m)
+    for (i <- 1 to 20; j <- 1 to 20; k <- 1 to 20; l <- 1 to 20) {
+      mdd += Seq(i, j, k, l)
     }
 
     val r2 = failAfter(Span(2, Seconds)) {
       mdd.reduce
     }
 
-    r2.edges shouldBe (100)
+    r2.edges shouldBe (80)
   }
 }

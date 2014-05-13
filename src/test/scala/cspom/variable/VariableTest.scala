@@ -33,8 +33,8 @@ class VariableTest extends FlatSpec with Matchers with PropertyChecks {
 
   "Int variables" should "work as sets" in {
 
-    forAll(IntIntervalTest.validIntervals) { itv =>
-      val vi = new IntVariable(itv)
+    forAll(IntervalTest.validIntervals) { itv =>
+      val vi = new IntVariable(IntDomain(itv))
 
       forAll { i: Int => vi.contains(i) shouldBe itv.contains(i) }
 
