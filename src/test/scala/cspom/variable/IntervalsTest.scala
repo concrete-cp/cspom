@@ -11,8 +11,8 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
     val itv1 = Intervals(0, 10)
     val itv2 = Interval(10, 15)
 
-    (itv1 + itv2).lower shouldBe empty
-    (itv1 + itv2).upper shouldBe empty
+    (itv1 + itv2) shouldBe 'convex
+
   }
   //
   //  it should "accept correct trees" in {
@@ -31,7 +31,7 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
 
     val itv1 = Intervals(0, 5)
 
-    (itv1 + Interval(-10, -9) + Interval(8, 10) + Interval(-7, -4)).asSequence shouldBe Seq(
+    (itv1 + Interval(-10, -9) + Interval(8, 10) + Interval(-7, -4)).intervals shouldBe Seq(
       Interval(-10, -9), Interval(-7, -4), Interval(0, 5), Interval(8, 10))
 
   }
@@ -39,8 +39,6 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
   it should "handle empty intervals" in {
     val itv1 = Intervals()
     itv1 shouldBe empty
-    itv1.lower shouldBe empty
-    itv1.upper shouldBe empty
 
     itv1 + Interval(5, 10) shouldBe Intervals(5, 10)
   }
@@ -48,7 +46,7 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
   it should "merge joint intervals" in {
     val itv1 = Intervals(0, 5)
 
-    (itv1 + Interval(-10, -9) + Interval(8, 10) + Interval(-8, -4)).asSequence shouldBe Seq(
+    (itv1 + Interval(-10, -9) + Interval(8, 10) + Interval(-8, -4)).intervals shouldBe Seq(
       Interval(-10, -4), Interval(0, 5), Interval(8, 10))
 
     (itv1 + Interval(6, 10)) shouldBe Intervals(0, 10)
@@ -59,16 +57,16 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
   it should "merge overlapping intervals" in {
     val itv1 = Intervals(0, 5) + Interval(-10, -9) + Interval(8, 10)
 
-    (itv1 + Interval(-10, -4)).asSequence shouldBe Seq(
+    (itv1 + Interval(-10, -4)).intervals shouldBe Seq(
       Interval(-10, -4), Interval(0, 5), Interval(8, 10))
 
-    (itv1 + Interval(-11, -4)).asSequence shouldBe Seq(
+    (itv1 + Interval(-11, -4)).intervals shouldBe Seq(
       Interval(-11, -4), Interval(0, 5), Interval(8, 10))
 
-    (itv1 + Interval(-11, 0)).asSequence shouldBe Seq(
+    (itv1 + Interval(-11, 0)).intervals shouldBe Seq(
       Interval(-11, 5), Interval(8, 10))
 
-    (itv1 + Interval(-11, 39)).asSequence shouldBe Seq(
+    (itv1 + Interval(-11, 39)).intervals shouldBe Seq(
       Interval(-11, 39))
   }
 

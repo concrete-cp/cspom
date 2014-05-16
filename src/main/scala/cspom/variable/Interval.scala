@@ -133,6 +133,8 @@ final class Interval(private val _lb: Int, private val _ub: Int) {
 
   def intersects(i: Interval): Boolean = (this intersect i).nonEmpty
 
+  def isMergeableWith(i: Interval): Boolean = !(this isBefore i) && !(this isAfter i)
+
   def isBefore(i: Interval): Boolean = i.lb.toLong - this.ub > 1
 
   def isAfter(i: Interval): Boolean = this.lb.toLong - i.ub > 1
@@ -145,7 +147,7 @@ final class Interval(private val _lb: Int, private val _ub: Int) {
     if (ub < 0) { negate }
     else if (lb > 0) { this }
     else { Interval(0, math.max(-lb, ub)) }
-  
+
   override def toString = if (isEmpty) "[]" else if (lb == ub) s"[$lb]" else s"[$lb..$ub]"
 
 }

@@ -58,4 +58,13 @@ class IntervalTest extends FlatSpec with Matchers with PropertyChecks {
     Interval(0, 5) intersects Interval(5, 10) shouldBe true
   }
 
+  it should "detect mergeability" in {
+    Interval(0, 5) isMergeableWith Interval(6, 10) shouldBe true
+    Interval(0, 5) isMergeableWith Interval(-6, -1) shouldBe true
+    Interval(0, 5) isMergeableWith Interval(-6, 2) shouldBe true
+    Interval(0, 5) isMergeableWith Interval(-6, 20) shouldBe true
+    Interval(0, 5) isMergeableWith Interval(10, 20) shouldBe false
+    Interval(0, 5) isMergeableWith Interval(-20, -10) shouldBe false
+  }
+
 }
