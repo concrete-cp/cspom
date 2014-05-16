@@ -4,16 +4,17 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.prop.PropertyChecks
 import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
 
 object IntervalTest {
   def validInterval(i: Int, j: Int) = i <= j && j.toLong - i <= Int.MaxValue
 
   def validIntervals =
-    for (i <- Gen.choose(Int.MinValue, Int.MaxValue); j: Long <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + Int.MaxValue)))
+    for (i <- Arbitrary.arbitrary[Int]; j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + Int.MaxValue).toInt))
       yield new Interval(i, j.toInt)
 
   def smallIntervals =
-    for (i <- Gen.choose(Int.MinValue, Int.MaxValue); j: Long <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000)))
+    for (i <- Arbitrary.arbitrary[Int]; j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000).toInt))
       yield new Interval(i, j.toInt)
 }
 
@@ -67,4 +68,19 @@ class IntervalTest extends FlatSpec with Matchers with PropertyChecks {
     Interval(0, 5) isMergeableWith Interval(-20, -10) shouldBe false
   }
 
+  it should "compute difference" in {
+    Interval(0, 5) diff Interval(10, 15) shouldBe Seq(Interval(0, 5))
+    Interval(10, 15) diff Interval(0, 5) shouldBe Seq(Interval(10, 15))
+    Interval(0, 10) diff Interval(3, 7) shouldBe Seq(Interval(0, 2), Interval(8, 10))
+    Interval(0, 10) diff Interval(-10, 5) shouldBe Seq(Interval(6, 10))
+    Interval(0, 10) diff Interval(5, 10) shouldBe Seq(Interval(0, 4))
+    Interval(0, 5) diff Interval(-5, 15) shouldBe Seq()
+    Interval(0, 5) diff Interval(0, 5) shouldBe Seq()
+
+    import IntervalTest._
+
+    forAll(smallIntervals, validIntervals) { (i1, i2) =>
+      (i1 diff i2).flatMap(_.range) shouldBe (i1.range.filterNot(i2.contains))
+    }
+  }
 }

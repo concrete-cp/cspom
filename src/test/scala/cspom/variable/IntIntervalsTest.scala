@@ -34,9 +34,10 @@ final class IntIntervalsTest extends FlatSpec with Matchers with PropertyChecks 
       }
     }
 
-  it should "check equality on any set" in forAll(validIntervals, Arbitrary.arbitrary[SortedSet[Int]]) {
-    (itv, s: SortedSet[Int]) =>
-      whenever(s.nonEmpty) {
+  it should "check equality on any set" in forAll(validIntervals, Arbitrary.arbitrary[Seq[Int]]) {
+    (itv, seq) =>
+      whenever(seq.nonEmpty) {
+        val s = seq.toSet 
         failAfter(Span(1, Second)) {
           if (s.min == itv.lb && s.max == itv.ub && s.size == itv.size) {
             itv shouldBe s
@@ -55,8 +56,12 @@ final class IntIntervalsTest extends FlatSpec with Matchers with PropertyChecks 
       val Interval(i, j) = interval
 
       val intInterval = IntDomain(interval)
-      
-      intInterval.toString shouldBe s"[$i..$j]"
+
+      if (i == j) {
+        intInterval.toString shouldBe s"[$i]"
+      } else {
+        intInterval.toString shouldBe s"[$i..$j]"
+      }
       intInterval should contain theSameElementsAs (i to j)
     }
 

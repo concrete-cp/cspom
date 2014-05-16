@@ -131,13 +131,35 @@ final class Interval(private val _lb: Int, private val _ub: Int) {
     Interval(l, u)
   }
 
+  def diff(i: Interval): Seq[Interval] = {
+    var r = Seq[Interval]()
+    
+    val ub1 = math.min(ub, i.lb.toLong - 1)
+    if (ub1 >= lb) {
+      assert(ub1.isValidInt)
+      r :+= Interval(lb, ub1.toInt)
+    }
+
+    val lb2 = math.max(lb, i.ub.toLong + 1)
+    if (lb2 <= ub) {
+      assert(lb2.isValidInt)
+      r :+= Interval(lb2.toInt, ub)
+    }
+
+    r
+  }
+
   def intersects(i: Interval): Boolean = (this intersect i).nonEmpty
 
   def isMergeableWith(i: Interval): Boolean = !(this isBefore i) && !(this isAfter i)
 
-  def isBefore(i: Interval): Boolean = i.lb.toLong - this.ub > 1
+  def isBefore(i: Interval): Boolean = isBefore(i.lb)
 
-  def isAfter(i: Interval): Boolean = this.lb.toLong - i.ub > 1
+  def isBefore(i: Int): Boolean = i.toLong - this.ub > 1
+
+  def isAfter(i: Interval): Boolean = isAfter(i.ub)
+
+  def isAfter(i: Int): Boolean = this.lb.toLong - i > 1
 
   def union(i: Interval) = Interval(math.min(lb, i.lb), math.max(ub, i.ub))
 

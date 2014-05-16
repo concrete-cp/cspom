@@ -27,7 +27,7 @@ final case class IntIntervals(intervals: Intervals) extends IntDomain {
 
   def intersect(domain: IntDomain): IntDomain = domain match {
     case FreeInt => this
-    case m: IntIntervals => new IntIntervals(m.intervals intersect intervals)
+    case m: IntIntervals => new IntIntervals(m.intervals & intervals)
   }
 
   def -(elem: Int): IntIntervals = throw new UnsupportedOperationException

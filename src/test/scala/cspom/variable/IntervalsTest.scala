@@ -43,6 +43,17 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
     itv1 + Interval(5, 10) shouldBe Intervals(5, 10)
   }
 
+  it should "handle large values" in {
+
+    Intervals() ++ List(0, 2, 1) shouldBe Set(0, 1, 2)
+
+    Intervals() + Int.MinValue + Int.MaxValue + 0 shouldBe Set(Int.MinValue, 0, Int.MaxValue)
+
+    val s = Set(0, -2147483648, 1, 2, -1, -2)
+    Intervals() ++ s shouldBe s
+
+  }
+
   it should "merge joint intervals" in {
     val itv1 = Intervals(0, 5)
 
@@ -71,11 +82,35 @@ class IntervalsTest extends FlatSpec with Matchers with PropertyChecks {
   }
 
   it should "behave like a SortedSet" in {
-    Intervals() + Int.MinValue + Int.MaxValue shouldBe Set(Int.MinValue, Int.MaxValue)
 
-    forAll { s: SortedSet[Int] =>
-      val itv = s.foldLeft(Intervals())(_ + _)
-      itv shouldBe s
+    forAll { s: Seq[Int] =>
+      Intervals() ++ s shouldBe s.toSet
+    }
+  }
+
+  it should "compute differences" in {
+    val s1 = List(0, -1, -2147483648)
+    val s2 = List(0, -2147483648)
+
+    val i1 = Intervals() ++ s1
+    val i2 = Intervals() ++ s2
+    (i1 -- i2) shouldBe Set(-1)
+
+    forAll { (s1: Seq[Int], s2: Seq[Int]) =>
+      val i1: Intervals = Intervals() ++ s1
+      val i2 = Intervals() ++ s2
+
+      (i1 -- i2) shouldBe (s1.toSet -- s2.toSet)
+    }
+  }
+
+  it should "intersect" in {
+    forAll { (s1: Seq[Int], s2: Seq[Int]) =>
+      val i1: Intervals = Intervals() ++ s1
+      val i2 = Intervals() ++ s2
+
+      (i1 & i2) shouldBe (s1.toSet & s2.toSet)
+
     }
   }
 

@@ -1,7 +1,7 @@
 package cspom.variable
 
 import scala.collection.immutable.SortedSet
-import scala.collection.immutable.VectorBuilder
+import scala.collection.GenTraversableOnce
 
 object Intervals {
   def apply(s: Iterable[Int]): Intervals = s match {
@@ -10,87 +10,146 @@ object Intervals {
     case s => s.foldLeft(empty)(_ + _)
   }
 
-  def apply(itv: Interval): Intervals = new Intervals(IndexedSeq(itv))
+  def apply(itv: Interval): Intervals = NoIntervals + itv
 
   def apply(lb: Int, ub: Int): Intervals = Intervals(Interval(lb, ub))
 
   def apply() = empty
 
-  val empty: Intervals = new Intervals(IndexedSeq())
+  val empty: Intervals = NoIntervals
 }
 
-final class Intervals private (
-  val intervals: IndexedSeq[Interval]) extends SortedSet[Int] {
+sealed trait Intervals extends SortedSet[Int] {
+  def lastInterval: Interval
+  def headInterval: Interval
 
-  require(intervals.forall(_.nonEmpty))
+  def +(i: Interval): Intervals
 
-  def ++(i: Intervals): Intervals = {
-    if (isEmpty) {
-      i
-    } else if (i.isEmpty) {
-      this
+  def -(i: Interval): Intervals
+
+  def ++(i: Intervals): Intervals = this ++ i.intervals
+
+  def ++(i: Traversable[Interval]): Intervals = i.foldLeft(this)(_ + _)
+
+  override def ++(i: GenTraversableOnce[Int]): Intervals = i.foldLeft(this)(_ + _)
+
+  def intervals: Seq[Interval]
+
+  def --(i: Intervals): Intervals = i.intervals.foldLeft(this)(_ - _)
+
+  def &(i: Intervals): Intervals = this -- (this -- i)
+
+  def &(i: Interval): Intervals = this -- (this - i)
+
+  def removeLast: Intervals
+
+  override def last: Int = lastInterval.ub
+
+  override def head: Int = headInterval.lb
+
+  def iterator = intervals.iterator.flatMap(_.range.iterator)
+
+  // Members declared in  scala.collection.generic.Sorted 
+  def keysIteratorFrom(start: Int): Iterator[Int] = ???
+  // Members declared in scala.collection.SortedSetLike 
+  implicit def ordering: Ordering[Int] = Ordering.Int
+
+  def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = ???
+
+  // Members declared in scala.collection.SetLike 
+  def -(elem: Int): Intervals = this - Interval(elem, elem)
+
+  def +(elem: Int): Intervals = this + Interval(elem, elem)
+
+}
+
+object NoIntervals extends Intervals {
+  def lastInterval = throw new UnsupportedOperationException
+  def headInterval = throw new UnsupportedOperationException
+
+  def +(i: Interval) = {
+    if (i.isEmpty) this else new SomeIntervals(i, NoIntervals, NoIntervals)
+  }
+
+  def -(i: Interval) = this
+
+  def removeLast = this
+
+  override def size = 0
+
+  def intervals = Seq()
+
+  def contains(elem: Int) = false
+
+  override def toString = "[]"
+}
+
+final class SomeIntervals(
+  val interval: Interval,
+  val lower: Intervals,
+  val upper: Intervals) extends Intervals {
+
+  require(interval.nonEmpty)
+
+  // If children are defined, they must not be empty and be correctly ordered
+  require(lower.isEmpty || (lower.lastInterval isBefore interval))
+  require(upper.isEmpty || (upper.headInterval isAfter interval))
+
+  def +(i: Interval): Intervals = {
+    if (i isBefore interval) {
+      new SomeIntervals(interval, lower + i, upper)
+    } else if (i isAfter interval) {
+      new SomeIntervals(interval, lower, upper + i)
     } else {
+      val newItv = i union interval
+      removeTop + newItv
+    }
 
-      val vb = new VectorBuilder[Interval]()
+  }
 
-      var itv1: IndexedSeq[Interval] = null
-      var itv2: IndexedSeq[Interval] = null
-
-      def update(i: IndexedSeq[Interval], j: IndexedSeq[Interval]) {
-        if (i.head.lb < j.head.lb) {
-          itv1 = i
-          itv2 = j
-        } else {
-          itv1 = j
-          itv2 = i
-        }
-      }
-
-      update(this.intervals, i.intervals)
-
-      var current = itv1.head
-      itv1 = itv1.tail
-
-      while (itv1.nonEmpty && itv2.nonEmpty) {
-        if (itv1.head isBefore current) {
-          vb += current
-          current = itv1.head
-          update(itv1.tail, itv2)
-        } else {
-          current = current union itv1.head
-          update(itv1.tail, itv2)
-        }
-      }
-
-      if (itv1.isEmpty) {
-        itv1 = itv2
-      }
-
-      while (itv1.headOption.exists(!_.isBefore(current))) {
-        current = current union itv1.head
-        itv1 = itv1.tail
-      }
-
-      vb += current
-      vb ++= itv1
-
-      new Intervals(vb.result)
+  def removeLast: Intervals = {
+    if (upper.isEmpty) {
+      lower
+    } else {
+      new SomeIntervals(interval, lower, upper.removeLast)
     }
   }
 
-  def +(i: Interval): Intervals = this ++ Intervals(i)
+  private def removeTop: Intervals = {
+    if (lower.isEmpty) {
+      upper
+    } else {
+      new SomeIntervals(lower.lastInterval, lower.removeLast, upper)
+    }
+  }
 
   override val size: Int = {
-    val l = intervals.foldLeft(0l)(_ + _.size)
+    val l = interval.size.toLong + lower.size + upper.size
     require(l <= Int.MaxValue)
     l.toInt
   }
 
-  def convex = intervals.size <= 1
+  def convex = lower.isEmpty && upper.isEmpty
 
-  def max: Int = intervals.last.ub
+  def lastInterval: Interval = {
+    if (upper.isEmpty) {
+      interval
+    } else {
+      upper.lastInterval
+    }
+  }
 
-  def min: Int = intervals.head.ub
+  def headInterval: Interval = {
+    if (lower.isEmpty) {
+      interval
+    } else {
+      lower.headInterval
+    }
+  }
+
+  def intervals: Seq[Interval] = {
+    lower.intervals ++: interval +: upper.intervals
+  }
 
   override def equals(o: Any): Boolean = {
     o match {
@@ -99,30 +158,33 @@ final class Intervals private (
     }
   }
 
-  def -(i: Interval): Intervals = this -- Intervals(i)
+  def -(i: Interval): Intervals = {
+    val l = if (i.lb < interval.lb) lower - i else lower
+    val u = if (i.ub > interval.ub) upper - i else upper
 
-  def --(i: Intervals): Intervals = ???
+    val newI = interval diff i
 
-  def intersect(i: Intervals): Intervals = this -- (this -- i)
+    val newT = if (l.isEmpty) {
+      u
+    } else {
+      new SomeIntervals(l.lastInterval, l.removeLast, u)
+    }
 
-  def intersect(i: Interval): Intervals = this -- (this - i)
+    newI.foldLeft(newT)(_ + _)
+  }
 
-  // Members declared in scala.collection.GenSetLike 
-  def iterator: Iterator[Int] = intervals.iterator.flatMap(_.range.iterator)
-
-  // Members declared in scala.collection.SetLike 
-  def -(elem: Int): Intervals = this - Interval(elem, elem)
-
-  def +(elem: Int): Intervals = this + Interval(elem, elem)
-
-  def contains(elem: Int): Boolean = ???
+  def contains(elem: Int): Boolean = {
+    if (interval.contains(elem)) {
+      true
+    } else if (elem < interval.lb) {
+      lower.contains(elem)
+    } else if (elem > interval.ub) {
+      upper.contains(elem)
+    } else {
+      false
+    }
+  }
 
   override def toString = intervals.mkString(" + ")
 
-  // Members declared in  scala.collection.generic.Sorted 
-  def keysIteratorFrom(start: Int): Iterator[Int] = ???
-  // Members declared in scala.collection.SortedSetLike 
-  implicit def ordering: Ordering[Int] = Ordering.Int
-
-  def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = ???
 }
