@@ -61,6 +61,7 @@ sealed trait Intervals extends SortedSet[Int] {
 
   def +(elem: Int): Intervals = this + Interval(elem, elem)
 
+  def isConvex: Boolean
 }
 
 object NoIntervals extends Intervals {
@@ -82,6 +83,8 @@ object NoIntervals extends Intervals {
   def contains(elem: Int) = false
 
   override def toString = "[]"
+
+  def isConvex = true
 }
 
 final class SomeIntervals(
@@ -94,6 +97,8 @@ final class SomeIntervals(
   // If children are defined, they must not be empty and be correctly ordered
   require(lower.isEmpty || (lower.lastInterval isBefore interval))
   require(upper.isEmpty || (upper.headInterval isAfter interval))
+  
+  def isConvex = lower.isEmpty && upper.isEmpty
 
   def +(i: Interval): Intervals = {
     if (i isBefore interval) {
