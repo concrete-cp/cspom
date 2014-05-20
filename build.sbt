@@ -23,8 +23,6 @@ publishTo := Some(
 	Resolver.file("Concrete local repository",
 		new File(Path.userHome.absolutePath+"/concrete/repository")))
 
-EclipseKeys.withSource := true
-
 org.scalastyle.sbt.ScalastylePlugin.Settings
 
 testOptions in Test <+= (target in Test) map {
