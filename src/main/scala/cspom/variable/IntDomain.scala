@@ -5,7 +5,7 @@ import scala.collection.immutable.SortedSet
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
-sealed trait IntDomain extends Iterable[Int] {
+sealed trait IntDomain extends SortedSet[Int] {
   def intersect(domain: IntDomain): IntDomain
   implicit def ordering = Ordering.Int
   def singleton: Option[Int]
@@ -29,7 +29,7 @@ final case class IntIntervals(intervals: Intervals) extends IntDomain {
     case m: IntIntervals => new IntIntervals(m.intervals & intervals)
   }
 
-  def -(elem: Int): IntIntervals = throw new UnsupportedOperationException
+  def -(elem: Int): IntIntervals = new IntIntervals(intervals - elem)
   def +(elem: Int): IntIntervals = new IntIntervals(intervals + elem)
 
   def contains(elem: Int): Boolean = intervals.contains(elem)
@@ -43,6 +43,9 @@ final case class IntIntervals(intervals: Intervals) extends IntDomain {
   def fullyDefined = true
 
   def iterator = intervals.iterator
+
+  def keysIteratorFrom(start: Int): Iterator[Int] = intervals.keysIteratorFrom(start)
+  def rangeImpl(from: Option[Int], until: Option[Int]) = intervals.rangeImpl(from, until)
 }
 
 case object FreeInt extends IntDomain {
@@ -59,4 +62,11 @@ case object FreeInt extends IntDomain {
   }
   override def toString = "?"
   def fullyDefined = false
+
+  def -(elem: Int): scala.collection.immutable.SortedSet[Int] = throw new UnsupportedOperationException
+
+  def +(elem: Int) = this
+
+  def keysIteratorFrom(start: Int): Iterator[Int] = throw new UnsupportedOperationException
+  def rangeImpl(from: Option[Int], until: Option[Int]) = throw new UnsupportedOperationException
 }

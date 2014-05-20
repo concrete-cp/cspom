@@ -11,9 +11,9 @@ final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChec
   "Extensive domains" should "behave like sets" in {
     forAll { d: Seq[Int] =>
 
-      val s = d.toSet
+      whenever(d.nonEmpty) {
 
-      whenever(s.nonEmpty) {
+        val s = d.toSet
 
         val intDomain = IntDomain(d)
 
