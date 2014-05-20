@@ -5,11 +5,12 @@ import scala.collection.immutable.SortedSet
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
-sealed trait IntDomain extends SortedSet[Int] {
+sealed trait IntDomain extends Iterable[Int] {
   def intersect(domain: IntDomain): IntDomain
   implicit def ordering = Ordering.Int
-  def singleton: Boolean
+  def singleton: Option[Int]
   def fullyDefined: Boolean
+  def contains(elem: Int): Boolean
 }
 
 object IntDomain extends LazyLogging {
@@ -19,11 +20,9 @@ object IntDomain extends LazyLogging {
 
 final case class IntIntervals(intervals: Intervals) extends IntDomain {
 
-  require(size > 0, "lb <= ub required, and intervals cannot contain more than Int.MaxValue elements.")
+  require(intervals.size > 0, "lb <= ub required, and intervals cannot contain more than Int.MaxValue elements.")
 
-  override def size = intervals.size
-
-  def singleton = size == 1
+  def singleton = if (intervals.size == 1) Some(intervals.head) else None
 
   def intersect(domain: IntDomain): IntDomain = domain match {
     case FreeInt => this
@@ -34,10 +33,7 @@ final case class IntIntervals(intervals: Intervals) extends IntDomain {
   def +(elem: Int): IntIntervals = new IntIntervals(intervals + elem)
 
   def contains(elem: Int): Boolean = intervals.contains(elem)
-  //implicit def ordering: Ordering[Int] = throw new UnsupportedOperationException
-  def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = throw new UnsupportedOperationException
-  def iterator: Iterator[Int] = intervals.iterator
-  def keysIteratorFrom(start: Int): Iterator[Int] = ???
+
   override def toString = intervals.toString
 
   override def equals(o: Any) = o match {
@@ -45,18 +41,17 @@ final case class IntIntervals(intervals: Intervals) extends IntDomain {
     case _ => super.equals(o)
   }
   def fullyDefined = true
+
+  def iterator = intervals.iterator
 }
 
 case object FreeInt extends IntDomain {
-  def singleton = false
-  def -(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
-  def +(elem: Int): SortedSet[Int] = throw new UnsupportedOperationException
-  def contains(elem: Int): Boolean = elem.isInstanceOf[Int]
-  def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = throw new UnsupportedOperationException
+  def singleton = None
+  def iterator = throw new UnsupportedOperationException
 
   def intersect(domain: IntDomain) = domain
-  def iterator: Iterator[Int] = throw new UnsupportedOperationException
-  def keysIteratorFrom(start: Int): Iterator[Int] = throw new UnsupportedOperationException
+
+  def contains(elem: Int) = true
 
   override def equals(o: Any) = o match {
     case ar: AnyRef => FreeInt eq ar

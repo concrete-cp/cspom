@@ -91,11 +91,7 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      if (domain.size == 1) {
-        name -> CSPOMConstant(domain.head)
-      } else {
-        name -> new IntVariable(domain)
-      }
+      name -> domain.singleton.map(CSPOMConstant(_)).getOrElse(new IntVariable(domain))
     }
 
   }
