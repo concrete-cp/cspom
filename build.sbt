@@ -16,7 +16,8 @@ libraryDependencies ++= Seq(
 	"ch.qos.logback" % "logback-classic" % "1.1.2",
 	"com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1",
-	"org.scala-lang.modules" %% "scala-xml" % "1.0.2"
+	"org.scala-lang.modules" %% "scala-xml" % "1.0.2",
+	"com.google.guava" % "guava" % "17.0"
 	)
 
 publishTo := Some(
