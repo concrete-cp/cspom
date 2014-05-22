@@ -48,7 +48,7 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
   def flatten = Seq(this)
 
-  def domain: Iterable[T]
+  def domainValues: Iterable[T]
 
 }
 
@@ -73,7 +73,7 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
 
   def isTrue = value == true
 
-  def domain = Iterable(value)
+  def domainValues = Iterable(value)
   
   def fullyDefined = true
 }

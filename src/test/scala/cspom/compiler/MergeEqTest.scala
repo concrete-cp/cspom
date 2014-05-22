@@ -49,7 +49,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
     cspom.namedExpressions should have size 1
     nv0.value should be theSameInstanceAs cspom.namedExpressions.head._2
     cspom.constraints should have size 1
-    nv0.value.domain shouldBe Set(2, 3)
+    nv0.value.domainValues should contain theSameElementsAs Set(2, 3)
 
   }
 

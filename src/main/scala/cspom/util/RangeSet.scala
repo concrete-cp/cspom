@@ -1,32 +1,28 @@
 package cspom.util
 
-import scala.collection.immutable.SortedSet
-import scala.collection.GenTraversableOnce
-import com.google.common.collect.BoundType
-import AsOrdered.asOrdered
-
 object RangeSet {
-  def apply[A <% Ordered[A]](s: Iterable[A]): RangeSet[A] = s match {
-    case r: Range if r.step == 1 => RangeSet(r.head.asInstanceOf[A], r.last.asInstanceOf[A])
-    case i: RangeSet[A] => i
-    case s => s.foldLeft(empty[A])(_ + rangeValue(_))
+//  def apply[A <% Ordered[A]](s: Iterable[A]): RangeSet[A] = s match {
+//    case r: Range if r.step == 1 => RangeSet(
+//      GuavaRange.closed(r.head.asInstanceOf[A], r.last.asInstanceOf[A]))
+//    case i: RangeSet[A] => i
+//    case s => s.foldLeft(empty[A])(_ + GuavaRange.of(_))
+//  }
+
+  def apply[A <% Ordered[A]](s: GuavaRange[A]*) = {
+    s.foldLeft(empty[A])(_ + _)
   }
 
-  def apply[A <% Ordered[A]](itv: GuavaRange[AsOrdered[A]]): RangeSet[A] = empty[A] + itv
+  def all[A <% Ordered[A]]: RangeSet[A] = apply(GuavaRange.all[A]())
 
-  def apply[A <% Ordered[A]](lb: A, ub: A): RangeSet[A] =
-    RangeSet(GuavaRange.closed(lb, ub))
+  def empty[A <% Ordered[A]]: RangeSet[A] = new NoIntervals()
 
-  def apply[A <% Ordered[A]]() = empty[A]
-
-  def empty[A <% Ordered[A]]: RangeSet[A] = NoIntervals.asInstanceOf[RangeSet[A]]
-
-  def rangeValue[A <% Ordered[A]](v: A) = GuavaRange.closed(v, v)
 }
 
-sealed trait RangeSet[A <: Ordered[A]] {
+sealed trait RangeSet[A] {
   def lastInterval: GuavaRange[A]
   def headInterval: GuavaRange[A]
+
+  implicit def ordering: Ordering[A]
 
   def +(i: GuavaRange[A]): RangeSet[A]
 
@@ -46,53 +42,52 @@ sealed trait RangeSet[A <: Ordered[A]] {
 
   def removeLast: RangeSet[A]
 
-  def upperBound: A = lastInterval.upperEndpoint()
+  def upperBound: A = lastInterval.upperEndpoint
 
-  def lowerBound: A = headInterval.lowerEndpoint()
+  def lowerBound: A = headInterval.lowerEndpoint
+
+  def fullyDefined = lastInterval.hasLowerBound && lastInterval.hasUpperBound
 
   def isConvex: Boolean
 
-  def isEmpty: Boolean = this eq NoIntervals
+  def isEmpty: Boolean
 
   def contains(elem: A): Boolean
+
+  override def toString = ranges.mkString("{", ", ", "}")
 }
 
-object NoIntervals extends RangeSet[Nothing] {
+final class NoIntervals[A](implicit val ordering: Ordering[A]) extends RangeSet[A] {
+
   def lastInterval = throw new UnsupportedOperationException
   def headInterval = throw new UnsupportedOperationException
 
-  def +(i: GuavaRange[Nothing]) = {
-    if (i.isEmpty) this else new SomeIntervals[Nothing](i, NoIntervals, NoIntervals)
+  def +(i: GuavaRange[A]) = {
+    if (i.isEmpty) this else new SomeIntervals[A](i, this, this)
   }
 
-  def -(i: GuavaRange[Nothing]) = this
+  def -(i: GuavaRange[A]) = this
 
   def removeLast = this
 
   def ranges = Seq()
 
-  override def toString = "[]"
-
   def isConvex = true
 
-  def contains(elem: Nothing) = false
+  def contains(elem: A) = false
+
+  def isEmpty = true
+
 }
 
-final class SomeIntervals[A <% Ordered[A]](
+final class SomeIntervals[A](
   val range: GuavaRange[A],
   val lower: RangeSet[A],
-  val upper: RangeSet[A]) extends RangeSet[A] {
+  val upper: RangeSet[A])(implicit val ordering: Ordering[A]) extends RangeSet[A] {
 
   require(!range.isEmpty)
 
-  implicit class BARange(g: GuavaRange[A]) {
-    def isBefore(h: GuavaRange[A]) = {
-      !g.isConnected(h) && g.upperEndpoint() < h.lowerEndpoint()
-    }
-    def isAfter(h: GuavaRange[A]) = {
-      !g.isConnected(h) && h.upperEndpoint() < g.lowerEndpoint()
-    }
-  }
+  implicit def asOrdered(v: A) = Ordered.orderingToOrdered(v)(ordering)
 
   // If children are defined, they must not be empty and be correctly ordered
   require(lower.isEmpty || (lower.lastInterval isBefore range))
@@ -104,7 +99,7 @@ final class SomeIntervals[A <% Ordered[A]](
     if (i.isConnected(range)) {
       val newItv = i.span(range) // union GuavaRange
       removeTop + newItv
-    } else if (i.lowerEndpoint() > range.upperEndpoint()) {
+    } else if (i.lowerEndpoint > range.upperEndpoint) {
       new SomeIntervals(range, lower, upper + i)
     } else {
       new SomeIntervals(range, lower + i, upper)
@@ -156,17 +151,12 @@ final class SomeIntervals[A <% Ordered[A]](
     }
   }
 
-  def other(bt: BoundType) = bt match {
-    case BoundType.CLOSED => BoundType.OPEN
-    case BoundType.OPEN => BoundType.CLOSED
-  }
-
   def -(i: GuavaRange[A]): RangeSet[A] = {
-    val l = if (i.lowerEndpoint() <= range.lowerEndpoint()) lower - i else lower
-    val u = if (i.upperEndpoint() >= range.upperEndpoint()) upper - i else upper
+    val l = if (i.lowerEndpoint <= range.lowerEndpoint) lower - i else lower
+    val u = if (i.upperEndpoint >= range.upperEndpoint) upper - i else upper
 
-    val before = GuavaRange.upTo(i.lowerEndpoint(), other(i.lowerBoundType()))
-    val after = GuavaRange.downTo(i.upperEndpoint(), other(i.lowerBoundType()))
+    val before = GuavaRange.upTo(i.lowerEndpoint, i.lowerBoundType.other)
+    val after = GuavaRange.downTo(i.upperEndpoint, i.lowerBoundType.other)
 
     var newT = if (l.isEmpty) {
       u
@@ -187,15 +177,14 @@ final class SomeIntervals[A <% Ordered[A]](
   def contains(elem: A): Boolean = {
     if (range.contains(elem)) {
       true
-    } else if (elem < range.lowerEndpoint()) {
+    } else if (elem < range.lowerEndpoint) {
       lower.contains(elem)
-    } else if (elem > range.upperEndpoint()) {
+    } else if (elem > range.upperEndpoint) {
       upper.contains(elem)
     } else {
       false
     }
   }
 
-  override def toString = ranges.mkString(" + ")
-
+  def isEmpty = false
 }

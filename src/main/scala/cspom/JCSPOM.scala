@@ -1,21 +1,17 @@
 package cspom
 
-import cspom.variable.IntVariable
-import cspom.variable.CSPOMConstant
 import cspom.extension.MDD
-import cspom.variable.IntDomain
-import scala.collection.JavaConversions
+import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
-import cspom.variable.IntIntervals
-import cspom.variable.FreeInt
+import cspom.variable.IntVariable
 
 object JCSPOM {
   def intVarRange(lb: Int, ub: Int) = IntVariable(lb to ub)
 
-//  def domainValues(d: IntDomain) = d match {
-//    case i: IntIntervals => JavaConversions.setAsJavaSet(i.intervals)
-//    case FreeInt => throw new UnsupportedOperationException
-//  }
+  //  def domainValues(d: IntDomain) = d match {
+  //    case i: IntIntervals => JavaConversions.setAsJavaSet(i.intervals)
+  //    case FreeInt => throw new UnsupportedOperationException
+  //  }
 
   def emptyMDD(): MDD[Nothing] = MDD.empty
 

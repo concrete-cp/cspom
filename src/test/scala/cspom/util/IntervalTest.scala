@@ -1,4 +1,4 @@
-package cspom.variable
+package cspom.util
 
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
@@ -10,8 +10,10 @@ object IntervalTest {
   def validInterval(i: Int, j: Int) = i <= j && j.toLong - i <= Int.MaxValue
 
   def validIntervals =
-    for (i <- Arbitrary.arbitrary[Int]; j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + Int.MaxValue).toInt))
-      yield new Interval(i, j.toInt)
+    for (
+      i <- Arbitrary.arbitrary[Int].suchThat(_ < Int.MaxValue);
+      j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + Int.MaxValue).toInt)
+    ) yield new Interval(i, j.toInt)
 
   def smallIntervals =
     for (i <- Arbitrary.arbitrary[Int]; j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000).toInt))

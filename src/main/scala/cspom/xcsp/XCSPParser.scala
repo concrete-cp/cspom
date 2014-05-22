@@ -1,19 +1,21 @@
 package cspom.xcsp;
 
 import java.io.InputStream
+
 import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
+
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.Relation
-import cspom.variable.IntDomain
-import cspom.variable.IntVariable
+import cspom.util.GuavaRange
+import cspom.util.RangeSet
 import cspom.variable.CSPOMConstant
+import cspom.variable.IntDiscreteDomain
+import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
-import cspom.variable.Interval
-import cspom.variable.Intervals
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -32,21 +34,19 @@ final object XCSPParser {
    *            The String domain to parse
    * @return The resulting Domain object
    */
-  def parseDomain(desc: String): IntDomain = {
-    val d = desc.trim.split(" +").foldLeft(Intervals.empty) { (i, v) =>
+  def parseDomain(desc: String): RangeSet[Int] = {
+    desc.trim.split(" +").foldLeft(RangeSet.empty[Int]) { (i, v) =>
       if (v.contains("..")) {
-        i + parseItv(v)
+        i + parseRange(v)
       } else {
-        i + v.trim.toInt
+        i + GuavaRange.ofInt(v.trim.toInt)
       }
     }
 
-    IntDomain(d)
-
   }
 
-  def parseItv(interval: String): Interval = interval.trim().split("\\.\\.") match {
-    case Array(a, b) => Interval(a.toInt, b.toInt)
+  def parseRange(interval: String): GuavaRange[Int] = interval.trim().split("\\.\\.") match {
+    case Array(a, b) => GuavaRange.ofIntInterval(a.toInt, b.toInt)
     case _ => throw new NumberFormatException("Interval format must be a..b");
   }
 
@@ -91,7 +91,10 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      name -> domain.singleton.map(CSPOMConstant(_)).getOrElse(new IntVariable(domain))
+      name -> (IntDiscreteDomain.singleton(domain) match {
+        case Some(s) => CSPOMConstant(s)
+        case None => new IntVariable(domain)
+      })
     }
 
   }

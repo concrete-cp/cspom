@@ -1,6 +1,4 @@
-package cspom.variable
-
-import scala.collection.SortedSet
+package cspom.util
 
 object Interval {
   def apply(lb: Int, ub: Int) = new Interval(lb, ub)
@@ -133,7 +131,7 @@ final class Interval(private val _lb: Int, private val _ub: Int) {
 
   def diff(i: Interval): Seq[Interval] = {
     var r = Seq[Interval]()
-    
+
     val ub1 = math.min(ub, i.lb.toLong - 1)
     if (ub1 >= lb) {
       assert(ub1.isValidInt)
@@ -172,4 +170,5 @@ final class Interval(private val _lb: Int, private val _ub: Int) {
 
   override def toString = if (isEmpty) "[]" else if (lb == ub) s"[$lb]" else s"[$lb..$ub]"
 
+  def asRange = GuavaRange.ofIntInterval(lb, ub)
 }
