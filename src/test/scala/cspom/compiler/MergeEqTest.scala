@@ -8,6 +8,7 @@ import cspom.CSPOMConstraint
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.OptionValues
+import cspom.variable.SimpleExpression
 
 class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
@@ -43,14 +44,17 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
     ProblemCompiler.compile(cspom, Seq(MergeSame, MergeEq))
 
     val nv0 = cspom.expression("V0") collect {
-      case v: IntVariable => v
+      case v: SimpleExpression[_] => v
     }
 
-    cspom.namedExpressions should have size 1
-    nv0.value should be theSameInstanceAs cspom.namedExpressions.head._2
-    cspom.constraints should have size 1
-    nv0.value.domainValues should contain theSameElementsAs Set(2, 3)
+    withClue(cspom) {
 
+      cspom.namedExpressions should have size 1
+      nv0.value should be theSameInstanceAs cspom.namedExpressions.head._2
+      cspom.constraints should have size 1
+      nv0.value.domainValues should contain theSameElementsAs Set(2, 3)
+
+    }
   }
 
 }

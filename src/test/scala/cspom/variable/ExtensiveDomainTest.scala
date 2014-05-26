@@ -16,9 +16,10 @@ final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChec
 
       whenever(d.nonEmpty) {
 
-        val intDomain = RangeSet(d.map(GuavaRange.singleton(_))).toSet(IntDiscreteDomain)
+        val intDomain = 
+          RangeSet(d.map(GuavaRange.singleton(_))).allValues(IntDiscreteDomain).toSet
 
-        d should contain theSameElementsAs intDomain
+        d.toSet shouldBe intDomain
 
       }
 

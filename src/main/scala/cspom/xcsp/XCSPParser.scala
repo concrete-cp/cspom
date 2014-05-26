@@ -91,7 +91,7 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      name -> (IntDiscreteDomain.singleton(domain) match {
+      name -> (domain.singletonMatch(IntDiscreteDomain) match {
         case Some(s) => CSPOMConstant(s)
         case None => new IntVariable(domain)
       })

@@ -63,16 +63,24 @@ sealed trait RangeSet[A] {
 
   def contains(elem: A): Boolean
 
-  def canonical(d: DiscreteDomain[AsOrdered[A]]) = RangeSet(ranges.map(_.canonical(d)))
+  def canonical(implicit d: DiscreteDomain[AsOrdered[A]]) =
+    RangeSet(ranges.map(_.canonical(d)))
 
-  def toSet(d: DiscreteDomain[AsOrdered[A]]): Set[A] = {
-    val b = Set.newBuilder[A]
+  def allValues(implicit d: DiscreteDomain[AsOrdered[A]]) =
+    ranges.iterator.flatMap(_.allValues(d))
 
-    for (r <- ranges) {
-      b ++= JavaConversions.asScalaSet(ContiguousSet.create(r.r, d)).map(_.value)
+  def singletonMatch(implicit d: DiscreteDomain[AsOrdered[A]]): Option[A] = {
+    allValues(d).toStream match {
+      case Stream(c) => Some(c.value)
+      case _ => None
     }
+  }
 
-    b.result
+  override def equals(o: Any): Boolean = {
+    o match {
+      case i: RangeSet[_] => i.ranges == ranges
+      case s => false
+    }
   }
 
   override def toString = ranges.mkString("{", ", ", "}")
@@ -172,19 +180,12 @@ final case class SomeIntervals[A](
     lower.ranges ++: range +: upper.ranges
   }
 
-  override def equals(o: Any): Boolean = {
-    o match {
-      case i: RangeSet[_] => i.ranges == ranges
-      case s => super.equals(s)
-    }
-  }
-
   def -(i: GuavaRange[A]): RangeSet[A] = {
     val l = if (i.lowerEndpoint <= range.lowerEndpoint) lower - i else lower
     val u = if (i.upperEndpoint >= range.upperEndpoint) upper - i else upper
 
     val before = GuavaRange.upTo(i.lowerEndpoint, i.lowerBoundType.other)
-    val after = GuavaRange.downTo(i.upperEndpoint, i.lowerBoundType.other)
+    val after = GuavaRange.downTo(i.upperEndpoint, i.upperBoundType.other)
 
     var newT = if (l.isEmpty) {
       u

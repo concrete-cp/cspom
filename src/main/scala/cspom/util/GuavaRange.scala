@@ -1,11 +1,10 @@
 package cspom.util
 
 import scala.collection.JavaConversions
-
 import com.google.common.collect.{BoundType => GuavaBT}
+import com.google.common.collect.ContiguousSet
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Range
-
 import cspom.util.GuavaRange.AsOrdered
 
 object BoundType {
@@ -88,8 +87,6 @@ final case class GuavaRange[A <% Ordered[A]](
   val r: Range[AsOrdered[A]]) {
 
   def contains(c: A) = r.contains(c)
-  def containsAll(c: Iterable[A]) = r.containsAll(
-    JavaConversions.asJavaCollection(c.view.map(AsOrdered(_))))
 
   def hasLowerBound = r.hasLowerBound()
   def hasUpperBound = r.hasUpperBound()
@@ -122,7 +119,11 @@ final case class GuavaRange[A <% Ordered[A]](
     !contains(elem) && elem < lowerEndpoint
   }
 
-  def canonical(d: DiscreteDomain[AsOrdered[A]]) = GuavaRange(r.canonical(d))
+  def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): GuavaRange[A] =
+    GuavaRange(r.canonical(d))
+
+  def allValues(implicit d: DiscreteDomain[AsOrdered[A]]): Iterator[A] =
+    JavaConversions.asScalaIterator(ContiguousSet.create(r, d).iterator).map(_.value)
 
   override def toString = r.toString
 

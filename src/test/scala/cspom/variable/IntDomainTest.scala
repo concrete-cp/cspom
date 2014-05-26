@@ -15,8 +15,8 @@ import cspom.util.IntDiscreteDomain
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
   "XCSP domain parser" should "handle disjoint values and intervals" in {
-    IntDiscreteDomain.allValues(
-      XCSPParser.parseDomain("1 3..10 18..20")) should contain theSameElementsAs (1 +: (3 to 10) ++: (18 to 20))
+    XCSPParser.parseDomain("1 3..10 18..20").allValues(IntDiscreteDomain).toSeq shouldBe
+      1 +: (3 to 10) ++: (18 to 20)
   }
 
   it should "parse ranges" in forAll(Intervals.validIntervals) {
@@ -36,9 +36,9 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
   }
 
   it should "coalesce connected ranges" in {
-    val itv = XCSPParser.parseDomain("3..5 6 7..10")
+    val itv = XCSPParser.parseDomain("3..5 6 7..10").canonical(IntDiscreteDomain)
     itv shouldBe a[RangeSet[_]]
-    itv shouldBe RangeSet(GuavaRange.closed(3, 10))
+    itv shouldBe RangeSet(GuavaRange.closed(3, 10).canonical(IntDiscreteDomain))
   }
 
 }
