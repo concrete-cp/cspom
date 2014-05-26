@@ -7,7 +7,6 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Second
 import org.scalatest.time.Span
 import cspom.xcsp.XCSPParser
-import cspom.util.Interval
 import cspom.util.IntervalTest
 import cspom.util.GuavaRange
 import cspom.util.RangeSet
@@ -19,14 +18,17 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
   }
 
   it should "parse ranges" in forAll(IntervalTest.validIntervals) {
-    case itv @ Interval(i, j) =>
+    r =>
+
+      val i = r.lowerEndpoint
+      val j = r.upperEndpoint
 
       val parsed = XCSPParser.parseRange(s"$i..$j")
 
       parsed shouldBe a[GuavaRange[_]]
 
       failAfter(Span(1, Second)) {
-        parsed shouldBe itv.asRange
+        parsed shouldBe r
       }
 
   }

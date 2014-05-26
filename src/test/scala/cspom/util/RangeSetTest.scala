@@ -103,6 +103,25 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
     itv1 + GuavaRange.closedOpen(-5, 0) shouldBe RangeSet(GuavaRange.closedOpen(-5, 6))
   }
+
+  it should "compute difference" in {
+    import IntervalTest.Interval
+
+    RangeSet(Interval(0, 5)) - Interval(10, 15) shouldBe RangeSet(Interval(0, 5))
+    RangeSet(Interval(10, 15)) - Interval(0, 5) shouldBe RangeSet(Interval(10, 15))
+    RangeSet(Interval(0, 10)) - Interval(3, 7) shouldBe RangeSet(Interval(0, 2), Interval(8, 10))
+    RangeSet(Interval(0, 10)) - Interval(-10, 5) shouldBe RangeSet(Interval(6, 10))
+    RangeSet(Interval(0, 10)) - Interval(5, 10) shouldBe RangeSet(Interval(0, 4))
+    RangeSet(Interval(0, 5)) - Interval(-5, 15) shouldBe RangeSet[Int]()
+    RangeSet(Interval(0, 5)) - Interval(0, 5) shouldBe RangeSet[Int]()
+
+    import IntervalTest._
+
+    forAll(smallIntervals, validIntervals) { (i1, i2) =>
+      IntDiscreteDomain.allValues(RangeSet(i1) - i2).shouldBe(
+        IntDiscreteDomain.allValues(i1).filterNot(i2.contains))
+    }
+  }
   //
   //  it should "merge overlapping RangeSet" in {
   //    val itv1 = RangeSet(0, 5) + GuavaRange.closed(-10, -9) + GuavaRange.closed(8, 10)

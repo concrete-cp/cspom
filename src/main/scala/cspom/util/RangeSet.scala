@@ -165,10 +165,10 @@ final class SomeIntervals[A](
     }
 
     if (before.isConnected(range)) {
-      newT += before.intersection(range)
+      newT += before & range
     }
     if (after.isConnected(range)) {
-      newT += after.intersection(range)
+      newT += after & range
     }
 
     newT

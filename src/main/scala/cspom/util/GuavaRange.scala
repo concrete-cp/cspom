@@ -17,7 +17,7 @@ object BoundType {
     case (Closed, Open) => true
     case _ => false
   }
-  
+
   def closedIsMore = Ordering.fromLessThan[BoundType] {
     case (Open, Closed) => true
     case _ => false
@@ -101,7 +101,7 @@ final case class GuavaRange[A <% Ordered[A]](
   def hasLowerBound = r.hasLowerBound()
   def hasUpperBound = r.hasUpperBound()
 
-  def intersection(si: GuavaRange[A]) = GuavaRange(r.intersection(si.r))
+  def &(si: GuavaRange[A]) = GuavaRange(r.intersection(si.r))
   def isConnected(si: GuavaRange[A]) = r.isConnected(si.r)
   def span(si: GuavaRange[A]) = GuavaRange(r.span(si.r))
 

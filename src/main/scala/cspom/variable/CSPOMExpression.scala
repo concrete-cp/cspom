@@ -59,7 +59,7 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
 
   def intersected(that: SimpleExpression[_ >: T]) =
     if (that.contains(value)) {
-      CSPOMConstant(value, Map("intersection" -> (this, that)))
+      CSPOMConstant(value, Map("intersection" -> ((this, that))))
     } else {
       throw new IllegalArgumentException("Empty intersection")
     }

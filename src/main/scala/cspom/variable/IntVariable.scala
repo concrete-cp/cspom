@@ -33,9 +33,12 @@ object IntDiscreteDomain extends DiscreteDomain[AsOrdered[Int]]
     Int.MaxValue
   }
 
-  def allValues(d: RangeSet[Int]): Stream[Int] = d.ranges.toStream.flatMap { r =>
-    JavaConversions.asScalaSet(ContiguousSet.create(r.r, IntDiscreteDomain)).toStream.map(_.value)
-  } toStream
+  def allValues(d: RangeSet[Int]): Iterable[Int] =
+    d.ranges.toStream.flatMap(allValues)
+
+  def allValues(r: GuavaRange[Int]): Iterable[Int] =
+    JavaConversions.collectionAsScalaIterable(
+      ContiguousSet.create(r.r, IntDiscreteDomain)).map(_.value)
 
   def singleton(d: RangeSet[Int]): Option[Int] = {
     allValues(d) match {
@@ -64,15 +67,16 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
-      case CSPOMConstant(c: Int) if domain.contains(c) => CSPOMConstant(c, Map("intersection" -> (this, c)))
+      case CSPOMConstant(c: Int) if domain.contains(c) =>
+        CSPOMConstant(c, Map("intersection" -> ((this, c))))
       case v: IntVariable => {
         val d = domain & v.domain
         IntDiscreteDomain.singleton(d) match {
-          case Some(s) => CSPOMConstant(s, Map("intersection" -> (this, v)))
-          case None => new IntVariable(d, Map("intersection" -> (this, v)))
+          case Some(s) => CSPOMConstant(s, Map("intersection" -> ((this, v))))
+          case None => new IntVariable(d, Map("intersection" -> ((this, v))))
         }
       }
-      case v: FreeVariable => new IntVariable(domain, Map("intersection" -> (this, v)))
+      case v: FreeVariable => new IntVariable(domain, Map("intersection" -> ((this, v))))
       case t: CSPOMExpression[_] =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
@@ -97,5 +101,5 @@ object IntVariable {
 
   def free(params: Map[String, Any] = Map()): IntVariable = new IntVariable(RangeSet.all[Int], params)
 
-  def unapply(v: IntVariable) = Some(v.domain, v.params)
+  def unapply(v: IntVariable) = Some((v.domain, v.params))
 }

@@ -1,21 +1,56 @@
 package cspom.util
 
+import java.math.RoundingMode
+import java.math.RoundingMode
+import com.google.common.math.IntMath
+
 object IntervalsArithmetic {
 
-  //  def apply(f: (Interval, Interval) => Interval, ii: Intervals, jj: Intervals): Intervals = {
-  //    var result = Intervals.empty
-  //    for (i <- ii.intervals; j <- jj.intervals) {
-  //      // + means union here
-  //      result += f(i, j)
-  //    }
-  //    result
-  //  }
-  //
-  //  def apply(f: Interval => Interval, ii: Intervals): Intervals = {
-  //    ii.intervals.map(f).foldLeft(Intervals.empty)(_ + _)
-  //  }
+  def apply[A <% Ordered[A]](
+    f: (GuavaRange[A], GuavaRange[A]) => GuavaRange[A],
+    ii: RangeSet[A], jj: RangeSet[A]): RangeSet[A] = {
+    var result = RangeSet.empty[A]
+    for (i <- ii.ranges; j <- jj.ranges) {
+      // + means union here
+      result += f(i, j)
+    }
+    result
+  }
 
-  def asInfinities(r: GuavaRange[Int]) = {
+  def apply[A <% Ordered[A]](f: GuavaRange[A] => GuavaRange[A], ii: RangeSet[A]): RangeSet[A] = {
+    ii.ranges.map(f).foldLeft(RangeSet.empty[A])(_ + _)
+  }
+
+  def canonical(r: GuavaRange[Int]) = {
+    val lower: GuavaRange[Int] =
+      if (r.hasLowerBound) {
+        val l = if (r.lowerBoundType == Open) {
+          IntMath.checkedAdd(r.lowerEndpoint, 1)
+        } else {
+          r.lowerEndpoint
+        }
+        GuavaRange.downTo(l, Closed)
+      } else {
+        GuavaRange.all[Int]
+      }
+
+    val upper: GuavaRange[Int] =
+      if (r.hasUpperBound) {
+        val u = if (r.upperBoundType == Closed) {
+          IntMath.checkedAdd(r.upperEndpoint, 1)
+        } else {
+          r.upperEndpoint
+        }
+        GuavaRange.upTo(u, Open)
+      } else {
+        GuavaRange.all[Int]
+      }
+
+    lower & upper
+
+  }
+
+  private def asInfinities(r: GuavaRange[Int]) = {
     val l = if (r.hasLowerBound) {
       Finite(r.lowerEndpoint)
     } else {
@@ -31,15 +66,25 @@ object IntervalsArithmetic {
     (l, u)
   }
 
-  def minBound[A](b: (A, BoundType)*)(implicit ord: Ordering[A]): (A, BoundType) = {
+  private def asRange(l: Value, lbt: BoundType, u: Value, ubt: BoundType) = {
+    (l, u) match {
+      case (Finite(l), Finite(u)) => GuavaRange(l, lbt, u, ubt)
+      case (MinInf, Finite(u)) => GuavaRange.upTo(u, ubt)
+      case (Finite(l), PlusInf) => GuavaRange.downTo(l, lbt)
+      case (MinInf, PlusInf) => GuavaRange.all[Int]
+      case _ => throw new IllegalStateException
+    }
+  }
+
+  private def minBound[A](b: (A, BoundType)*)(implicit ord: Ordering[A]): (A, BoundType) = {
     b.min(Ordering.Tuple2(ord, BoundType.closedIsLess))
   }
 
-  def maxBound[A](b: (A, BoundType)*)(implicit ord: Ordering[A]): (A, BoundType) = {
+  private def maxBound[A](b: (A, BoundType)*)(implicit ord: Ordering[A]): (A, BoundType) = {
     b.max(Ordering.Tuple2(ord, BoundType.closedIsMore))
   }
 
-  implicit class IntervalsArithmetic(r: GuavaRange[Int]) {
+  implicit class Arithmetics(r: GuavaRange[Int]) {
     /**
      * [a, b] + [c, d] = [a + c, b + d]
      * [a, b] − [c, d] = [a − d, b − c]
@@ -48,8 +93,10 @@ object IntervalsArithmetic {
      */
 
     def +(i: GuavaRange[Int]): GuavaRange[Int] = {
-      GuavaRange(r.lowerEndpoint + i.lowerEndpoint, r.lowerBoundType & i.lowerBoundType,
-        r.upperEndpoint + i.upperEndpoint, r.upperBoundType & i.upperBoundType)
+      val (a, b) = asInfinities(r)
+      val (c, d) = asInfinities(i)
+
+      asRange(a + c, r.lowerBoundType & i.lowerBoundType, b + d, r.upperBoundType & i.upperBoundType)
     }
 
     def +(v: Int): GuavaRange[Int] = this + GuavaRange.ofInt(v)
@@ -78,73 +125,59 @@ object IntervalsArithmetic {
         (b * c, r.upperBoundType & i.lowerBoundType),
         (b * d, r.upperBoundType & i.upperBoundType))
 
-      (l, u) match {
-        case (Finite(l), Finite(u)) => GuavaRange(l, lbt, u, ubt)
-        case (MinInf, Finite(u)) => GuavaRange.upTo(u, ubt)
-        case (Finite(l), PlusInf) => GuavaRange.downTo(l, lbt)
-        case (MinInf, PlusInf) => GuavaRange.all[Int]
-        case _ => throw new IllegalStateException
-      }
+      asRange(l, lbt, u, ubt)
 
     }
 
     def *(v: Int): GuavaRange[Int] = this * GuavaRange.ofInt(v)
-    //
-    //    def /(i: Interval) = {
-    //      if (i.contains(0)) throw new ArithmeticException
-    //      val Interval(c, d) = i
-    //      Interval(
-    //        List(ceilDiv(lb, c), ceilDiv(lb, d), ceilDiv(ub, c), ceilDiv(ub, d)).min,
-    //        List(floorDiv(lb, c), floorDiv(lb, d), floorDiv(ub, c), floorDiv(ub, d)).max)
-    //    }
-    //
-    //    def /(v: Int) = {
-    //      if (v >= 0) {
-    //        Interval(ceilDiv(lb, v), floorDiv(ub, v))
-    //      } else {
-    //        Interval(ceilDiv(ub, v), floorDiv(lb, v))
-    //      }
-    //
-    //      //    if (l < u) Interval(l, u) else Interval(u, l)
-    //    }
-    //
-    //    def floorDiv(dividend: Int, divisor: Int) = {
-    //      val roundedTowardsZeroQuotient = dividend / divisor;
-    //      val dividedEvenly = (dividend % divisor) == 0;
-    //      if (dividedEvenly) {
-    //        roundedTowardsZeroQuotient;
-    //      } else {
-    //        // If they're of opposite sign then we rounded 
-    //        // UP towards zero so we rem one. If they're of the same sign then 
-    //        // we rounded DOWN towards zero, so we are done.
-    //
-    //        if (divisor.signum == dividend.signum) {
-    //          roundedTowardsZeroQuotient;
-    //        } else {
-    //          roundedTowardsZeroQuotient - 1;
-    //        }
-    //      }
-    //    }
-    //
-    //    def ceilDiv(dividend: Int, divisor: Int) = {
-    //
-    //      val roundedTowardsZeroQuotient = dividend / divisor;
-    //      val dividedEvenly = (dividend % divisor) == 0;
-    //      if (dividedEvenly) {
-    //        roundedTowardsZeroQuotient;
-    //      } else {
-    //        // If they're of opposite sign then we rounded 
-    //        // UP towards zero so we're done. If they're of the same sign then 
-    //        // we rounded DOWN towards zero, so we need to add one.
-    //
-    //        if (divisor.signum == dividend.signum) {
-    //          roundedTowardsZeroQuotient + 1;
-    //        } else {
-    //          roundedTowardsZeroQuotient;
-    //        }
-    //      }
-    //    }
-    //
-    //  }
+
+    def /(i: GuavaRange[Int]) = {
+      if (i.contains(0)) {
+        GuavaRange.all[Int]
+      } else {
+        val (a, b) = asInfinities(r)
+        val (c, d) = asInfinities(i)
+
+        val (l, lbt) = minBound(
+          (a.div(c, RoundingMode.CEILING), r.lowerBoundType & i.lowerBoundType),
+          (a.div(d, RoundingMode.CEILING), r.lowerBoundType & i.upperBoundType),
+          (b.div(c, RoundingMode.CEILING), r.upperBoundType & i.lowerBoundType),
+          (b.div(d, RoundingMode.CEILING), r.upperBoundType & i.upperBoundType))
+
+        val (u, ubt) = maxBound(
+          (a.div(c, RoundingMode.FLOOR), r.lowerBoundType & i.lowerBoundType),
+          (a.div(d, RoundingMode.FLOOR), r.lowerBoundType & i.upperBoundType),
+          (b.div(c, RoundingMode.FLOOR), r.upperBoundType & i.lowerBoundType),
+          (b.div(d, RoundingMode.FLOOR), r.upperBoundType & i.upperBoundType))
+
+        asRange(l, lbt, u, ubt)
+      }
+    }
+
+    def /(v: Int) = {
+      val (lb, ub) = asInfinities(r)
+      val d = Finite(v)
+      if (v >= 0) {
+        asRange(
+          lb.div(d, RoundingMode.CEILING), if (lb.divisible(d)) r.lowerBoundType else Closed,
+          ub.div(d, RoundingMode.FLOOR), if (ub.divisible(d)) r.upperBoundType else Closed)
+      } else {
+        asRange(
+          ub.div(d, RoundingMode.CEILING), if (ub.divisible(d)) r.upperBoundType else Closed,
+          lb.div(d, RoundingMode.FLOOR), if (lb.divisible(d)) r.lowerBoundType else Closed)
+      }
+    }
+
+    def abs: GuavaRange[Int] = {
+      val (l, u) = asInfinities(r)
+      if (u <= Finite(0)) { -r }
+      else if (l >= Finite(0)) { r }
+      else {
+        val (b, bt) = maxBound[Value]((-l, r.lowerBoundType), (u, r.upperBoundType))
+
+        asRange(Finite(0), Closed, b, bt)
+      }
+    }
+
   }
 }
