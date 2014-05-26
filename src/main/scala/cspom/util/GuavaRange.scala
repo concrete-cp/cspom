@@ -1,10 +1,11 @@
 package cspom.util
 
-import com.google.common.collect.Range
-import com.google.common.collect.{ BoundType => GuavaBT }
 import scala.collection.JavaConversions
+
+import com.google.common.collect.{BoundType => GuavaBT}
 import com.google.common.collect.DiscreteDomain
-import com.google.common.collect.ContiguousSet
+import com.google.common.collect.Range
+
 import cspom.util.GuavaRange.AsOrdered
 
 object BoundType {
@@ -13,12 +14,12 @@ object BoundType {
     case GuavaBT.OPEN => Open
   }
 
-  def closedIsLess = Ordering.fromLessThan[BoundType] {
+  val closedIsLess = Ordering.fromLessThan[BoundType] {
     case (Closed, Open) => true
     case _ => false
   }
 
-  def closedIsMore = Ordering.fromLessThan[BoundType] {
+  val closedIsMore = Ordering.fromLessThan[BoundType] {
     case (Open, Closed) => true
     case _ => false
   }
@@ -79,14 +80,6 @@ object GuavaRange {
 
   def singleton[A <% Ordered[A]](v: A) = GuavaRange(Range.singleton[AsOrdered[A]](v))
 
-  def ofIntInterval(lb: Int, ub: Int) = {
-    val u = 1l + ub
-    require(u.isValidInt)
-    closedOpen(lb, u.toInt)
-  }
-
-  def ofInt(v: Int) = ofIntInterval(v, v)
-
   def apply[A <% Ordered[A]](lower: A, lowerType: BoundType, upper: A, upperType: BoundType): GuavaRange[A] =
     GuavaRange(Range.range(lower, lowerType.guava, upper, upperType.guava))
 }
@@ -128,6 +121,8 @@ final case class GuavaRange[A <% Ordered[A]](
   def isAfter(elem: A): Boolean = {
     !contains(elem) && elem < lowerEndpoint
   }
+
+  def canonical(d: DiscreteDomain[AsOrdered[A]]) = GuavaRange(r.canonical(d))
 
   override def toString = r.toString
 

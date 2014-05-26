@@ -1,20 +1,29 @@
 package cspom.util
 
-object RangeSet {
-//  def apply[A <% Ordered[A]](s: Iterable[A]): RangeSet[A] = s match {
-//    case r: Range if r.step == 1 => RangeSet(
-//      GuavaRange.closed(r.head.asInstanceOf[A], r.last.asInstanceOf[A]))
-//    case i: RangeSet[A] => i
-//    case s => s.foldLeft(empty[A])(_ + GuavaRange.of(_))
-//  }
+import com.google.common.collect.DiscreteDomain
+import cspom.util.GuavaRange.AsOrdered
+import com.google.common.collect.ContiguousSet
+import scala.collection.JavaConversions
 
-  def apply[A <% Ordered[A]](s: GuavaRange[A]*) = {
-    s.foldLeft(empty[A])(_ + _)
+object RangeSet {
+  //  def apply[A <% Ordered[A]](s: Iterable[A]): RangeSet[A] = s match {
+  //    case r: Range if r.step == 1 => RangeSet(
+  //      GuavaRange.closed(r.head.asInstanceOf[A], r.last.asInstanceOf[A]))
+  //    case i: RangeSet[A] => i
+  //    case s => s.foldLeft(empty[A])(_ + GuavaRange.of(_))
+  //  }
+
+  def apply[A <% Ordered[A]](s: Iterable[GuavaRange[A]]): RangeSet[A] = {
+    s.foldLeft(RangeSet[A]())(_ + _)
+  }
+
+  def apply[A <% Ordered[A]](s: GuavaRange[A]): RangeSet[A] = {
+    RangeSet[A]() + s
   }
 
   def all[A <% Ordered[A]]: RangeSet[A] = apply(GuavaRange.all[A]())
 
-  def empty[A <% Ordered[A]]: RangeSet[A] = new NoIntervals()
+  def apply[A <% Ordered[A]](): RangeSet[A] = new NoIntervals()
 
 }
 
@@ -54,10 +63,22 @@ sealed trait RangeSet[A] {
 
   def contains(elem: A): Boolean
 
+  def canonical(d: DiscreteDomain[AsOrdered[A]]) = RangeSet(ranges.map(_.canonical(d)))
+
+  def toSet(d: DiscreteDomain[AsOrdered[A]]): Set[A] = {
+    val b = Set.newBuilder[A]
+
+    for (r <- ranges) {
+      b ++= JavaConversions.asScalaSet(ContiguousSet.create(r.r, d)).map(_.value)
+    }
+
+    b.result
+  }
+
   override def toString = ranges.mkString("{", ", ", "}")
 }
 
-final class NoIntervals[A](implicit val ordering: Ordering[A]) extends RangeSet[A] {
+final case class NoIntervals[A](implicit val ordering: Ordering[A]) extends RangeSet[A] {
 
   def lastInterval = throw new UnsupportedOperationException
   def headInterval = throw new UnsupportedOperationException
@@ -80,7 +101,7 @@ final class NoIntervals[A](implicit val ordering: Ordering[A]) extends RangeSet[
 
 }
 
-final class SomeIntervals[A](
+final case class SomeIntervals[A](
   val range: GuavaRange[A],
   val lower: RangeSet[A],
   val upper: RangeSet[A])(implicit val ordering: Ordering[A]) extends RangeSet[A] {
@@ -90,8 +111,15 @@ final class SomeIntervals[A](
   implicit def asOrdered(v: A) = Ordered.orderingToOrdered(v)(ordering)
 
   // If children are defined, they must not be empty and be correctly ordered
-  require(lower.isEmpty || (lower.lastInterval isBefore range))
-  require(upper.isEmpty || (upper.headInterval isAfter range))
+  require(lower match {
+    case _: NoIntervals[_] => true
+    case SomeIntervals(r, _, _) => r isBefore range
+  })
+
+  require(upper match {
+    case _: NoIntervals[_] => true
+    case SomeIntervals(r, _, _) => r isAfter range
+  })
 
   def isConvex = lower.isEmpty && upper.isEmpty
 

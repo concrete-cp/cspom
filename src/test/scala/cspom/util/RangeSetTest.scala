@@ -1,15 +1,17 @@
 package cspom.util
 
-import org.scalatest.Matchers
-import com.google.common.collect.TreeRangeSet
 import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
-import cspom.variable.IntDiscreteDomain
+
+import Intervals.Interval
+import Intervals.smallIntervals
+import Intervals.validIntervals
 
 class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
   "RangeSet" should "be conform" in {
-    val rangeSet1: RangeSet[Int] = RangeSet.empty
+    val rangeSet1: RangeSet[Int] = RangeSet()
     val rs2 = rangeSet1 + GuavaRange.closed(1, 10); // {[1, 10]}
     val rs3 = rs2 + GuavaRange.closedOpen(11, 15); // disconnected range: {[1, 10], [11, 15)} 
     val rs4 = rs3 + GuavaRange.closedOpen(15, 20); // connected range; {[1, 10], [11, 20)}
@@ -39,7 +41,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     val itv1 = GuavaRange.closed(0, 10)
     val itv2 = GuavaRange.closed(10, 15)
 
-    RangeSet(itv1, itv2) shouldBe 'convex
+    RangeSet(Seq(itv1, itv2)) shouldBe 'convex
 
   }
   //
@@ -57,15 +59,15 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
   it should "work under disjoint RangeSet" in {
 
-    RangeSet(
+    RangeSet(Seq(
       GuavaRange.closed(0, 5),
       GuavaRange.closed(-10, -9),
       GuavaRange.closed(8, 10),
-      GuavaRange.closed(-7, -4)) shouldBe RangeSet(
-        GuavaRange.closed(-10, -9),
-        GuavaRange.closed(-7, -4),
-        GuavaRange.closed(0, 5),
-        GuavaRange.closed(8, 10))
+      GuavaRange.closed(-7, -4))) shouldBe RangeSet(Seq(
+      GuavaRange.closed(-10, -9),
+      GuavaRange.closed(-7, -4),
+      GuavaRange.closed(0, 5),
+      GuavaRange.closed(8, 10)))
 
   }
 
@@ -78,7 +80,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
   it should "handle large values" in {
 
-    implicit def single(i: Int) = GuavaRange.ofInt(i)
+    implicit def single(i: Int) = GuavaRange.singleton(i)
 
     IntDiscreteDomain.allValues(
       RangeSet[Int]() ++ List(0, 2, 1).map(single)) should contain theSameElementsAs Set(0, 1, 2)
@@ -105,17 +107,15 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   }
 
   it should "compute difference" in {
-    import IntervalTest.Interval
+    import Intervals._
 
     RangeSet(Interval(0, 5)) - Interval(10, 15) shouldBe RangeSet(Interval(0, 5))
     RangeSet(Interval(10, 15)) - Interval(0, 5) shouldBe RangeSet(Interval(10, 15))
-    RangeSet(Interval(0, 10)) - Interval(3, 7) shouldBe RangeSet(Interval(0, 2), Interval(8, 10))
+    RangeSet(Interval(0, 10)) - Interval(3, 7) shouldBe RangeSet(Seq(Interval(0, 2), Interval(8, 10)))
     RangeSet(Interval(0, 10)) - Interval(-10, 5) shouldBe RangeSet(Interval(6, 10))
     RangeSet(Interval(0, 10)) - Interval(5, 10) shouldBe RangeSet(Interval(0, 4))
     RangeSet(Interval(0, 5)) - Interval(-5, 15) shouldBe RangeSet[Int]()
     RangeSet(Interval(0, 5)) - Interval(0, 5) shouldBe RangeSet[Int]()
-
-    import IntervalTest._
 
     forAll(smallIntervals, validIntervals) { (i1, i2) =>
       IntDiscreteDomain.allValues(RangeSet(i1) - i2).shouldBe(

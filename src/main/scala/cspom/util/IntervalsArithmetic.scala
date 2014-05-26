@@ -3,13 +3,15 @@ package cspom.util
 import java.math.RoundingMode
 import java.math.RoundingMode
 import com.google.common.math.IntMath
+import com.google.common.collect.DiscreteDomain
+import com.google.common.collect.Cut
 
 object IntervalsArithmetic {
 
   def apply[A <% Ordered[A]](
     f: (GuavaRange[A], GuavaRange[A]) => GuavaRange[A],
     ii: RangeSet[A], jj: RangeSet[A]): RangeSet[A] = {
-    var result = RangeSet.empty[A]
+    var result = RangeSet[A]()
     for (i <- ii.ranges; j <- jj.ranges) {
       // + means union here
       result += f(i, j)
@@ -18,37 +20,37 @@ object IntervalsArithmetic {
   }
 
   def apply[A <% Ordered[A]](f: GuavaRange[A] => GuavaRange[A], ii: RangeSet[A]): RangeSet[A] = {
-    ii.ranges.map(f).foldLeft(RangeSet.empty[A])(_ + _)
+    ii.ranges.foldLeft(RangeSet[A]())(_ + f(_))
   }
 
-  def canonical(r: GuavaRange[Int]) = {
-    val lower: GuavaRange[Int] =
-      if (r.hasLowerBound) {
-        val l = if (r.lowerBoundType == Open) {
-          IntMath.checkedAdd(r.lowerEndpoint, 1)
-        } else {
-          r.lowerEndpoint
-        }
-        GuavaRange.downTo(l, Closed)
-      } else {
-        GuavaRange.all[Int]
-      }
-
-    val upper: GuavaRange[Int] =
-      if (r.hasUpperBound) {
-        val u = if (r.upperBoundType == Closed) {
-          IntMath.checkedAdd(r.upperEndpoint, 1)
-        } else {
-          r.upperEndpoint
-        }
-        GuavaRange.upTo(u, Open)
-      } else {
-        GuavaRange.all[Int]
-      }
-
-    lower & upper
-
-  }
+  //  def canonical(r: GuavaRange[Int]) = {
+  //    val lower: GuavaRange[Int] =
+  //      if (r.hasLowerBound) {
+  //        val l = if (r.lowerBoundType == Open) {
+  //          IntMath.checkedAdd(r.lowerEndpoint, 1)
+  //        } else {
+  //          r.lowerEndpoint
+  //        }
+  //        GuavaRange.downTo(l, Closed)
+  //      } else {
+  //        GuavaRange.all[Int]
+  //      }
+  //
+  //    val upper: GuavaRange[Int] =
+  //      if (r.hasUpperBound) {
+  //        val u = if (r.upperBoundType == Closed) {
+  //          IntMath.checkedAdd(r.upperEndpoint, 1)
+  //        } else {
+  //          r.upperEndpoint
+  //        }
+  //        GuavaRange.upTo(u, Open)
+  //      } else {
+  //        GuavaRange.all[Int]
+  //      }
+  //
+  //    lower & upper
+  //
+  //  }
 
   private def asInfinities(r: GuavaRange[Int]) = {
     val l = if (r.hasLowerBound) {
@@ -68,7 +70,10 @@ object IntervalsArithmetic {
 
   private def asRange(l: Value, lbt: BoundType, u: Value, ubt: BoundType) = {
     (l, u) match {
-      case (Finite(l), Finite(u)) => GuavaRange(l, lbt, u, ubt)
+      case (Finite(l), Finite(u)) => {
+        if (l > u) { GuavaRange.closedOpen(l, l) }
+        else { GuavaRange(l, lbt, u, ubt) }
+      }
       case (MinInf, Finite(u)) => GuavaRange.upTo(u, ubt)
       case (Finite(l), PlusInf) => GuavaRange.downTo(l, lbt)
       case (MinInf, PlusInf) => GuavaRange.all[Int]
@@ -99,7 +104,7 @@ object IntervalsArithmetic {
       asRange(a + c, r.lowerBoundType & i.lowerBoundType, b + d, r.upperBoundType & i.upperBoundType)
     }
 
-    def +(v: Int): GuavaRange[Int] = this + GuavaRange.ofInt(v)
+    def +(v: Int): GuavaRange[Int] = this + GuavaRange.singleton(v)
 
     def unary_-(): GuavaRange[Int] = {
       GuavaRange(-r.upperEndpoint, r.upperBoundType, -r.lowerEndpoint, r.lowerBoundType)
@@ -110,47 +115,46 @@ object IntervalsArithmetic {
     def -(v: Int) = this + -v
 
     def *(i: GuavaRange[Int]): GuavaRange[Int] = {
-      val (a, b) = asInfinities(r)
-      val (c, d) = asInfinities(i)
 
-      val (l, lbt) = minBound(
-        (a * c, r.lowerBoundType & i.lowerBoundType),
-        (a * d, r.lowerBoundType & i.upperBoundType),
-        (b * c, r.upperBoundType & i.lowerBoundType),
-        (b * d, r.upperBoundType & i.upperBoundType))
+      val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
+      val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
 
-      val (u, ubt) = maxBound(
-        (a * c, r.lowerBoundType & i.lowerBoundType),
-        (a * d, r.lowerBoundType & i.upperBoundType),
-        (b * c, r.upperBoundType & i.lowerBoundType),
-        (b * d, r.upperBoundType & i.upperBoundType))
+      val d = dc - Finite(1)
+      val b = bc - Finite(1)
 
-      asRange(l, lbt, u, ubt)
+      val l = List(a * c, a * d, b * c, b * d).min
+
+      val u = List(a * c, a * d, b * c, b * d).max
+
+      asRange(l, Closed, u, Closed)
 
     }
 
-    def *(v: Int): GuavaRange[Int] = this * GuavaRange.ofInt(v)
+    def *(v: Int): GuavaRange[Int] = this * GuavaRange.singleton(v)
 
     def /(i: GuavaRange[Int]) = {
       if (i.contains(0)) {
         GuavaRange.all[Int]
       } else {
-        val (a, b) = asInfinities(r)
-        val (c, d) = asInfinities(i)
+        val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
+        val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
 
-        val (l, lbt) = minBound(
-          (a.div(c, RoundingMode.CEILING), r.lowerBoundType & i.lowerBoundType),
-          (a.div(d, RoundingMode.CEILING), r.lowerBoundType & i.upperBoundType),
-          (b.div(c, RoundingMode.CEILING), r.upperBoundType & i.lowerBoundType),
-          (b.div(d, RoundingMode.CEILING), r.upperBoundType & i.upperBoundType))
+        val d = dc - Finite(1)
+        val b = bc - Finite(1)
 
-        val (u, ubt) = maxBound(
-          (a.div(c, RoundingMode.FLOOR), r.lowerBoundType & i.lowerBoundType),
-          (a.div(d, RoundingMode.FLOOR), r.lowerBoundType & i.upperBoundType),
-          (b.div(c, RoundingMode.FLOOR), r.upperBoundType & i.lowerBoundType),
-          (b.div(d, RoundingMode.FLOOR), r.upperBoundType & i.upperBoundType))
+        val l = List(
+          a.div(c, RoundingMode.CEILING),
+          a.div(d, RoundingMode.CEILING),
+          b.div(c, RoundingMode.CEILING),
+          b.div(d, RoundingMode.CEILING)).min
 
-        asRange(l, lbt, u, ubt)
+        val u = List(
+          a.div(c, RoundingMode.FLOOR),
+          a.div(d, RoundingMode.FLOOR),
+          b.div(c, RoundingMode.FLOOR),
+          b.div(d, RoundingMode.FLOOR)).max
+
+        asRange(l, Closed, u, Closed)
       }
     }
 

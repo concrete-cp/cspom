@@ -6,6 +6,8 @@ import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
 import cspom.util.RangeSet
 import cspom.util.GuavaRange
+import com.google.common.collect.ContiguousSet
+import cspom.util.IntDiscreteDomain
 
 final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChecks {
 
@@ -14,12 +16,9 @@ final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChec
 
       whenever(d.nonEmpty) {
 
-        val s = d.toSet
+        val intDomain = RangeSet(d.map(GuavaRange.singleton(_))).toSet(IntDiscreteDomain)
 
-        val intDomain = RangeSet(d.map(GuavaRange.singleton(_)): _*)
-
-        s shouldBe intDomain
-        intDomain shouldBe s
+        d should contain theSameElementsAs intDomain
 
       }
 

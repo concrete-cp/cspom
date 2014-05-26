@@ -11,9 +11,9 @@ import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.Relation
 import cspom.util.GuavaRange
+import cspom.util.IntDiscreteDomain
 import cspom.util.RangeSet
 import cspom.variable.CSPOMConstant
-import cspom.variable.IntDiscreteDomain
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 
@@ -35,18 +35,18 @@ final object XCSPParser {
    * @return The resulting Domain object
    */
   def parseDomain(desc: String): RangeSet[Int] = {
-    desc.trim.split(" +").foldLeft(RangeSet.empty[Int]) { (i, v) =>
+    desc.trim.split(" +").foldLeft(RangeSet[Int]()) { (i, v) =>
       if (v.contains("..")) {
         i + parseRange(v)
       } else {
-        i + GuavaRange.ofInt(v.trim.toInt)
+        i + GuavaRange.singleton(v.trim.toInt)
       }
     }
 
   }
 
   def parseRange(interval: String): GuavaRange[Int] = interval.trim().split("\\.\\.") match {
-    case Array(a, b) => GuavaRange.ofIntInterval(a.toInt, b.toInt)
+    case Array(a, b) => GuavaRange.closed(a.toInt, b.toInt)
     case _ => throw new NumberFormatException("Interval format must be a..b");
   }
 
