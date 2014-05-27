@@ -181,6 +181,7 @@ final case class SomeIntervals[A](
   }
 
   def -(i: GuavaRange[A]): RangeSet[A] = {
+
     val l = if (i.lowerEndpoint <= range.lowerEndpoint) lower - i else lower
     val u = if (i.upperEndpoint >= range.upperEndpoint) upper - i else upper
 

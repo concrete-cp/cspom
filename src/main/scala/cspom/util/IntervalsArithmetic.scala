@@ -52,7 +52,7 @@ object IntervalsArithmetic {
   //
   //  }
 
-  private def asInfinities(r: GuavaRange[Int]) = {
+  private def asInfinities(r: GuavaRange[Int]): (Infinitable, Infinitable) = {
     val l = if (r.hasLowerBound) {
       Finite(r.lowerEndpoint)
     } else {
@@ -68,7 +68,7 @@ object IntervalsArithmetic {
     (l, u)
   }
 
-  private def asRange(l: Value, lbt: BoundType, u: Value, ubt: BoundType) = {
+  private def asRange(l: Infinitable, lbt: BoundType, u: Infinitable, ubt: BoundType) = {
     (l, u) match {
       case (Finite(l), Finite(u)) => {
         if (l > u) { GuavaRange.closedOpen(l, l) }
@@ -177,7 +177,7 @@ object IntervalsArithmetic {
       if (u <= Finite(0)) { -r }
       else if (l >= Finite(0)) { r }
       else {
-        val (b, bt) = maxBound[Value]((-l, r.lowerBoundType), (u, r.upperBoundType))
+        val (b, bt) = maxBound[Infinitable]((-l, r.lowerBoundType), (u, r.upperBoundType))
 
         asRange(Finite(0), Closed, b, bt)
       }

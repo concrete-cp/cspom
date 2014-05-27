@@ -1,7 +1,7 @@
 package cspom.util
 
 import scala.collection.JavaConversions
-import com.google.common.collect.{BoundType => GuavaBT}
+import com.google.common.collect.{ BoundType => GuavaBT }
 import com.google.common.collect.ContiguousSet
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Range
@@ -99,6 +99,20 @@ final case class GuavaRange[A <% Ordered[A]](
 
   def lowerEndpoint = r.lowerEndpoint().value
   def upperEndpoint = r.upperEndpoint().value
+
+  def lowerEndpointOption: Option[A] =
+    if (hasLowerBound) {
+      Some(lowerEndpoint)
+    } else {
+      None
+    }
+
+  def upperEndpointOption: Option[A] =
+    if (hasUpperBound) {
+      Some(upperEndpoint)
+    } else {
+      None
+    }
 
   def upperBoundType = BoundType(r.upperBoundType())
   def lowerBoundType = BoundType(r.lowerBoundType())
