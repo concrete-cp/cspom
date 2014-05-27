@@ -17,6 +17,11 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
 
   def domainValues = domain.allValues.toIterable
 
+  def firstValue = domain.firstValue
+  def lastValue = domain.lastValue
+  def isConvex = domain.isConvex
+  def ranges = domain.ranges
+
   if (domain.singletonMatch.isDefined) {
     logger.warn(s"$domain: a variable domain should be of size 2 or more")
   }

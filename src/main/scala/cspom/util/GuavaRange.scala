@@ -6,6 +6,7 @@ import com.google.common.collect.ContiguousSet
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Range
 import cspom.util.GuavaRange.AsOrdered
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
 object BoundType {
   def apply(t: GuavaBT) = t match {
@@ -57,7 +58,7 @@ object GuavaRange {
 
   def atLeast[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.atLeast(AsOrdered(endpoint)))
 
-  def atMost[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.atLeast(AsOrdered(endpoint)))
+  def atMost[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.atMost(AsOrdered(endpoint)))
 
   def closed[A <% Ordered[A]](lower: A, upper: A) = GuavaRange(Range.closed[AsOrdered[A]](lower, upper))
 
@@ -84,7 +85,7 @@ object GuavaRange {
 }
 
 final case class GuavaRange[A <% Ordered[A]](
-  val r: Range[AsOrdered[A]]) {
+  val r: Range[AsOrdered[A]]) extends LazyLogging {
 
   def contains(c: A) = r.contains(c)
 
@@ -100,16 +101,16 @@ final case class GuavaRange[A <% Ordered[A]](
   def lowerEndpoint = r.lowerEndpoint().value
   def upperEndpoint = r.upperEndpoint().value
 
-  def lowerEndpointOption: Option[A] =
+  def lowerBoundOption: Option[(A, BoundType)] =
     if (hasLowerBound) {
-      Some(lowerEndpoint)
+      Some((lowerEndpoint, lowerBoundType))
     } else {
       None
     }
 
-  def upperEndpointOption: Option[A] =
+  def upperBoundOption: Option[(A, BoundType)] =
     if (hasUpperBound) {
-      Some(upperEndpoint)
+      Some((upperEndpoint, upperBoundType))
     } else {
       None
     }
@@ -133,11 +134,26 @@ final case class GuavaRange[A <% Ordered[A]](
     !contains(elem) && elem < lowerEndpoint
   }
 
-  def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): GuavaRange[A] =
-    GuavaRange(r.canonical(d))
+  def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): GuavaRange[A] = {
+    if (hasLowerBound && lowerBoundType == Open && d.next(lowerEndpoint) == null) {
+      val m = d.maxValue().value
+      logger.warn(s"Range $r's canonical form forced to [$m, $m)")
+      GuavaRange.closedOpen(m, m)
+    } else {
+      GuavaRange(r.canonical(d))
+    }
+  }
 
   def allValues(implicit d: DiscreteDomain[AsOrdered[A]]): Iterator[A] =
     JavaConversions.asScalaIterator(ContiguousSet.create(r, d).iterator).map(_.value)
+
+  def firstValue(implicit d: DiscreteDomain[AsOrdered[A]]): A = {
+    ContiguousSet.create(r, d).first().value
+  }
+  
+  def lastValue(implicit d: DiscreteDomain[AsOrdered[A]]): A = {
+    ContiguousSet.create(r, d).last().value
+  }
 
   override def toString = r.toString
 

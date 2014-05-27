@@ -110,9 +110,10 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   }
 
   it should "compute difference" in {
-    import Intervals._
-
     implicit def domain = IntDiscreteDomain
+
+    val i = RangeSet(Seq(GuavaRange.singleton(2147483647), GuavaRange.singleton(0))).canonical
+    (i - GuavaRange.singleton(2147483647)).canonical shouldBe RangeSet(GuavaRange.singleton(0)).canonical
 
     RangeSet(Interval(0, 5)) - Interval(10, 15) shouldBe RangeSet(Interval(0, 5))
     RangeSet(Interval(10, 15)) - Interval(0, 5) shouldBe RangeSet(Interval(10, 15))
@@ -135,6 +136,27 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
       val i2 = RangeSet(s2.map(GuavaRange.singleton(_))).canonical
 
       (i1 -- i2).allValues.toSet shouldBe (s1.toSet -- s2.toSet)
+    }
+
+  }
+
+  it should "compute differences of open intervals" in {
+    implicit def domain = IntDiscreteDomain
+
+    RangeSet(Seq(Interval(0, 5), Interval(10, 15))) - GuavaRange.atMost(7) shouldBe
+      RangeSet(Interval(10, 15))
+
+    RangeSet(Seq(Interval(0, 5), Interval(10, 15))) - GuavaRange.atMost(-2) shouldBe
+      RangeSet(Seq(Interval(0, 5), Interval(10, 15)))
+
+    RangeSet(Seq(Interval(0, 5), Interval(10, 15))) - GuavaRange.atMost(15) shouldBe
+      RangeSet[Int]()
+
+    forAll { (s1: Seq[Int], b: Int) =>
+      val s = RangeSet(s1.map(GuavaRange.singleton(_))).canonical
+      val d = s - GuavaRange.lessThan(b)
+
+      d.allValues.toSet shouldBe (s1.toSet.filter(_ >= b))
     }
   }
 

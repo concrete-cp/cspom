@@ -64,10 +64,16 @@ sealed trait RangeSet[A] {
   def contains(elem: A): Boolean
 
   def canonical(implicit d: DiscreteDomain[AsOrdered[A]]) =
-    RangeSet(ranges.map(_.canonical(d)))
+    RangeSet(ranges.map(_.canonical))
 
   def allValues(implicit d: DiscreteDomain[AsOrdered[A]]) =
-    ranges.iterator.flatMap(_.allValues(d))
+    ranges.iterator.flatMap(_.allValues)
+
+  def firstValue(implicit d: DiscreteDomain[AsOrdered[A]]) =
+    headInterval.firstValue
+
+  def lastValue(implicit d: DiscreteDomain[AsOrdered[A]]) =
+    lastInterval.lastValue
 
   def singletonMatch(implicit d: DiscreteDomain[AsOrdered[A]]): Option[A] = {
     allValues(d).toStream match {
@@ -132,10 +138,12 @@ final case class SomeIntervals[A](
   def isConvex = lower.isEmpty && upper.isEmpty
 
   def +(i: GuavaRange[A]): RangeSet[A] = {
-    if (i.isConnected(range)) {
+    if (i.isEmpty) {
+      this
+    } else if (i.isConnected(range)) {
       val newItv = i.span(range) // union GuavaRange
       removeTop + newItv
-    } else if (i.lowerEndpoint > range.upperEndpoint) {
+    } else if (i.hasLowerBound && range.hasUpperBound && i.lowerEndpoint > range.upperEndpoint) {
       new SomeIntervals(range, lower, upper + i)
     } else {
       new SomeIntervals(range, lower + i, upper)
@@ -182,11 +190,24 @@ final case class SomeIntervals[A](
 
   def -(i: GuavaRange[A]): RangeSet[A] = {
 
-    val l = if (i.lowerEndpoint <= range.lowerEndpoint) lower - i else lower
-    val u = if (i.upperEndpoint >= range.upperEndpoint) upper - i else upper
+    val l: RangeSet[A] =
+      if (!i.hasLowerBound || range.hasLowerBound && i.lowerEndpoint <= range.lowerEndpoint)
+        lower - i
+      else
+        lower
 
-    val before = GuavaRange.upTo(i.lowerEndpoint, i.lowerBoundType.other)
-    val after = GuavaRange.downTo(i.upperEndpoint, i.upperBoundType.other)
+    val u: RangeSet[A] =
+      if (!i.hasUpperBound || range.hasUpperBound && i.upperEndpoint >= range.upperEndpoint)
+        upper - i
+      else
+        upper
+
+    val before = i.lowerBoundOption map {
+      case (lep, lbt) => GuavaRange.upTo(lep, lbt.other)
+    }
+    val after = i.upperBoundOption map {
+      case (uep, ubt) => GuavaRange.downTo(uep, ubt.other)
+    }
 
     var newT = if (l.isEmpty) {
       u
@@ -194,11 +215,11 @@ final case class SomeIntervals[A](
       new SomeIntervals(l.lastInterval, l.removeLast, u)
     }
 
-    if (before.isConnected(range)) {
-      newT += before & range
+    for (b <- before if b.isConnected(range)) {
+      newT += b & range
     }
-    if (after.isConnected(range)) {
-      newT += after & range
+    for (a <- after if a.isConnected(range)) {
+      newT += a & range
     }
 
     newT
