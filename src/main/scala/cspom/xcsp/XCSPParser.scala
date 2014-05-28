@@ -1,11 +1,9 @@
 package cspom.xcsp;
 
 import java.io.InputStream
-
 import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
-
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
@@ -16,6 +14,7 @@ import cspom.util.RangeSet
 import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
+import cspom.util.ContiguousRangeSet
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -37,9 +36,9 @@ final object XCSPParser {
   def parseDomain(desc: String): RangeSet[Int] = {
     desc.trim.split(" +").foldLeft(RangeSet[Int]()) { (i, v) =>
       if (v.contains("..")) {
-        i + parseRange(v)
+        i ++ parseRange(v)
       } else {
-        i + GuavaRange.singleton(v.trim.toInt)
+        i ++ GuavaRange.singleton(v.trim.toInt)
       }
     }
 
@@ -91,7 +90,7 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      name -> (domain.singletonMatch(IntDiscreteDomain) match {
+      name -> (new ContiguousRangeSet(domain, IntDiscreteDomain).singletonMatch match {
         case Some(s) => CSPOMConstant(s)
         case None => new IntVariable(domain)
       })

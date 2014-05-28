@@ -27,7 +27,7 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
     val args = c.arguments.toIndexedSeq
 
     val domains = args.map {
-      case v: SimpleExpression[Any] => v.domainValues.toSet
+      case v: SimpleExpression[Any] => v.toSet
       case _ => ???
     }
 

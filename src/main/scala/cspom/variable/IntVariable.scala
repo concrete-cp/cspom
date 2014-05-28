@@ -9,27 +9,29 @@ import cspom.util.GuavaRange
 import cspom.util.GuavaRange.AsOrdered
 import cspom.util.IntDiscreteDomain
 import com.google.common.math.IntMath
+import cspom.util.ContiguousRangeSet
 
 final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
 
-  implicit def domainType = IntDiscreteDomain
+  val asSortedSet = new ContiguousRangeSet(domain, IntDiscreteDomain)
 
-  def domainValues = domain.allValues.toIterable
+  def iterator = asSortedSet.iterator
 
-  def firstValue = domain.firstValue
-  def lastValue = domain.lastValue
+  override def head = asSortedSet.head
+  override def last = asSortedSet.last
+  override def size = asSortedSet.size
+
   def isConvex = domain.isConvex
   def ranges = domain.ranges
 
-  if (domain.singletonMatch.isDefined) {
+  if (asSortedSet.singletonMatch.isDefined) {
     logger.warn(s"$domain: a variable domain should be of size 2 or more")
   }
 
   override def toString = {
-    val c = domain.canonical
-    val d = c & GuavaRange.closed(c.lowerBound, IntMath.checkedSubtract(c.upperBound, 1))
-    s"int variable ($d)$displayParams"
+    val c = domain.canonical(IntDiscreteDomain)
+    s"int variable ($c)$displayParams"
   }
 
   def contains[S >: Int](that: S): Boolean = that match {
@@ -43,7 +45,7 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
         CSPOMConstant(c, Map("intersection" -> ((this, c))))
       case v: IntVariable => {
         val d = domain & v.domain
-        d.singletonMatch match {
+        new ContiguousRangeSet(d, IntDiscreteDomain).singletonMatch match {
           case Some(s) => CSPOMConstant(s, Map("intersection" -> ((this, v))))
           case None => new IntVariable(d, Map("intersection" -> ((this, v))))
         }

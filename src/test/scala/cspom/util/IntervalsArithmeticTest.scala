@@ -9,6 +9,8 @@ import Intervals.Interval
 
 import IntervalsArithmetic._
 
+import RangeSet._
+
 object Intervals {
   def validInterval(i: Int, j: Int) = i <= j
 
@@ -44,9 +46,7 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
 
   it should "multiply" in {
     Interval(0, 5) * 10 shouldBe Interval(0, 50)
-    IntervalsArithmetic(
-      { g: GuavaRange[Int] => g * 10 },
-      RangeSet(Interval(0, 100)) - Interval(10, 90)) shouldBe
+    (RangeSet(Interval(0, 100)) - Interval(10, 90)) * 10 shouldBe
       RangeSet(Seq(Interval(0, 90), Interval(910, 1000)))
 
     GuavaRange.atLeast(10) * 100 shouldBe GuavaRange.atLeast(1000)
@@ -62,9 +62,8 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
   }
 
   it should "add" in {
-    IntervalsArithmetic(
-      { g: GuavaRange[Int] => g + Interval(0, 10) },
-      RangeSet(Interval(0, 100)) - Interval(10, 90)).canonical(IntDiscreteDomain) shouldBe
+
+    ((RangeSet(Interval(0, 100)) -- Interval(10, 90)) + Interval(0, 10)).canonical(IntDiscreteDomain) shouldBe
       RangeSet(Seq(Interval(0, 19), Interval(91, 110))).canonical(IntDiscreteDomain)
 
   }

@@ -31,14 +31,14 @@ sealed trait CSPOMExpression[+T] extends Parameterized {
   def flatten: Seq[SimpleExpression[T]]
 
   def isTrue: Boolean
-  
+
   def fullyDefined: Boolean
 }
 
 /*
  * Simple expressions are typed (int or boolean)
  */
-sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
+sealed trait SimpleExpression[+T] extends CSPOMExpression[T] with Iterable[T] {
   final def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) =
     if (which == this) by else this
 
@@ -47,8 +47,6 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   def contains[S >: T](that: S): Boolean
 
   def flatten = Seq(this)
-
-  def domainValues: Iterable[T]
 
 }
 
@@ -73,8 +71,8 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
 
   def isTrue = value == true
 
-  def domainValues = Iterable(value)
-  
+  def iterator = Iterator(value)
+
   def fullyDefined = true
 }
 
@@ -126,6 +124,6 @@ final case class CSPOMSeq[+T](
   def flatten = values.flatMap(_.flatten)
 
   def isTrue = false
-  
+
   def fullyDefined = values.forall(_.fullyDefined)
 }

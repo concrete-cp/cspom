@@ -5,6 +5,7 @@ import java.math.RoundingMode
 import com.google.common.math.IntMath
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Cut
+import RangeSet._
 
 object IntervalsArithmetic {
 
@@ -13,44 +14,14 @@ object IntervalsArithmetic {
     ii: RangeSet[A], jj: RangeSet[A]): RangeSet[A] = {
     var result = RangeSet[A]()
     for (i <- ii.ranges; j <- jj.ranges) {
-      // + means union here
-      result += f(i, j)
+      result ++= f(i, j)
     }
     result
   }
 
   def apply[A <% Ordered[A]](f: GuavaRange[A] => GuavaRange[A], ii: RangeSet[A]): RangeSet[A] = {
-    ii.ranges.foldLeft(RangeSet[A]())(_ + f(_))
+    ii.ranges.foldLeft(RangeSet[A]())(_ ++ f(_))
   }
-
-  //  def canonical(r: GuavaRange[Int]) = {
-  //    val lower: GuavaRange[Int] =
-  //      if (r.hasLowerBound) {
-  //        val l = if (r.lowerBoundType == Open) {
-  //          IntMath.checkedAdd(r.lowerEndpoint, 1)
-  //        } else {
-  //          r.lowerEndpoint
-  //        }
-  //        GuavaRange.downTo(l, Closed)
-  //      } else {
-  //        GuavaRange.all[Int]
-  //      }
-  //
-  //    val upper: GuavaRange[Int] =
-  //      if (r.hasUpperBound) {
-  //        val u = if (r.upperBoundType == Closed) {
-  //          IntMath.checkedAdd(r.upperEndpoint, 1)
-  //        } else {
-  //          r.upperEndpoint
-  //        }
-  //        GuavaRange.upTo(u, Open)
-  //      } else {
-  //        GuavaRange.all[Int]
-  //      }
-  //
-  //    lower & upper
-  //
-  //  }
 
   private def asInfinities(r: GuavaRange[Int]): (Infinitable, Infinitable) = {
     val l = if (r.hasLowerBound) {
@@ -89,6 +60,15 @@ object IntervalsArithmetic {
     b.max(Ordering.Tuple2(ord, BoundType.closedIsMore))
   }
 
+  implicit class RangeArithmetics(r: RangeSet[Int]) {
+    def +(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ + _, r, i)
+    def unary_-(): RangeSet[Int] = IntervalsArithmetic(-_, r)
+    def -(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ - _, r, i)
+    def *(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ * _, r, i)
+    def /(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ / _, r, i)
+    def abs(): RangeSet[Int] = IntervalsArithmetic(_.abs, r)
+  }
+
   implicit class Arithmetics(r: GuavaRange[Int]) {
     /**
      * [a, b] + [c, d] = [a + c, b + d]
@@ -103,8 +83,6 @@ object IntervalsArithmetic {
 
       asRange(a + c, r.lowerBoundType & i.lowerBoundType, b + d, r.upperBoundType & i.upperBoundType)
     }
-
-    def +(v: Int): GuavaRange[Int] = this + GuavaRange.singleton(v)
 
     def unary_-(): GuavaRange[Int] = {
       GuavaRange(-r.upperEndpoint, r.upperBoundType, -r.lowerEndpoint, r.lowerBoundType)
@@ -129,8 +107,6 @@ object IntervalsArithmetic {
       asRange(l, Closed, u, Closed)
 
     }
-
-    def *(v: Int): GuavaRange[Int] = this * GuavaRange.singleton(v)
 
     def /(i: GuavaRange[Int]) = {
       if (i.contains(0)) {

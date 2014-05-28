@@ -17,7 +17,7 @@ final class BoolVariable(params: Map[String, Any] = Map())
     that.isInstanceOf[Boolean]
   }
 
-  def domainValues = Seq(false, true)
+  def iterator = Iterator(false, true)
   
   def fullyDefined = true
 

@@ -150,9 +150,13 @@ final case class GuavaRange[A <% Ordered[A]](
   def firstValue(implicit d: DiscreteDomain[AsOrdered[A]]): A = {
     ContiguousSet.create(r, d).first().value
   }
-  
+
   def lastValue(implicit d: DiscreteDomain[AsOrdered[A]]): A = {
     ContiguousSet.create(r, d).last().value
+  }
+
+  def nbValues(implicit d: DiscreteDomain[AsOrdered[A]]): Int = {
+    ContiguousSet.create(r, d).size
   }
 
   override def toString = r.toString

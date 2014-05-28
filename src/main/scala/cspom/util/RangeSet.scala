@@ -14,17 +14,22 @@ object RangeSet {
   //  }
 
   def apply[A <% Ordered[A]](s: Iterable[GuavaRange[A]]): RangeSet[A] = {
-    s.foldLeft(RangeSet[A]())(_ + _)
+    s.foldLeft(RangeSet[A]())(_ ++ _)
   }
 
   def apply[A <% Ordered[A]](s: GuavaRange[A]): RangeSet[A] = {
-    RangeSet[A]() + s
+    RangeSet[A]() ++ s
   }
 
   def all[A <% Ordered[A]]: RangeSet[A] = apply(GuavaRange.all[A]())
 
   def apply[A <% Ordered[A]](): RangeSet[A] = new NoIntervals()
 
+  implicit def valueAsSingletonRange[A <% Ordered[A]](i: A) = GuavaRange.singleton(i)
+
+  implicit def rangeAsRangeSet[A <% Ordered[A]](i: GuavaRange[A]) = RangeSet(i)
+
+  implicit def valueasRangeSet[A <% Ordered[A]](i: A) = RangeSet(i)
 }
 
 sealed trait RangeSet[A] {
@@ -33,21 +38,21 @@ sealed trait RangeSet[A] {
 
   implicit def ordering: Ordering[A]
 
-  def +(i: GuavaRange[A]): RangeSet[A]
+  def ++(i: GuavaRange[A]): RangeSet[A]
 
-  def -(i: GuavaRange[A]): RangeSet[A]
+  def --(i: GuavaRange[A]): RangeSet[A]
 
   def ++(i: RangeSet[A]): RangeSet[A] = this ++ i.ranges
 
-  def ++(i: Traversable[GuavaRange[A]]): RangeSet[A] = i.foldLeft(this)(_ + _)
+  def ++(i: Traversable[GuavaRange[A]]): RangeSet[A] = i.foldLeft(this)(_ ++ _)
 
   def ranges: Seq[GuavaRange[A]]
 
-  def --(i: RangeSet[A]): RangeSet[A] = i.ranges.foldLeft(this)(_ - _)
+  def --(i: RangeSet[A]): RangeSet[A] = i.ranges.foldLeft(this)(_ -- _)
 
   def &(i: RangeSet[A]): RangeSet[A] = this -- (this -- i)
 
-  def &(i: GuavaRange[A]): RangeSet[A] = this -- (this - i)
+  def &(i: GuavaRange[A]): RangeSet[A] = this -- (this -- i)
 
   def removeLast: RangeSet[A]
 
@@ -66,22 +71,6 @@ sealed trait RangeSet[A] {
   def canonical(implicit d: DiscreteDomain[AsOrdered[A]]) =
     RangeSet(ranges.map(_.canonical))
 
-  def allValues(implicit d: DiscreteDomain[AsOrdered[A]]) =
-    ranges.iterator.flatMap(_.allValues)
-
-  def firstValue(implicit d: DiscreteDomain[AsOrdered[A]]) =
-    headInterval.firstValue
-
-  def lastValue(implicit d: DiscreteDomain[AsOrdered[A]]) =
-    lastInterval.lastValue
-
-  def singletonMatch(implicit d: DiscreteDomain[AsOrdered[A]]): Option[A] = {
-    allValues(d).toStream match {
-      case Stream(c) => Some(c.value)
-      case _ => None
-    }
-  }
-
   override def equals(o: Any): Boolean = {
     o match {
       case i: RangeSet[_] => i.ranges == ranges
@@ -97,11 +86,11 @@ final case class NoIntervals[A](implicit val ordering: Ordering[A]) extends Rang
   def lastInterval = throw new UnsupportedOperationException
   def headInterval = throw new UnsupportedOperationException
 
-  def +(i: GuavaRange[A]) = {
+  def ++(i: GuavaRange[A]) = {
     if (i.isEmpty) this else new SomeIntervals[A](i, this, this)
   }
 
-  def -(i: GuavaRange[A]) = this
+  def --(i: GuavaRange[A]) = this
 
   def removeLast = this
 
@@ -137,16 +126,16 @@ final case class SomeIntervals[A](
 
   def isConvex = lower.isEmpty && upper.isEmpty
 
-  def +(i: GuavaRange[A]): RangeSet[A] = {
+  def ++(i: GuavaRange[A]): RangeSet[A] = {
     if (i.isEmpty) {
       this
     } else if (i.isConnected(range)) {
       val newItv = i.span(range) // union GuavaRange
-      removeTop + newItv
+      removeTop ++ newItv
     } else if (i.hasLowerBound && range.hasUpperBound && i.lowerEndpoint > range.upperEndpoint) {
-      new SomeIntervals(range, lower, upper + i)
+      new SomeIntervals(range, lower, upper ++ i)
     } else {
-      new SomeIntervals(range, lower + i, upper)
+      new SomeIntervals(range, lower ++ i, upper)
     }
   }
 
@@ -188,17 +177,17 @@ final case class SomeIntervals[A](
     lower.ranges ++: range +: upper.ranges
   }
 
-  def -(i: GuavaRange[A]): RangeSet[A] = {
+  def --(i: GuavaRange[A]): RangeSet[A] = {
 
     val l: RangeSet[A] =
       if (!i.hasLowerBound || range.hasLowerBound && i.lowerEndpoint <= range.lowerEndpoint)
-        lower - i
+        lower -- i
       else
         lower
 
     val u: RangeSet[A] =
       if (!i.hasUpperBound || range.hasUpperBound && i.upperEndpoint >= range.upperEndpoint)
-        upper - i
+        upper -- i
       else
         upper
 
@@ -209,17 +198,18 @@ final case class SomeIntervals[A](
       case (uep, ubt) => GuavaRange.downTo(uep, ubt.other)
     }
 
-    var newT = if (l.isEmpty) {
-      u
-    } else {
-      new SomeIntervals(l.lastInterval, l.removeLast, u)
-    }
+    var newT: RangeSet[A] =
+      if (l.isEmpty) {
+        u
+      } else {
+        new SomeIntervals(l.lastInterval, l.removeLast, u)
+      }
 
     for (b <- before if b.isConnected(range)) {
-      newT += b & range
+      newT ++= b & range
     }
     for (a <- after if a.isConnected(range)) {
-      newT += a & range
+      newT ++= a & range
     }
 
     newT

@@ -12,10 +12,15 @@ import cspom.util.GuavaRange
 import cspom.util.RangeSet
 import cspom.util.Intervals
 import cspom.util.IntDiscreteDomain
+import cspom.util.ContiguousRangeSet
+import scala.collection.SortedSet
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
+  implicit def asSet(r: RangeSet[Int]): SortedSet[Int] =
+    new ContiguousRangeSet(r, IntDiscreteDomain)
+
   "XCSP domain parser" should "handle disjoint values and intervals" in {
-    XCSPParser.parseDomain("1 3..10 18..20").allValues(IntDiscreteDomain).toSeq shouldBe
+    XCSPParser.parseDomain("1 3..10 18..20").toSeq shouldBe
       1 +: (3 to 10) ++: (18 to 20)
   }
 

@@ -1,23 +1,27 @@
 package cspom.variable;
 
 import scala.collection.SortedSet
+
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
-import cspom.util.RangeSet
+
+import cspom.util.ContiguousRangeSet
 import cspom.util.GuavaRange
-import com.google.common.collect.ContiguousSet
 import cspom.util.IntDiscreteDomain
+import cspom.util.RangeSet
 
 final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChecks {
+
+  implicit def asSet(r: RangeSet[Int]): SortedSet[Int] =
+    new ContiguousRangeSet(r, IntDiscreteDomain)
 
   "Extensive domains" should "behave like sets" in {
     forAll { d: Seq[Int] =>
 
       whenever(d.nonEmpty) {
 
-        val intDomain = 
-          RangeSet(d.map(GuavaRange.singleton(_))).allValues(IntDiscreteDomain).toSet
+        val intDomain = asSet(RangeSet(d.map(GuavaRange.singleton(_))))
 
         d.toSet shouldBe intDomain
 
