@@ -5,7 +5,7 @@ import com.google.common.collect.{ BoundType => GuavaBT }
 import com.google.common.collect.ContiguousSet
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Range
-import cspom.util.GuavaRange.AsOrdered
+import cspom.util.Interval.AsOrdered
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
 object BoundType {
@@ -46,7 +46,7 @@ case object Open extends BoundType {
 
 }
 
-object GuavaRange {
+object Interval {
 
   implicit class AsOrdered[T <% Ordered[T]](val value: T) extends Ordered[AsOrdered[T]] {
     override def compare(that: AsOrdered[T]) = value.compare(that.value)
@@ -54,37 +54,62 @@ object GuavaRange {
 
   }
 
-  def all[A <% Ordered[A]](): GuavaRange[A] = GuavaRange(Range.all[AsOrdered[A]]())
+  class Closing[A <% Ordered[A]](left: A) {
+    def -(right: A) = new {
+      def > = Interval(left, right)
+      def < = Interval.closedOpen(left, right)
+    }
 
-  def atLeast[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.atLeast(AsOrdered(endpoint)))
+    def > = Interval.singleton(left)
+  }
 
-  def atMost[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.atMost(AsOrdered(endpoint)))
+  class Opening[A <% Ordered[A]](left: A) {
+    def -(right: A) = new {
+      def > = Interval.openClosed(left, right)
+      def < = Interval.open(left, right)
+    }
 
-  def closed[A <% Ordered[A]](lower: A, upper: A) = GuavaRange(Range.closed[AsOrdered[A]](lower, upper))
+  }
 
-  def closedOpen[A <% Ordered[A]](lower: A, upper: A) = GuavaRange(Range.closedOpen[AsOrdered[A]](lower, upper))
+  def all[A <% Ordered[A]](): Interval[A] = Interval(Range.all[AsOrdered[A]]())
 
-  def greaterThan[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.greaterThan[AsOrdered[A]](endpoint))
+  def atLeast[A <% Ordered[A]](endpoint: A) = Interval(Range.atLeast(AsOrdered(endpoint)))
 
-  def lessThan[A <% Ordered[A]](endpoint: A) = GuavaRange(Range.lessThan[AsOrdered[A]](endpoint))
+  def atMost[A <% Ordered[A]](endpoint: A) = Interval(Range.atMost(AsOrdered(endpoint)))
 
-  def open[A <% Ordered[A]](lower: A, upper: A) = GuavaRange(Range.open[AsOrdered[A]](lower, upper))
+  def apply[A <% Ordered[A]](lower: A, upper: A): Interval[A] =
+    Interval(Range.closed[AsOrdered[A]](lower, upper))
 
-  def openClosed[A <% Ordered[A]](lower: A, upper: A) = GuavaRange(Range.openClosed[AsOrdered[A]](lower, upper))
+  def closedOpen[A <% Ordered[A]](lower: A, upper: A) = Interval(Range.closedOpen[AsOrdered[A]](lower, upper))
 
-  def upTo[A <% Ordered[A]](endpoint: A, bt: BoundType) = GuavaRange(
+  def greaterThan[A <% Ordered[A]](endpoint: A) = Interval(Range.greaterThan[AsOrdered[A]](endpoint))
+
+  def lessThan[A <% Ordered[A]](endpoint: A) = Interval(Range.lessThan[AsOrdered[A]](endpoint))
+
+  def open[A <% Ordered[A]](lower: A, upper: A) = Interval(Range.open[AsOrdered[A]](lower, upper))
+
+  def openClosed[A <% Ordered[A]](lower: A, upper: A) = Interval(Range.openClosed[AsOrdered[A]](lower, upper))
+
+  def upTo[A <% Ordered[A]](endpoint: A, bt: BoundType) = Interval(
     Range.upTo[AsOrdered[A]](endpoint, bt.guava))
 
-  def downTo[A <% Ordered[A]](endpoint: A, bt: BoundType) = GuavaRange(
+  def downTo[A <% Ordered[A]](endpoint: A, bt: BoundType) = Interval(
     Range.downTo[AsOrdered[A]](endpoint, bt.guava))
 
-  def singleton[A <% Ordered[A]](v: A) = GuavaRange(Range.singleton[AsOrdered[A]](v))
+  def apply[A <% Ordered[A]](lower: A, lowerType: BoundType, upper: A, upperType: BoundType): Interval[A] =
+    Interval(Range.range(lower, lowerType.guava, upper, upperType.guava))
 
-  def apply[A <% Ordered[A]](lower: A, lowerType: BoundType, upper: A, upperType: BoundType): GuavaRange[A] =
-    GuavaRange(Range.range(lower, lowerType.guava, upper, upperType.guava))
+  def singleton[A <% Ordered[A]](v: A): Interval[A] =
+    Interval(Range.singleton[AsOrdered[A]](v))
+
+  def <[A <% Ordered[A]](left: A) = new Closing[A](left)
+
+  def >[A <% Ordered[A]](left: A) = new Opening[A](left)
+
+  val r = <(2) - (5)>
 }
 
-final case class GuavaRange[A <% Ordered[A]](
+final case class Interval[A <% Ordered[A]](
   val r: Range[AsOrdered[A]]) extends LazyLogging {
 
   def contains(c: A) = r.contains(c)
@@ -92,9 +117,9 @@ final case class GuavaRange[A <% Ordered[A]](
   def hasLowerBound = r.hasLowerBound()
   def hasUpperBound = r.hasUpperBound()
 
-  def &(si: GuavaRange[A]) = GuavaRange(r.intersection(si.r))
-  def isConnected(si: GuavaRange[A]) = r.isConnected(si.r)
-  def span(si: GuavaRange[A]) = GuavaRange(r.span(si.r))
+  def &(si: Interval[A]) = Interval(r.intersection(si.r))
+  def isConnected(si: Interval[A]) = r.isConnected(si.r)
+  def span(si: Interval[A]) = Interval(r.span(si.r))
 
   def isEmpty = r.isEmpty()
 
@@ -118,7 +143,7 @@ final case class GuavaRange[A <% Ordered[A]](
   def upperBoundType = BoundType(r.upperBoundType())
   def lowerBoundType = BoundType(r.lowerBoundType())
 
-  def isBefore(h: GuavaRange[A]): Boolean = {
+  def isBefore(h: Interval[A]): Boolean = {
     isBefore(h.lowerEndpoint)
   }
 
@@ -126,7 +151,7 @@ final case class GuavaRange[A <% Ordered[A]](
     !contains(elem) && upperEndpoint < elem
   }
 
-  def isAfter(h: GuavaRange[A]): Boolean = {
+  def isAfter(h: Interval[A]): Boolean = {
     isAfter(h.upperEndpoint)
   }
 
@@ -134,13 +159,13 @@ final case class GuavaRange[A <% Ordered[A]](
     !contains(elem) && elem < lowerEndpoint
   }
 
-  def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): GuavaRange[A] = {
+  def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): Interval[A] = {
     if (hasLowerBound && lowerBoundType == Open && d.next(lowerEndpoint) == null) {
       val m = d.maxValue().value
       logger.warn(s"Range $r's canonical form forced to [$m, $m)")
-      GuavaRange.closedOpen(m, m)
+      Interval.closedOpen(m, m)
     } else {
-      GuavaRange(r.canonical(d))
+      Interval(r.canonical(d))
     }
   }
 

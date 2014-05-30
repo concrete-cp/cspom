@@ -8,7 +8,7 @@ import org.scalatest.time.Second
 import org.scalatest.time.Span
 import cspom.xcsp.XCSPParser
 import cspom.util.IntervalTest
-import cspom.util.GuavaRange
+import cspom.util.Interval
 import cspom.util.RangeSet
 import cspom.util.Intervals
 import cspom.util.IntDiscreteDomain
@@ -32,7 +32,7 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
 
       val parsed = XCSPParser.parseRange(s"$i..$j")
 
-      parsed shouldBe a[GuavaRange[_]]
+      parsed shouldBe a[Interval[_]]
 
       failAfter(Span(1, Second)) {
         parsed shouldBe r
@@ -43,7 +43,7 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
   it should "coalesce connected ranges" in {
     val itv = XCSPParser.parseDomain("3..5 6 7..10").canonical(IntDiscreteDomain)
     itv shouldBe a[RangeSet[_]]
-    itv shouldBe RangeSet(GuavaRange.closed(3, 10).canonical(IntDiscreteDomain))
+    itv shouldBe RangeSet(Interval(3, 10).canonical(IntDiscreteDomain))
   }
 
 }

@@ -3,7 +3,7 @@ package cspom.util
 import com.google.common.collect.ContiguousSet
 import com.google.common.collect.DiscreteDomain
 import scala.collection.JavaConversions
-import cspom.util.GuavaRange.AsOrdered
+import cspom.util.Interval.AsOrdered
 
 object IntDiscreteDomain extends DiscreteDomain[AsOrdered[Int]]
   with Serializable {

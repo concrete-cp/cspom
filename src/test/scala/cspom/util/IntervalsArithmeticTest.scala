@@ -5,16 +5,12 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalatest.FlatSpec
 
-import Intervals.Interval
-
 import IntervalsArithmetic._
 
 import RangeSet._
 
 object Intervals {
   def validInterval(i: Int, j: Int) = i <= j
-
-  def Interval(l: Int, b: Int) = GuavaRange.closed(l, b)
 
   def validIntervals =
     for (
@@ -41,7 +37,7 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
     Interval(1, 20) / -20 shouldBe Interval(-1, -1)
     Interval(0, 20) / -20 shouldBe Interval(-1, 0)
 
-    GuavaRange.atLeast(2) / 20 shouldBe GuavaRange.atLeast(1)
+    Interval.atLeast(2) / 20 shouldBe Interval.atLeast(1)
   }
 
   it should "multiply" in {
@@ -49,8 +45,8 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
     (RangeSet(Interval(0, 100)) - Interval(10, 90)) * 10 shouldBe
       RangeSet(Seq(Interval(0, 90), Interval(910, 1000)))
 
-    GuavaRange.atLeast(10) * 100 shouldBe GuavaRange.atLeast(1000)
-    GuavaRange.greaterThan(9) * 100 shouldBe GuavaRange.atLeast(1000)
+    Interval.atLeast(10) * 100 shouldBe Interval.atLeast(1000)
+    Interval.greaterThan(9) * 100 shouldBe Interval.atLeast(1000)
   }
 
   it should "compute abs" in {

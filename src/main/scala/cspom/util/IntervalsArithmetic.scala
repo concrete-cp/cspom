@@ -10,20 +10,20 @@ import RangeSet._
 object IntervalsArithmetic {
 
   def apply[A <% Ordered[A]](
-    f: (GuavaRange[A], GuavaRange[A]) => GuavaRange[A],
+    f: (Interval[A], Interval[A]) => Interval[A],
     ii: RangeSet[A], jj: RangeSet[A]): RangeSet[A] = {
-    var result = RangeSet[A]()
-    for (i <- ii.ranges; j <- jj.ranges) {
-      result ++= f(i, j)
+    //var result = RangeSet[A]()
+    val calcs = for (i <- ii.ranges; j <- jj.ranges) yield {
+      f(i, j)
     }
-    result
+    calcs.foldLeft(RangeSet[A]())(_ ++ _)
   }
 
-  def apply[A <% Ordered[A]](f: GuavaRange[A] => GuavaRange[A], ii: RangeSet[A]): RangeSet[A] = {
+  def apply[A <% Ordered[A]](f: Interval[A] => Interval[A], ii: RangeSet[A]): RangeSet[A] = {
     ii.ranges.foldLeft(RangeSet[A]())(_ ++ f(_))
   }
 
-  private def asInfinities(r: GuavaRange[Int]): (Infinitable, Infinitable) = {
+  private def asInfinities(r: Interval[Int]): (Infinitable, Infinitable) = {
     val l = if (r.hasLowerBound) {
       Finite(r.lowerEndpoint)
     } else {
@@ -42,12 +42,12 @@ object IntervalsArithmetic {
   private def asRange(l: Infinitable, lbt: BoundType, u: Infinitable, ubt: BoundType) = {
     (l, u) match {
       case (Finite(l), Finite(u)) => {
-        if (l > u) { GuavaRange.closedOpen(l, l) }
-        else { GuavaRange(l, lbt, u, ubt) }
+        if (l > u) { Interval.closedOpen(l, l) }
+        else { Interval(l, lbt, u, ubt) }
       }
-      case (MinInf, Finite(u)) => GuavaRange.upTo(u, ubt)
-      case (Finite(l), PlusInf) => GuavaRange.downTo(l, lbt)
-      case (MinInf, PlusInf) => GuavaRange.all[Int]
+      case (MinInf, Finite(u)) => Interval.upTo(u, ubt)
+      case (Finite(l), PlusInf) => Interval.downTo(l, lbt)
+      case (MinInf, PlusInf) => Interval.all[Int]
       case _ => throw new IllegalStateException
     }
   }
@@ -69,7 +69,7 @@ object IntervalsArithmetic {
     def abs(): RangeSet[Int] = IntervalsArithmetic(_.abs, r)
   }
 
-  implicit class Arithmetics(r: GuavaRange[Int]) {
+  implicit class Arithmetics(r: Interval[Int]) {
     /**
      * [a, b] + [c, d] = [a + c, b + d]
      * [a, b] − [c, d] = [a − d, b − c]
@@ -77,22 +77,22 @@ object IntervalsArithmetic {
      * [a, b] ÷ [c, d] = [min (a ÷ c, a ÷ d, b ÷ c, b ÷ d), max (a ÷ c, a ÷ d, b ÷ c, b ÷ d)] when 0 is not in [c, d].
      */
 
-    def +(i: GuavaRange[Int]): GuavaRange[Int] = {
+    def +(i: Interval[Int]): Interval[Int] = {
       val (a, b) = asInfinities(r)
       val (c, d) = asInfinities(i)
 
       asRange(a + c, r.lowerBoundType & i.lowerBoundType, b + d, r.upperBoundType & i.upperBoundType)
     }
 
-    def unary_-(): GuavaRange[Int] = {
-      GuavaRange(-r.upperEndpoint, r.upperBoundType, -r.lowerEndpoint, r.lowerBoundType)
+    def unary_-(): Interval[Int] = {
+      Interval(-r.upperEndpoint, r.upperBoundType, -r.lowerEndpoint, r.lowerBoundType)
     }
 
-    def -(i: GuavaRange[Int]) = this + -i
+    def -(i: Interval[Int]) = this + -i
 
     def -(v: Int) = this + -v
 
-    def *(i: GuavaRange[Int]): GuavaRange[Int] = {
+    def *(i: Interval[Int]): Interval[Int] = {
 
       val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
       val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
@@ -108,9 +108,9 @@ object IntervalsArithmetic {
 
     }
 
-    def /(i: GuavaRange[Int]) = {
+    def /(i: Interval[Int]) = {
       if (i.contains(0)) {
-        GuavaRange.all[Int]
+        Interval.all[Int]
       } else {
         val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
         val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
@@ -118,13 +118,13 @@ object IntervalsArithmetic {
         val d = dc - Finite(1)
         val b = bc - Finite(1)
 
-        val l = List(
+        val l = Seq(
           a.div(c, RoundingMode.CEILING),
           a.div(d, RoundingMode.CEILING),
           b.div(c, RoundingMode.CEILING),
           b.div(d, RoundingMode.CEILING)).min
 
-        val u = List(
+        val u = Seq(
           a.div(c, RoundingMode.FLOOR),
           a.div(d, RoundingMode.FLOOR),
           b.div(c, RoundingMode.FLOOR),
@@ -135,20 +135,24 @@ object IntervalsArithmetic {
     }
 
     def /(v: Int) = {
-      val (lb, ub) = asInfinities(r)
-      val d = Finite(v)
-      if (v >= 0) {
-        asRange(
-          lb.div(d, RoundingMode.CEILING), if (lb.divisible(d)) r.lowerBoundType else Closed,
-          ub.div(d, RoundingMode.FLOOR), if (ub.divisible(d)) r.upperBoundType else Closed)
+      if (v == 0) {
+        Interval.all[Int]
       } else {
-        asRange(
-          ub.div(d, RoundingMode.CEILING), if (ub.divisible(d)) r.upperBoundType else Closed,
-          lb.div(d, RoundingMode.FLOOR), if (lb.divisible(d)) r.lowerBoundType else Closed)
+        val (lb, ub) = asInfinities(r)
+        val d = Finite(v)
+        if (v > 0) {
+          asRange(
+            lb.div(d, RoundingMode.CEILING), if (lb.divisible(d)) r.lowerBoundType else Closed,
+            ub.div(d, RoundingMode.FLOOR), if (ub.divisible(d)) r.upperBoundType else Closed)
+        } else {
+          asRange(
+            ub.div(d, RoundingMode.CEILING), if (ub.divisible(d)) r.upperBoundType else Closed,
+            lb.div(d, RoundingMode.FLOOR), if (lb.divisible(d)) r.lowerBoundType else Closed)
+        }
       }
     }
 
-    def abs: GuavaRange[Int] = {
+    def abs: Interval[Int] = {
       val (l, u) = asInfinities(r)
       if (u <= Finite(0)) { -r }
       else if (l >= Finite(0)) { r }

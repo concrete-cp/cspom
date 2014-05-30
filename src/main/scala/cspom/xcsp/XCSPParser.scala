@@ -8,7 +8,7 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.Relation
-import cspom.util.GuavaRange
+import cspom.util.Interval
 import cspom.util.IntDiscreteDomain
 import cspom.util.RangeSet
 import cspom.variable.CSPOMConstant
@@ -38,14 +38,14 @@ final object XCSPParser {
       if (v.contains("..")) {
         i ++ parseRange(v)
       } else {
-        i ++ GuavaRange.singleton(v.trim.toInt)
+        i ++ Interval.singleton(v.trim.toInt)
       }
     }
 
   }
 
-  def parseRange(interval: String): GuavaRange[Int] = interval.trim().split("\\.\\.") match {
-    case Array(a, b) => GuavaRange.closed(a.toInt, b.toInt)
+  def parseRange(interval: String): Interval[Int] = interval.trim().split("\\.\\.") match {
+    case Array(a, b) => Interval(a.toInt, b.toInt)
     case _ => throw new NumberFormatException("Interval format must be a..b");
   }
 

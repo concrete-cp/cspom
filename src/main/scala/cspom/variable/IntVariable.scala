@@ -5,8 +5,8 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import cspom.util.RangeSet
 import com.google.common.collect.ContiguousSet
 import com.google.common.collect.DiscreteDomain
-import cspom.util.GuavaRange
-import cspom.util.GuavaRange.AsOrdered
+import cspom.util.Interval
+import cspom.util.Interval.AsOrdered
 import cspom.util.IntDiscreteDomain
 import com.google.common.math.IntMath
 import cspom.util.ContiguousRangeSet
@@ -62,14 +62,14 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
 object IntVariable {
   def apply(values: Iterable[Int], params: Map[String, Any] = Map()): IntVariable = {
     new IntVariable(RangeSet(values.map(
-      v => GuavaRange.singleton(v))).canonical(IntDiscreteDomain), params)
+      v => Interval.singleton(v))).canonical(IntDiscreteDomain), params)
   }
 
   def apply(values: RangeSet[Int]): IntVariable = {
     new IntVariable(values, Map())
   }
 
-  def apply(values: GuavaRange[Int]): IntVariable = {
+  def apply(values: Interval[Int]): IntVariable = {
     apply(RangeSet(values))
   }
 

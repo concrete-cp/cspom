@@ -6,7 +6,7 @@ import cspom.util.RangeSet
 import cspom.variable.CSPOMExpression
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
-import cspom.util.GuavaRange
+import cspom.util.Interval
 import cspom.variable.CSPOMConstant
 
 class VariableCompiler(
@@ -17,7 +17,7 @@ class VariableCompiler(
 
   implicit def ranges(e: SimpleExpression[Int]): RangeSet[Int] = e match {
     case v: IntVariable => v.domain
-    case CSPOMConstant(c: Int) => RangeSet(GuavaRange.singleton(c))
+    case CSPOMConstant(c: Int) => RangeSet(Interval.singleton(c))
   }
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {

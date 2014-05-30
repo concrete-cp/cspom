@@ -3,16 +3,14 @@ package cspom.util
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import Intervals.Interval
-
-class IntervalTest extends FlatSpec with Matchers  {
+class IntervalTest extends FlatSpec with Matchers {
 
   it should "compare correctly" in {
     Interval(0, 5) isBefore Interval(7, 10) shouldBe true
     Interval(0, 5) isBefore Interval(6, 10) shouldBe true
     Interval(7, 10) isAfter Interval(0, 5) shouldBe true
     Interval(6, 10) isAfter Interval(0, 5) shouldBe true
-    an [IllegalArgumentException] should be thrownBy Interval(0, 5) & Interval(6, 10) 
+    an[IllegalArgumentException] should be thrownBy Interval(0, 5) & Interval(6, 10)
     Interval(0, 5) & Interval(5, 10) should not be empty
   }
 

@@ -1,58 +1,58 @@
 package cspom.util
 
 import com.google.common.collect.DiscreteDomain
-import cspom.util.GuavaRange.AsOrdered
+import cspom.util.Interval.AsOrdered
 import com.google.common.collect.ContiguousSet
 import scala.collection.JavaConversions
 
 object RangeSet {
   //  def apply[A <% Ordered[A]](s: Iterable[A]): RangeSet[A] = s match {
   //    case r: Range if r.step == 1 => RangeSet(
-  //      GuavaRange.closed(r.head.asInstanceOf[A], r.last.asInstanceOf[A]))
+  //      Interval.closed(r.head.asInstanceOf[A], r.last.asInstanceOf[A]))
   //    case i: RangeSet[A] => i
-  //    case s => s.foldLeft(empty[A])(_ + GuavaRange.of(_))
+  //    case s => s.foldLeft(empty[A])(_ + Interval.of(_))
   //  }
 
-  def apply[A <% Ordered[A]](s: Iterable[GuavaRange[A]]): RangeSet[A] = {
+  def apply[A <% Ordered[A]](s: Iterable[Interval[A]]): RangeSet[A] = {
     s.foldLeft(RangeSet[A]())(_ ++ _)
   }
 
-  def apply[A <% Ordered[A]](s: GuavaRange[A]): RangeSet[A] = {
+  def apply[A <% Ordered[A]](s: Interval[A]): RangeSet[A] = {
     RangeSet[A]() ++ s
   }
 
-  def all[A <% Ordered[A]]: RangeSet[A] = apply(GuavaRange.all[A]())
+  def all[A <% Ordered[A]]: RangeSet[A] = apply(Interval.all[A]())
 
   def apply[A <% Ordered[A]](): RangeSet[A] = new NoIntervals()
 
-  implicit def valueAsSingletonRange[A <% Ordered[A]](i: A) = GuavaRange.singleton(i)
+  implicit def valueAsSingletonRange[A <% Ordered[A]](i: A) = Interval.singleton(i)
 
-  implicit def rangeAsRangeSet[A <% Ordered[A]](i: GuavaRange[A]) = RangeSet(i)
+  implicit def rangeAsRangeSet[A <% Ordered[A]](i: Interval[A]) = RangeSet(i)
 
   implicit def valueasRangeSet[A <% Ordered[A]](i: A) = RangeSet(i)
 }
 
 sealed trait RangeSet[A] {
-  def lastInterval: GuavaRange[A]
-  def headInterval: GuavaRange[A]
+  def lastInterval: Interval[A]
+  def headInterval: Interval[A]
 
   implicit def ordering: Ordering[A]
 
-  def ++(i: GuavaRange[A]): RangeSet[A]
+  def ++(i: Interval[A]): RangeSet[A]
 
-  def --(i: GuavaRange[A]): RangeSet[A]
+  def --(i: Interval[A]): RangeSet[A]
 
   def ++(i: RangeSet[A]): RangeSet[A] = this ++ i.ranges
 
-  def ++(i: Traversable[GuavaRange[A]]): RangeSet[A] = i.foldLeft(this)(_ ++ _)
+  def ++(i: Traversable[Interval[A]]): RangeSet[A] = i.foldLeft(this)(_ ++ _)
 
-  def ranges: Seq[GuavaRange[A]]
+  def ranges: Seq[Interval[A]]
 
   def --(i: RangeSet[A]): RangeSet[A] = i.ranges.foldLeft(this)(_ -- _)
 
   def &(i: RangeSet[A]): RangeSet[A] = this -- (this -- i)
 
-  def &(i: GuavaRange[A]): RangeSet[A] = this -- (this -- i)
+  def &(i: Interval[A]): RangeSet[A] = this -- (this -- i)
 
   def removeLast: RangeSet[A]
 
@@ -86,11 +86,11 @@ final case class NoIntervals[A](implicit val ordering: Ordering[A]) extends Rang
   def lastInterval = throw new UnsupportedOperationException
   def headInterval = throw new UnsupportedOperationException
 
-  def ++(i: GuavaRange[A]) = {
+  def ++(i: Interval[A]) = {
     if (i.isEmpty) this else new SomeIntervals[A](i, this, this)
   }
 
-  def --(i: GuavaRange[A]) = this
+  def --(i: Interval[A]) = this
 
   def removeLast = this
 
@@ -105,7 +105,7 @@ final case class NoIntervals[A](implicit val ordering: Ordering[A]) extends Rang
 }
 
 final case class SomeIntervals[A](
-  val range: GuavaRange[A],
+  val range: Interval[A],
   val lower: RangeSet[A],
   val upper: RangeSet[A])(implicit val ordering: Ordering[A]) extends RangeSet[A] {
 
@@ -126,11 +126,11 @@ final case class SomeIntervals[A](
 
   def isConvex = lower.isEmpty && upper.isEmpty
 
-  def ++(i: GuavaRange[A]): RangeSet[A] = {
+  def ++(i: Interval[A]): RangeSet[A] = {
     if (i.isEmpty) {
       this
     } else if (i.isConnected(range)) {
-      val newItv = i.span(range) // union GuavaRange
+      val newItv = i.span(range) // union Interval
       removeTop ++ newItv
     } else if (i.hasLowerBound && range.hasUpperBound && i.lowerEndpoint > range.upperEndpoint) {
       new SomeIntervals(range, lower, upper ++ i)
@@ -157,7 +157,7 @@ final case class SomeIntervals[A](
 
   def convex = lower.isEmpty && upper.isEmpty
 
-  def lastInterval: GuavaRange[A] = {
+  def lastInterval: Interval[A] = {
     if (upper.isEmpty) {
       range
     } else {
@@ -165,7 +165,7 @@ final case class SomeIntervals[A](
     }
   }
 
-  def headInterval: GuavaRange[A] = {
+  def headInterval: Interval[A] = {
     if (lower.isEmpty) {
       range
     } else {
@@ -173,11 +173,11 @@ final case class SomeIntervals[A](
     }
   }
 
-  def ranges: Seq[GuavaRange[A]] = {
+  def ranges: Seq[Interval[A]] = {
     lower.ranges ++: range +: upper.ranges
   }
 
-  def --(i: GuavaRange[A]): RangeSet[A] = {
+  def --(i: Interval[A]): RangeSet[A] = {
 
     val l: RangeSet[A] =
       if (!i.hasLowerBound || range.hasLowerBound && i.lowerEndpoint <= range.lowerEndpoint)
@@ -192,10 +192,10 @@ final case class SomeIntervals[A](
         upper
 
     val before = i.lowerBoundOption map {
-      case (lep, lbt) => GuavaRange.upTo(lep, lbt.other)
+      case (lep, lbt) => Interval.upTo(lep, lbt.other)
     }
     val after = i.upperBoundOption map {
-      case (uep, ubt) => GuavaRange.downTo(uep, ubt.other)
+      case (uep, ubt) => Interval.downTo(uep, ubt.other)
     }
 
     var newT: RangeSet[A] =
