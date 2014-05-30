@@ -9,9 +9,10 @@ import cspom.variable.SimpleExpression
 import cspom.util.Interval
 import cspom.variable.CSPOMConstant
 
-class VariableCompiler(
-  val function: Symbol,
-  val compiler: CSPOMConstraint[_] => Map[CSPOMExpression[_], CSPOMExpression[_]]) extends ConstraintCompiler {
+abstract class VariableCompiler(
+  val function: Symbol) extends ConstraintCompiler {
+
+  def compiler(c: CSPOMConstraint[_]): Map[CSPOMExpression[_], CSPOMExpression[_]]
 
   type A = Map[CSPOMExpression[_], CSPOMExpression[_]]
 
@@ -52,6 +53,6 @@ class VariableCompiler(
     //    replace(Seq(undefinedArg), IntVariable(generated), problem)
   }
 
-  def selfPropagation = false
+  def selfPropagation = true
 
 }

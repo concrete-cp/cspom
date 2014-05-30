@@ -60,6 +60,8 @@ object Interval {
       def < = Interval.closedOpen(left, right)
     }
 
+    def - = Interval.atLeast(left)
+
     def > = Interval.singleton(left)
   }
 
@@ -68,6 +70,8 @@ object Interval {
       def > = Interval.openClosed(left, right)
       def < = Interval.open(left, right)
     }
+
+    def - = Interval.greaterThan(left)
 
   }
 
@@ -106,7 +110,6 @@ object Interval {
 
   def >[A <% Ordered[A]](left: A) = new Opening[A](left)
 
-  val r = <(2) - (5)>
 }
 
 final case class Interval[A <% Ordered[A]](
