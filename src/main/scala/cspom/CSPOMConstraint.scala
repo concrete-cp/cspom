@@ -30,6 +30,8 @@ final case class CSPOMConstraint[+T](
 
   def fullScope = result +: arguments
 
+  def flattenedScope = fullScope.flatMap(_.flatten)
+
   val id = CSPOMConstraint.id
   CSPOMConstraint.id += 1
 

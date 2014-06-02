@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import scala.collection.mutable.HashMap
 import cspom.extension.MDD
 import scala.collection.mutable.WeakHashMap
+import cspom.variable.IntVariable
 
 /**
  * Detects and removes constants from extensional constraints
@@ -22,12 +23,15 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
 
-    val Some(relation: Relation[_]) = c.params.get("relation")
+    val Some(r: Relation[_]) = c.params.get("relation")
 
+    val relation = r.asInstanceOf[Relation[Any]]
+    
     val args = c.arguments.toIndexedSeq
 
-    val domains = args.map {
-      case v: SimpleExpression[Any] => v.toSet
+    val domains: IndexedSeq[Set[Any]] = args.map {
+      case CSPOMConstant(v: Any) => Set(v)
+      case v: IntVariable => v.asSortedSet.asInstanceOf[Set[Any]]
       case _ => ???
     }
 
@@ -37,10 +41,10 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
       case (c: CSPOMVariable[_], i) => i
     }
     val projected = if (vars.size < c.arguments.size) { filtered.project(vars) } else { filtered }
-    
+
     val cached = cache.getOrElseUpdate(projected, projected)
 
-    logger.info(relation + " -> " + cached)
+    logger.info(s"$relation -> $cached")
     replaceCtr(c,
       CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", cached)),
       problem)

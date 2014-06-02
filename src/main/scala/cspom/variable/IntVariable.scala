@@ -10,20 +10,14 @@ import cspom.util.Interval.AsOrdered
 import cspom.util.IntDiscreteDomain
 import com.google.common.math.IntMath
 import cspom.util.ContiguousRangeSet
+import cspom.util.IntervalsArithmetic
 
 final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
 
   val asSortedSet = new ContiguousRangeSet(domain, IntDiscreteDomain)
 
-  def iterator = asSortedSet.iterator
-
-  override def head = asSortedSet.head
-  override def last = asSortedSet.last
-  override def size = asSortedSet.size
-
   def isConvex = domain.isConvex
-  def ranges = domain.ranges
 
   if (asSortedSet.singletonMatch.isDefined) {
     logger.warn(s"$domain: a variable domain should be of size 2 or more")
@@ -66,8 +60,10 @@ object IntVariable {
   }
 
   def apply(values: RangeSet[Int]): IntVariable = {
-    new IntVariable(values, Map())
+    IntVariable(values, Map[String, Any]())
   }
+
+  def apply(values: RangeSet[Int], params: Map[String, Any]) = new IntVariable(values, params)
 
   def apply(values: Interval[Int]): IntVariable = {
     apply(RangeSet(values))
@@ -76,4 +72,21 @@ object IntVariable {
   def free(params: Map[String, Any] = Map()): IntVariable = new IntVariable(RangeSet.all[Int], params)
 
   def unapply(v: IntVariable) = Some((v.domain, v.params))
+
+  implicit def iterable(s: SimpleExpression[Int]) = new ContiguousRangeSet(ranges(s), IntDiscreteDomain)
+
+  implicit def ranges(e: SimpleExpression[Int]): RangeSet[Int] = e match {
+    case v: IntVariable => v.domain
+    case CSPOMConstant(c: Int) => RangeSet(Interval.singleton(c))
+  }
+
+  implicit def arithmetics(e: SimpleExpression[Int]) =
+    IntervalsArithmetic.RangeArithmetics(ranges(e))
+
+  def intExpression(e: SimpleExpression[_]): SimpleExpression[Int] = e match {
+    case f: FreeVariable => free(f.params)
+    case i: IntVariable => i
+    case c @ CSPOMConstant(_: Int) => c.asInstanceOf[CSPOMConstant[Int]]
+    case _ => throw new IllegalArgumentException(s"Cannot convert $e to int variable")
+  }
 }

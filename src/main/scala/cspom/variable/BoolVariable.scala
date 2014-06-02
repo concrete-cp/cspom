@@ -18,7 +18,16 @@ final class BoolVariable(params: Map[String, Any] = Map())
   }
 
   def iterator = Iterator(false, true)
-  
+
   def fullyDefined = true
+
+}
+
+object BoolVariable {
+  def boolExpression(e: SimpleExpression[_]): SimpleExpression[Boolean] = e match {
+    case f: FreeVariable => new BoolVariable(f.params)
+    case b: BoolVariable => b
+    case c @ CSPOMConstant(_: Boolean) => c.asInstanceOf[CSPOMConstant[Boolean]]
+  }
 
 }

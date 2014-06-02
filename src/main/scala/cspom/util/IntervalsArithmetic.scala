@@ -60,16 +60,16 @@ object IntervalsArithmetic {
     b.max(Ordering.Tuple2(ord, BoundType.closedIsMore))
   }
 
-  implicit class RangeArithmetics(r: RangeSet[Int]) {
+  implicit class RangeArithmetics(val r: RangeSet[Int]) extends AnyVal {
     def +(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ + _, r, i)
     def unary_-(): RangeSet[Int] = IntervalsArithmetic(-_, r)
     def -(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ - _, r, i)
     def *(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ * _, r, i)
     def /(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ / _, r, i)
-    def abs(): RangeSet[Int] = IntervalsArithmetic(_.abs, r)
+    def abs: RangeSet[Int] = IntervalsArithmetic(_.abs, r)
   }
 
-  implicit class Arithmetics(r: Interval[Int]) {
+  implicit class Arithmetics(val r: Interval[Int]) extends AnyVal {
     /**
      * [a, b] + [c, d] = [a + c, b + d]
      * [a, b] − [c, d] = [a − d, b − c]

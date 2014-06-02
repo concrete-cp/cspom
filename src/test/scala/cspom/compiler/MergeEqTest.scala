@@ -1,13 +1,14 @@
 package cspom.compiler
 
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.OptionValues
+
 import cspom.CSPOM
-import CSPOM._
+import cspom.CSPOM._
+import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
-import cspom.CSPOMConstraint
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.OptionValues
 import cspom.variable.SimpleExpression
 
 class MergeEqTest extends FlatSpec with Matchers with OptionValues {
@@ -52,7 +53,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
       cspom.namedExpressions should have size 1
       nv0.value should be theSameInstanceAs cspom.namedExpressions.head._2
       cspom.constraints should have size 1
-      nv0.value should contain theSameElementsAs Set(2, 3)
+      nv0.value.asInstanceOf[IntVariable].asSortedSet should contain theSameElementsAs Set(2, 3)
 
     }
   }

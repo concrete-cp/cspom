@@ -4,6 +4,8 @@ import cspom.CSPOM
 import scala.collection.mutable.WeakHashMap
 import cspom.Parameterized
 import scala.collection.SetLike
+import cspom.util.RangeSet
+import cspom.util.Interval
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -38,7 +40,7 @@ sealed trait CSPOMExpression[+T] extends Parameterized {
 /*
  * Simple expressions are typed (int or boolean)
  */
-sealed trait SimpleExpression[+T] extends CSPOMExpression[T] with Iterable[T] {
+sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   final def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) =
     if (which == this) by else this
 
@@ -47,7 +49,6 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] with Iterable[T] {
   def contains[S >: T](that: S): Boolean
 
   def flatten = Seq(this)
-
 }
 
 class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
@@ -70,8 +71,6 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
   }
 
   def isTrue = value == true
-
-  def iterator = Iterator(value)
 
   def fullyDefined = true
 }
