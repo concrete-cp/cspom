@@ -50,18 +50,6 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     RangeSet(Seq(itv1, itv2)) shouldBe 'convex
 
   }
-  //
-  //  it should "accept correct trees" in {
-  //    noException should be thrownBy new RangeSet(Interval.closed(0, 5), None, None)
-  //    noException should be thrownBy RangeSet(Interval.closed(5, 0), None, None)
-  //    noException should be thrownBy RangeSet(Interval.closed(0, 5), Some(RangeSet(-5, -1)), None)
-  //  }
-  //
-  //  it should "reject incorrect trees" in {
-  //    an[IllegalArgumentException] should be thrownBy RangeSet(Interval.closed(5, 0), Some(RangeSet(0, 5)), None)
-  //    an[IllegalArgumentException] should be thrownBy RangeSet(Interval.closed(0, 5), Some(RangeSet(5, 0)), None)
-  //    an[IllegalArgumentException] should be thrownBy RangeSet(Interval.closed(0, 5), Some(RangeSet(-5, 0)), None)
-  //  }
 
   it should "work under disjoint RangeSet" in {
 
@@ -171,6 +159,13 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
       asSet(i1 & i2) should contain theSameElementsAs (s1.toSet & s2.toSet)
 
     }
+
+  }
+
+  it should "allow infinite ranges" in {
+    val all = RangeSet.all[Int]
+
+    all.toString shouldBe "{(-∞‥+∞)}"
 
   }
 } 

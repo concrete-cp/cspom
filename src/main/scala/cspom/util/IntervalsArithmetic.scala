@@ -42,13 +42,17 @@ object IntervalsArithmetic {
   private def asRange(l: Infinitable, lbt: BoundType, u: Infinitable, ubt: BoundType) = {
     (l, u) match {
       case (Finite(l), Finite(u)) => {
-        if (l > u) { Interval.closedOpen(l, l) }
-        else { Interval(l, lbt, u, ubt) }
+        if (l > u) {
+          // Empty interval
+          Interval.closedOpen(l, l)
+        } else {
+          Interval(l, lbt, u, ubt)
+        }
       }
       case (MinInf, Finite(u)) => Interval.upTo(u, ubt)
       case (Finite(l), PlusInf) => Interval.downTo(l, lbt)
       case (MinInf, PlusInf) => Interval.all[Int]
-      case _ => throw new IllegalStateException
+      case (l, u) => throw new IllegalArgumentException(s"Incoherent interval ($l, $u)")
     }
   }
 
@@ -82,16 +86,18 @@ object IntervalsArithmetic {
       val (c, d) = asInfinities(i)
 
       val lb = a + c
-      val lbt = if (lb.isInfinity) { Open } else { r.lowerBoundType & i.lowerBoundType }
+      val lbt = r.lowerBoundType & i.lowerBoundType
 
       val ub = b + d
-      val ubt = if (ub.isInfinity) { Open } else { r.upperBoundType & i.upperBoundType }
+      val ubt = r.upperBoundType & i.upperBoundType
 
       asRange(lb, lbt, ub, ubt)
     }
 
     def unary_-(): Interval[Int] = {
-      Interval(-r.upperEndpoint, r.upperBoundType, -r.lowerEndpoint, r.lowerBoundType)
+      val (a, b) = asInfinities(r)
+
+      asRange(-b, r.upperBoundType, -a, r.lowerBoundType)
     }
 
     def -(i: Interval[Int]) = this + -i

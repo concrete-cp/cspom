@@ -49,11 +49,16 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
   }
 
   it should "handle infinities" in {
+    Interval.all[Int] * 1 shouldBe Interval.all[Int]
     Interval(1, 1) + Interval.atLeast(0) shouldBe Interval.atLeast(1)
     Interval(1, 1) * Interval.atLeast(0) shouldBe Interval.atLeast(0)
     Interval(1, 1) / Interval.atLeast(1) shouldBe Interval(0, 1)
     Interval.atLeast(10) / 2 shouldBe Interval.atLeast(5)
     Interval.all[Int] / 2 shouldBe Interval.all[Int]
+
+    Interval.all[Int] + 0 shouldBe Interval.all[Int]
+
   }
+
 
 }

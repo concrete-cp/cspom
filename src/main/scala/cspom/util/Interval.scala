@@ -43,7 +43,6 @@ case object Open extends BoundType {
   def other = Closed
   def guava = GuavaBT.OPEN
   def &(bt: BoundType) = Open
-
 }
 
 object Interval {
@@ -143,15 +142,15 @@ final case class Interval[A <% Ordered[A]](
       None
     }
 
-  def upperBoundType = BoundType(r.upperBoundType())
-  def lowerBoundType = BoundType(r.lowerBoundType())
+  def upperBoundType = if (hasUpperBound) BoundType(r.upperBoundType()) else Open
+  def lowerBoundType = if (hasLowerBound) BoundType(r.lowerBoundType()) else Open
 
   def isBefore(h: Interval[A]): Boolean = {
     isBefore(h.lowerEndpoint)
   }
 
   def isBefore(elem: A): Boolean = {
-    !contains(elem) && upperEndpoint <= elem
+    hasUpperBound && !contains(elem) && upperEndpoint <= elem
   }
 
   def isAfter(h: Interval[A]): Boolean = {
@@ -159,16 +158,26 @@ final case class Interval[A <% Ordered[A]](
   }
 
   def isAfter(elem: A): Boolean = {
-    !contains(elem) && elem <= lowerEndpoint
+    hasLowerBound && !contains(elem) && elem <= lowerEndpoint
   }
 
   def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): Interval[A] = {
-    if (hasLowerBound && lowerBoundType == Open && d.next(lowerEndpoint) == null) {
-      val m = d.maxValue().value
-      logger.warn(s"Range $r's canonical form forced to [$m, $m)")
-      Interval.closedOpen(m, m)
+    if (hasLowerBound) {
+      if (lowerBoundType == Open && d.next(lowerEndpoint) == null) {
+
+        val m = d.maxValue().value
+        logger.warn(s"Range $r's canonical form forced to [$m, $m)")
+        Interval.closedOpen(m, m)
+      } else {
+        Interval(r.canonical(d))
+      }
     } else {
-      Interval(r.canonical(d))
+      val c = r.canonical(d)
+      if (c.hasUpperBound()) {
+        Interval.lessThan(c.upperEndpoint.value)
+      } else {
+        Interval.all[A]
+      }
     }
   }
 

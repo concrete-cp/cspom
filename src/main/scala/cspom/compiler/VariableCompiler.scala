@@ -27,8 +27,11 @@ abstract class VariableCompiler(
     if (c.function == function) {
       val m = compiler(c).filter { case (k, v) => k != v }
       require(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
+
       if (m.nonEmpty) {
+        logger.info(s"$c: $m")
         Some(m)
+
       } else {
         None
       }
@@ -45,23 +48,23 @@ abstract class VariableCompiler(
 
   def selfPropagation = true
 
-  def updateDomain(v: SimpleExpression[Int], d: RangeSet[Int]): SimpleExpression[Int] = {
-    new ContiguousRangeSet(d, IntDiscreteDomain).singletonMatch match {
-      case Some(s) => CSPOMConstant(s)
-      case None => IntVariable(d, v.params)
-    }
-
-  }
-
   def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Int]): SimpleExpression[Int] = {
-    updateDomain(v, IntVariable.ranges(v) & d)
+    val old = IntVariable.ranges(v)
+    if (old == d) {
+      v
+    } else {
+      new ContiguousRangeSet(old & d, IntDiscreteDomain).singletonMatch match {
+        case Some(s) => CSPOMConstant(s, v.params)
+        case None => IntVariable(d, v.params)
+      }
+    }
   }
 
   def reduceDomain(v: SimpleExpression[Boolean], d: Boolean): SimpleExpression[Boolean] = {
     v match {
       case b: CSPOMVariable[_] => CSPOMConstant(d, b.params)
       case c @ CSPOMConstant(b) =>
-        require(b == d, "Empty domain")
+        require(b == d, s"Reduced $v to $d: empty domain")
         c
     }
   }
