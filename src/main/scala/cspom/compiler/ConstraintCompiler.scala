@@ -26,7 +26,7 @@ trait ConstraintCompiler extends LazyLogging {
   def replace[T, S <: T](wh: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $which with $by")
 
-    val which = wh.filterNot(_.isInstanceOf[CSPOMConstant[_]])
+    val which = wh.filter(_ ne by)
 
     which.foreach(in.replaceExpression(_, by))
 

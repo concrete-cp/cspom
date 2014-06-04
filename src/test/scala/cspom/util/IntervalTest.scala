@@ -2,6 +2,8 @@ package cspom.util
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 
 class IntervalTest extends FlatSpec with Matchers {
 
@@ -23,4 +25,20 @@ class IntervalTest extends FlatSpec with Matchers {
     Interval(0, 5) isConnected Interval(-20, -10) shouldBe false
   }
 
+}
+
+object Intervals {
+  def validInterval(i: Int, j: Int) = i <= j
+
+  def validIntervals =
+    for (
+      i <- Arbitrary.arbitrary[Int];
+      j: Int <- Gen.choose(i, Int.MaxValue)
+    ) yield Interval(i, j)
+
+  def smallIntervals =
+    for (
+      i <- Arbitrary.arbitrary[Int];
+      j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000).toInt)
+    ) yield Interval(i, j)
 }

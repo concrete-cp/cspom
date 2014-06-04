@@ -1,29 +1,13 @@
 package cspom.util
 
-import org.scalatest.Matchers
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
 import org.scalatest.FlatSpec
+import org.scalatest.Matchers
 
-import IntervalsArithmetic._
-
-import RangeSet._
-
-object Intervals {
-  def validInterval(i: Int, j: Int) = i <= j
-
-  def validIntervals =
-    for (
-      i <- Arbitrary.arbitrary[Int];
-      j: Int <- Gen.choose(i, Int.MaxValue)
-    ) yield Interval(i, j)
-
-  def smallIntervals =
-    for (
-      i <- Arbitrary.arbitrary[Int];
-      j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000).toInt)
-    ) yield Interval(i, j)
-}
+import IntervalsArithmetic.Arithmetics
+import IntervalsArithmetic.RangeArithmetics
+import RangeSet.rangeAsRangeSet
+import RangeSet.valueAsSingletonRange
+import RangeSet.valueasRangeSet
 
 class IntervalsArithmeticTest extends FlatSpec with Matchers {
   "Intervals" should "provide correct shrinking integer division" in {
@@ -42,7 +26,7 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
 
   it should "multiply" in {
     Interval(0, 5) * 10 shouldBe Interval(0, 50)
-    (RangeSet(Interval(0, 100)) - Interval(10, 90)) * 10 shouldBe
+    (RangeSet(Interval(0, 100)) -- Interval(10, 90)) * 10 shouldBe
       RangeSet(Seq(Interval(0, 90), Interval(910, 1000)))
 
     Interval.atLeast(10) * 100 shouldBe Interval.atLeast(1000)
@@ -62,6 +46,14 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
     ((RangeSet(Interval(0, 100)) -- Interval(10, 90)) + Interval(0, 10)).canonical(IntDiscreteDomain) shouldBe
       RangeSet(Seq(Interval(0, 19), Interval(91, 110))).canonical(IntDiscreteDomain)
 
+  }
+
+  it should "handle infinities" in {
+    Interval(1, 1) + Interval.atLeast(0) shouldBe Interval.atLeast(1)
+    Interval(1, 1) * Interval.atLeast(0) shouldBe Interval.atLeast(0)
+    Interval(1, 1) / Interval.atLeast(1) shouldBe Interval(0, 1)
+    Interval.atLeast(10) / 2 shouldBe Interval.atLeast(5)
+    Interval.all[Int] / 2 shouldBe Interval.all[Int]
   }
 
 }

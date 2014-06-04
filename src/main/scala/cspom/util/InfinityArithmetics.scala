@@ -10,6 +10,7 @@ sealed trait Infinitable extends Ordered[Infinitable] {
   def div(v: Infinitable, rm: RoundingMode): Infinitable
   def divisible(v: Infinitable): Boolean
   def unary_-(): Infinitable
+  def isInfinity = (this eq MinInf) || (this eq PlusInf)
 }
 
 case object MinInf extends Infinitable {

@@ -117,12 +117,12 @@ final case class SomeIntervals[A](
   require(lower match {
     case _: NoIntervals[_] => true
     case SomeIntervals(r, _, _) => r isBefore range
-  })
+  }, s"$lower must be before $range")
 
   require(upper match {
     case _: NoIntervals[_] => true
     case SomeIntervals(r, _, _) => r isAfter range
-  })
+  }, s"$upper must be after $range")
 
   def isConvex = lower.isEmpty && upper.isEmpty
 
@@ -132,9 +132,10 @@ final case class SomeIntervals[A](
     } else if (i.isConnected(range)) {
       val newItv = i.span(range) // union Interval
       removeTop ++ newItv
-    } else if (i.hasLowerBound && range.hasUpperBound && i.lowerEndpoint > range.upperEndpoint) {
+    } else if (i isAfter range) { //.hasLowerBound && range.hasUpperBound && i.lowerEndpoint >= range.upperEndpoint) {
       new SomeIntervals(range, lower, upper ++ i)
     } else {
+      require(i isBefore range, s"$i <> $range ??")
       new SomeIntervals(range, lower ++ i, upper)
     }
   }

@@ -151,7 +151,7 @@ final case class Interval[A <% Ordered[A]](
   }
 
   def isBefore(elem: A): Boolean = {
-    !contains(elem) && upperEndpoint < elem
+    !contains(elem) && upperEndpoint <= elem
   }
 
   def isAfter(h: Interval[A]): Boolean = {
@@ -159,7 +159,7 @@ final case class Interval[A <% Ordered[A]](
   }
 
   def isAfter(elem: A): Boolean = {
-    !contains(elem) && elem < lowerEndpoint
+    !contains(elem) && elem <= lowerEndpoint
   }
 
   def canonical(implicit d: DiscreteDomain[AsOrdered[A]]): Interval[A] = {

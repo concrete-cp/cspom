@@ -1,6 +1,6 @@
 package cspom.util
 
-import scala.collection.SortedSet
+import scala.collection.immutable.SortedSet
 import com.google.common.collect.DiscreteDomain
 import Interval.AsOrdered
 

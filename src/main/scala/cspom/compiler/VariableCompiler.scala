@@ -13,6 +13,8 @@ import IntVariable.ranges
 import cspom.util.IntDiscreteDomain
 import com.google.common.collect.ContiguousSet
 import cspom.util.ContiguousRangeSet
+import cspom.variable.BoolVariable
+import cspom.variable.CSPOMVariable
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -24,7 +26,7 @@ abstract class VariableCompiler(
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {
     if (c.function == function) {
       val m = compiler(c).filter { case (k, v) => k != v }
-      require(m.forall(e => c.flattenedScope.contains(e)))
+      require(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
       if (m.nonEmpty) {
         Some(m)
       } else {
@@ -53,6 +55,15 @@ abstract class VariableCompiler(
 
   def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Int]): SimpleExpression[Int] = {
     updateDomain(v, IntVariable.ranges(v) & d)
+  }
+
+  def reduceDomain(v: SimpleExpression[Boolean], d: Boolean): SimpleExpression[Boolean] = {
+    v match {
+      case b: CSPOMVariable[_] => CSPOMConstant(d, b.params)
+      case c @ CSPOMConstant(b) =>
+        require(b == d, "Empty domain")
+        c
+    }
   }
 
 }

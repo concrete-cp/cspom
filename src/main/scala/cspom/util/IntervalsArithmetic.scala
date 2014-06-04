@@ -81,7 +81,13 @@ object IntervalsArithmetic {
       val (a, b) = asInfinities(r)
       val (c, d) = asInfinities(i)
 
-      asRange(a + c, r.lowerBoundType & i.lowerBoundType, b + d, r.upperBoundType & i.upperBoundType)
+      val lb = a + c
+      val lbt = if (lb.isInfinity) { Open } else { r.lowerBoundType & i.lowerBoundType }
+
+      val ub = b + d
+      val ubt = if (ub.isInfinity) { Open } else { r.upperBoundType & i.upperBoundType }
+
+      asRange(lb, lbt, ub, ubt)
     }
 
     def unary_-(): Interval[Int] = {
