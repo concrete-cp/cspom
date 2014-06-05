@@ -146,7 +146,7 @@ final case class Interval[A <% Ordered[A]](
   def lowerBoundType = if (hasLowerBound) BoundType(r.lowerBoundType()) else Open
 
   def isBefore(h: Interval[A]): Boolean = {
-    isBefore(h.lowerEndpoint)
+    h.hasLowerBound && isBefore(h.lowerEndpoint)
   }
 
   def isBefore(elem: A): Boolean = {
@@ -154,7 +154,7 @@ final case class Interval[A <% Ordered[A]](
   }
 
   def isAfter(h: Interval[A]): Boolean = {
-    isAfter(h.upperEndpoint)
+    h.hasUpperBound && isAfter(h.upperEndpoint)
   }
 
   def isAfter(elem: A): Boolean = {

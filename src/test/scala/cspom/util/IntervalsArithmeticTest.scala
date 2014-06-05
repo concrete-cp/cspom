@@ -2,14 +2,20 @@ package cspom.util
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import IntervalsArithmetic.Arithmetics
 import IntervalsArithmetic.RangeArithmetics
 import RangeSet.rangeAsRangeSet
 import RangeSet.valueAsSingletonRange
 import RangeSet.valueasRangeSet
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.time.Second
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.Span
+import org.scalatest.concurrent.Timeouts
 
-class IntervalsArithmeticTest extends FlatSpec with Matchers {
+class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
   "Intervals" should "provide correct shrinking integer division" in {
     Interval(1, 19) / 20 shouldBe empty
     Interval(0, 19) / 20 shouldBe Interval(0, 0)
@@ -60,5 +66,20 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers {
 
   }
 
+  it should "be fast" in {
+    val g = Gen.listOfN(100, Gen.choose(-1000000, 1000000))
+
+    implicit def intDom = IntDiscreteDomain
+
+    forAll(g, g) { (r1, r2) =>
+      val rs1 = RangeSet(r1.map(i => Interval.singleton(i)))
+      val rs2 = RangeSet(r2.map(i => Interval.singleton(i)))
+
+      failAfter(Span(1, Second)) {
+        println(rs1 + rs2)
+      }
+    }
+
+  }
 
 }

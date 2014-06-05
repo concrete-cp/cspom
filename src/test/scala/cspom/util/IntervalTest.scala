@@ -25,6 +25,10 @@ class IntervalTest extends FlatSpec with Matchers {
     Interval(0, 5) isConnected Interval(-20, -10) shouldBe false
   }
 
+  it should "detect equality" in {
+    Interval.all[Int] should not be Interval.greaterThan(0)
+  }
+
 }
 
 object Intervals {

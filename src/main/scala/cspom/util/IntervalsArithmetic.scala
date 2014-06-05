@@ -12,11 +12,11 @@ object IntervalsArithmetic {
   def apply[A <% Ordered[A]](
     f: (Interval[A], Interval[A]) => Interval[A],
     ii: RangeSet[A], jj: RangeSet[A]): RangeSet[A] = {
-    //var result = RangeSet[A]()
-    val calcs = for (i <- ii.ranges; j <- jj.ranges) yield {
-      f(i, j)
+    var result = RangeSet[A]()
+    for (i <- ii.ranges; j <- jj.ranges) yield {
+      result ++= f(i, j)
     }
-    calcs.foldLeft(RangeSet[A]())(_ ++ _)
+    result
   }
 
   def apply[A <% Ordered[A]](f: Interval[A] => Interval[A], ii: RangeSet[A]): RangeSet[A] = {
@@ -82,16 +82,17 @@ object IntervalsArithmetic {
      */
 
     def +(i: Interval[Int]): Interval[Int] = {
-      val (a, b) = asInfinities(r)
-      val (c, d) = asInfinities(i)
+      val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
+      val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
+
+      val b = bc - Finite(1)
+      val d = dc - Finite(1)
 
       val lb = a + c
-      val lbt = r.lowerBoundType & i.lowerBoundType
 
       val ub = b + d
-      val ubt = r.upperBoundType & i.upperBoundType
 
-      asRange(lb, lbt, ub, ubt)
+      asRange(lb, Closed, ub, Closed)
     }
 
     def unary_-(): Interval[Int] = {

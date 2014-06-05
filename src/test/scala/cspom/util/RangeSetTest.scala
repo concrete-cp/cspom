@@ -89,7 +89,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   it should "merge joint ranges" in {
     val itv1 = RangeSet(Interval.closedOpen(0, 6))
 
-    (itv1 ++ Interval.closedOpen(-10, -8) ++ Interval(8, 10) ++ Interval(-8, -4)).ranges shouldBe Seq(
+    (itv1 ++ Interval.closedOpen(-10, -8) ++ Interval(8, 10) ++ Interval(-8, -4)).ranges should contain theSameElementsAs Seq(
       Interval(-10, -4), Interval.closedOpen(0, 6), Interval(8, 10))
 
     itv1 ++ Interval(6, 10) shouldBe RangeSet(Interval(0, 10))
@@ -98,6 +98,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   }
 
   it should "compute difference" in {
+
     val i = RangeSet(Seq(Interval.singleton(2147483647), Interval.singleton(0))).canonical
     (i -- Interval.singleton(2147483647)).canonical shouldBe RangeSet(Interval.singleton(0)).canonical
 
@@ -167,5 +168,9 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
     all.toString shouldBe "{(-∞‥+∞)}"
 
+  }
+
+  it should "detect equality" in {
+    RangeSet(Interval.all[Int]) should not be RangeSet(Interval.greaterThan(0))
   }
 } 
