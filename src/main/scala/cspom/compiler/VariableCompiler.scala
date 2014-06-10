@@ -15,6 +15,8 @@ import com.google.common.collect.ContiguousSet
 import cspom.util.ContiguousRangeSet
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMVariable
+import cspom.util.IntRangeSet
+import cspom.util.ContiguousIntRangeSet
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -48,12 +50,12 @@ abstract class VariableCompiler(
 
   def selfPropagation = true
 
-  def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Int]): SimpleExpression[Int] = {
+  def reduceDomain(v: SimpleExpression[Int], d: IntRangeSet): SimpleExpression[Int] = {
     val old = IntVariable.ranges(v)
     if (old == d) {
       v
     } else {
-      new ContiguousRangeSet(old & d, IntDiscreteDomain).singletonMatch match {
+      new ContiguousIntRangeSet(old & d).singletonMatch match {
         case Some(s) => CSPOMConstant(s, v.params)
         case None => IntVariable(d, v.params)
       }

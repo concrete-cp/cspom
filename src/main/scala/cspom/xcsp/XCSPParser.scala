@@ -15,6 +15,9 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.util.ContiguousRangeSet
+import cspom.util.IntRangeSet
+import cspom.util.IntInterval
+import cspom.util.ContiguousIntRangeSet
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -33,19 +36,19 @@ final object XCSPParser {
    *            The String domain to parse
    * @return The resulting Domain object
    */
-  def parseDomain(desc: String): RangeSet[Int] = {
-    desc.trim.split(" +").foldLeft(RangeSet[Int]()) { (i, v) =>
+  def parseDomain(desc: String): IntRangeSet = {
+    desc.trim.split(" +").foldLeft(IntRangeSet()) { (i, v) =>
       if (v.contains("..")) {
         i ++ parseRange(v)
       } else {
-        i ++ Interval.singleton(v.trim.toInt)
+        i ++ IntInterval.singleton(v.trim.toInt)
       }
     }
 
   }
 
-  def parseRange(interval: String): Interval[Int] = interval.trim().split("\\.\\.") match {
-    case Array(a, b) => Interval(a.toInt, b.toInt)
+  def parseRange(interval: String): IntInterval = interval.trim().split("\\.\\.") match {
+    case Array(a, b) => IntInterval(a.toInt, b.toInt)
     case _ => throw new NumberFormatException("Interval format must be a..b");
   }
 
@@ -90,7 +93,7 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      name -> (new ContiguousRangeSet(domain, IntDiscreteDomain).singletonMatch match {
+      name -> (new ContiguousIntRangeSet(domain).singletonMatch match {
         case Some(s) => CSPOMConstant(s)
         case None => new IntVariable(domain)
       })

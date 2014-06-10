@@ -57,11 +57,10 @@ final class RangeSet[A](contents: TreeSet[Interval[A]])(implicit val ordering: O
     } else {
       val itvOrdering = contents.ordering
 
-      val (colliding, after) = contents.from(i).span(j => itvOrdering.compare(i, j) == 0)
+      val colliding = contents.from(i).takeWhile(j => itvOrdering.compare(i, j) == 0)
 
-      val before = contents.until(i)
-
-      new RangeSet(before + colliding.fold(i)(_ span _) ++ after)
+      new RangeSet(
+        (contents -- colliding) + colliding.fold(i)(_ span _))
     }
   }
 

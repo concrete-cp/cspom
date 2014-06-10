@@ -14,10 +14,13 @@ import cspom.util.Intervals
 import cspom.util.IntDiscreteDomain
 import cspom.util.ContiguousRangeSet
 import scala.collection.SortedSet
+import cspom.util.IntRangeSet
+import cspom.util.IntInterval
+import cspom.util.ContiguousIntRangeSet
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
-  implicit def asSet(r: RangeSet[Int]): SortedSet[Int] =
-    new ContiguousRangeSet(r, IntDiscreteDomain)
+  implicit def asSet(r: IntRangeSet): SortedSet[Int] =
+    new ContiguousIntRangeSet(r)
 
   "XCSP domain parser" should "handle disjoint values and intervals" in {
     XCSPParser.parseDomain("1 3..10 18..20").toSeq shouldBe
@@ -41,9 +44,9 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
   }
 
   it should "coalesce connected ranges" in {
-    val itv = XCSPParser.parseDomain("3..5 6 7..10").canonical(IntDiscreteDomain)
-    itv shouldBe a[RangeSet[_]]
-    itv shouldBe RangeSet(Interval(3, 10).canonical(IntDiscreteDomain))
+    val itv = XCSPParser.parseDomain("3..5 6 7..10").canonical
+    itv shouldBe a[IntRangeSet]
+    itv shouldBe IntRangeSet(IntInterval(3, 10).canonical)
   }
 
 }

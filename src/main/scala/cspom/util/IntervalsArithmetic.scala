@@ -5,25 +5,26 @@ import java.math.RoundingMode
 import com.google.common.math.IntMath
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Cut
-import RangeSet._
+import IntRangeSet._
+import scala.math.Ordering.IntOrdering
 
 object IntervalsArithmetic {
 
-  def apply[A <% Ordered[A]](
-    f: (Interval[A], Interval[A]) => Interval[A],
-    ii: RangeSet[A], jj: RangeSet[A]): RangeSet[A] = {
-    var result = RangeSet[A]()
+  def apply(
+    f: (IntInterval, IntInterval) => IntInterval,
+    ii: IntRangeSet, jj: IntRangeSet): IntRangeSet = {
+    var result = IntRangeSet()
     for (i <- ii.ranges; j <- jj.ranges) yield {
       result ++= f(i, j)
     }
     result
   }
 
-  def apply[A <% Ordered[A]](f: Interval[A] => Interval[A], ii: RangeSet[A]): RangeSet[A] = {
-    ii.ranges.foldLeft(RangeSet[A]())(_ ++ f(_))
+  def apply(f: IntInterval => IntInterval, ii: IntRangeSet): IntRangeSet = {
+    ii.ranges.foldLeft(IntRangeSet())(_ ++ f(_))
   }
 
-  private def asInfinities(r: Interval[Int]): (Infinitable, Infinitable) = {
+  private def asInfinities(r: IntInterval): (Infinitable, Infinitable) = {
     val l = if (r.hasLowerBound) {
       Finite(r.lowerEndpoint)
     } else {
@@ -44,14 +45,14 @@ object IntervalsArithmetic {
       case (Finite(l), Finite(u)) => {
         if (l > u) {
           // Empty interval
-          Interval.closedOpen(l, l)
+          IntInterval.closedOpen(l, l)
         } else {
-          Interval(l, lbt, u, ubt)
+          IntInterval(l, lbt, u, ubt)
         }
       }
-      case (MinInf, Finite(u)) => Interval.upTo(u, ubt)
-      case (Finite(l), PlusInf) => Interval.downTo(l, lbt)
-      case (MinInf, PlusInf) => Interval.all[Int]
+      case (MinInf, Finite(u)) => IntInterval.upTo(u, ubt)
+      case (Finite(l), PlusInf) => IntInterval.downTo(l, lbt)
+      case (MinInf, PlusInf) => IntInterval.all
       case (l, u) => throw new IllegalArgumentException(s"Incoherent interval ($l, $u)")
     }
   }
@@ -64,16 +65,16 @@ object IntervalsArithmetic {
     b.max(Ordering.Tuple2(ord, BoundType.closedIsMore))
   }
 
-  implicit class RangeArithmetics(val r: RangeSet[Int]) extends AnyVal {
-    def +(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ + _, r, i)
-    def unary_-(): RangeSet[Int] = IntervalsArithmetic(-_, r)
-    def -(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ - _, r, i)
-    def *(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ * _, r, i)
-    def /(i: RangeSet[Int]): RangeSet[Int] = IntervalsArithmetic(_ / _, r, i)
-    def abs: RangeSet[Int] = IntervalsArithmetic(_.abs, r)
+  implicit class RangeArithmetics(val r: IntRangeSet) extends AnyVal {
+    def +(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ + _, r, i)
+    def unary_-(): IntRangeSet = IntervalsArithmetic(-_, r)
+    def -(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ - _, r, i)
+    def *(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ * _, r, i)
+    def /(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ / _, r, i)
+    def abs: IntRangeSet = IntervalsArithmetic(_.abs, r)
   }
 
-  implicit class Arithmetics(val r: Interval[Int]) extends AnyVal {
+  implicit class Arithmetics(val r: IntInterval) extends AnyVal {
     /**
      * [a, b] + [c, d] = [a + c, b + d]
      * [a, b] − [c, d] = [a − d, b − c]
@@ -81,9 +82,9 @@ object IntervalsArithmetic {
      * [a, b] ÷ [c, d] = [min (a ÷ c, a ÷ d, b ÷ c, b ÷ d), max (a ÷ c, a ÷ d, b ÷ c, b ÷ d)] when 0 is not in [c, d].
      */
 
-    def +(i: Interval[Int]): Interval[Int] = {
-      val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
-      val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
+    def +(i: IntInterval): IntInterval = {
+      val (a, bc) = asInfinities(r.canonical)
+      val (c, dc) = asInfinities(i.canonical)
 
       val b = bc - Finite(1)
       val d = dc - Finite(1)
@@ -95,20 +96,20 @@ object IntervalsArithmetic {
       asRange(lb, Closed, ub, Closed)
     }
 
-    def unary_-(): Interval[Int] = {
+    def unary_-(): IntInterval = {
       val (a, b) = asInfinities(r)
 
       asRange(-b, r.upperBoundType, -a, r.lowerBoundType)
     }
 
-    def -(i: Interval[Int]) = this + -i
+    def -(i: IntInterval) = this + -i
 
     def -(v: Int) = this + -v
 
-    def *(i: Interval[Int]): Interval[Int] = {
+    def *(i: IntInterval): IntInterval = {
 
-      val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
-      val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
+      val (a, bc) = asInfinities(r.canonical)
+      val (c, dc) = asInfinities(i.canonical)
 
       val d = dc - Finite(1)
       val b = bc - Finite(1)
@@ -121,12 +122,12 @@ object IntervalsArithmetic {
 
     }
 
-    def /(i: Interval[Int]) = {
+    def /(i: IntInterval): IntInterval = {
       if (i.contains(0)) {
-        Interval.all[Int]
+        IntInterval.all
       } else {
-        val (a, bc) = asInfinities(r.canonical(IntDiscreteDomain))
-        val (c, dc) = asInfinities(i.canonical(IntDiscreteDomain))
+        val (a, bc) = asInfinities(r.canonical)
+        val (c, dc) = asInfinities(i.canonical)
 
         val d = dc - Finite(1)
         val b = bc - Finite(1)
@@ -147,9 +148,9 @@ object IntervalsArithmetic {
       }
     }
 
-    def /(v: Int) = {
+    def /(v: Int): IntInterval = {
       if (v == 0) {
-        Interval.all[Int]
+        IntInterval.all
       } else {
         val (lb, ub) = asInfinities(r)
         val d = Finite(v)
@@ -165,7 +166,7 @@ object IntervalsArithmetic {
       }
     }
 
-    def abs: Interval[Int] = {
+    def abs: IntInterval = {
       val (l, u) = asInfinities(r)
       if (u <= Finite(0)) { -r }
       else if (l >= Finite(0)) { r }

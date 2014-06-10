@@ -11,11 +11,14 @@ import cspom.util.IntDiscreteDomain
 import com.google.common.math.IntMath
 import cspom.util.ContiguousRangeSet
 import cspom.util.IntervalsArithmetic
+import cspom.util.IntRangeSet
+import cspom.util.ContiguousIntRangeSet
+import cspom.util.IntInterval
 
-final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Map())
+final class IntVariable(val domain: IntRangeSet, params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
 
-  val asSortedSet = new ContiguousRangeSet(domain, IntDiscreteDomain)
+  val asSortedSet = new ContiguousIntRangeSet(domain)
 
   def isConvex = domain.isConvex
 
@@ -24,8 +27,7 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
   }
 
   override def toString = {
-    val c = domain.canonical(IntDiscreteDomain)
-    s"int variable ($c)$displayParams"
+    s"int variable ($domain)$displayParams"
   }
 
   def contains[S >: Int](that: S): Boolean = that match {
@@ -39,7 +41,7 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
         CSPOMConstant(c, Map("intersection" -> ((this, c))))
       case v: IntVariable => {
         val d = domain & v.domain
-        new ContiguousRangeSet(d, IntDiscreteDomain).singletonMatch match {
+        new ContiguousIntRangeSet(d).singletonMatch match {
           case Some(s) => CSPOMConstant(s, Map("intersection" -> ((this, v))))
           case None => new IntVariable(d, Map("intersection" -> ((this, v))))
         }
@@ -55,29 +57,32 @@ final class IntVariable(val domain: RangeSet[Int], params: Map[String, Any] = Ma
 
 object IntVariable {
   def apply(values: Iterable[Int], params: Map[String, Any] = Map()): IntVariable = {
-    new IntVariable(RangeSet(values.map(
-      v => Interval.singleton(v))).canonical(IntDiscreteDomain), params)
+    new IntVariable(IntRangeSet(values.map(
+      v => IntInterval.singleton(v))).canonical, params)
   }
 
-  def apply(values: RangeSet[Int]): IntVariable = {
+  def apply(values: IntRangeSet): IntVariable = {
     IntVariable(values, Map[String, Any]())
   }
 
-  def apply(values: RangeSet[Int], params: Map[String, Any]) = new IntVariable(values, params)
+  def apply(values: IntRangeSet, params: Map[String, Any]) =
+    new IntVariable(values, params)
 
-  def apply(values: Interval[Int]): IntVariable = {
-    apply(RangeSet(values))
+  def apply(values: IntInterval): IntVariable = {
+    apply(IntRangeSet(values))
   }
 
-  def free(params: Map[String, Any] = Map()): IntVariable = new IntVariable(RangeSet.all[Int], params)
+  def free(params: Map[String, Any] = Map()): IntVariable =
+    new IntVariable(IntRangeSet.all, params)
 
   def unapply(v: IntVariable) = Some((v.domain, v.params))
 
-  implicit def iterable(s: SimpleExpression[Int]) = new ContiguousRangeSet(ranges(s), IntDiscreteDomain)
+  implicit def iterable(s: SimpleExpression[Int]) =
+    new ContiguousIntRangeSet(ranges(s))
 
-  implicit def ranges(e: SimpleExpression[Int]): RangeSet[Int] = e match {
+  implicit def ranges(e: SimpleExpression[Int]): IntRangeSet = e match {
     case v: IntVariable => v.domain
-    case CSPOMConstant(c: Int) => RangeSet(Interval.singleton(c))
+    case CSPOMConstant(c: Int) => IntRangeSet(IntInterval.singleton(c))
   }
 
   implicit def arithmetics(e: SimpleExpression[Int]) =

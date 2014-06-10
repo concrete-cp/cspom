@@ -38,11 +38,11 @@ object Intervals {
     for (
       i <- Arbitrary.arbitrary[Int];
       j: Int <- Gen.choose(i, Int.MaxValue)
-    ) yield Interval(i, j)
+    ) yield IntInterval(i, j)
 
   def smallIntervals =
     for (
       i <- Arbitrary.arbitrary[Int];
       j: Int <- Gen.choose(i, math.min(Int.MaxValue, i.toLong + 1000).toInt)
-    ) yield Interval(i, j)
+    ) yield IntInterval(i, j)
 }
