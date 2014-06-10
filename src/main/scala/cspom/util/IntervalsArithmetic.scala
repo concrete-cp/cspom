@@ -74,6 +74,15 @@ object IntervalsArithmetic {
     def abs: IntRangeSet = IntervalsArithmetic(_.abs, r)
   }
 
+  implicit class LazyRangeArithmetics(val r: IntRangeSet) extends AnyVal {
+    def ~+(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ + _, r, i)
+    def unary_~-(): IntRangeSet = IntervalsArithmetic(-_, r)
+    def ~-(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ - _, r, i)
+    def ~*(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ * _, r, i)
+    def ~/(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ / _, r, i)
+    def labs: IntRangeSet = IntervalsArithmetic(_.abs, r)
+  }
+
   implicit class Arithmetics(val r: IntInterval) extends AnyVal {
     /**
      * [a, b] + [c, d] = [a + c, b + d]

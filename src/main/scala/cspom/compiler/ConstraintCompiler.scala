@@ -84,31 +84,34 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
 }
 
-final case class Delta private (removed: Seq[CSPOMConstraint[_]], altered: Set[CSPOMExpression[_]]) {
+final case class Delta private (
+  removed: Seq[CSPOMConstraint[_]],
+  added: Seq[CSPOMConstraint[_]]) {
   def removed(c: CSPOMConstraint[_]): Delta = {
-    new Delta(c +: removed, altered ++ c.fullScope)
+    Delta(c +: removed, added)
   }
 
   def removed(c: Traversable[CSPOMConstraint[_]]): Delta = {
-    new Delta(c ++: removed, altered ++ c.flatMap(_.fullScope))
+    Delta(c ++: removed, added)
   }
 
   def added(c: CSPOMConstraint[_]): Delta = {
-    new Delta(removed, altered ++ c.fullScope)
+    Delta(removed, c +: added)
   }
 
   def added(c: Traversable[CSPOMConstraint[_]]): Delta = {
-    new Delta(removed, altered ++ c.flatMap(_.fullScope))
+    Delta(removed, c ++: added)
   }
 
-  def ++(d: Delta): Delta = Delta(removed ++ d.removed, altered ++ d.altered)
+  def ++(d: Delta): Delta = Delta(removed ++ d.removed, added ++ d.added)
 
-  def nonEmpty = removed.nonEmpty || altered.nonEmpty
+  def nonEmpty = removed.nonEmpty || added.nonEmpty
 }
 
 object Delta {
-  val empty = Delta(Seq(), Set())
+  val empty = Delta(Seq(), Seq())
   def apply(): Delta = empty
+
 }
 
 /**

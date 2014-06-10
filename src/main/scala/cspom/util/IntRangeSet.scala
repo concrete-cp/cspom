@@ -50,6 +50,8 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
 
   //implicit def ordering: Ordering[A]
 
+  def span = headInterval span lastInterval
+
   def ++(i: IntInterval): IntRangeSet = {
     if (i.isEmpty) {
       this

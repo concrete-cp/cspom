@@ -9,6 +9,11 @@ import scala.collection.mutable.HashMap
 import cspom.StatisticsManager
 import cspom.TimedException
 import cspom.VariableNames
+import com.typesafe.scalalogging.slf4j.LazyLogging
+
+sealed trait Reason
+case class ConstraintReason(constraint: CSPOMConstraint[_]) extends Reason
+case class ExpressionReason(expression: CSPOMExpression[_]) extends Reason
 
 /**
  * This class implements some known useful reformulation rules.
@@ -18,7 +23,7 @@ import cspom.VariableNames
  */
 final class ProblemCompiler(
   private val problem: CSPOM,
-  private val constraintCompilers: IndexedSeq[ConstraintCompiler]) {
+  private val constraintCompilers: IndexedSeq[ConstraintCompiler]) extends LazyLogging {
 
   val vn = new VariableNames(problem)
 
@@ -27,6 +32,7 @@ final class ProblemCompiler(
       constraintCompilers.size)
 
     val constraints = new HashMap[Int, CSPOMConstraint[_]]
+    //val reasons = new HashMap[Int, Set[Reason]]
 
     for (c <- problem.constraints) {
       constraints.put(c.id, c)
@@ -49,25 +55,29 @@ final class ProblemCompiler(
 
           val constraint = constraints(toCompile(i).dequeue())
           ProblemCompiler.matches += 1
-          //println(compiler, constraint.id)
+          //logger.debug(s"$compiler, ${constraint.id}")
           //print(constraint)
           for (data <- compiler.mtch(constraint, problem)) {
             ProblemCompiler.compiles += 1
             changed = true
+            logger.debug(s"$compiler : ${constraint.toString(vn)}")
             //print(compiler + " : " + constraint.toString(vn) + " -> ")
-            val delta = compiler.compile(constraint, problem, data)
+            val delta: Delta = compiler.compile(constraint, problem, data)
 
             //print(" match")
 
-            val enqueue = delta.altered.iterator.flatMap(problem.constraints).toList
-
             for (rc <- delta.removed) {
               constraints.remove(rc.id)
+              //reasons.remove(rc.id)
             }
 
-            for (ac <- enqueue) {
-              constraints.put(ac.id, ac)
+            for (c <- delta.added) {
+              constraints.put(c.id, c)
             }
+
+            val enqueue = delta.added.flatMap(_.fullScope.flatMap(problem.constraints))
+
+            logger.debug(s"Enqueuing ${enqueue.map(_.toString(vn))}")
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
               for (rc <- delta.removed) {
@@ -76,7 +86,9 @@ final class ProblemCompiler(
 
               if (j != i || compiler.selfPropagation) {
                 for (ac <- enqueue) {
-                  toCompile(j).enqueue(ac.id)
+                  if (ac ne constraint) {
+                    toCompile(j).enqueue(ac.id)
+                  }
                 }
               }
             }
