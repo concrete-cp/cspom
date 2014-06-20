@@ -46,6 +46,7 @@ final class ProblemCompiler(
       for (i <- toCompile.indices) {
 
         val compiler = constraintCompilers(i)
+        logger.info(compiler.toString)
         //println(compiler)
         if (first) {
           toCompile(i) = new QueueSet(constraints.keys)
@@ -54,6 +55,7 @@ final class ProblemCompiler(
         while (toCompile(i).nonEmpty) {
 
           val constraint = constraints(toCompile(i).dequeue())
+          require(problem.constraintSet(constraint))
           ProblemCompiler.matches += 1
           //logger.debug(s"$compiler, ${constraint.id}")
           //print(constraint)
@@ -75,7 +77,8 @@ final class ProblemCompiler(
               constraints.put(c.id, c)
             }
 
-            val enqueue = delta.added.flatMap(_.fullScope.flatMap(problem.constraints))
+            val enqueue = delta.added.flatMap(
+              _.fullScope).distinct.flatMap(problem.constraints).distinct
 
             logger.debug(s"Enqueuing ${enqueue.map(_.toString(vn))}")
 

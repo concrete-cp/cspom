@@ -108,6 +108,8 @@ class CSPOM extends LazyLogging {
   private val _constraints = collection.mutable.Set[CSPOMConstraint[_]]()
 
   def constraints = _constraints.iterator
+  
+  def constraintSet = _constraints //.toSet
 
   val getConstraints = JavaConversions.asJavaIterator(constraints)
 
@@ -127,7 +129,7 @@ class CSPOM extends LazyLogging {
    */
   private def addConstraint[A](constraint: CSPOMConstraint[A]) = {
 
-    require(!constraints.contains(constraint),
+    require(!_constraints(constraint),
       "The constraint " + constraint + " already belongs to the problem");
 
     _constraints += constraint

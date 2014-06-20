@@ -17,6 +17,8 @@ import cspom.variable.BoolVariable
 import cspom.variable.CSPOMVariable
 import cspom.util.IntRangeSet
 import cspom.util.ContiguousIntRangeSet
+import cspom.Statistic
+import cspom.StatisticsManager
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -52,12 +54,14 @@ abstract class VariableCompiler(
 
   def reduceDomain(v: SimpleExpression[Int], d: IntRangeSet): SimpleExpression[Int] = {
     val old = IntVariable.ranges(v)
-    if (old == d) {
+
+    val reduced = (old & d).canonical
+    if (old == reduced) {
       v
     } else {
-      new ContiguousIntRangeSet(old & d).singletonMatch match {
+      new ContiguousIntRangeSet(reduced).singletonMatch match {
         case Some(s) => CSPOMConstant(s, v.params)
-        case None => IntVariable(d, v.params)
+        case None => IntVariable(reduced, v.params)
       }
     }
   }
