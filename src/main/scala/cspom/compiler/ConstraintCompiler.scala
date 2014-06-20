@@ -88,22 +88,25 @@ final case class Delta private (
   removed: Seq[CSPOMConstraint[_]],
   added: Seq[CSPOMConstraint[_]]) {
   def removed(c: CSPOMConstraint[_]): Delta = {
-    Delta(c +: removed, added)
+    Delta(c +: removed, added.filter(_ ne c))
   }
 
   def removed(c: Traversable[CSPOMConstraint[_]]): Delta = {
-    Delta(c ++: removed, added)
+    val cset = c.toSet
+    Delta(c ++: removed, added.filterNot(cset))
   }
 
   def added(c: CSPOMConstraint[_]): Delta = {
+    require(!removed.contains(c))
     Delta(removed, c +: added)
   }
 
   def added(c: Traversable[CSPOMConstraint[_]]): Delta = {
+    require(c.forall(!removed.contains(_)))
     Delta(removed, c ++: added)
   }
 
-  def ++(d: Delta): Delta = Delta(removed ++ d.removed, added ++ d.added)
+  def ++(d: Delta): Delta = removed(d.removed).added(d.added)//Delta(removed ++ d.removed, added ++ d.added)
 
   def nonEmpty = removed.nonEmpty || added.nonEmpty
 }

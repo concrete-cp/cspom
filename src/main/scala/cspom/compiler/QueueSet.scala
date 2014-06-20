@@ -30,6 +30,8 @@ final class QueueSet {
     first
   }
 
+  def contains(e: Int) = present.get(e)
+
   def nonEmpty = !present.isEmpty()
 
   def enqueueAll(init: Iterable[Int]): Unit = {

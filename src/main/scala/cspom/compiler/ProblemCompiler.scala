@@ -54,59 +54,64 @@ final class ProblemCompiler(
 
         while (toCompile(i).nonEmpty) {
 
-          val constraint = constraints(toCompile(i).dequeue())
-          require(problem.constraintSet(constraint))
-          ProblemCompiler.matches += 1
-          //logger.debug(s"$compiler, ${constraint.id}")
-          //print(constraint)
-          for (data <- compiler.mtch(constraint, problem)) {
-            ProblemCompiler.compiles += 1
-            changed = true
-            logger.debug(s"$compiler : ${constraint.toString(vn)}")
-            //print(compiler + " : " + constraint.toString(vn) + " -> ")
-            val delta: Delta = compiler.compile(constraint, problem, data)
+          for (constraint <- constraints.get(toCompile(i).dequeue())) {
+            val delta = compile(compiler, constraint)
 
-            //print(" match")
+            changed |= delta.nonEmpty
 
             for (rc <- delta.removed) {
+              require(!problem.constraintSet(rc), s"$compiler: $rc is still present")
               constraints.remove(rc.id)
-              //reasons.remove(rc.id)
             }
 
             for (c <- delta.added) {
+              require(problem.constraintSet(c), s"$compiler: $c is not present")
               constraints.put(c.id, c)
             }
 
             val enqueue = delta.added.flatMap(
-              _.fullScope).distinct.flatMap(problem.constraints).distinct
+              _.fullScope).distinct.flatMap(
+                problem.constraints(_).filter(_ ne constraint)).distinct
 
             logger.debug(s"Enqueuing ${enqueue.map(_.toString(vn))}")
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
-              for (rc <- delta.removed) {
-                toCompile(j).remove(rc.id)
-              }
-
               if (j != i || compiler.selfPropagation) {
                 for (ac <- enqueue) {
-                  if (ac ne constraint) {
-                    toCompile(j).enqueue(ac.id)
-                  }
+                  toCompile(j).enqueue(ac.id)
                 }
               }
             }
+
           }
-          toCompile(i).remove(constraint.id)
+
+          //toCompile(i).remove(constraint.id)
           //println
+
         }
 
       }
+
       first = false
     }
-    //require(constraints.values.toSet == problem.constraints)
   }
 
-  // println(problem)
+  def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
+    require(problem.constraintSet(constraint), {
+      val vn = new VariableNames(problem)
+      s"${constraint.toString(vn)} not in $problem"
+    })
+    ProblemCompiler.matches += 1
+
+    compiler.mtch(constraint, problem) match {
+      case Some(data) =>
+        ProblemCompiler.compiles += 1
+        logger.debug(s"$compiler : ${constraint.toString(vn)}")
+        compiler.compile(constraint, problem, data)
+      case None => Delta()
+    }
+
+  }
 
 }
 
