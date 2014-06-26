@@ -1,11 +1,10 @@
 package cspom.variable
 
-import cspom.CSPOM
-import scala.collection.mutable.WeakHashMap
-import cspom.Parameterized
 import scala.collection.SetLike
-import cspom.util.RangeSet
-import cspom.util.Interval
+import scala.collection.mutable.WeakHashMap
+
+import cspom.CSPOM
+import cspom.Parameterized
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions

@@ -8,25 +8,25 @@ import org.scalacheck.Gen
 class IntervalTest extends FlatSpec with Matchers {
 
   it should "compare correctly" in {
-    Interval(0, 5) isBefore Interval(7, 10) shouldBe true
-    Interval(0, 5) isBefore Interval(6, 10) shouldBe true
-    Interval(7, 10) isAfter Interval(0, 5) shouldBe true
-    Interval(6, 10) isAfter Interval(0, 5) shouldBe true
-    an[IllegalArgumentException] should be thrownBy Interval(0, 5) & Interval(6, 10)
-    Interval(0, 5) & Interval(5, 10) should not be empty
+    IntInterval(0, 5) isBefore IntInterval(7, 10) shouldBe true
+    IntInterval(0, 5) isBefore IntInterval(6, 10) shouldBe true
+    IntInterval(7, 10) isAfter IntInterval(0, 5) shouldBe true
+    IntInterval(6, 10) isAfter IntInterval(0, 5) shouldBe true
+    an[IllegalArgumentException] should be thrownBy IntInterval(0, 5) & IntInterval(6, 10)
+    IntInterval(0, 5) & IntInterval(5, 10) should not be empty
   }
 
   it should "detect mergeability" in {
-    Interval(0, 5).canonical(IntDiscreteDomain) isConnected Interval(6, 10) shouldBe true
-    Interval(0, 5) isConnected Interval(-6, -1).canonical(IntDiscreteDomain) shouldBe true
-    Interval(0, 5) isConnected Interval(-6, 2) shouldBe true
-    Interval(0, 5) isConnected Interval(-6, 20) shouldBe true
-    Interval(0, 5) isConnected Interval(10, 20) shouldBe false
-    Interval(0, 5) isConnected Interval(-20, -10) shouldBe false
+    IntInterval(0, 5).canonical isConnected IntInterval(6, 10) shouldBe true
+    IntInterval(0, 5) isConnected IntInterval(-6, -1).canonical shouldBe true
+    IntInterval(0, 5) isConnected IntInterval(-6, 2) shouldBe true
+    IntInterval(0, 5) isConnected IntInterval(-6, 20) shouldBe true
+    IntInterval(0, 5) isConnected IntInterval(10, 20) shouldBe false
+    IntInterval(0, 5) isConnected IntInterval(-20, -10) shouldBe false
   }
 
   it should "detect equality" in {
-    Interval.all[Int] should not be Interval.greaterThan(0)
+    IntInterval.all should not be IntInterval.greaterThan(0)
   }
 
 }

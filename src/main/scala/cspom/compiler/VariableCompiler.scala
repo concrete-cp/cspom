@@ -2,23 +2,14 @@ package cspom.compiler
 
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.util.RangeSet
-import cspom.variable.CSPOMExpression
-import cspom.variable.IntVariable
-import cspom.variable.SimpleExpression
-import cspom.util.Interval
-import cspom.variable.CSPOMConstant
-import cspom.util.IntervalsArithmetic
-import IntVariable.ranges
-import cspom.util.IntDiscreteDomain
-import com.google.common.collect.ContiguousSet
-import cspom.util.ContiguousRangeSet
-import cspom.variable.BoolVariable
-import cspom.variable.CSPOMVariable
-import cspom.util.IntRangeSet
 import cspom.util.ContiguousIntRangeSet
-import cspom.Statistic
-import cspom.StatisticsManager
+import cspom.util.IntRangeSet
+import cspom.variable.CSPOMConstant
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMVariable
+import cspom.variable.IntVariable
+import cspom.variable.IntVariable.ranges
+import cspom.variable.SimpleExpression
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -54,8 +45,19 @@ abstract class VariableCompiler(
 
   def reduceDomain(v: SimpleExpression[Int], d: IntRangeSet): SimpleExpression[Int] = {
     val old = IntVariable.ranges(v)
-
     val reduced = (old & d).canonical
+    if (old == reduced) {
+      v
+    } else {
+      new ContiguousIntRangeSet(reduced).singletonMatch match {
+        case Some(s) => CSPOMConstant(s, v.params)
+        case None => IntVariable(reduced, v.params)
+      }
+    }
+  }
+
+  def applyDomain(v: SimpleExpression[Int], reduced: IntRangeSet): SimpleExpression[Int] = {
+    val old = IntVariable.ranges(v)
     if (old == reduced) {
       v
     } else {

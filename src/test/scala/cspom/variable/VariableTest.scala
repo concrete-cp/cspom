@@ -8,6 +8,7 @@ import CSPOM._
 import org.scalatest.prop.PropertyChecks
 import cspom.util.IntervalTest
 import cspom.util.Intervals
+import cspom.util.IntInterval
 
 class VariableTest extends FlatSpec with Matchers with PropertyChecks {
 
@@ -38,8 +39,9 @@ class VariableTest extends FlatSpec with Matchers with PropertyChecks {
     forAll(Intervals.validIntervals) { itv =>
       val vi = IntVariable(itv)
 
-      forAll { i: Int => 
-        vi.contains(i) shouldBe itv.contains(i) }
+      forAll { i: Int =>
+        vi.contains(i) shouldBe itv.contains(i)
+      }
 
       forAll { i: Boolean => vi.contains(i) shouldBe false }
 

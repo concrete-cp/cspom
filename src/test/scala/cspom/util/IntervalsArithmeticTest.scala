@@ -7,12 +7,12 @@ import org.scalatest.concurrent.Timeouts
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Millisecond
 import org.scalatest.time.Span
-
 import IntRangeSet.rangeAsRangeSet
 import IntRangeSet.valueAsSingletonRange
 import IntRangeSet.valueasRangeSet
 import IntervalsArithmetic.Arithmetics
 import IntervalsArithmetic.RangeArithmetics
+import org.scalatest.time.Milliseconds
 
 class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
   "Intervals" should "provide correct shrinking integer division" in {
@@ -66,15 +66,13 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks
   }
 
   it should "be fast" in {
-    val g = Gen.listOfN(100, Gen.choose(-1000000, 1000000))
-
-    implicit def intDom = IntDiscreteDomain
+    val g = Gen.listOfN(10, Gen.choose(-1000000, 1000000))
 
     forAll(g, g) { (r1, r2) =>
       val rs1 = IntRangeSet(r1.map(i => IntInterval.singleton(i)))
       val rs2 = IntRangeSet(r2.map(i => IntInterval.singleton(i)))
 
-      failAfter(Span(1, Millisecond)) {
+      failAfter(Span(10, Milliseconds)) {
         rs1 + rs2
       }
     }

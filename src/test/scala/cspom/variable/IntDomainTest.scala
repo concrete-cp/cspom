@@ -1,22 +1,20 @@
 package cspom.variable
 
+import scala.collection.SortedSet
+
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Timeouts
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Second
 import org.scalatest.time.Span
-import cspom.xcsp.XCSPParser
-import cspom.util.IntervalTest
-import cspom.util.Interval
-import cspom.util.RangeSet
-import cspom.util.Intervals
-import cspom.util.IntDiscreteDomain
-import cspom.util.ContiguousRangeSet
-import scala.collection.SortedSet
-import cspom.util.IntRangeSet
-import cspom.util.IntInterval
+
 import cspom.util.ContiguousIntRangeSet
+import cspom.util.IntInterval
+import cspom.util.IntRangeSet
+import cspom.util.Intervals
+import cspom.xcsp.XCSPParser
+
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
   implicit def asSet(r: IntRangeSet): SortedSet[Int] =
@@ -35,7 +33,7 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
 
       val parsed = XCSPParser.parseRange(s"$i..$j")
 
-      parsed shouldBe a[Interval[_]]
+      parsed shouldBe a[IntInterval]
 
       failAfter(Span(1, Second)) {
         parsed shouldBe r

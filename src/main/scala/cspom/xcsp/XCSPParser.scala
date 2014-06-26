@@ -1,23 +1,21 @@
 package cspom.xcsp;
 
 import java.io.InputStream
+
 import scala.util.parsing.input.CharSequenceReader
 import scala.xml.NodeSeq
 import scala.xml.XML
+
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.extension.Relation
-import cspom.util.Interval
-import cspom.util.IntDiscreteDomain
-import cspom.util.RangeSet
+import cspom.util.ContiguousIntRangeSet
+import cspom.util.IntInterval
+import cspom.util.IntRangeSet
 import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
-import cspom.util.ContiguousRangeSet
-import cspom.util.IntRangeSet
-import cspom.util.IntInterval
-import cspom.util.ContiguousIntRangeSet
 
 /**
  * This class implements an XCSP 2.0 parser.

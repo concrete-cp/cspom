@@ -1,19 +1,11 @@
 package cspom.variable
 
-import scala.collection.JavaConversions
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import cspom.util.RangeSet
-import com.google.common.collect.ContiguousSet
-import com.google.common.collect.DiscreteDomain
-import cspom.util.Interval
-import cspom.util.Interval.AsOrdered
-import cspom.util.IntDiscreteDomain
-import com.google.common.math.IntMath
-import cspom.util.ContiguousRangeSet
-import cspom.util.IntervalsArithmetic
-import cspom.util.IntRangeSet
+
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
+import cspom.util.IntRangeSet
+import cspom.util.IntervalsArithmetic
 
 final class IntVariable(val domain: IntRangeSet, params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {

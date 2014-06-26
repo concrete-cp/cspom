@@ -14,7 +14,7 @@ object IntervalsArithmetic {
     f: (IntInterval, IntInterval) => IntInterval,
     ii: IntRangeSet, jj: IntRangeSet): IntRangeSet = {
     var result = IntRangeSet()
-    for (i <- ii.ranges; j <- jj.ranges) yield {
+    for (i <- ii.ranges; j <- jj.ranges) {
       result ++= f(i, j)
     }
     result

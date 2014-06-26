@@ -24,8 +24,6 @@ publishTo := Some(
 	Resolver.file("Concrete local repository",
 		new File(Path.userHome.absolutePath+"/concrete/repository")))
 
-org.scalastyle.sbt.ScalastylePlugin.Settings
-
 testOptions in Test <+= (target in Test) map {
   t => Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${t / "test-reports"}")
 }

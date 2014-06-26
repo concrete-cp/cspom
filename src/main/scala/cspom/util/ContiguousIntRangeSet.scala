@@ -7,7 +7,9 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
 
   def ordering = Ordering.Int
 
-  def iterator: Iterator[Int] = r.ranges.iterator.flatMap(_.allValues.map(Integer2int))
+  def iterator: Iterator[Int] =
+    r.ranges.iterator.flatMap(_.allValues.map(Integer2int))
+
   def -(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r -- IntInterval.singleton(elem))
   def +(elem: Int): SortedSet[Int] =
@@ -26,7 +28,7 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
 
   override def last = r.lastInterval.lastValue
 
-  override def size = r.ranges.map(_.nbValues).sum
+  override def size = r.ranges.iterator.map(_.nbValues).sum
 
   def singletonMatch: Option[Int] = {
     toStream match {

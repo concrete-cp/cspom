@@ -171,4 +171,15 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   it should "detect equality" in {
     IntRangeSet(IntInterval.all) should not be IntRangeSet(IntInterval.greaterThan(0))
   }
+  
+  it should "contain given values" in {
+    val r = IntRangeSet(Seq(IntInterval.singleton(0), IntInterval.singleton(-1)))
+    val s = new ContiguousIntRangeSet(r)
+    s should contain(0)
+    s should contain(-1)
+    
+    Set(0, -1) shouldBe s
+    s.iterator.toStream shouldBe Stream(-1, 0)
+    
+  }
 } 

@@ -2,7 +2,6 @@ package cspom.util
 
 import scala.collection.immutable.TreeSet
 import com.google.common.collect.DiscreteDomain
-import cspom.util.Interval.AsOrdered
 import scala.collection.immutable.SortedSet
 
 object IntIntervalOrdering extends Ordering[IntInterval] {
@@ -68,9 +67,7 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
   def --(i: IntInterval): IntRangeSet = {
     val itvOrdering = contents.ordering
 
-    val (colliding, afterTree) = contents.from(i).span(j => itvOrdering.compare(i, j) == 0)
-
-    val beforeTree = contents.until(i)
+    val colliding = contents.from(i).takeWhile(j => itvOrdering.compare(i, j) == 0)
 
     val beforeItv = i.lowerBoundOption map {
       case (lep, lbt) => IntInterval.upTo(lep, lbt.other)
@@ -79,7 +76,7 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
       case (uep, ubt) => IntInterval.downTo(uep, ubt.other)
     }
 
-    var cleanTree: TreeSet[IntInterval] = beforeTree ++ afterTree
+    var cleanTree: TreeSet[IntInterval] = contents -- colliding
 
     for (b <- beforeItv; c <- colliding if (b isConnected c)) {
       val d = b & c
@@ -121,7 +118,7 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
   def isEmpty: Boolean = contents.isEmpty
 
   def contains(elem: Integer): Boolean =
-    contents.from(IntInterval.singleton(elem)).head.contains(elem)
+    contents.from(IntInterval.singleton(elem)).headOption.exists(_.contains(elem))
 
   def canonical =
     IntRangeSet() ++ contents.map(_.canonical)
