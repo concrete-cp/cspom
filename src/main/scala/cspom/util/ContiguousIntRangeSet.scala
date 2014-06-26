@@ -8,7 +8,7 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
   def ordering = Ordering.Int
 
   def iterator: Iterator[Int] =
-    r.ranges.iterator.flatMap(_.allValues.map(Integer2int))
+    r.ranges.iterator.flatMap(_.allValues)
 
   def -(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r -- IntInterval.singleton(elem))
@@ -17,7 +17,7 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
   def contains(elem: Int): Boolean = r.contains(elem)
 
   def keysIteratorFrom(start: Int): Iterator[Int] =
-    (r & IntInterval.atLeast(start)).ranges.iterator.flatMap(_.allValues.map(Integer2int))
+    (r & IntInterval.atLeast(start)).ranges.iterator.flatMap(_.allValues)
 
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = {
     val i = from.map(IntInterval.atLeast(_)).getOrElse(IntInterval.all) &
@@ -26,7 +26,10 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
     new ContiguousIntRangeSet(r & i)
   }
 
-  override def last = r.lastInterval.lastValue
+  override def last = {
+    val Finite(u) = r.upperBound
+    u
+  }
 
   override def size = r.ranges.iterator.map(_.nbValues).sum
 

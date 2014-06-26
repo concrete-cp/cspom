@@ -45,7 +45,7 @@ abstract class VariableCompiler(
 
   def reduceDomain(v: SimpleExpression[Int], d: IntRangeSet): SimpleExpression[Int] = {
     val old = IntVariable.ranges(v)
-    val reduced = (old & d).canonical
+    val reduced = old & d
     if (old == reduced) {
       v
     } else {

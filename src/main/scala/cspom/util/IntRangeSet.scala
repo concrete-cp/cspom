@@ -32,7 +32,7 @@ object IntRangeSet {
     IntRangeSet() ++ s
   }
 
-  def all: IntRangeSet = apply(IntInterval.all())
+  val all: IntRangeSet = apply(IntInterval.all)
 
   def apply(): IntRangeSet = new IntRangeSet(TreeSet()(IntIntervalOrdering))
 
@@ -69,23 +69,28 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
 
     val colliding = contents.from(i).takeWhile(j => itvOrdering.compare(i, j) == 0)
 
-    val beforeItv = i.lowerBoundOption map {
-      case (lep, lbt) => IntInterval.upTo(lep, lbt.other)
+    val beforeItv = i.lb match {
+      case MinInf => None
+      case Finite(l) => if (l == Int.MinValue) None else Some(IntInterval.atMost(l - 1))
+      case PlusInf => throw new IllegalArgumentException
     }
-    val afterItv = i.upperBoundOption map {
-      case (uep, ubt) => IntInterval.downTo(uep, ubt.other)
+
+    val afterItv = i.ub match {
+      case PlusInf => None
+      case Finite(u) => if (u == Int.MaxValue) None else Some(IntInterval.atLeast(u + 1))
+      case MinInf => throw new IllegalArgumentException
     }
 
     var cleanTree: TreeSet[IntInterval] = contents -- colliding
 
-    for (b <- beforeItv; c <- colliding if (b isConnected c)) {
+    for (b <- beforeItv; c <- colliding) {
       val d = b & c
       if (!d.isEmpty) {
         cleanTree += d
       }
     }
 
-    for (a <- afterItv; c <- colliding if (a isConnected c)) {
+    for (a <- afterItv; c <- colliding) {
       val d = a & c
       if (!d.isEmpty) {
         cleanTree += d
@@ -107,21 +112,20 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
 
   def &(i: IntInterval): IntRangeSet = this -- (this -- i)
 
-  def upperBound: Integer = lastInterval.upperEndpoint
+  def upperBound: Infinitable = lastInterval.ub
 
-  def lowerBound: Integer = headInterval.lowerEndpoint
+  def lowerBound: Infinitable = headInterval.lb
 
-  def fullyDefined = lastInterval.hasLowerBound && lastInterval.hasUpperBound
+  def fullyDefined = {
+    lowerBound != MinInf && upperBound != PlusInf
+  }
 
   def isConvex: Boolean = contents.size == 1
 
   def isEmpty: Boolean = contents.isEmpty
 
-  def contains(elem: Integer): Boolean =
+  def contains(elem: Int): Boolean =
     contents.from(IntInterval.singleton(elem)).headOption.exists(_.contains(elem))
-
-  def canonical =
-    IntRangeSet() ++ contents.map(_.canonical)
 
   override def equals(o: Any): Boolean = {
     o match {

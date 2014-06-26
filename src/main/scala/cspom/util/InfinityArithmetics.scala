@@ -11,6 +11,10 @@ sealed trait Infinitable extends Ordered[Infinitable] {
   def divisible(v: Infinitable): Boolean
   def unary_-(): Infinitable
   def isInfinity = (this eq MinInf) || (this eq PlusInf)
+
+  def <=(i: Int): Boolean
+  def <(i: Int): Boolean
+
 }
 
 case object MinInf extends Infinitable {
@@ -28,6 +32,8 @@ case object MinInf extends Infinitable {
   def divisible(v: Infinitable) = false
   def compare(v: Infinitable) = -1
   def unary_-() = PlusInf
+  def <=(i: Int) = true
+  def <(i: Int) = true
 }
 case object PlusInf extends Infinitable {
   def +(v: Infinitable) = PlusInf
@@ -36,6 +42,8 @@ case object PlusInf extends Infinitable {
   def compare(v: Infinitable) = 1
   def unary_-() = MinInf
   def divisible(v: Infinitable) = false
+  def <=(i: Int) = false
+  def <(i: Int) = false
 }
 case class Finite(i: Int) extends Infinitable {
   def +(v: Infinitable) = v match {
@@ -59,4 +67,6 @@ case class Finite(i: Int) extends Infinitable {
     case Finite(j) => i - j
     case u => -u.compare(v)
   }
+  def <=(j: Int) = i <= j
+  def <(j: Int) = i < j
 }

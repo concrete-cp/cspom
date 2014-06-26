@@ -35,7 +35,6 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks
       IntRangeSet(Seq(IntInterval(0, 90), IntInterval(910, 1000)))
 
     IntInterval.atLeast(10) * 100 shouldBe IntInterval.atLeast(1000)
-    IntInterval.greaterThan(9) * 100 shouldBe IntInterval.atLeast(1000)
   }
 
   it should "compute abs" in {
@@ -48,8 +47,8 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks
 
   it should "add" in {
 
-    ((IntRangeSet(IntInterval(0, 100)) -- IntInterval(10, 90)) + IntInterval(0, 10)).canonical shouldBe
-      IntRangeSet(Seq(IntInterval(0, 19), IntInterval(91, 110))).canonical
+    ((IntRangeSet(IntInterval(0, 100)) -- IntInterval(10, 90)) + IntInterval(0, 10)) shouldBe
+      IntRangeSet(Seq(IntInterval(0, 19), IntInterval(91, 110)))
 
   }
 

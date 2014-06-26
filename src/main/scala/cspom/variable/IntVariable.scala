@@ -56,7 +56,7 @@ final class IntVariable(val domain: IntRangeSet, params: Map[String, Any] = Map(
 object IntVariable {
   def apply(values: Iterable[Int], params: Map[String, Any] = Map()): IntVariable = {
     new IntVariable(IntRangeSet(values.map(
-      v => IntInterval.singleton(v))).canonical, params)
+      v => IntInterval.singleton(v))), params)
   }
 
   def apply(values: IntRangeSet): IntVariable = {

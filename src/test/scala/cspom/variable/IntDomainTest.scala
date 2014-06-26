@@ -1,19 +1,18 @@
 package cspom.variable
 
 import scala.collection.SortedSet
-
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Timeouts
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Second
 import org.scalatest.time.Span
-
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
 import cspom.util.IntRangeSet
 import cspom.util.Intervals
 import cspom.xcsp.XCSPParser
+import cspom.util.Finite
 
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
@@ -28,8 +27,8 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
   it should "parse ranges" in forAll(Intervals.validIntervals) {
     r =>
 
-      val i = r.lowerEndpoint
-      val j = r.upperEndpoint
+      val Finite(i) = r.lb
+      val Finite(j) = r.ub
 
       val parsed = XCSPParser.parseRange(s"$i..$j")
 
@@ -42,9 +41,9 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
   }
 
   it should "coalesce connected ranges" in {
-    val itv = XCSPParser.parseDomain("3..5 6 7..10").canonical
+    val itv = XCSPParser.parseDomain("3..5 6 7..10")
     itv shouldBe a[IntRangeSet]
-    itv shouldBe IntRangeSet(IntInterval(3, 10).canonical)
+    itv shouldBe IntRangeSet(IntInterval(3, 10))
   }
 
 }

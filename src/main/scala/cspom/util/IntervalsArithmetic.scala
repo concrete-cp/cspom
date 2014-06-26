@@ -24,45 +24,12 @@ object IntervalsArithmetic {
     ii.ranges.foldLeft(IntRangeSet())(_ ++ f(_))
   }
 
-  private def asInfinities(r: IntInterval): (Infinitable, Infinitable) = {
-    val l = if (r.hasLowerBound) {
-      Finite(r.lowerEndpoint)
+  private def asRange(l: Infinitable, u: Infinitable) = {
+    if (l == MinInf && u == PlusInf) {
+      IntInterval.all
     } else {
-      MinInf
+      IntInterval(l, u)
     }
-
-    val u = if (r.hasUpperBound) {
-      Finite(r.upperEndpoint)
-    } else {
-      PlusInf
-    }
-
-    (l, u)
-  }
-
-  private def asRange(l: Infinitable, lbt: BoundType, u: Infinitable, ubt: BoundType) = {
-    (l, u) match {
-      case (Finite(l), Finite(u)) => {
-        if (l > u) {
-          // Empty interval
-          IntInterval.closedOpen(l, l)
-        } else {
-          IntInterval(l, lbt, u, ubt)
-        }
-      }
-      case (MinInf, Finite(u)) => IntInterval.upTo(u, ubt)
-      case (Finite(l), PlusInf) => IntInterval.downTo(l, lbt)
-      case (MinInf, PlusInf) => IntInterval.all
-      case (l, u) => throw new IllegalArgumentException(s"Incoherent interval ($l, $u)")
-    }
-  }
-
-  private def minBound[A](b: (A, BoundType)*)(implicit ord: Ordering[A]): (A, BoundType) = {
-    b.min(Ordering.Tuple2(ord, BoundType.closedIsLess))
-  }
-
-  private def maxBound[A](b: (A, BoundType)*)(implicit ord: Ordering[A]): (A, BoundType) = {
-    b.max(Ordering.Tuple2(ord, BoundType.closedIsMore))
   }
 
   implicit class RangeArithmetics(val r: IntRangeSet) extends AnyVal {
@@ -92,23 +59,20 @@ object IntervalsArithmetic {
      */
 
     def +(i: IntInterval): IntInterval = {
-      val (a, bc) = asInfinities(r.canonical)
-      val (c, dc) = asInfinities(i.canonical)
-
-      val b = bc - Finite(1)
-      val d = dc - Finite(1)
+      val IntInterval(a, b) = r
+      val IntInterval(c, d) = i
 
       val lb = a + c
 
       val ub = b + d
 
-      asRange(lb, Closed, ub, Closed)
+      asRange(lb, ub)
     }
 
     def unary_-(): IntInterval = {
-      val (a, b) = asInfinities(r)
+      val IntInterval(a, b) = r
 
-      asRange(-b, r.upperBoundType, -a, r.lowerBoundType)
+      asRange(-b, -a)
     }
 
     def -(i: IntInterval) = this + -i
@@ -117,17 +81,14 @@ object IntervalsArithmetic {
 
     def *(i: IntInterval): IntInterval = {
 
-      val (a, bc) = asInfinities(r.canonical)
-      val (c, dc) = asInfinities(i.canonical)
-
-      val d = dc - Finite(1)
-      val b = bc - Finite(1)
+      val IntInterval(a, b) = r
+      val IntInterval(c, d) = i
 
       val l = List(a * c, a * d, b * c, b * d).min
 
       val u = List(a * c, a * d, b * c, b * d).max
 
-      asRange(l, Closed, u, Closed)
+      asRange(l, u)
 
     }
 
@@ -135,11 +96,8 @@ object IntervalsArithmetic {
       if (i.contains(0)) {
         IntInterval.all
       } else {
-        val (a, bc) = asInfinities(r.canonical)
-        val (c, dc) = asInfinities(i.canonical)
-
-        val d = dc - Finite(1)
-        val b = bc - Finite(1)
+        val IntInterval(a, b) = r
+        val IntInterval(c, d) = i
 
         val l = Seq(
           a.div(c, RoundingMode.CEILING),
@@ -153,7 +111,7 @@ object IntervalsArithmetic {
           b.div(c, RoundingMode.FLOOR),
           b.div(d, RoundingMode.FLOOR)).max
 
-        asRange(l, Closed, u, Closed)
+        asRange(l, u)
       }
     }
 
@@ -161,28 +119,28 @@ object IntervalsArithmetic {
       if (v == 0) {
         IntInterval.all
       } else {
-        val (lb, ub) = asInfinities(r)
+        val IntInterval(lb, ub) = r
         val d = Finite(v)
         if (v > 0) {
           asRange(
-            lb.div(d, RoundingMode.CEILING), if (lb.divisible(d)) r.lowerBoundType else Closed,
-            ub.div(d, RoundingMode.FLOOR), if (ub.divisible(d)) r.upperBoundType else Closed)
+            lb.div(d, RoundingMode.CEILING),
+            ub.div(d, RoundingMode.FLOOR))
         } else {
           asRange(
-            ub.div(d, RoundingMode.CEILING), if (ub.divisible(d)) r.upperBoundType else Closed,
-            lb.div(d, RoundingMode.FLOOR), if (lb.divisible(d)) r.lowerBoundType else Closed)
+            ub.div(d, RoundingMode.CEILING),
+            lb.div(d, RoundingMode.FLOOR))
         }
       }
     }
 
     def abs: IntInterval = {
-      val (l, u) = asInfinities(r)
+      val IntInterval(l, u) = r
       if (u <= Finite(0)) { -r }
       else if (l >= Finite(0)) { r }
       else {
-        val (b, bt) = maxBound[Infinitable]((-l, r.lowerBoundType), (u, r.upperBoundType))
+        val b = if (u > -l) u else -l
 
-        asRange(Finite(0), Closed, b, bt)
+        asRange(Finite(0), b)
       }
     }
 
