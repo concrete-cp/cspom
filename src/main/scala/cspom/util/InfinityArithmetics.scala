@@ -5,7 +5,7 @@ import java.math.RoundingMode
 
 sealed trait Infinitable extends Ordered[Infinitable] {
   def +(v: Infinitable): Infinitable
-  def -(v: Infinitable): Infinitable = this + (-v)
+  def -(v: Infinitable): Infinitable
   def *(v: Infinitable): Infinitable
   def div(v: Infinitable, rm: RoundingMode): Infinitable
   def divisible(v: Infinitable): Boolean
@@ -14,11 +14,10 @@ sealed trait Infinitable extends Ordered[Infinitable] {
 
   def <=(i: Int): Boolean
   def <(i: Int): Boolean
-
 }
-
 case object MinInf extends Infinitable {
   def +(v: Infinitable) = MinInf
+  def -(v: Infinitable) = MinInf
   def *(v: Infinitable) = {
     if (v > Finite(0)) {
       MinInf
@@ -34,9 +33,11 @@ case object MinInf extends Infinitable {
   def unary_-() = PlusInf
   def <=(i: Int) = true
   def <(i: Int) = true
+  override def toString = "-∞"
 }
 case object PlusInf extends Infinitable {
   def +(v: Infinitable) = PlusInf
+  def -(v: Infinitable) = PlusInf
   def *(v: Infinitable) = -(MinInf * v)
   def div(v: Infinitable, rm: RoundingMode) = -(MinInf.div(v, rm))
   def compare(v: Infinitable) = 1
@@ -44,11 +45,16 @@ case object PlusInf extends Infinitable {
   def divisible(v: Infinitable) = false
   def <=(i: Int) = false
   def <(i: Int) = false
+  override def toString = "+∞"
 }
 case class Finite(i: Int) extends Infinitable {
   def +(v: Infinitable) = v match {
     case Finite(j) => Finite(IntMath.checkedAdd(i, j))
     case u => u + this
+  }
+  def -(v: Infinitable) = v match {
+    case Finite(j) => Finite(IntMath.checkedSubtract(i, j))
+    case u => u - this
   }
   def *(v: Infinitable) = v match {
     case Finite(j) => Finite(IntMath.checkedMultiply(i, j))
@@ -64,9 +70,10 @@ case class Finite(i: Int) extends Infinitable {
   }
   def unary_-() = Finite(-i)
   def compare(v: Infinitable) = v match {
-    case Finite(j) => i - j
+    case Finite(j) => i.compare(j)
     case u => -u.compare(v)
   }
   def <=(j: Int) = i <= j
   def <(j: Int) = i < j
+  override def toString = i.toString
 }

@@ -6,6 +6,7 @@ import com.google.common.collect.Range
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.google.common.collect.DiscreteDomain
 import scala.collection.JavaConversions
+import scala.collection.AbstractIterator
 
 object IntInterval {
   val all: IntInterval = IntInterval(MinInf, PlusInf)
@@ -62,7 +63,7 @@ object IntInterval {
 
 final case class IntInterval(
   val lb: Infinitable, val ub: Infinitable) extends LazyLogging {
-  
+
   require(lb != PlusInf)
   require(ub != MinInf)
 
@@ -83,7 +84,8 @@ final case class IntInterval(
   }
 
   def isConnected(si: IntInterval) = {
-    lb.compare(si.ub) <= 0 && si.lb.compare(ub) <= 0
+    (lb <= si.ub || (lb > Finite(Int.MinValue) && lb - Finite(1) <= si.ub)) &&
+      ((si.lb <= ub) || (si.lb > Finite(Int.MinValue) && si.lb - Finite(1) <= ub))
   }
 
   def span(si: IntInterval): IntInterval = {
@@ -134,14 +136,37 @@ final case class IntInterval(
     }
   }
 
-  def allValues: Iterable[Int] = {
+  def allValues: Iterator[Int] = {
     val Finite(l) = lb
     val Finite(u) = ub
-    l to u
+    new AbstractIterator[Int] {
+      private var i = l
+      def hasNext: Boolean = i <= u
+      def next(): Int =
+        if (hasNext) { val result = i; i += 1; result }
+        else Iterator.empty.next()
+    }
   }
 
-  def nbValues: Int = allValues.size
+  def nbValues: Int = {
+    val Finite(s) = (ub - lb) + Finite(1)
+    s
+  }
 
-  override def toString = s"$lb..$ub"
+  override def toString = {
+    val l = lb match {
+      case MinInf => "(-\u221e"
+      case Finite(i) => s"[$i"
+      case PlusInf => throw new AssertionError
+    }
+    val u = ub match {
+
+      case Finite(i) => s"$i]"
+      case PlusInf => "+\u221e)"
+      case MinInf => throw new AssertionError
+    }
+
+    s"$l‥$u"
+  }
 
 }

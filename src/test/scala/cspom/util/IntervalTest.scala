@@ -7,7 +7,7 @@ import org.scalacheck.Gen
 
 class IntervalTest extends FlatSpec with Matchers {
 
-  it should "compare correctly" in {
+  "Intervals" should "compare correctly" in {
     assert(IntInterval(0, 5) isBefore IntInterval(7, 10))
     assert(IntInterval(0, 5) isBefore IntInterval(6, 10))
     assert(IntInterval(7, 10) isAfter IntInterval(0, 5))
@@ -23,6 +23,7 @@ class IntervalTest extends FlatSpec with Matchers {
     assert(IntInterval(0, 5) isConnected IntInterval(-6, 20))
     assert(!(IntInterval(0, 5) isConnected IntInterval(10, 20)))
     assert(!(IntInterval(0, 5) isConnected IntInterval(-20, -10)))
+    assert(IntInterval(Int.MinValue, 0) isConnected IntInterval(0, 5))
   }
 
   it should "detect equality" in {
