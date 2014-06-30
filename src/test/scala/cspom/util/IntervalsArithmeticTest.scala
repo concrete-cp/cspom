@@ -64,18 +64,4 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks
 
   }
 
-  it should "be fast" in {
-    val g = Gen.listOfN(10, Gen.choose(-1000000, 1000000))
-
-    forAll(g, g) { (r1, r2) =>
-      val rs1 = IntRangeSet(r1.map(i => IntInterval.singleton(i)))
-      val rs2 = IntRangeSet(r2.map(i => IntInterval.singleton(i)))
-
-      failAfter(Span(10, Milliseconds)) {
-        rs1 + rs2
-      }
-    }
-
-  }
-
 }

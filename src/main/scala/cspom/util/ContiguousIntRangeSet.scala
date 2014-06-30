@@ -12,10 +12,10 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
 
   def -(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r -- IntInterval.singleton(elem))
-  
+
   def +(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r ++ IntInterval.singleton(elem))
-  
+
   def contains(elem: Int): Boolean = r.contains(elem)
 
   def keysIteratorFrom(start: Int): Iterator[Int] =
@@ -36,9 +36,13 @@ final class ContiguousIntRangeSet(val r: IntRangeSet) extends SortedSet[Int] {
   override def size = r.ranges.iterator.map(_.nbValues).sum
 
   def singletonMatch: Option[Int] = {
-    toStream match {
-      case Stream(c) => Some(c)
-      case _ => None
+    if (r.fullyDefined) {
+      toStream match {
+        case Stream(c) => Some(c)
+        case _ => None
+      }
+    } else {
+      None
     }
   }
 }
