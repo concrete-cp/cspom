@@ -1,12 +1,9 @@
 package cspom.util
 
 import java.math.RoundingMode
-import java.math.RoundingMode
 import com.google.common.math.IntMath
-import com.google.common.collect.DiscreteDomain
-import com.google.common.collect.Cut
 import IntRangeSet._
-import scala.math.Ordering.IntOrdering
+import Infinitable.compare
 
 object IntervalsArithmetic {
 
@@ -39,15 +36,6 @@ object IntervalsArithmetic {
     def *(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ * _, r, i)
     def /(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ / _, r, i)
     def abs: IntRangeSet = IntervalsArithmetic(_.abs, r)
-  }
-
-  implicit class LazyRangeArithmetics(val r: IntRangeSet) extends AnyVal {
-    def ~+(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ + _, r, i)
-    def unary_~-(): IntRangeSet = IntervalsArithmetic(-_, r)
-    def ~-(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ - _, r, i)
-    def ~*(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ * _, r, i)
-    def ~/(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ / _, r, i)
-    def labs: IntRangeSet = IntervalsArithmetic(_.abs, r)
   }
 
   implicit class Arithmetics(val r: IntInterval) extends AnyVal {
@@ -135,10 +123,10 @@ object IntervalsArithmetic {
 
     def abs: IntInterval = {
       val IntInterval(l, u) = r
-      if (u <= Finite(0)) { -r }
-      else if (l >= Finite(0)) { r }
+      if (compare(u, 0) <= 0) { -r }
+      else if (compare(l, 0) >= 0) { r }
       else {
-        val b = if (u > -l) u else -l
+        val b = if (Infinitable.InfinitableOrdering.compare(u, -l) > 0) u else -l
 
         asRange(Finite(0), b)
       }

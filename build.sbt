@@ -30,6 +30,6 @@ testOptions in Test <+= (target in Test) map {
 }
 
 
-//testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
 parallelExecution in Test := false

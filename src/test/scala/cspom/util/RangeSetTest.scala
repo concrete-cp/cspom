@@ -97,6 +97,12 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     itv1 ++ IntInterval(-5, 0) shouldBe IntRangeSet(IntInterval(-5, 6))
   }
 
+  it should "be iterable" in {
+    forAll(smallIntervals) { i1 =>
+      asSet(IntRangeSet(i1)) should contain theSameElementsInOrderAs i1
+    }
+  }
+
   it should "compute difference" in {
 
     val i = IntRangeSet(Seq(IntInterval.singleton(2147483647), IntInterval.singleton(0)))
@@ -115,7 +121,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
     forAll(smallIntervals, validIntervals) { (i1, i2) =>
       asSet(IntRangeSet(i1) -- i2) should contain theSameElementsInOrderAs
-        i1.allValues.filterNot(i2.contains).toStream
+        i1.filterNot(i2.contains)
     }
 
     forAll { (s1: Seq[Int], s2: Seq[Int]) =>
@@ -171,15 +177,15 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   it should "detect equality" in {
     IntRangeSet(IntInterval.all) should not be IntRangeSet(IntInterval.atLeast(0))
   }
-  
+
   it should "contain given values" in {
     val r = IntRangeSet(Seq(IntInterval.singleton(0), IntInterval.singleton(-1)))
     val s = new ContiguousIntRangeSet(r)
     s should contain(0)
     s should contain(-1)
-    
+
     Set(0, -1) shouldBe s
     s.iterator.toStream shouldBe Stream(-1, 0)
-    
+
   }
 } 

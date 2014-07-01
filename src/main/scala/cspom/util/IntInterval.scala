@@ -7,6 +7,9 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.google.common.collect.DiscreteDomain
 import scala.collection.JavaConversions
 import scala.collection.AbstractIterator
+import com.google.common.math.IntMath
+import Infinitable.InfinitableOrdering
+import InfinitableOrdering.compare
 
 object IntInterval {
   val all: IntInterval = IntInterval(MinInf, PlusInf)
@@ -18,51 +21,18 @@ object IntInterval {
   def apply(lower: Int, upper: Int): IntInterval =
     IntInterval(Finite(lower), Finite(upper))
 
+  def unapply(itv: IntInterval): Option[(Infinitable, Infinitable)] = Some((itv.lb, itv.ub))
+
+  def apply(lower: Infinitable, upper: Infinitable): IntInterval = new IntInterval(lower, upper)
+
   def singleton(v: Int): IntInterval = IntInterval(v, v)
 
 }
 
-//sealed trait IntBound extends Ordered[IntBound]
-//sealed trait LowerIntBound extends IntBound {
-//  def <=(c: Int): Boolean
-//}
-//case object NoLowerBound extends LowerIntBound {
-//  def <=(c: Int) = true
-//  def compare(c: IntBound) = -1
-//  override def toString = "(-\u221e"
-//}
-//case class AtLeast(i: Int) extends LowerIntBound {
-//  def <=(c: Int) = i <= c
-//  def compare(c: IntBound) = c match {
-//    case NoLowerBound => 1
-//    case NoUpperBound => -1
-//    case AtLeast(j) => i.compare(j)
-//    case AtMost(j) => i.compare(j)
-//  }
-//  override def toString = s"[$i"
-//}
-//
-//sealed trait UpperIntBound extends IntBound {
-//  def >=(c: Int): Boolean
-//}
-//case object NoUpperBound extends UpperIntBound {
-//  def >=(c: Int) = true
-//  def compare(c: IntBound) = 1
-//  override def toString = "+-\u221e)"
-//}
-//case class AtMost(i: Int) extends UpperIntBound {
-//  def >=(c: Int) = i >= c
-//  def compare(c: IntBound) = c match {
-//    case NoLowerBound => 1
-//    case NoUpperBound => -1
-//    case AtMost(j) => i.compare(j)
-//    case AtMost(j) => i.compare(j)
-//  }
-//  override def toString = s"$i]"
-//}
-
-final case class IntInterval(
-  val lb: Infinitable, val ub: Infinitable) extends LazyLogging {
+final class IntInterval(
+  val lb: Infinitable, val ub: Infinitable)
+  extends IndexedSeq[Int]
+  with LazyLogging {
 
   require(lb != PlusInf)
   require(ub != MinInf)
@@ -70,8 +40,9 @@ final case class IntInterval(
   def contains(c: Int) = lb <= c && !(ub < c)
 
   def &(si: IntInterval) = {
-    val lowerCmp = lb.compare(si.lb);
-    val upperCmp = ub.compare(si.ub);
+
+    val lowerCmp = compare(lb, si.lb)
+    val upperCmp = compare(ub, si.ub)
     if (lowerCmp >= 0 && upperCmp <= 0) {
       this
     } else if (lowerCmp <= 0 && upperCmp >= 0) {
@@ -83,14 +54,17 @@ final case class IntInterval(
     }
   }
 
+  def lbBeforeOrConnectedUb(si: IntInterval): Boolean = {
+    compare(lb, si.ub) <= 0 || (Infinitable.compare(lb, Int.MinValue) > 0 && compare(lb - Finite(1), si.ub) <= 0)
+  }
+
   def isConnected(si: IntInterval) = {
-    (lb <= si.ub || (lb > Finite(Int.MinValue) && lb - Finite(1) <= si.ub)) &&
-      ((si.lb <= ub) || (si.lb > Finite(Int.MinValue) && si.lb - Finite(1) <= ub))
+    lbBeforeOrConnectedUb(si) && si.lbBeforeOrConnectedUb(this)
   }
 
   def span(si: IntInterval): IntInterval = {
-    val lowerCmp = lb.compare(si.lb);
-    val upperCmp = ub.compare(si.ub);
+    val lowerCmp = compare(lb, si.ub)
+    val upperCmp = compare(ub, si.lb)
     if (lowerCmp <= 0 && upperCmp >= 0) {
       this
     } else if (lowerCmp >= 0 && upperCmp <= 0) {
@@ -102,7 +76,21 @@ final case class IntInterval(
     }
   }
 
-  def isEmpty = lb.compare(ub) > 0
+  def finiteLb = lb match {
+    case Finite(l) => l
+    case _ => throw new AssertionError("lb is not finite")
+  }
+
+  def finiteUb = ub match {
+    case Finite(u) => u
+    case _ => throw new AssertionError("ub is not finite")
+  }
+
+  override def isEmpty = compare(lb, ub) > 0
+
+  def apply(idx: Int): Int = IntMath.checkedAdd(finiteLb, idx)
+
+  def length: Int = IntMath.checkedAdd(IntMath.checkedSubtract(finiteUb, finiteLb), 1)
 
   def isBefore(h: IntInterval): Boolean = {
     h.lb match {
@@ -136,21 +124,9 @@ final case class IntInterval(
     }
   }
 
-  def allValues: Iterator[Int] = {
-    val Finite(l) = lb
-    val Finite(u) = ub
-    new AbstractIterator[Int] {
-      private var i = l
-      def hasNext: Boolean = i <= u
-      def next(): Int =
-        if (hasNext) { val result = i; i += 1; result }
-        else Iterator.empty.next()
-    }
-  }
-
-  def nbValues: Int = {
-    val Finite(s) = (ub - lb) + Finite(1)
-    s
+  override def equals(o: Any) = o match {
+    case IntInterval(l, u) => lb == l && ub == u
+    case _ => super.equals(o)
   }
 
   override def toString = {
@@ -160,7 +136,6 @@ final case class IntInterval(
       case PlusInf => throw new AssertionError
     }
     val u = ub match {
-
       case Finite(i) => s"$i]"
       case PlusInf => "+\u221e)"
       case MinInf => throw new AssertionError

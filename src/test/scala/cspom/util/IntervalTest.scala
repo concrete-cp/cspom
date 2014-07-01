@@ -30,6 +30,13 @@ class IntervalTest extends FlatSpec with Matchers {
     IntInterval.all should not be IntInterval.atLeast(0)
   }
 
+  it should "be iterable" in {
+    val i = IntInterval(0, 0)
+    val l = i.toList
+
+    l should contain theSameElementsInOrderAs Iterable(0)
+  }
+
 }
 
 object Intervals {
