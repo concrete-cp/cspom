@@ -54,17 +54,11 @@ final class IntInterval(
     }
   }
 
-  def lbBeforeOrConnectedUb(si: IntInterval): Boolean = {
-    compare(lb, si.ub) <= 0 || (Infinitable.compare(lb, Int.MinValue) > 0 && compare(lb - Finite(1), si.ub) <= 0)
-  }
-
-  def isConnected(si: IntInterval) = {
-    lbBeforeOrConnectedUb(si) && si.lbBeforeOrConnectedUb(this)
-  }
+  def isConnected(si: IntInterval) = !((this isAfter si) || (this isBefore si))
 
   def span(si: IntInterval): IntInterval = {
-    val lowerCmp = compare(lb, si.ub)
-    val upperCmp = compare(ub, si.lb)
+    val lowerCmp = compare(lb, si.lb)
+    val upperCmp = compare(ub, si.ub)
     if (lowerCmp <= 0 && upperCmp >= 0) {
       this
     } else if (lowerCmp >= 0 && upperCmp <= 0) {
@@ -101,11 +95,12 @@ final class IntInterval(
   }
 
   def isBefore(elem: Int): Boolean = {
-    ub match {
-      case PlusInf => false
-      case Finite(i) => i < elem
-      case MinInf => throw new IllegalArgumentException
-    }
+    elem > Int.MinValue && (
+      ub match {
+        case PlusInf => false
+        case Finite(i) => i < elem - 1
+        case MinInf => throw new IllegalArgumentException
+      })
   }
 
   def isAfter(h: IntInterval): Boolean = {
@@ -117,16 +112,22 @@ final class IntInterval(
   }
 
   def isAfter(elem: Int): Boolean = {
-    lb match {
-      case MinInf => false
-      case Finite(i) => i > elem
-      case PlusInf => throw new IllegalArgumentException
-    }
+    elem < Int.MaxValue && (
+      lb match {
+        case MinInf => false
+        case Finite(i) =>
+          i > elem + 1
+        case PlusInf => throw new IllegalArgumentException
+      })
   }
 
   override def equals(o: Any) = o match {
     case IntInterval(l, u) => lb == l && ub == u
     case _ => super.equals(o)
+  }
+
+  override def hashCode = {
+    41 * lb.hashCode + ub.hashCode
   }
 
   override def toString = {

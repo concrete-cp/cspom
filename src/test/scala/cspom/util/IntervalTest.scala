@@ -9,9 +9,9 @@ class IntervalTest extends FlatSpec with Matchers {
 
   "Intervals" should "compare correctly" in {
     assert(IntInterval(0, 5) isBefore IntInterval(7, 10))
-    assert(IntInterval(0, 5) isBefore IntInterval(6, 10))
+    assert(IntInterval(0, 5) isConnected IntInterval(6, 10))
     assert(IntInterval(7, 10) isAfter IntInterval(0, 5))
-    assert(IntInterval(6, 10) isAfter IntInterval(0, 5))
+    assert(IntInterval(6, 10) isConnected IntInterval(0, 5))
     IntInterval(0, 5) & IntInterval(6, 10) shouldBe empty
     IntInterval(0, 5) & IntInterval(5, 10) should not be empty
   }

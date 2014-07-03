@@ -36,9 +36,11 @@ abstract class VariableCompiler(
   }
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {
-    (for ((k, v) <- data) yield {
-      replace(Seq(k), v, problem)
-    }).reduce(_ ++ _)
+    var d = Delta()
+    for ((k, v) <- data) {
+      d ++= replace(Seq(k), v, problem)
+    }
+    d
   }
 
   def selfPropagation = true

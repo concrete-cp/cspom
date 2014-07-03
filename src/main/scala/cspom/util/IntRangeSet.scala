@@ -6,12 +6,12 @@ import scala.collection.immutable.SortedSet
 
 object IntIntervalOrdering extends Ordering[IntInterval] {
   def compare(i: IntInterval, j: IntInterval) = {
-    if (i isConnected j) {
-      0
-    } else if (i isAfter j) {
+    if (i isAfter j) {
       1
-    } else {
+    } else if (i isBefore j) {
       -1
+    } else {
+      0
     }
   }
 }
@@ -43,7 +43,7 @@ object IntRangeSet {
   implicit def valueasRangeSet(i: Int) = IntRangeSet(i)
 }
 
-final class IntRangeSet(contents: TreeSet[IntInterval]) {
+final class IntRangeSet(private val contents: TreeSet[IntInterval]) {
   def lastInterval: IntInterval = contents.last
   def headInterval: IntInterval = contents.head
 
@@ -55,30 +55,55 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
     if (i.isEmpty) {
       this
     } else {
-      val itvOrdering = contents.ordering
-
-      val colliding = contents.from(i).takeWhile(j => itvOrdering.compare(i, j) == 0)
+      val colliding = contents.from(i).takeWhile(i.isConnected)
 
       new IntRangeSet(
         (contents -- colliding) + colliding.fold(i)(_ span _))
     }
   }
 
+  //  def ++(i: IntRangeSet): IntRangeSet = {
+  //    import IntIntervalOrdering.compare
+  //    var it1 = contents.toStream
+  //    var it2 = i.contents.toStream
+  //    var result = TreeSet.newBuilder(IntIntervalOrdering)
+  //    result.sizeHint(contents.size + i.contents.size)
+  //
+  //    while (it1.nonEmpty && it2.nonEmpty) {
+  //      val comp = compare(it1.head, it2.head)
+  //      if (comp == 0) {
+  //        it1 = (it1.head span it2.head) +: it1.tail
+  //        it2 = it2.tail
+  //      } else if (comp < 0) {
+  //        result += it1.head
+  //        it1 = it1.tail
+  //      } else {
+  //        result += it2.head
+  //        it2 = it2.tail
+  //      }
+  //    }
+  //
+  //    result ++= it1
+  //    result ++= it2
+  //
+  //    IntRangeSet(result.result)
+  //  }
+
   def --(i: IntInterval): IntRangeSet = {
     val itvOrdering = contents.ordering
 
-    val colliding = contents.from(i).takeWhile(j => itvOrdering.compare(i, j) == 0)
+    val colliding = contents.from(i).takeWhile(i.isConnected)
 
     val beforeItv = i.lb match {
       case MinInf => None
       case Finite(l) => if (l == Int.MinValue) None else Some(IntInterval.atMost(l - 1))
-      case PlusInf => throw new IllegalArgumentException
+      case PlusInf => throw new AssertionError
     }
 
     val afterItv = i.ub match {
       case PlusInf => None
       case Finite(u) => if (u == Int.MaxValue) None else Some(IntInterval.atLeast(u + 1))
-      case MinInf => throw new IllegalArgumentException
+      case MinInf => throw new AssertionError
     }
 
     var cleanTree: TreeSet[IntInterval] = contents -- colliding
@@ -102,9 +127,9 @@ final class IntRangeSet(contents: TreeSet[IntInterval]) {
 
   def ++(i: IntRangeSet): IntRangeSet = this ++ i.ranges
 
-  def ++(i: Traversable[IntInterval]): IntRangeSet = i.foldLeft(this)(_ ++ _)
+  def ++(i: Iterable[IntInterval]): IntRangeSet = i.foldLeft(this)(_ ++ _)
 
-  def ranges: Iterable[IntInterval] = contents
+  def ranges: SortedSet[IntInterval] = contents
 
   def --(i: IntRangeSet): IntRangeSet = i.ranges.foldLeft(this)(_ -- _)
 
