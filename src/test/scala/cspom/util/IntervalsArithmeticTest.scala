@@ -7,9 +7,8 @@ import org.scalatest.concurrent.Timeouts
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Millisecond
 import org.scalatest.time.Span
-import IntRangeSet.rangeAsRangeSet
-import IntRangeSet.valueAsSingletonRange
-import IntRangeSet.valueasRangeSet
+import RangeSet.apply
+import IntInterval.singleton
 import IntervalsArithmetic.Arithmetics
 import IntervalsArithmetic.RangeArithmetics
 import org.scalatest.time.Milliseconds
@@ -31,8 +30,8 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks
 
   it should "multiply" in {
     IntInterval(0, 5) * 10 shouldBe IntInterval(0, 50)
-    (IntRangeSet(IntInterval(0, 100)) -- IntInterval(10, 90)) * 10 shouldBe
-      IntRangeSet(Seq(IntInterval(0, 90), IntInterval(910, 1000)))
+    (RangeSet(IntInterval(0, 100)) -- IntInterval(10, 90)) * RangeSet(10) shouldBe
+      RangeSet(Seq(IntInterval(0, 90), IntInterval(910, 1000)))
 
     IntInterval.atLeast(10) * 100 shouldBe IntInterval.atLeast(1000)
   }
@@ -47,8 +46,8 @@ class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks
 
   it should "add" in {
 
-    ((IntRangeSet(IntInterval(0, 100)) -- IntInterval(10, 90)) + IntInterval(0, 10)) shouldBe
-      IntRangeSet(Seq(IntInterval(0, 19), IntInterval(91, 110)))
+    ((RangeSet(IntInterval(0, 100)) -- IntInterval(10, 90)) + IntInterval(0, 10)) shouldBe
+      RangeSet(Seq(IntInterval(0, 19), IntInterval(91, 110)))
 
   }
 

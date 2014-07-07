@@ -1,15 +1,10 @@
 package cspom.util
 
-import com.google.common.collect.{ BoundType => GuavaBT }
-import com.google.common.collect.ContiguousSet
-import com.google.common.collect.Range
-import com.typesafe.scalalogging.slf4j.LazyLogging
-import com.google.common.collect.DiscreteDomain
-import scala.collection.JavaConversions
 import scala.collection.AbstractIterator
-import com.google.common.math.IntMath
+
+import com.typesafe.scalalogging.slf4j.LazyLogging
+
 import Infinitable.InfinitableOrdering
-import InfinitableOrdering.compare
 
 object IntInterval {
   val all: IntInterval = IntInterval(MinInf, PlusInf)
@@ -21,25 +16,35 @@ object IntInterval {
   def apply(lower: Int, upper: Int): IntInterval =
     IntInterval(Finite(lower), Finite(upper))
 
-  def unapply(itv: IntInterval): Option[(Infinitable, Infinitable)] = Some((itv.lb, itv.ub))
+  def apply(lower: Infinitable, upper: Infinitable): IntInterval =
+    new IntInterval(lower, upper)
 
-  def apply(lower: Infinitable, upper: Infinitable): IntInterval = new IntInterval(lower, upper)
+  implicit def singleton(v: Int): IntInterval = IntInterval(v, v)
 
-  def singleton(v: Int): IntInterval = IntInterval(v, v)
+  val ordering = new IntIntervalOrdering[Infinitable]
 
 }
 
 final class IntInterval(
   val lb: Infinitable, val ub: Infinitable)
-  extends IndexedSeq[Int]
+  extends Interval[Infinitable] with Iterable[Int]
   with LazyLogging {
 
-  require(lb != PlusInf)
-  require(ub != MinInf)
+  //require(lb != PlusInf)
+  //require(ub != MinInf)
+
+  def compare(i: Infinitable, j: Infinitable) = InfinitableOrdering.compare(i, j)
+
+  def iterator: Iterator[Int] = {
+    val finiteLb = this.finiteLb
+    (0 until size).map(Math.checkedAdd(finiteLb, _)).iterator
+  }
+
+  def contains(c: Infinitable) = compare(lb, c) <= 0 && compare(ub, c) >= 0
 
   def contains(c: Int) = lb <= c && !(ub < c)
 
-  def &(si: IntInterval) = {
+  def &(si: Interval[Infinitable]) = {
 
     val lowerCmp = compare(lb, si.lb)
     val upperCmp = compare(ub, si.ub)
@@ -54,9 +59,37 @@ final class IntInterval(
     }
   }
 
-  def isConnected(si: IntInterval) = !((this isAfter si) || (this isBefore si))
+  def lessThan(siub: Infinitable) = {
+    if (siub <= Int.MinValue) {
+      IntInterval(lb, MinInf)
+    } else {
+      val rsiub = siub - Finite(1)
+      val upperCmp = compare(ub, rsiub)
+      if (upperCmp <= 0) {
+        this
+      } else {
+        IntInterval(lb, rsiub)
+      }
+    }
+  }
 
-  def span(si: IntInterval): IntInterval = {
+  def moreThan(silb: Infinitable) = {
+    if (Infinitable.compare(silb, Int.MaxValue) >= 0) {
+      IntInterval(PlusInf, ub)
+    } else {
+      val rsilb = silb + Finite(1)
+      val lowerCmp = compare(lb, rsilb)
+      if (lowerCmp >= 0) {
+        this
+      } else {
+        IntInterval(rsilb, ub)
+      }
+    }
+  }
+
+  def isConnected(si: Interval[Infinitable]) = !((this isAfter si) || (this isBefore si))
+
+  def span(si: Interval[Infinitable]) = {
     val lowerCmp = compare(lb, si.lb)
     val upperCmp = compare(ub, si.ub)
     if (lowerCmp <= 0 && upperCmp >= 0) {
@@ -80,13 +113,15 @@ final class IntInterval(
     case _ => throw new AssertionError("ub is not finite")
   }
 
-  override def isEmpty = compare(lb, ub) > 0
+  override def isEmpty = {
+    lb == PlusInf ||
+      ub == MinInf ||
+      compare(lb, ub) > 0
+  }
 
-  def apply(idx: Int): Int = IntMath.checkedAdd(finiteLb, idx)
+  override def size: Int = Math.checkedAdd(Math.checkedSubtract(finiteUb, finiteLb), 1)
 
-  def length: Int = IntMath.checkedAdd(IntMath.checkedSubtract(finiteUb, finiteLb), 1)
-
-  def isBefore(h: IntInterval): Boolean = {
+  def isBefore(h: Interval[Infinitable]): Boolean = {
     h.lb match {
       case MinInf => false
       case Finite(i) => isBefore(i)
@@ -103,7 +138,7 @@ final class IntInterval(
       })
   }
 
-  def isAfter(h: IntInterval): Boolean = {
+  def isAfter(h: Interval[Infinitable]): Boolean = {
     h.ub match {
       case PlusInf => false
       case Finite(i) => isAfter(i)
@@ -121,9 +156,11 @@ final class IntInterval(
       })
   }
 
-  override def equals(o: Any) = o match {
-    case IntInterval(l, u) => lb == l && ub == u
-    case _ => super.equals(o)
+  override def equals(o: Any) = {
+    o match {
+      case Interval(l, u) => lb == l && ub == u
+      case _ => super.equals(o)
+    }
   }
 
   override def hashCode = {

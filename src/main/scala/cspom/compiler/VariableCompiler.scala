@@ -3,13 +3,14 @@ package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.util.ContiguousIntRangeSet
-import cspom.util.IntRangeSet
+import cspom.util.RangeSet
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
 import cspom.variable.IntVariable.ranges
 import cspom.variable.SimpleExpression
+import cspom.util.Infinitable
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -45,7 +46,7 @@ abstract class VariableCompiler(
 
   def selfPropagation = true
 
-  def reduceDomain(v: SimpleExpression[Int], d: IntRangeSet): SimpleExpression[Int] = {
+  def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Infinitable]): SimpleExpression[Int] = {
     val old = IntVariable.ranges(v)
     val reduced = old & d
     if (old == reduced) {
@@ -58,7 +59,7 @@ abstract class VariableCompiler(
     }
   }
 
-  def applyDomain(v: SimpleExpression[Int], reduced: IntRangeSet): SimpleExpression[Int] = {
+  def applyDomain(v: SimpleExpression[Int], reduced: RangeSet[Infinitable]): SimpleExpression[Int] = {
     val old = IntVariable.ranges(v)
     if (old == reduced) {
       v

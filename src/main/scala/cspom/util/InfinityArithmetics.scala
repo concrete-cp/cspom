@@ -1,8 +1,6 @@
 package cspom.util
 
-import com.google.common.math.IntMath
 import java.math.RoundingMode
-import scala.math.Ordering.IntOrdering
 
 object Infinitable {
   implicit object InfinitableOrdering extends Ordering[Infinitable] {
@@ -69,19 +67,19 @@ case object PlusInf extends Infinitable {
 }
 case class Finite(i: Int) extends AnyVal with Infinitable {
   def +(v: Infinitable) = v match {
-    case Finite(j) => Finite(IntMath.checkedAdd(i, j))
+    case Finite(j) => Finite(Math.checkedAdd(i, j))
     case u => u + this
   }
   def -(v: Infinitable) = v match {
-    case Finite(j) => Finite(IntMath.checkedSubtract(i, j))
+    case Finite(j) => Finite(Math.checkedSubtract(i, j))
     case u => u - this
   }
   def *(v: Infinitable) = v match {
-    case Finite(j) => Finite(IntMath.checkedMultiply(i, j))
+    case Finite(j) => Finite(Math.checkedMultiply(i, j))
     case u => u * this
   }
   def div(v: Infinitable, rm: RoundingMode) = v match {
-    case Finite(j) => Finite(IntMath.divide(i, j, rm))
+    case Finite(j) => Finite(Math.divide(i, j, rm))
     case u => Finite(0)
   }
   def divisible(v: Infinitable) = v match {

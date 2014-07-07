@@ -1,24 +1,22 @@
 package cspom.util
 
 import java.math.RoundingMode
-import com.google.common.math.IntMath
-import IntRangeSet._
 import Infinitable.compare
 
 object IntervalsArithmetic {
 
   def apply(
-    f: (IntInterval, IntInterval) => IntInterval,
-    ii: IntRangeSet, jj: IntRangeSet): IntRangeSet = {
-    var result = IntRangeSet()
+    f: (Interval[Infinitable], Interval[Infinitable]) => Interval[Infinitable],
+    ii: RangeSet[Infinitable], jj: RangeSet[Infinitable]): RangeSet[Infinitable] = {
+    var result = RangeSet[Infinitable]()
     for (i <- ii.ranges; j <- jj.ranges) {
       result ++= f(i, j)
     }
     result
   }
 
-  def apply(f: IntInterval => IntInterval, ii: IntRangeSet): IntRangeSet = {
-    ii.ranges.foldLeft(IntRangeSet())(_ ++ f(_))
+  def apply(f: Interval[Infinitable] => Interval[Infinitable], ii: RangeSet[Infinitable]): RangeSet[Infinitable] = {
+    ii.ranges.foldLeft(RangeSet[Infinitable]())(_ ++ f(_))
   }
 
   private def asRange(l: Infinitable, u: Infinitable) = {
@@ -29,16 +27,16 @@ object IntervalsArithmetic {
     }
   }
 
-  implicit class RangeArithmetics(val r: IntRangeSet) extends AnyVal {
-    def +(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ + _, r, i)
-    def unary_-(): IntRangeSet = IntervalsArithmetic(-_, r)
-    def -(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ - _, r, i)
-    def *(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ * _, r, i)
-    def /(i: IntRangeSet): IntRangeSet = IntervalsArithmetic(_ / _, r, i)
-    def abs: IntRangeSet = IntervalsArithmetic(_.abs, r)
+  implicit class RangeArithmetics(val r: RangeSet[Infinitable]) extends AnyVal {
+    def +(i: RangeSet[Infinitable]): RangeSet[Infinitable] = IntervalsArithmetic(_ + _, r, i)
+    def unary_-(): RangeSet[Infinitable] = IntervalsArithmetic(-_, r)
+    def -(i: RangeSet[Infinitable]): RangeSet[Infinitable] = IntervalsArithmetic(_ - _, r, i)
+    def *(i: RangeSet[Infinitable]): RangeSet[Infinitable] = IntervalsArithmetic(_ * _, r, i)
+    def /(i: RangeSet[Infinitable]): RangeSet[Infinitable] = IntervalsArithmetic(_ / _, r, i)
+    def abs: RangeSet[Infinitable] = IntervalsArithmetic(_.abs, r)
   }
 
-  implicit class Arithmetics(val r: IntInterval) extends AnyVal {
+  implicit class Arithmetics(val r: Interval[Infinitable]) extends AnyVal {
     /**
      * [a, b] + [c, d] = [a + c, b + d]
      * [a, b] − [c, d] = [a − d, b − c]
@@ -46,46 +44,35 @@ object IntervalsArithmetic {
      * [a, b] ÷ [c, d] = [min (a ÷ c, a ÷ d, b ÷ c, b ÷ d), max (a ÷ c, a ÷ d, b ÷ c, b ÷ d)] when 0 is not in [c, d].
      */
 
-    def +(i: IntInterval): IntInterval = {
-      val IntInterval(a, b) = r
-      val IntInterval(c, d) = i
-
-      val lb = a + c
-
-      val ub = b + d
-
-      asRange(lb, ub)
+    def +(i: Interval[Infinitable]): Interval[Infinitable] = {
+      asRange(r.lb + i.lb, r.ub + i.ub)
     }
 
-    def unary_-(): IntInterval = {
-      val IntInterval(a, b) = r
-
-      asRange(-b, -a)
+    def unary_-(): Interval[Infinitable] = {
+      asRange(-r.ub, -r.lb)
     }
 
-    def -(i: IntInterval) = this + -i
+    def -(i: Interval[Infinitable]) = {
+      asRange(r.lb - i.ub, r.ub - i.lb)
+    }
 
-    def -(v: Int) = this + -v
+    def *(i: Interval[Infinitable]): Interval[Infinitable] = {
 
-    def *(i: IntInterval): IntInterval = {
+      val Interval(a, b) = r
+      val Interval(c, d) = i
+      
+      val l = Seq(a * c, a * d, b * c, b * d)
 
-      val IntInterval(a, b) = r
-      val IntInterval(c, d) = i
-
-      val l = List(a * c, a * d, b * c, b * d).min
-
-      val u = List(a * c, a * d, b * c, b * d).max
-
-      asRange(l, u)
+      asRange(l.min, l.max)
 
     }
 
-    def /(i: IntInterval): IntInterval = {
-      if (i.contains(0)) {
+    def /(i: Interval[Infinitable]): Interval[Infinitable] = {
+      if (i.contains(Finite(0))) {
         IntInterval.all
       } else {
-        val IntInterval(a, b) = r
-        val IntInterval(c, d) = i
+        val Interval(a, b) = r
+        val Interval(c, d) = i
 
         val l = Seq(
           a.div(c, RoundingMode.CEILING),
@@ -103,11 +90,11 @@ object IntervalsArithmetic {
       }
     }
 
-    def /(v: Int): IntInterval = {
+    def /(v: Int): Interval[Infinitable] = {
       if (v == 0) {
         IntInterval.all
       } else {
-        val IntInterval(lb, ub) = r
+        val Interval(lb, ub) = r
         val d = Finite(v)
         if (v > 0) {
           asRange(
@@ -121,8 +108,8 @@ object IntervalsArithmetic {
       }
     }
 
-    def abs: IntInterval = {
-      val IntInterval(l, u) = r
+    def abs: Interval[Infinitable] = {
+      val Interval(l, u) = r
       if (compare(u, 0) <= 0) { -r }
       else if (compare(l, 0) >= 0) { r }
       else {

@@ -1,13 +1,12 @@
 package cspom.variable;
 
-import scala.collection.SortedSet
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
-import cspom.util.IntRangeSet
+
 import cspom.util.ContiguousIntRangeSet
-import com.google.common.collect.RangeSet
 import cspom.util.IntInterval
+import cspom.util.RangeSet
 
 final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChecks {
 
@@ -15,7 +14,7 @@ final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChec
     val d = List(0, 0, -2147483648)
 
     val intDomain = new ContiguousIntRangeSet(
-      IntRangeSet(d.map(IntInterval.singleton(_))))
+      RangeSet(d.map(IntInterval.singleton(_))))
 
     intDomain should contain(0)
     intDomain should contain(-2147483648)
@@ -28,7 +27,7 @@ final class ExtensiveDomainTest extends FlatSpec with Matchers with PropertyChec
       whenever(d.nonEmpty) {
 
         val intDomain = new ContiguousIntRangeSet(
-          IntRangeSet(d.map(IntInterval.singleton(_))))
+          RangeSet(d.map(IntInterval.singleton(_))))
 
         d.toSet shouldBe intDomain
 

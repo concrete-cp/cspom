@@ -1,13 +1,14 @@
 package cspom.variable
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
-
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
-import cspom.util.IntRangeSet
+import cspom.util.RangeSet
 import cspom.util.IntervalsArithmetic
+import cspom.util.Infinitable
+import cspom.util.Finite
 
-final class IntVariable(val domain: IntRangeSet, params: Map[String, Any] = Map())
+final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
 
   val asSortedSet = new ContiguousIntRangeSet(domain)
@@ -23,13 +24,13 @@ final class IntVariable(val domain: IntRangeSet, params: Map[String, Any] = Map(
   }
 
   def contains[S >: Int](that: S): Boolean = that match {
-    case t: Int => domain.contains(t)
+    case t: Int => domain.contains(Finite(t))
     case _ => false
   }
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
-      case const @ CSPOMConstant(c: Int) if domain.contains(c) =>
+      case const @ CSPOMConstant(c: Int) if domain.contains(Finite(c)) =>
         const.asInstanceOf[CSPOMConstant[Int]]
       //CSPOMConstant(c, Map("intersection" -> ((this, c))))
       case v: IntVariable => {
@@ -55,32 +56,32 @@ final class IntVariable(val domain: IntRangeSet, params: Map[String, Any] = Map(
 
 object IntVariable {
   def apply(values: Iterable[Int], params: Map[String, Any] = Map()): IntVariable = {
-    new IntVariable(IntRangeSet(values.map(
+    new IntVariable(RangeSet(values.map(
       v => IntInterval.singleton(v))), params)
   }
 
-  def apply(values: IntRangeSet): IntVariable = {
+  def apply(values: RangeSet[Infinitable]): IntVariable = {
     IntVariable(values, Map[String, Any]())
   }
 
-  def apply(values: IntRangeSet, params: Map[String, Any]) =
+  def apply(values: RangeSet[Infinitable], params: Map[String, Any]) =
     new IntVariable(values, params)
 
   def apply(values: IntInterval): IntVariable = {
-    apply(IntRangeSet(values))
+    apply(RangeSet(values))
   }
 
   def free(params: Map[String, Any] = Map()): IntVariable =
-    new IntVariable(IntRangeSet.all, params)
+    new IntVariable(RangeSet.allInt, params)
 
   def unapply(v: IntVariable) = Some((v.domain, v.params))
 
   implicit def iterable(s: SimpleExpression[Int]) =
     new ContiguousIntRangeSet(ranges(s))
 
-  implicit def ranges(e: SimpleExpression[Int]): IntRangeSet = e match {
+  implicit def ranges(e: SimpleExpression[Int]): RangeSet[Infinitable] = e match {
     case v: IntVariable => v.domain
-    case CSPOMConstant(c: Int) => IntRangeSet(IntInterval.singleton(c))
+    case CSPOMConstant(c: Int) => RangeSet(IntInterval.singleton(c))
   }
 
   implicit def arithmetics(e: SimpleExpression[Int]) =

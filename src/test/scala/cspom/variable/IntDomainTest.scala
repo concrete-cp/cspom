@@ -9,14 +9,15 @@ import org.scalatest.time.Second
 import org.scalatest.time.Span
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
-import cspom.util.IntRangeSet
+import cspom.util.RangeSet
 import cspom.util.Intervals
 import cspom.xcsp.XCSPParser
 import cspom.util.Finite
+import cspom.util.Infinitable
 
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
-  implicit def asSet(r: IntRangeSet): SortedSet[Int] =
+  implicit def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
     new ContiguousIntRangeSet(r)
 
   "XCSP domain parser" should "handle disjoint values and intervals" in {
@@ -42,8 +43,8 @@ class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Time
 
   it should "coalesce connected ranges" in {
     val itv = XCSPParser.parseDomain("3..5 6 7..10")
-    itv shouldBe a[IntRangeSet]
-    itv shouldBe IntRangeSet(IntInterval(3, 10))
+    itv shouldBe a[RangeSet[_]]
+    itv shouldBe RangeSet(IntInterval(3, 10))
   }
 
 }

@@ -7,18 +7,18 @@ import org.scalameter.reporting.RegressionReporter
 import org.scalameter.reporting.HtmlReporter
 import org.scalameter.Reporter
 
-object RangeMicrobenchmark extends PerformanceTest.OnlineRegressionReport {
+object RangeMicrobenchmark extends PerformanceTest.OfflineRegressionReport {
 
   val sizes: Gen[Int] = Gen.range("size")(0, 200, 20)
 
   def simpleRanges = for (size <- sizes) yield {
-    (IntRangeSet((0 until size).map(i => IntInterval.singleton(i * 13))),
-      IntRangeSet((0 until size).map(i => IntInterval.singleton(i * 13 + 10000))))
+    (RangeSet((0 until size).map(i => IntInterval.singleton(i * 13))),
+      RangeSet((0 until size).map(i => IntInterval.singleton(i * 13 + 10000))))
   }
 
   def simpleRanges2 = for (size <- sizes) yield {
-    (IntRangeSet((0 until size).map(i => IntInterval.singleton(i * 13))),
-      IntRangeSet((0 until size).map(i => IntInterval.singleton(i * 13 + 130))))
+    (RangeSet((0 until size).map(i => IntInterval.singleton(i * 13))),
+      RangeSet((0 until size).map(i => IntInterval.singleton(i * 13 + 130))))
   }
 
   performance of "RangeSet" in {
