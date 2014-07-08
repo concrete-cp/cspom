@@ -1,12 +1,13 @@
 package cspom.variable
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
 import cspom.util.RangeSet
 import cspom.util.IntervalsArithmetic
 import cspom.util.Infinitable
 import cspom.util.Finite
+import cspom.util.Interval
 
 final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
@@ -87,10 +88,17 @@ object IntVariable {
   implicit def arithmetics(e: SimpleExpression[Int]) =
     IntervalsArithmetic.RangeArithmetics(ranges(e))
 
-  def intExpression(e: SimpleExpression[_]): SimpleExpression[Int] = e match {
+  def intExpression(e: CSPOMExpression[_]): SimpleExpression[Int] = e match {
     case f: FreeVariable => free(f.params)
     case i: IntVariable => i
     case c @ CSPOMConstant(_: Int) => c.asInstanceOf[CSPOMConstant[Int]]
     case _ => throw new IllegalArgumentException(s"Cannot convert $e to int variable")
+  }
+
+  def span(e: SimpleExpression[Int]): Interval[Infinitable] = e match {
+    case f: FreeVariable => IntInterval.all
+    case i: IntVariable => i.domain.span
+    case CSPOMConstant(i: Int) => IntInterval.singleton(i)
+    case _ => throw new IllegalArgumentException(s"Cannot span $e")
   }
 }

@@ -9,7 +9,7 @@ import scala.collection.mutable.HashMap
 import cspom.StatisticsManager
 import cspom.TimedException
 import cspom.VariableNames
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 sealed trait Reason
 case class ConstraintReason(constraint: CSPOMConstraint[_]) extends Reason

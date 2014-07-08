@@ -3,7 +3,7 @@ package cspom.extension
 import scala.collection.mutable
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import java.util.IdentityHashMap
 import scala.collection.JavaConversions
 

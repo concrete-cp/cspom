@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes.concrete"
 
-version := "2.2"
+version := "2.3-SNAPSHOT"
 
 // For BZip2
 resolvers += "Concrete repository" at "http://concrete-cp.github.io/concrete/repository"
@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
 	"org.scalatest" %% "scalatest" % "2.2.0" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.11.4" % "test",
 	"ch.qos.logback" % "logback-classic" % "1.1.2",
-	"com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
+	"com.typesafe.scala-logging" %% "scala-logging" % "3.0.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.2",
 	"com.github.axel22" %% "scalameter" % "0.5-M2" % "test"

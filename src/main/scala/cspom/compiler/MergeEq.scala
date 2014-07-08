@@ -7,7 +7,7 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 /**
  * If given constraint is an all-equal constraint, merges and removes all

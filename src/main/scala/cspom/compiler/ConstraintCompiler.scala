@@ -8,7 +8,7 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.flatzinc.FZAnnotation
 import cspom.flatzinc.FZVarParId
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 trait ConstraintCompiler extends LazyLogging {
   type A

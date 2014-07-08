@@ -6,7 +6,7 @@ import cspom.extension.Relation
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import scala.collection.mutable.HashMap
 import cspom.extension.MDD
 import scala.collection.mutable.WeakHashMap

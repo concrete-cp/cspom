@@ -2,7 +2,7 @@ package cspom.util
 
 import scala.collection.AbstractIterator
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 import Infinitable.InfinitableOrdering
 
@@ -171,12 +171,12 @@ final class IntInterval(
     val l = lb match {
       case MinInf => "(-\u221e"
       case Finite(i) => s"[$i"
-      case PlusInf => throw new AssertionError
+      case PlusInf => "(+\u221e"
     }
     val u = ub match {
       case Finite(i) => s"$i]"
       case PlusInf => "+\u221e)"
-      case MinInf => throw new AssertionError
+      case MinInf => "-\u221e)"
     }
 
     s"$l‥$u"

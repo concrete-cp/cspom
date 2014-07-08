@@ -36,7 +36,10 @@ sealed trait Infinitable extends Any {
 }
 case object MinInf extends Infinitable {
   def +(v: Infinitable) = MinInf
-  def -(v: Infinitable) = MinInf
+  def -(v: Infinitable) = {
+    require(v != MinInf, "-Inf - -Inf is undefined")
+    MinInf
+  }
   def *(v: Infinitable) = {
     val comp = Infinitable.InfinitableOrdering.compare(v, Finite(0))
     if (comp > 0) {
@@ -56,7 +59,10 @@ case object MinInf extends Infinitable {
 }
 case object PlusInf extends Infinitable {
   def +(v: Infinitable) = PlusInf
-  def -(v: Infinitable) = PlusInf
+  def -(v: Infinitable) = {
+    require(v != PlusInf, "Inf - Inf is undefined")
+    PlusInf
+  }
   def *(v: Infinitable) = -(MinInf * v)
   def div(v: Infinitable, rm: RoundingMode) = -(MinInf.div(v, rm))
   def unary_-() = MinInf
@@ -72,7 +78,7 @@ case class Finite(i: Int) extends AnyVal with Infinitable {
   }
   def -(v: Infinitable) = v match {
     case Finite(j) => Finite(Math.checkedSubtract(i, j))
-    case u => u - this
+    case u => -u + this
   }
   def *(v: Infinitable) = v match {
     case Finite(j) => Finite(Math.checkedMultiply(i, j))

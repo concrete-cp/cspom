@@ -9,7 +9,7 @@ import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMSeq
 import cspom.variable.SimpleExpression
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 final case class CSPOMConstraint[+T](
   val result: CSPOMExpression[T],

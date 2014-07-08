@@ -5,7 +5,7 @@ import scala.collection.mutable.HashMap
 import java.lang.reflect.Modifier
 import java.lang.reflect.Field
 import scala.annotation.tailrec
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 class StatisticsManager extends LazyLogging {
 

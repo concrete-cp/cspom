@@ -23,7 +23,7 @@ import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
 import cspom.variable.CSPOMVariable
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 
 object NameParser extends JavaTokenParsers {
 
