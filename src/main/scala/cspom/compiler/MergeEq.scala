@@ -18,7 +18,7 @@ object MergeEq extends ConstraintCompiler with LazyLogging {
   type A = Seq[SimpleExpression[Any]]
 
   override def mtch(c: CSPOMConstraint[_], p: CSPOM) = c match {
-    case CSPOMConstraint(CSPOMConstant(true), 'eq, args: Seq[_], params) if !params.contains("neg") &&
+    case CSPOMConstraint(CSPOMConstant(true), 'eq, args: Seq[_], params) if params.get("neg").forall(_ == false) &&
       params.get("offset").forall(_ == 0) && args.forall(_.isInstanceOf[SimpleExpression[_]]) =>
       val se = args.asInstanceOf[Seq[SimpleExpression[_]]].distinct
 

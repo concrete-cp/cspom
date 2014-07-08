@@ -71,13 +71,11 @@ final class ProblemCompiler(
 
             val enqueue = delta.added.flatMap(
               _.fullScope).distinct.flatMap(
-                problem.constraints(_).filter(_ ne constraint)).distinct
-
-            logger.debug(s"Enqueuing ${enqueue.map(_.toString(vn))}")
+                problem.constraints(_)).distinct
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
               if (j != i || compiler.selfPropagation) {
-                for (ac <- enqueue) {
+                for (ac <- enqueue if i != j || (ac ne constraint)) {
                   toCompile(j).enqueue(ac.id)
                 }
               }

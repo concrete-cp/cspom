@@ -21,7 +21,7 @@ case class FZBoolConst(value: Boolean) extends FZConstant[Boolean] {
 }
 
 case class FZSetConst(value: Seq[Int]) extends FZConstant[Seq[Int]] {
-  def asConstant = new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
+  def asConstant = ??? //new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
 }
 
 case class FZFloatConst(value: Double) extends FZConstant[Double] {
