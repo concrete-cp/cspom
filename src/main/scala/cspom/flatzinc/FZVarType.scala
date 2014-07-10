@@ -6,6 +6,7 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
 import FlatZincParser.fzAnnotations
+import cspom.util.IntInterval
 
 sealed trait FZVarType[T] {
   def genVariable(ann: Seq[FZAnnotation]): CSPOMExpression[T]
@@ -28,11 +29,12 @@ case object FZInt extends FZVarType[Int] {
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(lb to ub, fzAnnotations(ann))
+  def genVariable(ann: Seq[FZAnnotation]) =
+    IntVariable(IntInterval(lb, ub), fzAnnotations(ann))
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable(values, fzAnnotations(ann))
+  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.ofSeq(values, fzAnnotations(ann))
 }
 
 case object FZIntSet extends FZVarType[Int] {

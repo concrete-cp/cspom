@@ -37,7 +37,7 @@ final class IntInterval(
 
   def iterator: Iterator[Int] = {
     val finiteLb = this.finiteLb
-    (0 until size).map(Math.checkedAdd(finiteLb, _)).iterator
+    Iterator.range(0, size).map(Math.checkedAdd(finiteLb, _))
   }
 
   def contains(c: Infinitable) = compare(lb, c) <= 0 && compare(ub, c) >= 0

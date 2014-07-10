@@ -80,7 +80,21 @@ class CSPOM extends LazyLogging {
   }
 
   def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
-    namedExpressions.filter(_._2 == e).map(_._1)
+    namedExpressions flatMap {
+      case (n, expr) => namesOf(e, n, expr)
+    }
+  }
+
+  private def namesOf(toFind: CSPOMExpression[_], root: String, expr: CSPOMExpression[_]): Iterable[String] = {
+    expr match {
+      case `toFind` => Iterable(root)
+      case CSPOMSeq(seq, indices, _) =>
+        for (
+          (v, i) <- seq zip indices;
+          n <- namesOf(toFind, s"$root[$i]", v)
+        ) yield n
+      case _ => Iterable()
+    }
   }
 
   def variable(name: String): CSPOMVariable[_] = {
@@ -108,7 +122,7 @@ class CSPOM extends LazyLogging {
   private val _constraints = collection.mutable.Set[CSPOMConstraint[_]]()
 
   def constraints = _constraints.iterator
-  
+
   def constraintSet = _constraints //.toSet
 
   val getConstraints = JavaConversions.asJavaIterator(constraints)

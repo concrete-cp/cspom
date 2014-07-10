@@ -56,10 +56,15 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
 }
 
 object IntVariable {
-  def apply(values: Iterable[Int], params: Map[String, Any] = Map()): IntVariable = {
+  def apply(values: Range, params: Map[String, Any] = Map()): IntVariable = apply(
+    IntInterval(values.head, values.last), params)
+
+  def ofSeq(values: Seq[Int], params: Map[String, Any]): IntVariable = {
     new IntVariable(RangeSet(values.map(
       v => IntInterval.singleton(v))), params)
   }
+
+  def ofSeq(values: Int*): IntVariable = ofSeq(values, Map[String, Any]())
 
   def apply(values: RangeSet[Infinitable]): IntVariable = {
     IntVariable(values, Map[String, Any]())
@@ -68,8 +73,8 @@ object IntVariable {
   def apply(values: RangeSet[Infinitable], params: Map[String, Any]) =
     new IntVariable(values, params)
 
-  def apply(values: IntInterval): IntVariable = {
-    apply(RangeSet(values))
+  def apply(values: IntInterval, params: Map[String, Any]): IntVariable = {
+    apply(RangeSet(values), params)
   }
 
   def free(params: Map[String, Any] = Map()): IntVariable =

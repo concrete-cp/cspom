@@ -3,13 +3,13 @@ package cspom.compiler
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.OptionValues
-
 import cspom.CSPOM
 import cspom.CSPOM._
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
+import cspom.util.IntInterval
 
 class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
@@ -36,9 +36,9 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
   it should "simplify two Variables" in {
 
     val cspom = CSPOM { implicit problem =>
-      val v0 = IntVariable(Seq(1, 2, 3)) as "V0"
+      val v0 = IntVariable.ofSeq(1, 2, 3) as "V0"
       ctr(CSPOMConstraint('dummy, Seq(v0)))
-      val v1 = IntVariable(Seq(2, 3, 4))
+      val v1 = IntVariable.ofSeq(2, 3, 4)
       ctr(v0 === v1)
     }
 

@@ -94,46 +94,6 @@ object CSPOMConstraint {
     new CSPOMConstraint(CSPOMConstant(true), function, arguments, params)
 }
 
-final class VariableNames(cspom: CSPOM) {
-
-  val generatedNames = new HashMap[CSPOMExpression[_], String]
-
-  for ((n, v) <- cspom.namedExpressions) {
-    name(v, n)
-  }
-
-  private def add(e: CSPOMExpression[_], n: String) {
-    generatedNames(e) = generatedNames.get(e) match {
-      case Some(ns) => s"$ns||$n"
-      case None => n
-    }
-  }
-
-  private def name(e: CSPOMExpression[_], root: String): Unit = {
-    add(e, root)
-
-    e match {
-      case CSPOMSeq(v, i, _) => for ((v, i) <- (v zip i)) {
-        name(v, s"$root[$i]")
-      }
-      case _ =>
-    }
-  }
-
-  var id = 0
-
-  private def nextName(e: CSPOMExpression[_]) = e match {
-    case CSPOMConstant(v) => v.toString
-    case CSPOMSeq(v, _, _) => v.map(names).mkString("CSPOMSeq(", ", ", ")")
-    case _ =>
-      id += 1
-      "_" + id
-  }
-
-  def names(expression: CSPOMExpression[_]): String =
-    generatedNames.getOrElseUpdate(expression, nextName(expression))
-}
-
 case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {
   def param(key: String, v: Any) = ConstraintParameters(m + (key -> v))
   def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = ConstraintParameters(m + kv)
