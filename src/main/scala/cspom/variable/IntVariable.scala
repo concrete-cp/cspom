@@ -100,6 +100,12 @@ object IntVariable {
     case _ => throw new IllegalArgumentException(s"Cannot convert $e to int variable")
   }
 
+  def isInt(e: CSPOMExpression[_]): Boolean = e match {
+    case i: IntVariable => true
+    case c @ CSPOMConstant(_: Int) => true
+    case _ => false
+  }
+
   def span(e: SimpleExpression[Int]): Interval[Infinitable] = e match {
     case f: FreeVariable => IntInterval.all
     case i: IntVariable => i.domain.span

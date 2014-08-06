@@ -1,5 +1,7 @@
 package cspom
 
+import scala.reflect.ClassTag
+
 trait Parameterized {
 
   def params: Map[String, Any]
@@ -15,13 +17,19 @@ trait Parameterized {
     }
   }
 
-  def displayParams: String =
-    params map {
+  def getParamOrElse[A: ClassTag](name: String, default: => A): A = {
+    params.get(name).map(_.asInstanceOf[A]).getOrElse(default)
+  }
+
+  def displayParams: String = params
+    .map {
       case (k, Unit) => k
       case (k, v) => s"$k: $v"
-    } map {
+    }
+    .map {
       s => s" :: $s"
-    } mkString
+    }
+    .mkString
 
   def hasParam = params.contains(_)
 }

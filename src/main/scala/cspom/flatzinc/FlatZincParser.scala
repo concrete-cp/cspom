@@ -37,18 +37,20 @@ object FlatZincParser extends RegexParsers {
       case Success((cspom, goal), _) =>
         ProblemCompiler.compile(cspom, FZPatterns())
         (cspom, Map('goal -> goal))
-      case NoSuccess(msg, next) => throw new CSPParseException(msg, null, next.pos.line)
+      case n: NoSuccess => throw new CSPParseException(n.toString, null, n.next.pos.line)
     }
   }
 
   private def mapVariables(params: Map[String, CSPOMExpression[_]], variables: Seq[(String, CSPOMExpression[_], Option[FZExpr[_]])]) = {
 
-    val decl: Map[String, CSPOMExpression[Any]] = variables.map {
-      case (name, single: CSPOMVariable[_], _) => name -> single
-      case (name, seq: CSPOMSeq[_], _) => name -> seq
-      case (name, c: CSPOMConstant[_], _) =>
-        throw new IllegalStateException(s"Unexpected constant $name: $c")
-    } toMap
+    val decl: Map[String, CSPOMExpression[Any]] = variables
+      .map {
+        case (name, single: CSPOMVariable[_], _) => name -> single
+        case (name, seq: CSPOMSeq[_], _) => name -> seq
+        case (name, c: CSPOMConstant[_], _) => name -> c
+        //throw new IllegalStateException(s"Unexpected constant $name: $c")
+      }
+      .toMap
 
     val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
       case (_, expr, Some(aff)) => expr -> aff.toCSPOM(decl)
@@ -93,7 +95,7 @@ object FlatZincParser extends RegexParsers {
     "bool" ^^^ FZBoolean |
       "float" ^^^ FZFloat |
       "int" ^^^ FZInt |
-      "set of int" ~> err("Unsupported") |
+      "set of int" ^^^ FZIntSet |
       "array [" ~> index_set <~ "] of bool" ^^ { FZArray[Boolean](_, FZBoolean) } |
       "array [" ~> index_set <~ "] of float" ^^ { s => FZArray[Double](s, FZFloat) } |
       "array [" ~> index_set <~ "] of int" ^^ { FZArray[Int](_, FZInt) } |

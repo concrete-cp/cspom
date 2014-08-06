@@ -36,6 +36,30 @@ final class IdMap[A, B] extends mutable.Map[A, B] {
 
 }
 
+final case class ShallowEq[A](val m: MDD[A]) {
+  override def hashCode = m.hashCode
+
+  override def equals(o: Any) = {
+    val ShallowEq(m1) = o
+    (m1 eq m) || m1.isInstanceOf[MDDNode[_]] && m.isInstanceOf[MDDNode[_]] && {
+      val n = m1.asInstanceOf[MDDNode[A]]
+      val m2 = m.asInstanceOf[MDDNode[A]]
+      m2.trie.size == n.trie.size && n.trie.forall {
+        case (k1, v1) => m2.trie.get(k1).exists(v1 eq _)
+      }
+    }
+  }
+}
+
+final case class IdEq[A <: AnyRef](val m: A) {
+  override def hashCode = m.hashCode
+
+  override def equals(o: Any) = {
+    val IdEq(m1) = o
+    m1 eq m
+  }
+}
+
 final class IdSet[A] extends mutable.Set[A] {
   val idMap = new IdentityHashMap[A, Unit]
   def iterator: Iterator[A] = JavaConversions.asScalaSet(idMap.keySet).iterator
@@ -69,20 +93,16 @@ sealed trait MDD[A] extends Relation[A] {
   /*
    * Do not use IdMap here as reduceable MDDs are equal but not ident
    */
-  final def reduce = reduce2
+  final def reduce: MDD[A] = reduce(new HashMap[(Int, MDD[A]), MDD[A]](), 0)
 
-  final def reduce1: MDD[A] = reduce1(new HashMap())
-  def reduce1(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A]
-
-  final def reduce2: MDD[A] = reduce2(new HashMap())
-  def reduce2(mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A]
+  def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A]
 
   override def toString = s"MDD with $edges edges representing $lambda tuples"
 
-  final def filter(f: (Int, A) => Boolean): MDD[A] = filter(f, 0, new IdMap[MDD[A], MDD[A]]()).reduce
+  final def filter(f: (Int, A) => Boolean): MDD[A] = filter(f, 0, new IdMap[MDD[A], MDD[A]]())
   def filter(f: (Int, A) => Boolean, k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A]
 
-  final def project(c: Seq[Int]): MDD[A] = project(c.toSet, 0, new IdMap[MDD[A], MDD[A]]()).reduce
+  final def project(c: Seq[Int]): MDD[A] = project(c.toSet, 0, new IdMap[MDD[A], MDD[A]]())
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A]
 
   override def size = {
@@ -99,7 +119,6 @@ sealed trait MDD[A] extends Relation[A] {
   }
 
   def equals(m: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean
-
 }
 
 case object MDDLeaf extends MDD[Any] {
@@ -115,8 +134,7 @@ case object MDDLeaf extends MDD[Any] {
   }
   def edges(e: IdSet[MDD[Any]]) = 0
   def lambda(ls: IdMap[MDD[Any], BigInt]) = BigInt(1)
-  def reduce1(mdds: mutable.Map[Map[Any, MDD[Any]], MDD[Any]]) = this
-  def reduce2(mdds: mutable.Map[MDD[Any], MDD[Any]]) = this
+  def reduce(mdds: mutable.Map[(Int, MDD[Any]), MDD[Any]], depth: Int) = this
   def filter(f: (Int, Any) => Boolean, k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def union(m: MDD[Any], mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = this
@@ -167,13 +185,12 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
       case _ => false
     })
 
-  def reduce1(mdds: mutable.Map[Map[A, MDD[A]], MDD[A]]): MDD[A] = {
-    mdds.getOrElseUpdate(trie,
-      new MDDNode(trie.map(e => e._1 -> e._2.reduce1(mdds))))
-  }
-  def reduce2(mdds: mutable.Map[MDD[A], MDD[A]]): MDD[A] = {
-    mdds.getOrElseUpdate(this,
-      new MDDNode(trie.map(e => e._1 -> e._2.reduce2(mdds))))
+  def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A] = {
+    //println(this.toSet)
+    mdds.getOrElseUpdate((depth, this),
+      new MDDNode(trie.map(e => e._1 -> e._2.reduce(mdds, depth + 1))))
+    //println("cached: " + (reduced eq cached))
+
   }
 
   def filter(f: (Int, A) => Boolean, k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A] = mdds.getOrElseUpdate(this, {

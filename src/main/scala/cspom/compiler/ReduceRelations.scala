@@ -11,38 +11,55 @@ import scala.collection.mutable.HashMap
 import cspom.extension.MDD
 import scala.collection.mutable.WeakHashMap
 import cspom.variable.IntVariable
+import cspom.extension.IdEq
+import cspom.variable.BoolVariable
 
 /**
  * Detects and removes constants from extensional constraints
  */
 object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  val cache = new WeakHashMap[Relation[_], Relation[_]]
+  val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[Set[Any]], Seq[Int]), Relation[_]]
 
-  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = c.function == 'extension && c.nonReified
+  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
+    //println(c)
+    c.function == 'extension && c.nonReified
+  }
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
 
-    val Some(r: Relation[_]) = c.params.get("relation")
+    val Some(relation: Relation[Any] @unchecked) = c.params.get("relation")
 
-    val relation = r.asInstanceOf[Relation[Any]]
-    
     val args = c.arguments.toIndexedSeq
 
     val domains: IndexedSeq[Set[Any]] = args.map {
       case CSPOMConstant(v: Any) => Set(v)
       case v: IntVariable => v.asSortedSet.asInstanceOf[Set[Any]]
+      case b: BoolVariable => Set[Any](false, true)
       case _ => ???
     }
-
-    val filtered = relation.filter((k, i) => domains(k)(i))
 
     val vars = c.arguments.zipWithIndex.collect {
       case (c: CSPOMVariable[_], i) => i
     }
-    val projected = if (vars.size < c.arguments.size) { filtered.project(vars) } else { filtered }
 
-    val cached = cache.getOrElseUpdate(projected, projected)
+    logger.info(s"will reduce $relation for $args")
+
+    val cached = cache.getOrElseUpdate((IdEq(relation), domains, vars), {
+      logger.info("reducing !")
+      val filtered = relation.filter((k, i) => domains(k)(i))
+
+      val projected = if (vars.size < c.arguments.size) {
+        filtered.project(vars)
+      } else {
+        filtered
+      }
+
+      projected match {
+        case p: MDD[_] => p.reduce
+        case p => p
+      }
+    })
 
     logger.info(s"$relation -> $cached")
     replaceCtr(c,

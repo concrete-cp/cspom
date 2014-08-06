@@ -31,7 +31,7 @@ final class MDDTest extends FlatSpec with Matchers with Timeouts {
 
   it should "have correct size" in {
     relation should have size 2
-    
+
     (MDD.empty + Seq(138)).edges shouldBe 1
   }
 
@@ -57,7 +57,7 @@ final class MDDTest extends FlatSpec with Matchers with Timeouts {
 
   it should "be reduced" in {
     val r2 = relation.reduce
-    r2.edges shouldBe 4
+    r2 should have('edges(4))
     r2 shouldBe relation
     relation shouldBe r2
   }

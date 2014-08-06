@@ -9,7 +9,7 @@ import org.scalameter.Reporter
 
 object RangeMicrobenchmark extends PerformanceTest.OfflineRegressionReport {
 
-  val sizes: Gen[Int] = Gen.range("size")(0, 200, 20)
+  val sizes: Gen[Int] = Gen.range("size")(0, 100, 20)
 
   def simpleRanges = for (size <- sizes) yield {
     (RangeSet((0 until size).map(i => IntInterval.singleton(i * 13))),

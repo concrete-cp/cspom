@@ -41,7 +41,7 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
   override def size = r.ranges.iterator.map(allValues(_).size).sum
 
   def singletonMatch: Option[Int] = {
-
+    assert(!r.isEmpty)
     if (r.fullyDefined) {
       val Finite(l) = r.lowerBound
       val Finite(u) = r.upperBound

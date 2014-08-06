@@ -2,9 +2,9 @@ package cspom.variable
 
 import scala.collection.SetLike
 import scala.collection.mutable.WeakHashMap
-
 import cspom.CSPOM
 import cspom.Parameterized
+import cspom.util.ContiguousIntRangeSet
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -48,6 +48,16 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   def contains[S >: T](that: S): Boolean
 
   def flatten = Seq(this)
+}
+
+object SimpleExpression {
+  implicit def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
+    case v: IntVariable => new ContiguousIntRangeSet(v.domain)
+    case b: BoolVariable => Iterable(false, true)
+    case CSPOMConstant(c: A) => Iterable(c)
+
+  }
+
 }
 
 class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
