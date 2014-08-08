@@ -15,7 +15,7 @@ object RemoveUselessEq extends ConstraintCompiler {
     if (c.function == 'eq) {
       val distinct = c.arguments.distinct
       val dsize = distinct.size
-      if (dsize <= 1 || distinct.size < c.arguments.size) {
+      if (dsize < c.arguments.size) {
         Some(distinct)
       } else {
         None
@@ -28,7 +28,9 @@ object RemoveUselessEq extends ConstraintCompiler {
     if (distinct.size > 1) {
       replaceCtr(c, new CSPOMConstraint(c.result, 'eq, distinct, c.params), problem)
     } else {
-      replaceCtr(c, Seq(), problem)
+      require(c.result != CSPOMConstant(false))
+      val d = replaceCtr(c, Nil, problem)
+      d ++ replace(Seq(c.result), CSPOMConstant(true), problem)
     }
 
   }

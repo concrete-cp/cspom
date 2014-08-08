@@ -21,15 +21,17 @@ trait Parameterized {
     params.get(name).map(_.asInstanceOf[A]).getOrElse(default)
   }
 
-  def displayParams: String = params
-    .map {
-      case (k, Unit) => k
-      case (k, v) => s"$k: $v"
-    }
-    .map {
-      s => s" :: $s"
-    }
-    .mkString
+  def displayParams: String = { "" 
+//    params
+//    .map {
+//        case (k, Unit) => k
+//        case (k, v) => s"$k: $v"
+//      }
+//      .map {
+//        s => s" :: $s"
+//      }
+//      .mkString
+  }
 
   def hasParam = params.contains(_)
 }

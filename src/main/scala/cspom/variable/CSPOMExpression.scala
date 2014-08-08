@@ -76,6 +76,8 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
     case i: CSPOMConstant[_] => i.value == value && i.params == params
     case i: Any => i == value && params.isEmpty
   }
+  
+  override def hashCode = 31 * value.hashCode + params.hashCode 
 
   def isTrue = value == true
 
@@ -90,10 +92,6 @@ object CSPOMConstant {
 
   def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
 }
-
-//object CSPOMConstant(true) extends CSPOMConstant(true)
-//
-//object CSPOMConstant(false) extends CSPOMConstant(false)
 
 abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
