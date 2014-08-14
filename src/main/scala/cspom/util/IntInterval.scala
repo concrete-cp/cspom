@@ -40,6 +40,11 @@ final class IntInterval(
     Iterator.range(0, size).map(Math.checkedAdd(finiteLb, _))
   }
 
+  def itvSize = {
+    val s = Finite(1) + ub - lb
+    if (s <= 0) Finite(0) else s
+  }
+
   def contains(c: Infinitable) = compare(lb, c) <= 0 && compare(ub, c) >= 0
 
   def contains(c: Int) = lb <= c && !(ub < c)

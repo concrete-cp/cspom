@@ -8,6 +8,8 @@ import cspom.util.IntervalsArithmetic
 import cspom.util.Infinitable
 import cspom.util.Finite
 import cspom.util.Interval
+import cspom.util.PlusInf
+import cspom.util.MinInf
 
 final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
@@ -53,6 +55,13 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
 
   def fullyDefined = domain.fullyDefined
 
+  def searchSpace = domain.ranges.iterator.foldLeft(0.0) {
+    case (acc, itv) => acc + (itv.itvSize match {
+      case Finite(f) => f.toDouble
+      case PlusInf => Double.PositiveInfinity
+      case MinInf => throw new AssertionError()
+    })
+  }
 }
 
 object IntVariable {

@@ -17,6 +17,7 @@ class FreeVariable(params: Map[String, Any]) extends CSPOMVariable[Any](params) 
   def contains[S >: Any](that: S) = true
   def iterator = throw new UnsupportedOperationException
   def fullyDefined = false
+  def searchSpace = Double.PositiveInfinity
 }
 
 

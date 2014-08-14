@@ -445,10 +445,14 @@ object FZPatterns {
      * a∈b
      * set_in(var int: a, var set of int: b)
      */
+
     /**
      * (a ∈ b) ↔ r
      * set_in_reif(var int: a, var set of int: b, var bool: r)
      */
+    case Ctr('set_in_reif, Seq(a, CSPOMConstant(b: Seq[_]), r), p) => {
+      val constants = new CSPOMSeq(b.map(CSPOMConstant( _)))
+      new CSPOMConstraint(r, 'in, Seq(a, constants), p)}
     /**
      * a∩b = c
      * set_intersect(var set of int: a, var set of int: b, var set of int: c)

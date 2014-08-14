@@ -75,8 +75,10 @@ final class ProblemCompiler(
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
               if (j != i || compiler.selfPropagation) {
-                for (ac <- enqueue if i != j || (ac ne constraint)) {
-                  toCompile(j).enqueue(ac.id)
+                for (ac <- enqueue) {
+                  if (i != j || (ac ne constraint)) {
+                    toCompile(j).enqueue(ac.id)
+                  }
                 }
               }
             }

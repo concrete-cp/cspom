@@ -33,7 +33,11 @@ sealed trait CSPOMExpression[+T] extends Parameterized {
 
   def isTrue: Boolean
 
+  def isFalse: Boolean
+
   def fullyDefined: Boolean
+
+  def searchSpace: Double
 }
 
 /*
@@ -76,12 +80,16 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
     case i: CSPOMConstant[_] => i.value == value && i.params == params
     case i: Any => i == value && params.isEmpty
   }
-  
-  override def hashCode = 31 * value.hashCode + params.hashCode 
+
+  override def hashCode = 31 * value.hashCode + params.hashCode
 
   def isTrue = value == true
 
+  def isFalse = value == false
+
   def fullyDefined = true
+
+  def searchSpace = 1
 }
 
 object CSPOMConstant {
@@ -96,6 +104,7 @@ object CSPOMConstant {
 abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
   def isTrue = false
+  def isFalse = false
 }
 
 final case class CSPOMSeq[+T](
@@ -129,5 +138,9 @@ final case class CSPOMSeq[+T](
 
   def isTrue = false
 
+  def isFalse = false
+
   def fullyDefined = values.forall(_.fullyDefined)
+
+  def searchSpace = values.foldLeft(0.0)(_ * _.searchSpace)
 }

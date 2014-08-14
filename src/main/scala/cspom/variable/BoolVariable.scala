@@ -20,7 +20,7 @@ final class BoolVariable(params: Map[String, Any] = Map())
   def iterator = Iterator(false, true)
 
   def fullyDefined = true
-
+  def searchSpace = 2
 }
 
 object BoolVariable {

@@ -20,5 +20,7 @@ trait Interval[@specialized T] {
 
   def lessThan(ub: T): Interval[T]
   def moreThan(lb: T): Interval[T]
+  
+  def itvSize: T
 
 }
