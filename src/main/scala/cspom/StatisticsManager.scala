@@ -16,6 +16,8 @@ class StatisticsManager extends LazyLogging {
     if (objects.contains(name)) {
       logger.info(name + ": an object with the same name is already registered");
     }
+    
+    require(fields(o.getClass()).nonEmpty, s"$o does not contain any statistic field")
 
     objects += name -> o
   }
