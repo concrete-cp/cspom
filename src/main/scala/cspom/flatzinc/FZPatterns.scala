@@ -451,8 +451,9 @@ object FZPatterns {
      * set_in_reif(var int: a, var set of int: b, var bool: r)
      */
     case Ctr('set_in_reif, Seq(a, CSPOMConstant(b: Seq[_]), r), p) => {
-      val constants = new CSPOMSeq(b.map(CSPOMConstant( _)))
-      new CSPOMConstraint(r, 'in, Seq(a, constants), p)}
+      val constants = new CSPOMSeq(b.map(CSPOMConstant(_)))
+      new CSPOMConstraint(r, 'in, Seq(a, constants), p)
+    }
     /**
      * a∩b = c
      * set_intersect(var set of int: a, var set of int: b, var set of int: c)
@@ -499,6 +500,14 @@ object FZPatterns {
         "relation" -> new Table(t.map {
           case CSPOMConstant(v) => v
         }.grouped(x.size).toSeq)))
+
+    /**
+     *  Constrains 'c' to be the number of occurrences of 'y' in 'x'.
+     *  No support for variable y yet in Concrete…
+     */
+//    case Ctr('count_eq, Seq(x, y, c), p) =>
+//      CSPOMConstraint(c, 'occurrence, Seq(x, y), p)
+
   }
 
 }

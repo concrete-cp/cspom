@@ -14,9 +14,9 @@ class StatisticsManager extends LazyLogging {
   def register(name: String, o: AnyRef) {
     require(!o.isInstanceOf[Class[_]])
     if (objects.contains(name)) {
-      logger.info(name + ": an object with the same name is already registered");
+      logger.warn(name + ": an object with the same name is already registered");
     }
-    
+
     require(fields(o.getClass()).nonEmpty, s"$o does not contain any statistic field")
 
     objects += name -> o
@@ -37,8 +37,6 @@ class StatisticsManager extends LazyLogging {
 
   }
 
-  def digest: Map[String, Any] = digest("")
-
   private def fields(c: Class[_], f: List[Field] = Nil): List[Field] =
     if (c == null) {
       f
@@ -46,14 +44,15 @@ class StatisticsManager extends LazyLogging {
       fields(c.getSuperclass, c.getDeclaredFields.toList.filter(annoted) ::: f)
     }
 
-  private def digest(sub: String): Map[String, Any] = objects flatMap {
+  def digest: Map[String, Any] = objects flatMap {
     case (s, o) =>
       fields(o.getClass).flatMap { f =>
         f.setAccessible(true)
-        f.get(o) match {
-          case sm: StatisticsManager => sm.digest("%s.%s.".format(s, f.getName))
-          case v: AnyRef => Map(sub + s + "." + f.getName -> v)
+        val map = f.get(o) match {
+          case sm: StatisticsManager => sm.digest
+          case v: AnyRef => Map(f.getName -> v)
         }
+        map.map { case (k, v) => s"$s.$k" -> v }
       }
   }
 

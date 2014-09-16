@@ -297,7 +297,7 @@ class CSPOM extends LazyLogging {
 
 object CSPOM {
 
-  val VERSION = "CSPOM 1.3-SNAPSHOT"
+  val VERSION = "CSPOM 2.4"
 
   /**
    * Opens an InputStream according to the given URL. If URL ends with ".gz"

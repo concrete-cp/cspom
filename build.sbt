@@ -11,10 +11,10 @@ scalaVersion := "2.11.2"
 
 libraryDependencies ++= Seq(
 	"org.kohsuke" % "bzip2" % "1.0",
-	"org.scalatest" %% "scalatest" % "2.2.1" % "test",
+	"org.scalatest" %% "scalatest" % "2.2.2" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.11.5" % "test",
 	"ch.qos.logback" % "logback-classic" % "1.1.2",
-	"com.typesafe.scala-logging" %% "scala-logging" % "3.0.0",
+	"com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.2",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.2",
 	"com.storm-enroute" %% "scalameter" % "0.6" % "test"
