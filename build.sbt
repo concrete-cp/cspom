@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
 
 scalacOptions ++= Seq("-optimise"
 	      , "-Xdisable-assertions"
+	      , "-target:jvm-1.7"
 //	"-deprecation", 
 //	"-unchecked", 
 //	"-optimise", 
@@ -30,6 +31,8 @@ scalacOptions ++= Seq("-optimise"
 //	"-feature",
 //	"-Yinline-warnings"
 )
+
+javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 
 
 publishTo := Some(

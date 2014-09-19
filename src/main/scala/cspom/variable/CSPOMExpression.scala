@@ -58,7 +58,7 @@ object SimpleExpression {
   implicit def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
     case v: IntVariable => new ContiguousIntRangeSet(v.domain)
     case b: BoolVariable => Iterable(false, true)
-    case CSPOMConstant(c: A) => Iterable(c)
+    case CSPOMConstant(c) => Iterable[A](c)
 
   }
 
