@@ -58,12 +58,7 @@ class CSPOM extends LazyLogging {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private var _namedExpressions = Map[String, CSPOMExpression[_]]()
-
-  /**
-   * @return The named expressions of this problem.
-   */
-  def namedExpressions = _namedExpressions
+  val namedExpressions = collection.mutable.LinkedHashMap[String, CSPOMExpression[_]]()
 
   def getExpressions = JavaConversions.asJavaCollection(namedExpressions)
 
@@ -77,6 +72,16 @@ class CSPOM extends LazyLogging {
       case (n, s) => getInSeq(namedExpressions.get(n), s)
     }
 
+  }
+
+  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = {
+    if (s.isEmpty) {
+      e
+    } else {
+      e.collect {
+        case v: CSPOMSeq[_] => getInSeq(Some(v(s.head)), s.tail)
+      } flatten
+    }
   }
 
   def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
@@ -106,20 +111,10 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = {
-    if (s.isEmpty) {
-      e
-    } else {
-      e.collect {
-        case v: CSPOMSeq[_] => getInSeq(Some(v(s.head)), s.tail)
-      } flatten
-    }
-  }
-
   /**
    * Collection of all constraints of the problem.
    */
-  private val _constraints = collection.mutable.Set[CSPOMConstraint[_]]()
+  private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
   def constraints = _constraints.iterator
 
@@ -129,11 +124,11 @@ class CSPOM extends LazyLogging {
 
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
-    _namedExpressions += n -> e
+    namedExpressions += n -> e
     e
   }
 
-  private val ctrV = collection.mutable.HashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]()
+  private val ctrV = collection.mutable.LinkedHashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]()
 
   /**
    * Adds a constraint to the problem.
@@ -152,8 +147,7 @@ class CSPOM extends LazyLogging {
       e <- Iterator(constraint.result) ++ constraint.arguments;
       v <- e.flatten
     ) {
-      val cs = ctrV.getOrElse(v, Set()) + constraint
-      ctrV(v) = cs
+      ctrV(v) = ctrV.getOrElse(v, Set()) + constraint
     }
 
     constraint
@@ -286,12 +280,15 @@ class CSPOM extends LazyLogging {
   }
 
   def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]) = {
-    _namedExpressions = _namedExpressions.map {
-      case (n, e) => n -> e.replaceVar(which, by)
+    for ((n, e) <- namedExpressions) {
+      namedExpressions(n) = e.replaceVar(which, by)
     }
   }
 
-  def referencedExpressions = ctrV.keySet ++ namedExpressions.values
+  def referencedExpressions: Seq[CSPOMExpression[_]] = {
+    (ctrV.keysIterator ++ namedExpressions.values).toSeq.distinct
+   // ctrV.keySet ++ namedExpressions.values
+  }
 
 }
 
