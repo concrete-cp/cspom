@@ -287,7 +287,7 @@ class CSPOM extends LazyLogging {
 
   def referencedExpressions: Seq[CSPOMExpression[_]] = {
     (ctrV.keysIterator ++ namedExpressions.values).toSeq.distinct
-   // ctrV.keySet ++ namedExpressions.values
+    // ctrV.keySet ++ namedExpressions.values
   }
 
 }
@@ -395,6 +395,50 @@ object CSPOM {
   implicit def constant[A <: AnyVal](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
   implicit def seq2CSPOMSeq[A](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = new CSPOMSeq(c)
+
+  implicit def constantSeq[A <: AnyVal](c: Seq[A]): CSPOMSeq[A] = new CSPOMSeq(c.map(constant))
+
+  import language.experimental.macros
+
+  import scala.reflect.macros.Context
+  import scala.util.Try
+
+  implicit class MatrixContext(sc: StringContext) {
+    def matrix(): Array[Array[Int]] = macro matrixImpl
+  }
+
+  def matrixImpl(c: Context)(): c.Expr[Array[Array[Int]]] = {
+    import c.universe.{ Try => _, _ }
+
+    val matrix = Try {
+      c.prefix.tree match {
+        case Apply(_, List(Apply(_, List(Literal(Constant(raw: String)))))) =>
+
+          def toArrayAST(c: List[TermTree]) =
+            Apply(Select(Select(Ident("scala"), newTermName("Array")), newTermName("apply")), c)
+
+          val matrix = raw
+            .split("\n")
+            .map(_.trim)
+            .filter(_.nonEmpty)
+            .map {
+              _.split(",").map(_.trim.toInt)
+            }
+          if (matrix.map(_.length).distinct.size != 1) {
+            c.abort(c.enclosingPosition, "rows of matrix do not have the same length")
+          }
+
+          val matrixAST = matrix
+            .map(_.map(i => Literal(Constant(i))))
+            .map(i => toArrayAST(i.toList))
+
+          toArrayAST(matrixAST.toList)
+      }
+    }
+
+    c.Expr(matrix.getOrElse(c.abort(c.enclosingPosition, "not a matrix of Int")))
+  }
+
 }
 
 

@@ -106,8 +106,11 @@ sealed trait MDD[A] extends Relation[A] {
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A]
 
   override def size = {
-    require(lambda.isValidInt)
-    lambda.toInt
+    val l = lambda
+    if (!l.isValidInt) {
+      throw new IndexOutOfBoundsException("Size out of bounds: " + l)
+    }
+    l.toInt
   }
 
   final def union(m: MDD[A]): MDD[A] = union(m, new IdMap()).reduce
@@ -119,6 +122,7 @@ sealed trait MDD[A] extends Relation[A] {
   }
 
   def equals(m: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean
+
 }
 
 case object MDDLeaf extends MDD[Any] {
