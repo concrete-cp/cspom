@@ -11,10 +11,6 @@ import cspom.TimedException
 import cspom.VariableNames
 import com.typesafe.scalalogging.LazyLogging
 
-sealed trait Reason
-case class ConstraintReason(constraint: CSPOMConstraint[_]) extends Reason
-case class ExpressionReason(expression: CSPOMExpression[_]) extends Reason
-
 /**
  * This class implements some known useful reformulation rules.
  *
@@ -60,12 +56,12 @@ final class ProblemCompiler(
             changed |= delta.nonEmpty
 
             for (rc <- delta.removed) {
-              require(!problem.constraintSet(rc), s"$compiler: $rc is still present")
+              assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")
               constraints.remove(rc.id)
             }
 
             for (c <- delta.added) {
-              require(problem.constraintSet(c), s"$compiler: $c is not present")
+              assert(problem.constraintSet(c), s"$compiler: $c is not present")
               constraints.put(c.id, c)
             }
 

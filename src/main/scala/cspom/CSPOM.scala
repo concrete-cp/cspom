@@ -188,7 +188,7 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def ctr(v: BoolVariable) = {
+  def ctr(v: SimpleExpression[Boolean]) = {
     addConstraint(CSPOMConstraint('eq, Seq(v, CSPOMConstant(true))))
   }
 
@@ -383,7 +383,7 @@ object CSPOM {
     p
   }
 
-  def ctr(v: BoolVariable)(implicit problem: CSPOM): CSPOMConstraint[Boolean] = problem.ctr(v)
+  def ctr(v: SimpleExpression[Boolean])(implicit problem: CSPOM): CSPOMConstraint[Boolean] = problem.ctr(v)
 
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
