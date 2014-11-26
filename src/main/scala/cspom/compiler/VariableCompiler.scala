@@ -2,15 +2,7 @@ package cspom.compiler
 
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.util.ContiguousIntRangeSet
-import cspom.util.RangeSet
-import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMVariable
-import cspom.variable.IntVariable
-import cspom.variable.IntVariable.ranges
-import cspom.variable.SimpleExpression
-import cspom.util.Infinitable
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -46,38 +38,6 @@ abstract class VariableCompiler(
 
   def selfPropagation = true
 
-  def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Infinitable]): SimpleExpression[Int] = {
-    val old = IntVariable.ranges(v)
-    val reduced = old & d
-    if (old == reduced) {
-      v
-    } else {
-      new ContiguousIntRangeSet(reduced).singletonMatch match {
-        case Some(s) => CSPOMConstant(s, v.params)
-        case None => IntVariable(reduced, v.params)
-      }
-    }
-  }
 
-  def applyDomain(v: SimpleExpression[Int], reduced: RangeSet[Infinitable]): SimpleExpression[Int] = {
-    val old = IntVariable.ranges(v)
-    if (old == reduced) {
-      v
-    } else {
-      new ContiguousIntRangeSet(reduced).singletonMatch match {
-        case Some(s) => CSPOMConstant(s, v.params)
-        case None => IntVariable(reduced, v.params)
-      }
-    }
-  }
-
-  def reduceDomain(v: SimpleExpression[Boolean], d: Boolean): SimpleExpression[Boolean] = {
-    v match {
-      case b: CSPOMVariable[_] => CSPOMConstant(d, b.params)
-      case c @ CSPOMConstant(b) =>
-        require(b == d, s"Reduced $v to $d: empty domain")
-        c
-    }
-  }
 
 }

@@ -9,6 +9,11 @@ import cspom.variable.CSPOMSeq
 import cspom.flatzinc.FZAnnotation
 import cspom.flatzinc.FZVarParId
 import com.typesafe.scalalogging.LazyLogging
+import cspom.util.ContiguousIntRangeSet
+import cspom.variable.SimpleExpression
+import cspom.variable.IntVariable
+import cspom.util.RangeSet
+import cspom.util.Infinitable
 
 trait ConstraintCompiler extends LazyLogging {
   type A
@@ -70,6 +75,40 @@ trait ConstraintCompiler extends LazyLogging {
   }
 
   def selfPropagation: Boolean
+
+  def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Infinitable]): SimpleExpression[Int] = {
+    val old = IntVariable.ranges(v)
+    val reduced = old & d
+    if (old == reduced) {
+      v
+    } else {
+      new ContiguousIntRangeSet(reduced).singletonMatch match {
+        case Some(s) => CSPOMConstant(s, v.params)
+        case None    => IntVariable(reduced, v.params)
+      }
+    }
+  }
+
+  def applyDomain(v: SimpleExpression[Int], reduced: RangeSet[Infinitable]): SimpleExpression[Int] = {
+    val old = IntVariable.ranges(v)
+    if (old == reduced) {
+      v
+    } else {
+      new ContiguousIntRangeSet(reduced).singletonMatch match {
+        case Some(s) => CSPOMConstant(s, v.params)
+        case None    => IntVariable(reduced, v.params)
+      }
+    }
+  }
+
+  def reduceDomain(v: SimpleExpression[Boolean], d: Boolean): SimpleExpression[Boolean] = {
+    v match {
+      case b: CSPOMVariable[_] => CSPOMConstant(d, b.params)
+      case c @ CSPOMConstant(b) =>
+        require(b == d, s"Reduced $v to $d: empty domain")
+        c
+    }
+  }
 }
 
 trait ConstraintCompilerNoData extends ConstraintCompiler {
@@ -106,7 +145,7 @@ final case class Delta private (
     Delta(removed, c ++: added)
   }
 
-  def ++(d: Delta): Delta = removed(d.removed).added(d.added)//Delta(removed ++ d.removed, added ++ d.added)
+  def ++(d: Delta): Delta = removed(d.removed).added(d.added) //Delta(removed ++ d.removed, added ++ d.added)
 
   def nonEmpty = removed.nonEmpty || added.nonEmpty
 }
