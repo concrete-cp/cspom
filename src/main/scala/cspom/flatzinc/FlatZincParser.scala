@@ -18,6 +18,10 @@ import cspom.variable.CSPOMVariable
 import scala.collection.immutable.PagedSeq
 import scala.util.parsing.input.PagedSeqReader
 
+sealed trait FZDecl
+case class FZParamDecl(name: String, expression: CSPOMExpression[_]) extends FZDecl
+case class FZVarDecl(name: String, expression: CSPOMExpression[_], affectation: Option[FZExpr[_]])
+
 object FlatZincParser extends RegexParsers {
 
   def fzAnnotations(ann: Seq[FZAnnotation]): Map[String, Seq[FZAnnotation]] = {
@@ -42,19 +46,20 @@ object FlatZincParser extends RegexParsers {
     }
   }
 
-  private def mapVariables(params: Map[String, CSPOMExpression[_]], variables: Seq[(String, CSPOMExpression[_], Option[FZExpr[_]])]) = {
+  private def mapVariables(params: Map[String, CSPOMExpression[_]],
+                           variables: Seq[FZVarDecl]) = {
 
     val decl: Map[String, CSPOMExpression[Any]] = variables
       .map {
-        case (name, single: CSPOMVariable[_], _) => name -> single
-        case (name, seq: CSPOMSeq[_], _) => name -> seq
-        case (name, c: CSPOMConstant[_], _) => name -> c
+        case FZVarDecl(name, single: CSPOMVariable[_], _) => name -> single
+        case FZVarDecl(name, seq: CSPOMSeq[_], _)         => name -> seq
+        case FZVarDecl(name, c: CSPOMConstant[_], _)      => name -> c
         //throw new IllegalStateException(s"Unexpected constant $name: $c")
       }
       .toMap
 
     val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
-      case (_, expr, Some(aff)) => expr -> aff.toCSPOM(decl)
+      case FZVarDecl(_, expr, Some(aff)) => expr -> aff.toCSPOM(decl)
     }
 
     (params ++ decl, affectations)
@@ -63,9 +68,15 @@ object FlatZincParser extends RegexParsers {
   /*
    * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
-  def flatzincModel: Parser[(CSPOM, FZSolve)] = rep(pred_decl) ~ rep(param_decl) ~ rep(var_decl) >> {
-    case predicates ~ parameters ~ variables =>
-      val params = parameters.toMap
+  def flatzincModel: Parser[(CSPOM, FZSolve)] = rep(pred_decl) ~ rep(param_decl | var_decl) >> {
+    case predicates ~ paramOrVar =>
+      val params: Map[String, CSPOMExpression[_]] = paramOrVar.collect {
+        case FZParamDecl(name, expr) => name -> expr
+      }.toMap
+      val variables = paramOrVar.collect {
+        case v: FZVarDecl => v
+      }
+      require(params.size + variables.size == paramOrVar.size)
       val (declared, affectations) = mapVariables(params, variables)
       success((declared, affectations)) ~ rep(constraint(declared)) ~ solve_goal
   } ^^ {
@@ -97,10 +108,10 @@ object FlatZincParser extends RegexParsers {
       "float" ^^^ FZFloat |
       "int" ^^^ FZInt |
       "set of int" ^^^ FZIntSet |
-      "array [" ~> index_set <~ "] of bool" ^^ { FZArray[Boolean](_, FZBoolean) } |
-      "array [" ~> index_set <~ "] of float" ^^ { s => FZArray[Double](s, FZFloat) } |
-      "array [" ~> index_set <~ "] of int" ^^ { FZArray[Int](_, FZInt) } |
-      "array [" ~> index_set <~ "] of set of int" ^^ { FZArray[Int](_, FZIntSet) }
+      ("array" ~ "[") ~> index_set <~ "] of bool" ^^ { FZArray[Boolean](_, FZBoolean) } |
+      ("array" ~ "[") ~> index_set <~ "] of float" ^^ { s => FZArray[Double](s, FZFloat) } |
+      ("array" ~ "[") ~> index_set <~ "] of int" ^^ { FZArray[Int](_, FZInt) } |
+      ("array" ~ "[") ~> index_set <~ "] of set of int" ^^ { FZArray[Int](_, FZIntSet) }
   }
 
   def par_pred_param_type: Parser[Any] =
@@ -110,15 +121,15 @@ object FlatZincParser extends RegexParsers {
       "{" ~ repsep(int_const, ",") ~ "}" |
       "set of " ~ int_const ~ ".." ~ int_const |
       "set of {" ~ repsep(int_const, ",") ~ "}" |
-      "array [" ~ index_set ~ "] of " ~ float_const ~ ".." ~ float_const |
-      "array [" ~ index_set ~ "] of " ~ int_const ~ ".." ~ int_const |
-      "array [" ~ index_set ~ "] of " ~ "{" ~ repsep(int_const, ",") ~ "}" |
-      "array [" ~ index_set ~ "] of set of " ~ int_const ~ ".." ~ int_const |
-      "array [" ~ index_set ~ "] of set of " ~ int_const ~ ".." ~ int_const
+      ("array" ~ "[") ~ index_set ~ "] of " ~ float_const ~ ".." ~ float_const |
+      ("array" ~ "[") ~ index_set ~ "] of " ~ int_const ~ ".." ~ int_const |
+      ("array" ~ "[") ~ index_set ~ "] of " ~ "{" ~ repsep(int_const, ",") ~ "}" |
+      ("array" ~ "[") ~ index_set ~ "] of set of " ~ int_const ~ ".." ~ int_const |
+      ("array" ~ "[") ~ index_set ~ "] of set of " ~ int_const ~ ".." ~ int_const
 
   def var_type: Parser[FZVarType[_]] = {
     single_var_type |
-      ("array [" ~> index_set <~ "] of ") ~ single_var_type ^^ {
+      (("array" ~ "[") ~> index_set <~ "] of ") ~ single_var_type ^^ {
         case indices ~ vartype => FZArray(indices, vartype)
       }
   }
@@ -142,7 +153,7 @@ object FlatZincParser extends RegexParsers {
   def var_pred_param_type: Parser[Any] =
     var_type |
       "var set of int" |
-      "array [" ~ index_set ~ "] of var set of int"
+      "array" ~ "[" ~ index_set ~ "] of var set of int"
 
   def index_set: Parser[Seq[IndexSet]] = rep1sep(index_set1, ",")
 
@@ -174,8 +185,8 @@ object FlatZincParser extends RegexParsers {
 
   def var_par_id: Parser[FZVarParId] = """_*[A-Za-z][A-Za-z0-9_]*""".r ^^ FZVarParId
 
-  def bool_const: Parser[FZBoolConst] = "true" ^^^ FZBoolConst(true) | 
-  	"false" ^^^ FZBoolConst(false)
+  def bool_const: Parser[FZBoolConst] = "true" ^^^ FZBoolConst(true) |
+    "false" ^^^ FZBoolConst(false)
 
   def float_const: Parser[FZFloatConst] = """[+-]?[0-9][0-9]*\.[0-9][0-9]*[[eE][+-]?[0-9][0-9]*]?""".r ^^ {
     f => FZFloatConst(f.toDouble)
@@ -196,7 +207,7 @@ object FlatZincParser extends RegexParsers {
     "[" ~> repsep(exprInAnn, ",") <~ "]" ^^ { l => FZArrayExpr(l) }
   }
 
-  def param_decl: Parser[(String, CSPOMExpression[_])] = (par_type <~ ":") ~ (var_par_id <~ "=") ~ expr <~ ";" ^^ {
+  def param_decl: Parser[FZParamDecl] = (par_type <~ ":") ~ (var_par_id <~ "=") ~ expr <~ ";" ^^ {
     case t ~ id ~ expr =>
       val e: CSPOMExpression[_] = (t, expr) match {
         case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.range)
@@ -204,12 +215,12 @@ object FlatZincParser extends RegexParsers {
         case _ => throw new IllegalArgumentException("Constant expected")
       }
 
-      id.value -> e
+      FZParamDecl(id.value, e)
   }
 
-  def var_decl: Parser[(String, CSPOMExpression[_], Option[FZExpr[_]])] = {
+  def var_decl: Parser[FZVarDecl] = {
     (var_type <~ ":") ~ var_par_id ~ annotations ~ opt("=" ~> expr) <~ ";" ^^ {
-      case varType ~ varParId ~ ann ~ aff => (varParId.value, varType.genVariable(ann), aff)
+      case varType ~ varParId ~ ann ~ aff => FZVarDecl(varParId.value, varType.genVariable(ann), aff)
     }
 
   }

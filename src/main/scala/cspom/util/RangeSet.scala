@@ -49,10 +49,16 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
     if (i.isEmpty) {
       this
     } else {
-      val colliding = contents.from(i).takeWhile(i.isConnected)
+      val colliding = contents.keysIteratorFrom(i).takeWhile(i.isConnected).toSeq
+
+      val collSpan = if (colliding.isEmpty) {
+        i
+      } else {
+        i span Interval(colliding.head.lb, colliding.last.ub)
+      }
 
       new RangeSet(
-        (contents -- colliding) + colliding.fold(i)(_ span _))
+        (contents -- colliding) + collSpan)
     }
   }
 
@@ -91,7 +97,7 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
     var cleanTree = contents -- colliding
 
     for (c <- colliding) {
-      
+
       val b = c.lessThan(i.lb)
       if (!b.isEmpty) {
         cleanTree += b
@@ -136,7 +142,7 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
     // println(this.ranges == o.asInstanceOf[RangeSet[_]].ranges)
     o match {
       case i: RangeSet[_] => i.ranges.sameElements(ranges)
-      case s => false
+      case s              => false
     }
   }
 

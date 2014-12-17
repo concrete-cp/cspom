@@ -3,6 +3,12 @@ package cspom.util
 object Interval {
   def unapply[T](itv: Interval[T]): Option[(T, T)] = Some((itv.lb, itv.ub))
 
+  def apply[T](lb: T, ub: T): Interval[T] = (lb, ub) match {
+    case (l: Int, u: Int)                 => IntInterval(l, u).asInstanceOf[Interval[T]]
+    case (l: Infinitable, u: Infinitable) => IntInterval(l, u).asInstanceOf[Interval[T]]
+  }
+  
+
 }
 
 trait Interval[@specialized T] {
@@ -20,7 +26,7 @@ trait Interval[@specialized T] {
 
   def lessThan(ub: T): Interval[T]
   def moreThan(lb: T): Interval[T]
-  
+
   def itvSize: T
 
 }
