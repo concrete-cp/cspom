@@ -46,7 +46,7 @@ final object XCSPParser {
 
   def parseRange(interval: String): IntInterval = interval.trim().split("\\.\\.") match {
     case Array(a, b) => IntInterval(a.toInt, b.toInt)
-    case _ => throw new NumberFormatException("Interval format must be a..b");
+    case _           => throw new NumberFormatException("Interval format must be a..b");
   }
 
   /**
@@ -81,9 +81,9 @@ final object XCSPParser {
    *            XCSP document
    */
   private def parseVariables(doc: NodeSeq): Seq[(String, SimpleExpression[Int])] = {
-    val domains = (doc \ "domains" \ "domain") map { node =>
-      (node \ "@name").text -> parseDomain(node.text)
-    } toMap
+    val domains = (doc \ "domains" \ "domain")
+      .map { node => (node \ "@name").text -> parseDomain(node.text) }
+      .toMap
 
     (doc \ "variables" \ "variable").map { node =>
 
@@ -92,7 +92,7 @@ final object XCSPParser {
 
       name -> (new ContiguousIntRangeSet(domain).singletonMatch match {
         case Some(s) => CSPOMConstant(s)
-        case None => new IntVariable(domain)
+        case None    => new IntVariable(domain)
       })
     }
 
@@ -107,8 +107,6 @@ final object XCSPParser {
    *            Predicates constraints may use.
    * @param doc
    *            XCSP document.
-   * @throws CSPParseException
-   *             If a relation or predicate could not be found or applied.
    */
   private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM) = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
@@ -155,15 +153,17 @@ final object XCSPParser {
    *            Map of relations
    */
   private def genConstraint(name: String, varNames: String,
-    parameters: String, reference: String, relations: Map[String, AnyRef],
-    declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
+                            parameters: String, reference: String, relations: Map[String, AnyRef],
+                            declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
 
-    val scope = varNames.split(" +").iterator.map { s =>
-      s -> declaredVariables.getOrElse(s, {
-        throw new CSPParseException("Could not find variable " + s
-          + " from the scope of " + name);
-      })
-    } toSeq
+    val scope = varNames.split(" +").iterator
+      .map { s =>
+        s -> declaredVariables.getOrElse(s, {
+          throw new CSPParseException("Could not find variable " + s
+            + " from the scope of " + name);
+        })
+      }
+      .toSeq
 
     if (reference startsWith "global:") {
 

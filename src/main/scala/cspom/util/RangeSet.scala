@@ -27,7 +27,7 @@ object RangeSet {
     s.foldLeft(RangeSet[T]())(_ ++ _)
   }
 
-  implicit def apply[T](s: Interval[T]): RangeSet[T] = {
+  def apply[T](s: Interval[T]): RangeSet[T] = {
     RangeSet[T]() ++ s
   }
 

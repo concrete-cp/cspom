@@ -7,7 +7,7 @@ version := "2.5-SNAPSHOT"
 // For BZip2
 resolvers += "Concrete repository" at "http://concrete-cp.github.io/concrete/repository"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.5"
 
 libraryDependencies ++= Seq(
 	"org.kohsuke" % "bzip2" % "1.0",

@@ -9,6 +9,7 @@ import org.scalatest.prop.PropertyChecks
 import cspom.util.IntervalTest
 import cspom.util.Intervals
 import cspom.util.IntInterval
+import cspom.util.RangeSet
 
 class VariableTest extends FlatSpec with Matchers with PropertyChecks {
 
@@ -36,7 +37,7 @@ class VariableTest extends FlatSpec with Matchers with PropertyChecks {
 
   "Int variables" should "work as sets" in {
 
-    val v = IntVariable(IntInterval(-2147483648, 2088690084))
+    val v = IntVariable(RangeSet(IntInterval(-2147483648, 2088690084)))
 
     forAll { i: Int => v.contains(i) shouldBe (i >= -2147483648 && i <= 2088690084) }
 

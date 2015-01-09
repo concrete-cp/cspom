@@ -13,7 +13,7 @@ import IntInterval.singleton
 
 class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
-  implicit def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
+  def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
     new ContiguousIntRangeSet(r)
 
   "RangeSet" should "be conform" in {
@@ -75,13 +75,13 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
   it should "handle large values" in {
 
-    asSet(RangeSet[Infinitable]() ++ List[IntInterval](0, 2, 1)) should contain theSameElementsInOrderAs
+    asSet(RangeSet[Infinitable]() ++ List(0, 2, 1).map(IntInterval.singleton)) should contain theSameElementsInOrderAs
       Seq(0, 1, 2)
 
-    asSet(RangeSet[Infinitable]() ++ Int.MinValue ++ (Int.MaxValue - 1) ++ 0) should contain theSameElementsInOrderAs
+    asSet(RangeSet[Infinitable]() ++ IntInterval.singleton(Int.MinValue) ++ IntInterval.singleton(Int.MaxValue - 1) ++ IntInterval.singleton(0)) should contain theSameElementsInOrderAs
       Seq(Int.MinValue, 0, Int.MaxValue - 1)
 
-    val s = Set[IntInterval](0, -2147483648, 2, -2)
+    val s = Set(0, -2147483648, 2, -2).map(IntInterval.singleton)
 
     (RangeSet() ++ s).ranges should contain theSameElementsAs s
 

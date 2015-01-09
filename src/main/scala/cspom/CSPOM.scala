@@ -5,11 +5,17 @@ import java.io.InputStream
 import java.net.URI
 import java.net.URL
 import java.util.zip.GZIPInputStream
+
 import scala.Iterator
 import scala.collection.JavaConversions
+import scala.language.implicitConversions
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
+
 import org.apache.tools.bzip2.CBZip2InputStream
+
+import com.typesafe.scalalogging.LazyLogging
+
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
 import cspom.extension.Table
@@ -18,12 +24,11 @@ import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
+import cspom.variable.CSPOMVariable
 import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
-import cspom.variable.CSPOMVariable
-import com.typesafe.scalalogging.LazyLogging
 
 object NameParser extends JavaTokenParsers {
 
@@ -80,7 +85,8 @@ class CSPOM extends LazyLogging {
     } else {
       e.collect {
         case v: CSPOMSeq[_] => getInSeq(Some(v(s.head)), s.tail)
-      } flatten
+      }
+        .flatten
     }
   }
 
@@ -104,7 +110,7 @@ class CSPOM extends LazyLogging {
 
   def variable(name: String): CSPOMVariable[_] = {
     expression(name).map {
-      case v: CSPOMVariable[_] => v
+      case v: CSPOMVariable[_]   => v
       case e: CSPOMExpression[_] => throw new IllegalArgumentException(s"$e is not a variable")
     } getOrElse {
       throw new IllegalArgumentException(s"Could not find $name")
@@ -232,9 +238,12 @@ class CSPOM extends LazyLogging {
 
     val vn = new VariableNames(this)
 
-    val variables = referencedExpressions.flatMap(_.flatten).collect {
-      case e: CSPOMVariable[_] => e -> vn.names(e)
-    } toMap
+    val variables = referencedExpressions
+      .flatMap(_.flatten)
+      .collect {
+        case e: CSPOMVariable[_] => e -> vn.names(e)
+      }
+      .toMap
 
     for (k <- variables.values.toSeq.sorted) {
       stb.append(s"""
@@ -372,7 +381,7 @@ object CSPOM {
       case name if name.contains(".xml") => XCSPParser.parse(problemIS)
       case name if name.contains(".cnf") => CNFParser.parse(problemIS)
       case name if name.contains(".fzn") => FlatZincParser.parse(problemIS)
-      case _ => throw new IllegalArgumentException("Unhandled file format");
+      case _                             => throw new IllegalArgumentException("Unhandled file format");
     }
 
   }
@@ -400,7 +409,7 @@ object CSPOM {
 
   import language.experimental.macros
 
-  import scala.reflect.macros.Context
+  import scala.reflect.macros.blackbox.Context
   import scala.util.Try
 
   implicit class MatrixContext(sc: StringContext) {
@@ -415,7 +424,7 @@ object CSPOM {
         case Apply(_, List(Apply(_, List(Literal(Constant(raw: String)))))) =>
 
           def toArrayAST(c: List[TermTree]) =
-            Apply(Select(Select(Ident("scala"), newTermName("Array")), newTermName("apply")), c)
+            Apply(Select(Select(Ident(TermName("scala")), TermName("Array")), TermName("apply")), c)
 
           val matrix = raw
             .split("\n")

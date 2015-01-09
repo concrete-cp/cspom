@@ -1,26 +1,22 @@
 package cspom
 
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 trait Parameterized {
 
   def params: Map[String, Any]
 
-  def getParam[A: ClassTag](name: String): Option[A] =
-    params.get(name).map {
-      case p: A => p
-      case _    => throw new ClassCastException
-    }
+  def getParam[A: TypeTag](name: String): Option[A] = params.get(name).map(_.asInstanceOf[A])
 
-  def getSeqParam[A: ClassTag](name: String): Seq[A] = {
+  def getSeqParam[A: TypeTag](name: String): Seq[A] = {
     params.get(name).toSeq.flatMap {
-      case s: Seq[A] => s.map(_.asInstanceOf[A])
+      case s: Seq[_] => s.map(_.asInstanceOf[A])
       case _         => throw new IllegalArgumentException
     }
   }
 
-  def getParamOrElse[A: ClassTag](name: String, default: => A): A = {
-    getParam(name).getOrElse(default)
+  def getParamOrElse[A: TypeTag](name: String, default: => A): A = {
+    getParam[A](name).getOrElse(default)
   }
 
   def displayParams: String = {

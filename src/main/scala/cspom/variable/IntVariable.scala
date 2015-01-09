@@ -28,7 +28,7 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
 
   def contains[S >: Int](that: S): Boolean = that match {
     case t: Int => domain.contains(Finite(t))
-    case _ => false
+    case _      => false
   }
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
@@ -44,7 +44,7 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
 
           new ContiguousIntRangeSet(d).singletonMatch match {
             case Some(s) => CSPOMConstant(s) //, Map("intersection" -> ((this, v))))
-            case None => new IntVariable(d) //, Map("intersection" -> ((this, v))))
+            case None    => new IntVariable(d) //, Map("intersection" -> ((this, v))))
           }
         }
       }
@@ -58,8 +58,8 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
   def searchSpace = domain.ranges.iterator.foldLeft(0.0) {
     case (acc, itv) => acc + (itv.itvSize match {
       case Finite(f) => f.toDouble
-      case PlusInf => Double.PositiveInfinity
-      case MinInf => throw new AssertionError()
+      case PlusInf   => Double.PositiveInfinity
+      case MinInf    => throw new AssertionError()
     })
   }
 }
@@ -86,39 +86,11 @@ object IntVariable {
     apply(RangeSet(values), params)
   }
 
+  def apply(values: IntInterval): IntVariable = apply(RangeSet(values))
+
   def free(params: Map[String, Any] = Map()): IntVariable =
     new IntVariable(RangeSet.allInt, params)
 
   def unapply(v: IntVariable) = Some((v.domain, v.params))
 
-  implicit def iterable(s: SimpleExpression[Int]) =
-    new ContiguousIntRangeSet(ranges(s))
-
-  implicit def ranges(e: SimpleExpression[Int]): RangeSet[Infinitable] = e match {
-    case v: IntVariable => v.domain
-    case CSPOMConstant(c: Int) => RangeSet(IntInterval.singleton(c))
-  }
-
-  implicit def arithmetics(e: SimpleExpression[Int]) =
-    IntervalsArithmetic.RangeArithmetics(ranges(e))
-
-  def intExpression(e: CSPOMExpression[_]): SimpleExpression[Int] = e match {
-    case f: FreeVariable => free(f.params)
-    case i: IntVariable => i
-    case c @ CSPOMConstant(_: Int) => c.asInstanceOf[CSPOMConstant[Int]]
-    case _ => throw new IllegalArgumentException(s"Cannot convert $e to int variable")
-  }
-
-  def isInt(e: CSPOMExpression[_]): Boolean = e match {
-    case i: IntVariable => true
-    case c @ CSPOMConstant(_: Int) => true
-    case _ => false
-  }
-
-  def span(e: SimpleExpression[Int]): Interval[Infinitable] = e match {
-    case f: FreeVariable => IntInterval.all
-    case i: IntVariable => i.domain.span
-    case CSPOMConstant(i: Int) => IntInterval.singleton(i)
-    case _ => throw new IllegalArgumentException(s"Cannot span $e")
-  }
 }

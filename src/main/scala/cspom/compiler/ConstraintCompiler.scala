@@ -14,6 +14,8 @@ import cspom.variable.SimpleExpression
 import cspom.variable.IntVariable
 import cspom.util.RangeSet
 import cspom.util.Infinitable
+import cspom.variable.IntExpression
+import cspom.util.Interval
 
 trait ConstraintCompiler extends LazyLogging {
   type A
@@ -76,8 +78,10 @@ trait ConstraintCompiler extends LazyLogging {
 
   def selfPropagation: Boolean
 
+  def reduceDomain(v: SimpleExpression[Int], d: Interval[Infinitable]): SimpleExpression[Int] = reduceDomain(v, RangeSet(d))
+
   def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Infinitable]): SimpleExpression[Int] = {
-    val old = IntVariable.ranges(v)
+    val old = IntExpression.implicits.ranges(v)
     val reduced = old & d
     if (old == reduced) {
       v
@@ -90,7 +94,7 @@ trait ConstraintCompiler extends LazyLogging {
   }
 
   def applyDomain(v: SimpleExpression[Int], reduced: RangeSet[Infinitable]): SimpleExpression[Int] = {
-    val old = IntVariable.ranges(v)
+    val old = IntExpression.implicits.ranges(v)
     if (old == reduced) {
       v
     } else {

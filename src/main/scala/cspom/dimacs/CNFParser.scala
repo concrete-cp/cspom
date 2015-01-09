@@ -36,7 +36,7 @@ final object CNFParser {
 
       val (variables, ns) = (for (i <- 1 to nbVars.toInt) yield {
         new BoolVariable() withName ("V" + i)
-      }) unzip
+      }).unzip
 
       var currentClause: List[Int] = Nil;
 
@@ -60,9 +60,10 @@ final object CNFParser {
 
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMExpression[Boolean]]) = {
 
-    val (clause, parameters) = currentClause map { i =>
-      (variables(math.abs(i) - 1), i == 0)
-    } unzip
+    val (clause, parameters) = currentClause
+      .map { i => (variables(math.abs(i) - 1), i == 0)
+      }
+      .unzip
 
     CSPOMConstraint('or, clause, Map("revsign" -> parameters))
 

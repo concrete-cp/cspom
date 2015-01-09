@@ -19,7 +19,7 @@ object IntInterval {
   def apply(lower: Infinitable, upper: Infinitable): IntInterval =
     new IntInterval(lower, upper)
 
-  implicit def singleton(v: Int): IntInterval = IntInterval(v, v)
+  def singleton(v: Int): IntInterval = IntInterval(v, v)
 
   val ordering = new IntIntervalOrdering[Infinitable]
 

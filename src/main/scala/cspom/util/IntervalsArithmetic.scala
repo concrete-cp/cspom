@@ -34,6 +34,11 @@ object IntervalsArithmetic {
     def *(i: RangeSet[Infinitable]): RangeSet[Infinitable] = IntervalsArithmetic(_ * _, r, i)
     def /(i: RangeSet[Infinitable]): RangeSet[Infinitable] = IntervalsArithmetic(_ / _, r, i)
     def abs: RangeSet[Infinitable] = IntervalsArithmetic(_.abs, r)
+
+    def +(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r + i }, r)
+    def -(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r - i }, r)
+    def *(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r * i }, r)
+    def /(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r / i }, r)
   }
 
   implicit class Arithmetics(val r: Interval[Infinitable]) extends AnyVal {
@@ -60,7 +65,7 @@ object IntervalsArithmetic {
 
       val Interval(a, b) = r
       val Interval(c, d) = i
-      
+
       val l = Seq(a * c, a * d, b * c, b * d)
 
       asRange(l.min, l.max)

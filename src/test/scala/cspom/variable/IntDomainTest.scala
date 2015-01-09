@@ -17,11 +17,11 @@ import cspom.util.Infinitable
 
 class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
 
-  implicit def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
+  def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
     new ContiguousIntRangeSet(r)
 
   "XCSP domain parser" should "handle disjoint values and intervals" in {
-    XCSPParser.parseDomain("1 3..10 18..20").toSeq shouldBe
+    asSet(XCSPParser.parseDomain("1 3..10 18..20")).toSeq shouldBe
       1 +: (3 to 10) ++: (18 to 20)
   }
 
