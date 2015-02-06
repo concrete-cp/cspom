@@ -56,8 +56,8 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
 object SimpleExpression {
   def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
-    case v: IntVariable => new ContiguousIntRangeSet(v.domain)
-    case b: BoolVariable => Iterable(false, true)
+    case v: IntVariable   => new ContiguousIntRangeSet(v.domain)
+    case b: BoolVariable  => Iterable(false, true)
     case CSPOMConstant(c) => Iterable[A](c)
 
   }
@@ -78,7 +78,7 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
 
   override def equals(o: Any) = o match {
     case i: CSPOMConstant[_] => i.value == value && i.params == params
-    case i: Any => i == value && params.isEmpty
+    case i: Any              => i == value && params.isEmpty
   }
 
   override def hashCode = 31 * value.hashCode + params.hashCode
@@ -107,13 +107,21 @@ abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExp
   def isFalse = false
 }
 
+object CSPOMSeq {
+  def empty: CSPOMSeq[Nothing] = CSPOMSeq()
+  def apply[T](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq, seq.indices)
+
+}
+
 final case class CSPOMSeq[+T](
   val values: Seq[CSPOMExpression[T]],
   val definedIndices: Range,
   val params: Map[String, Any] = Map())
   extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
 
-  def this(seq: Seq[CSPOMExpression[T]]) = this(seq, seq.indices)
+  def +:[S >: T](v: CSPOMExpression[S]) = CSPOMSeq(v +: values: _*)
+
+  def :+[S >: T](v: CSPOMExpression[S]) = CSPOMSeq(values :+ v: _*)
 
   require(values.size == definedIndices.size)
 

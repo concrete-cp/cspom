@@ -5,17 +5,13 @@ import java.io.InputStream
 import java.net.URI
 import java.net.URL
 import java.util.zip.GZIPInputStream
-
 import scala.Iterator
 import scala.collection.JavaConversions
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
-
 import org.apache.tools.bzip2.CBZip2InputStream
-
 import com.typesafe.scalalogging.LazyLogging
-
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
 import cspom.extension.Table
@@ -29,6 +25,7 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
+import cspom.extension.Table
 
 object NameParser extends JavaTokenParsers {
 
@@ -396,16 +393,21 @@ object CSPOM {
 
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
-  def table[A](rel: Relation[A], init: Boolean, vars: Seq[SimpleExpression[A]]): CSPOMConstraint[Boolean] =
-    CSPOMConstraint('extension, vars, Map("init" -> init, "relation" -> rel))
+  implicit class SeqOperations[A](vars: Seq[SimpleExpression[A]]) {
+    def in(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = in(new Table(rel))
+    def notIn(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = notIn(new Table(rel))
+
+    def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension, vars, Map("init" -> false, "relation" -> rel))
+    def notIn(rel: Relation[A]) = CSPOMConstraint('extension, vars, Map("init" -> true, "relation" -> rel))
+  }
 
   implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)
 
   implicit def constant[A <: AnyVal](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
-  implicit def seq2CSPOMSeq[A](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = new CSPOMSeq(c)
+  implicit def seq2CSPOMSeq[A](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = CSPOMSeq(c: _*)
 
-  implicit def constantSeq[A <: AnyVal](c: Seq[A]): CSPOMSeq[A] = new CSPOMSeq(c.map(constant))
+  implicit def constantSeq[A <: AnyVal](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
   import language.experimental.macros
 

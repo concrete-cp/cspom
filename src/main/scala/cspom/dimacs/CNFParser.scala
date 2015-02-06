@@ -59,13 +59,15 @@ final object CNFParser {
   }
 
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMExpression[Boolean]]) = {
+    require(!currentClause.contains(0))
 
-    val (clause, parameters) = currentClause
-      .map { i => (variables(math.abs(i) - 1), i == 0)
-      }
-      .unzip
+    val (positive, negative) = currentClause.partition(_ > 0)
+    
+    /**
+     * Variable indices starts at 1 in Dimacs format, 0 in IndexedSeq
+     */
 
-    CSPOMConstraint('or, clause, Map("revsign" -> parameters))
+    CSPOMConstraint('clause, Seq(positive.map(i => variables(i - 1)), negative.map(i => variables(-i - 1))))
 
   }
 }

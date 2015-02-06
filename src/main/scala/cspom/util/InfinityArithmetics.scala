@@ -6,8 +6,8 @@ object Infinitable {
   implicit object InfinitableOrdering extends Ordering[Infinitable] {
     def compare(i: Infinitable, j: Infinitable): Int = {
       i match {
-        case MinInf => -1
-        case PlusInf => 1
+        case MinInf    => -1
+        case PlusInf   => 1
         case Finite(i) => -Infinitable.compare(j, i)
       }
     }
@@ -15,8 +15,8 @@ object Infinitable {
 
   def compare(i: Infinitable, j: Int): Int = {
     i match {
-      case MinInf => -1
-      case PlusInf => 1
+      case MinInf    => -1
+      case PlusInf   => 1
       case Finite(i) => Ordering.Int.compare(i, j)
     }
   }
@@ -37,8 +37,11 @@ sealed trait Infinitable extends Any {
 case object MinInf extends Infinitable {
   def +(v: Infinitable) = MinInf
   def -(v: Infinitable) = {
-    require(v != MinInf, "-Inf - -Inf is undefined")
-    MinInf
+    if (v == MinInf) {
+      throw new ArithmeticException("-Infinity - -Infinity is undefined")
+    } else {
+      MinInf
+    }
   }
   def *(v: Infinitable) = {
     val comp = Infinitable.InfinitableOrdering.compare(v, Finite(0))
@@ -47,7 +50,7 @@ case object MinInf extends Infinitable {
     } else if (comp < 0) {
       PlusInf
     } else {
-      throw new AssertionError("Infinity * 0 is undefined")
+      throw new ArithmeticException("Infinity * 0 is undefined")
     }
   }
   def div(v: Infinitable, rm: RoundingMode) = this * v
@@ -60,8 +63,11 @@ case object MinInf extends Infinitable {
 case object PlusInf extends Infinitable {
   def +(v: Infinitable) = PlusInf
   def -(v: Infinitable) = {
-    require(v != PlusInf, "Inf - Inf is undefined")
-    PlusInf
+    if (v == PlusInf) {
+      throw new ArithmeticException("Infinity - Infinity is undefined")
+    } else {
+      PlusInf
+    }
   }
   def *(v: Infinitable) = -(MinInf * v)
   def div(v: Infinitable, rm: RoundingMode) = -(MinInf.div(v, rm))
@@ -74,23 +80,23 @@ case object PlusInf extends Infinitable {
 case class Finite(i: Int) extends AnyVal with Infinitable {
   def +(v: Infinitable) = v match {
     case Finite(j) => Finite(Math.checkedAdd(i, j))
-    case u => u + this
+    case u         => u + this
   }
   def -(v: Infinitable) = v match {
     case Finite(j) => Finite(Math.checkedSubtract(i, j))
-    case u => -u + this
+    case u         => -u + this
   }
   def *(v: Infinitable) = v match {
     case Finite(j) => Finite(Math.checkedMultiply(i, j))
-    case u => u * this
+    case u         => u * this
   }
   def div(v: Infinitable, rm: RoundingMode) = v match {
     case Finite(j) => Finite(Math.divide(i, j, rm))
-    case u => Finite(0)
+    case u         => Finite(0)
   }
   def divisible(v: Infinitable) = v match {
     case Finite(j) => i % j == 0
-    case u => false
+    case u         => false
   }
   def unary_-() = Finite(-i)
 

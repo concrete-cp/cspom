@@ -8,7 +8,7 @@ trait Types extends ConstraintCompilerNoData {
 
   def matchBool(constraint: CSPOMConstraint[_], problem: CSPOM): Boolean = {
     _types.contains(constraint.function) &&
-      constraint.fullScope.exists(_.isInstanceOf[FreeVariable])
+      constraint.fullScope.iterator.flatMap(_.flatten).exists(_.isInstanceOf[FreeVariable])
   }
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM) =

@@ -21,11 +21,6 @@ final case class CSPOMConstraint[+T](
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
-  //  require(function != 'or || !arguments.forall {
-  //    case CSPOMConstant(c: Boolean) => !c
-  //    case _ => false
-  //  })
-
   def nonReified = result.isTrue
 
   def fullScope = result +: arguments
@@ -40,7 +35,7 @@ final case class CSPOMConstraint[+T](
   override final def hashCode = id
   override final def equals(o: Any) = o match {
     case o: AnyRef => o eq this
-    case _ => false
+    case _         => false
   }
 
   def replacedVar[R, S <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
@@ -65,7 +60,7 @@ final case class CSPOMConstraint[+T](
   private def toString(result: Option[String], arguments: Seq[String]): String = {
     val content = s"$function(${arguments.mkString(", ")})$displayParams"
     result match {
-      case None => s"constraint $content"
+      case None    => s"constraint $content"
       case Some(r) => s"constraint $r == $content"
     }
   }

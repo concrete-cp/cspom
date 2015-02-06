@@ -19,7 +19,7 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
   def isConvex = domain.isConvex
 
   if (asSortedSet.singletonMatch.isDefined) {
-    logger.warn(s"$domain: a variable domain should be of size 2 or more")
+    logger.warn(s"$domain: a variable domain should be of size 2 or more, created in ${Thread.currentThread().getStackTrace.toSeq}")
   }
 
   override def toString = {

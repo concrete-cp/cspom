@@ -15,11 +15,11 @@ import cspom.extension.Table
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.SimpleExpression
+import CSPOM.seq2CSPOMSeq
 
 object FZPatterns {
   def apply() = Seq(
-    new GlobalCompiler(mtch) { def selfPropagation = false },
-    new Flattener('allDifferent))
+    new GlobalCompiler(mtch) { def selfPropagation = false })
 
   //  val debug = new PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]] {
   //    def isDefinedAt(c: CSPOMConstraint[_]) = {
@@ -52,7 +52,7 @@ object FZPatterns {
      * array_bool_or(array [int] of var bool: as, var bool: r)
      */
     case Ctr('array_bool_or, Seq(CSeq(as), v), p) =>
-      new CSPOMConstraint(v, 'or, as, p)
+      new CSPOMConstraint(v, 'clause, Seq(as, Nil), p)
 
     /**
      * (((i ∈ 1..n : as[i]) mod 2) = 1) where n is the length of as
@@ -115,9 +115,8 @@ object FZPatterns {
      * (∃ i ∈ 1..nas : as[i]) ∨ (∃ i ∈ 1..nbs : ¬bs[i]) where n is the length of as
      * bool_clause(array [int] of var bool: as, array [int] of var bool: bs)
      */
-    //    case Ctr('bool_clause, Seq(CSeq(as), CSeq(bs)), p) =>
-    //      CSPOMConstraint('or, as ++ bs,
-    //        p + ("revsign" -> (Seq.fill(as.length)(false) ++ Seq.fill(bs.length)(true))))
+    case Ctr('bool_clause, Seq(CSeq(as), CSeq(bs)), p) =>
+      CSPOMConstraint('clause, Seq(seq2CSPOMSeq(as), seq2CSPOMSeq(bs)), p)
     /**
      * a = b
      * bool_eq(var bool: a, var bool: b)
@@ -135,13 +134,13 @@ object FZPatterns {
      * bool_le(var bool: a, var bool: b)
      */
     case Ctr('bool_le, Seq(a, b), p) =>
-      CSPOMConstraint('or, Seq(a, b), p + ("revsign" -> Seq(true, false)))
+      CSPOMConstraint('clause, Seq(seq2CSPOMSeq(Seq(b)), seq2CSPOMSeq(Seq(a))), p)
     /**
      * (¬a ∨ b) ↔ r
      * bool_le_reif(var bool: a, var bool: b, var bool: r)
      */
     case Ctr('bool_le_reif, Seq(a, b, r), p) =>
-      new CSPOMConstraint(r, 'or, Seq(a, b), p + ("revsign" -> Seq(true, false)))
+      new CSPOMConstraint(r, 'clause, Seq(Seq(b), Seq(a)), p)
     /**
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * bool_lin_eq(array [int] of int: as, array [int] of var bool: bs, var int: c)
@@ -321,7 +320,7 @@ object FZPatterns {
      * a = b
      * int_eq(var int: a, var int: b)
      */
-    case Ctr('int_eq, args, p) => CSPOMConstraint('eq, args, p)
+    case Ctr('int_eq, args, p)       => CSPOMConstraint('eq, args, p)
     /**
      * (a = b) ↔ r
      * int_eq_reif(var int: a, var int: b, var bool: r)
@@ -451,7 +450,7 @@ object FZPatterns {
      * set_in_reif(var int: a, var set of int: b, var bool: r)
      */
     case Ctr('set_in_reif, Seq(a, CSPOMConstant(b: Seq[_]), r), p) => {
-      val constants = new CSPOMSeq(b.map(CSPOMConstant(_)))
+      val constants = CSPOMSeq(b.map(CSPOMConstant(_)))
       new CSPOMConstraint(r, 'in, Seq(a, constants), p)
     }
     /**
@@ -495,34 +494,24 @@ object FZPatterns {
      * FlatZinc flattens t.
      * predicate table_int(array[int] of var int: x, array[int, int] of int: t)
      */
-    case Ctr('table_int, Seq(x: CSPOMSeq[_], t: CSPOMSeq[_]), p) =>
+    case Ctr('table_int, Seq(CSeq(x), CSeq(t)), p) =>
       CSPOMConstraint('extension, x, p ++ Map("init" -> false,
-        "relation" -> new Table(t.map {
-          case CSPOMConstant(v) => v
-        }.grouped(x.size).toSeq)))
+        "relation" -> new Table(t.map(CSPOMConstant(_)).grouped(x.size).toSet)))
 
     /**
      *  Constrains 'c' to be the number of occurrences of 'y' in 'x'.
      *  No support for variable y yet in Concrete…
      */
-//    case Ctr('count_eq, Seq(x, y, c), p) =>
-//      CSPOMConstraint(c, 'occurrence, Seq(x, y), p)
+    //    case Ctr('count_eq, Seq(x, y, c), p) =>
+    //      CSPOMConstraint(c, 'occurrence, Seq(x, y), p)
+
+    /**
+     *  predicate all_different_int(array[int] of var int: x);
+     */
+    case Ctr('all_different_int, Seq(y), p) =>
+      val CSeq(x) = y
+      CSPOMConstraint('alldifferent, x, p)
 
   }
 
-}
-
-class Flattener(symbol: Symbol) extends ConstraintCompiler {
-  type A = Seq[CSPOMExpression[_]]
-
-  override def constraintMatcher = {
-    case CSPOMConstraint(_, `symbol`, Seq(CSeq(args)), _) => args
-  }
-
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, args: A) = {
-    replaceCtr(constraint,
-      new CSPOMConstraint(constraint.result, symbol, args, constraint.params), problem)
-  }
-
-  def selfPropagation = false
 }

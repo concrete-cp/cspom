@@ -42,7 +42,7 @@ final class ProblemCompiler(
       for (i <- toCompile.indices) {
 
         val compiler = constraintCompilers(i)
-        logger.info(compiler.toString)
+        logger.debug(compiler.toString)
         //println(compiler)
         if (first) {
           toCompile(i) = new QueueSet(constraints.keys)
@@ -51,8 +51,9 @@ final class ProblemCompiler(
         while (toCompile(i).nonEmpty) {
 
           for (constraint <- constraints.get(toCompile(i).dequeue())) {
-            val delta = compile(compiler, constraint)
 
+            val delta = compile(compiler, constraint)
+            logger.trace(s"${constraint.toString(vn)}: $delta")
             changed |= delta.nonEmpty
 
             for (rc <- delta.removed) {
