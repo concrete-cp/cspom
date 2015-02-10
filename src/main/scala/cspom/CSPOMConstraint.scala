@@ -21,6 +21,8 @@ final case class CSPOMConstraint[+T](
   require(arguments != null)
   require(arguments.nonEmpty, "Must have at least one argument")
 
+  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
+
   def nonReified = result.isTrue
 
   def fullScope = result +: arguments

@@ -10,7 +10,6 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.IntVariable
 import cspom.compiler.GlobalCompiler
 import cspom.compiler.Ctr
-import cspom.compiler.CSeq
 import cspom.extension.Table
 import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMConstant
@@ -35,7 +34,7 @@ object FZPatterns {
      *  (∀ i ∈ 1..n : as[i]) ↔ r where n is the length of as
      * array_bool_and(array [int] of var bool: as, var bool: r)
      */
-    case Ctr('array_bool_and, Seq(CSeq(as), r), p) =>
+    case Ctr('array_bool_and, Seq(CSPOMSeq(as), r), p) =>
       CSPOMConstraint(r, 'and, as, p)
 
     /**
@@ -44,14 +43,14 @@ object FZPatterns {
      *
      * TODO: b as variable
      */
-    case Ctr('array_bool_element, Seq(CSPOMConstant(b: Int), CSeq(as), c), p) =>
+    case Ctr('array_bool_element, Seq(CSPOMConstant(b: Int), CSPOMSeq(as), c), p) =>
       CSPOMConstraint('eq, Seq(as(b), c), p)
 
     /**
      * (∃ i ∈ 1..n : as[i]) ↔ r where n is the length of as
      * array_bool_or(array [int] of var bool: as, var bool: r)
      */
-    case Ctr('array_bool_or, Seq(CSeq(as), v), p) =>
+    case Ctr('array_bool_or, Seq(CSPOMSeq(as), v), p) =>
       new CSPOMConstraint(v, 'clause, Seq(as, Nil), p)
 
     /**
@@ -115,7 +114,7 @@ object FZPatterns {
      * (∃ i ∈ 1..nas : as[i]) ∨ (∃ i ∈ 1..nbs : ¬bs[i]) where n is the length of as
      * bool_clause(array [int] of var bool: as, array [int] of var bool: bs)
      */
-    case Ctr('bool_clause, Seq(CSeq(as), CSeq(bs)), p) =>
+    case Ctr('bool_clause, Seq(CSPOMSeq(as), CSPOMSeq(bs)), p) =>
       CSPOMConstraint('clause, Seq(seq2CSPOMSeq(as), seq2CSPOMSeq(bs)), p)
     /**
      * a = b
@@ -342,7 +341,7 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_eq(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_eq, Seq(CSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
+    case Ctr('int_lin_eq, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
       CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "eq"))
 
     /**
@@ -353,7 +352,7 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] ≤ c where n is the common length of as and bs
      * int_lin_le(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    case Ctr('int_lin_le, Seq(CSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
+    case Ctr('int_lin_le, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
       CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
     /**
      * (i ∈ 1..n : as[i].bs[i] ≤ c) ↔ r where n is the common length of as and bs
@@ -363,7 +362,7 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_ne(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    //    case Ctr('int_lin_ne, Seq(CSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
+    //    case Ctr('int_lin_ne, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
     //      CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "ne"))
     /**
      * (i ∈ 1..n : as[i].bs[i] = c) ↔ r where n is the common length of as and bs
@@ -450,8 +449,7 @@ object FZPatterns {
      * set_in_reif(var int: a, var set of int: b, var bool: r)
      */
     case Ctr('set_in_reif, Seq(a, CSPOMConstant(b: Seq[_]), r), p) => {
-      val constants = CSPOMSeq(b.map(CSPOMConstant(_)))
-      new CSPOMConstraint(r, 'in, Seq(a, constants), p)
+      new CSPOMConstraint(r, 'in, Seq(a, b.map(CSPOMConstant(_))), p)
     }
     /**
      * a∩b = c
@@ -494,7 +492,7 @@ object FZPatterns {
      * FlatZinc flattens t.
      * predicate table_int(array[int] of var int: x, array[int, int] of int: t)
      */
-    case Ctr('table_int, Seq(CSeq(x), CSeq(t)), p) =>
+    case Ctr('table_int, Seq(CSPOMSeq(x), CSPOMSeq(t)), p) =>
       CSPOMConstraint('extension, x, p ++ Map("init" -> false,
         "relation" -> new Table(t.map(CSPOMConstant(_)).grouped(x.size).toSet)))
 
@@ -509,7 +507,7 @@ object FZPatterns {
      *  predicate all_different_int(array[int] of var int: x);
      */
     case Ctr('all_different_int, Seq(y), p) =>
-      val CSeq(x) = y
+      val CSPOMSeq(x: Seq[CSPOMExpression[Any]]) = y
       CSPOMConstraint('alldifferent, x, p)
 
   }

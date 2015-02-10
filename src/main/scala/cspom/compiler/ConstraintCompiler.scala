@@ -184,6 +184,5 @@ object Ctr {
 }
 
 object CSeq {
-  def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[_ >: A]]] =
-    Some(s.values)
+
 }

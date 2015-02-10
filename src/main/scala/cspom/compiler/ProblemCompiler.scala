@@ -42,7 +42,7 @@ final class ProblemCompiler(
       for (i <- toCompile.indices) {
 
         val compiler = constraintCompilers(i)
-        logger.debug(compiler.toString)
+        logger.info(compiler.toString)
         //println(compiler)
         if (first) {
           toCompile(i) = new QueueSet(constraints.keys)

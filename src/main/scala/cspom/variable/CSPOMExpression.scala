@@ -74,7 +74,7 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
     CSPOMConstant(value, Map("intersection" -> ((this, that))))
   }
 
-  override def toString = value.toString + displayParams
+  override def toString = s"[$value]$displayParams"
 
   override def equals(o: Any) = o match {
     case i: CSPOMConstant[_] => i.value == value && i.params == params
@@ -110,10 +110,13 @@ abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExp
 object CSPOMSeq {
   def empty: CSPOMSeq[Nothing] = CSPOMSeq()
   def apply[T](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq, seq.indices)
+  def apply[T](seq: Seq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] = new CSPOMSeq(seq, indices)
 
+  def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
+    Some(s.values)
 }
 
-final case class CSPOMSeq[+T](
+final class CSPOMSeq[+T](
   val values: Seq[CSPOMExpression[T]],
   val definedIndices: Range,
   val params: Map[String, Any] = Map())
@@ -151,4 +154,6 @@ final case class CSPOMSeq[+T](
   def fullyDefined = values.forall(_.fullyDefined)
 
   def searchSpace = values.foldLeft(0.0)(_ * _.searchSpace)
+
+  def zipWithIndex = values.iterator.zip(definedIndices.iterator)
 }

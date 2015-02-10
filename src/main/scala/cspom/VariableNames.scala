@@ -35,7 +35,7 @@ final class VariableNames(cspom: CSPOM) {
 
   private def nextName(e: CSPOMExpression[_]) = e match {
     case CSPOMConstant(v)  => v.toString
-    case CSPOMSeq(v, _, _) => v.map(names).mkString("CSPOMSeq(", ", ", ")")
+    case CSPOMSeq(v) => v.map(names).mkString("CSPOMSeq(", ", ", ")")
     case _ =>
       id += 1
       "_" + id

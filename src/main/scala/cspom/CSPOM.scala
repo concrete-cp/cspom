@@ -96,21 +96,19 @@ class CSPOM extends LazyLogging {
   private def namesOf(toFind: CSPOMExpression[_], root: String, expr: CSPOMExpression[_]): Iterable[String] = {
     expr match {
       case `toFind` => Iterable(root)
-      case CSPOMSeq(seq, indices, _) =>
-        for (
-          (v, i) <- seq zip indices;
-          n <- namesOf(toFind, s"$root[$i]", v)
-        ) yield n
+      case s: CSPOMSeq[_] => s.zipWithIndex
+        .flatMap {
+          case (v, i) => namesOf(toFind, s"$root[$i]", v)
+        }
+        .toIterable
+
       case _ => Iterable()
     }
   }
 
-  def variable(name: String): CSPOMVariable[_] = {
-    expression(name).map {
-      case v: CSPOMVariable[_]   => v
-      case e: CSPOMExpression[_] => throw new IllegalArgumentException(s"$e is not a variable")
-    } getOrElse {
-      throw new IllegalArgumentException(s"Could not find $name")
+  def variable(name: String): Option[CSPOMVariable[_]] = {
+    expression(name).collect {
+      case v: CSPOMVariable[_] => v
     }
   }
 
@@ -286,6 +284,7 @@ class CSPOM extends LazyLogging {
   }
 
   def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]) = {
+    logger.debug(s"replacing $which with $by from ${Thread.currentThread().getStackTrace.toSeq}")
     for ((n, e) <- namedExpressions) {
       namedExpressions(n) = e.replaceVar(which, by)
     }
