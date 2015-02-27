@@ -10,11 +10,14 @@ import cspom.util.Finite
 import cspom.util.Interval
 import cspom.util.PlusInf
 import cspom.util.MinInf
+import cspom.UNSATException
 
 final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, Any] = Map())
   extends CSPOMVariable[Int](params) with LazyLogging {
 
   val asSortedSet = new ContiguousIntRangeSet(domain)
+
+  if (domain.isEmpty) throw new UNSATException("A variable with empty domain was created")
 
   def isConvex = domain.isConvex
 

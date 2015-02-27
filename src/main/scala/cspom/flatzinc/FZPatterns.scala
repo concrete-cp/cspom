@@ -310,16 +310,17 @@ object FZPatterns {
      * |a| = b
      * int_abs(var int: a, var int: b)
      */
-    case Ctr('int_abs, Seq(a, b), p) => CSPOMConstraint(b, 'abs, Seq(a), p)
+    case Ctr('int_abs, Seq(a, b), p)    => CSPOMConstraint(b, 'abs, Seq(a), p)
     /**
      * a/b = c rounding towards zero.
      * int_div(var int: a, var int: b, var int: c)
      */
+    case Ctr('int_div, Seq(a, b, c), p) => CSPOMConstraint(c, 'div, Seq(a, b), p)
     /**
      * a = b
      * int_eq(var int: a, var int: b)
      */
-    case Ctr('int_eq, args, p)       => CSPOMConstraint('eq, args, p)
+    case Ctr('int_eq, args, p)          => CSPOMConstraint('eq, args, p)
     /**
      * (a = b) ↔ r
      * int_eq_reif(var int: a, var int: b, var bool: r)
@@ -362,8 +363,8 @@ object FZPatterns {
      * i ∈ 1..n : as[i].bs[i] = c where n is the common length of as and bs
      * int_lin_ne(array [int] of int: as, array [int] of var int: bs, int: c)
      */
-    //    case Ctr('int_lin_ne, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
-    //      CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "ne"))
+    case Ctr('int_lin_ne, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
+      CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "ne"))
     /**
      * (i ∈ 1..n : as[i].bs[i] = c) ↔ r where n is the common length of as and bs
      * int_lin_ne_reif(array [int] of int: as, array [int] of var int: bs, int: c, var bool: r)

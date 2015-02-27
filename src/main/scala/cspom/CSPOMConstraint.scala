@@ -19,9 +19,11 @@ final case class CSPOMConstraint[+T](
 
   require(result != null)
   require(arguments != null)
-  require(arguments.nonEmpty, "Must have at least one argument")
+ // require(arguments.nonEmpty, "Must have at least one argument")
 
-  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
+//  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
+//  require(function != 'alldifferent || arguments.forall(_.isInstanceOf[SimpleExpression[_]]))
+//  require(function != 'ge)
 
   def nonReified = result.isTrue
 
@@ -68,7 +70,7 @@ final case class CSPOMConstraint[+T](
   }
 
   def toString(vn: VariableNames): String = {
-    val args = arguments.map(vn.names(_))
+    val args = arguments.map(a => vn.names(a))
     if (result.isTrue) {
       toString(None, args)
     } else {

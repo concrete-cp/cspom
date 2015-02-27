@@ -109,6 +109,7 @@ abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExp
 
 object CSPOMSeq {
   def empty: CSPOMSeq[Nothing] = CSPOMSeq()
+  @annotation.varargs
   def apply[T](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq, seq.indices)
   def apply[T](seq: Seq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] = new CSPOMSeq(seq, indices)
 
@@ -153,7 +154,7 @@ final class CSPOMSeq[+T](
 
   def fullyDefined = values.forall(_.fullyDefined)
 
-  def searchSpace = values.foldLeft(0.0)(_ * _.searchSpace)
+  def searchSpace = values.foldLeft(1.0)(_ * _.searchSpace)
 
   def zipWithIndex = values.iterator.zip(definedIndices.iterator)
 }

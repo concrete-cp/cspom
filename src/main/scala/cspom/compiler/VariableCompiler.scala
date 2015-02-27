@@ -3,6 +3,7 @@ package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMExpression
+import cspom.UNSATException
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -13,7 +14,11 @@ abstract class VariableCompiler(
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {
     if (c.function == function) {
-      val m = compiler(c).filter { case (k, v) => k != v }
+      val m = try {
+        compiler(c).filter { case (k, v) => k != v }
+      } catch {
+        case e: UNSATException => throw new UNSATException(s"$c is inconsistent", e)
+      }
       require(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
 
       if (m.nonEmpty) {
@@ -37,7 +42,5 @@ abstract class VariableCompiler(
   }
 
   def selfPropagation = true
-
-
 
 }
