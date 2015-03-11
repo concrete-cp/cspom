@@ -51,16 +51,11 @@ trait ConstraintCompiler extends LazyLogging {
   }
 
   def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta = {
-    in.removeConstraint(which)
-    in.ctr(by)
-    Delta().removed(which).added(by)
+    removeCtr(which, in) ++ addCtr(by, in)
   }
 
   def replaceCtr(which: Seq[CSPOMConstraint[_]], by: CSPOMConstraint[_], in: CSPOM): Delta = {
-    which.foreach(in.removeConstraint)
-    val d = Delta().removed(which)
-    in.ctr(by)
-    d.added(by)
+    removeCtr(which, in) ++ addCtr(by, in)
   }
 
   def replaceCtr(which: CSPOMConstraint[_], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
@@ -68,12 +63,20 @@ trait ConstraintCompiler extends LazyLogging {
   }
 
   def replaceCtr(which: Seq[CSPOMConstraint[_]], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    which.foreach(in.removeConstraint)
-    val dr = Delta().removed(which)
+    removeCtr(which, in) ++ addCtr(by, in)
+  }
 
-    by.foreach(in.ctr(_))
+  def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+    c.foreach(in.removeConstraint)
+    Delta.empty.removed(c)
+  }
 
-    dr.added(by)
+  def removeCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = removeCtr(Seq(c), in)
+
+  def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
+  def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+    c.foreach(in.ctr(_))
+    Delta.empty.added(c)
   }
 
   def selfPropagation: Boolean
