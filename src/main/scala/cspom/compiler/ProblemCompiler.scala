@@ -71,13 +71,13 @@ final class ProblemCompiler(
                 problem.constraints(_)).distinct
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
-              if (j != i || compiler.selfPropagation) {
+//              if (j != i || compiler.selfPropagation) {
                 for (ac <- enqueue) {
-                  if (i != j || (ac ne constraint)) {
+//                  if (i != j || (ac ne constraint)) {
                     toCompile(j).enqueue(ac.id)
-                  }
+//                  }
                 }
-              }
+//              }
             }
 
           }
