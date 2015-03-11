@@ -5,6 +5,7 @@ import scala.collection.mutable.WeakHashMap
 import cspom.CSPOM
 import cspom.Parameterized
 import cspom.util.ContiguousIntRangeSet
+import cspom.UNSATException
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -70,8 +71,11 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
   def contains[S >: T](that: S) = value == that
 
   def intersected(that: SimpleExpression[_ >: T]) = {
-    require(that.contains(value), "Empty intersection")
-    CSPOMConstant(value, Map("intersection" -> ((this, that))))
+    if (!that.contains(value)) {
+      throw new UNSATException("Empty intersection")
+    } else {
+      this
+    }
   }
 
   override def toString = s"[$value]$displayParams"
