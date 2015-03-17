@@ -7,6 +7,7 @@ import cspom.variable.BoolVariable
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.OptionValues
+import cspom.variable.CSPOMSeq
 
 class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
@@ -85,52 +86,81 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
     }
 
     val gml = cspom.toGML
-    
+
     //shouldBe """graph [
-//directed 0
-//
-//          node [
-//            id "X"
-//            label "X"
-//          ]
-//          
-//          node [
-//            id "Y"
-//            label "Y"
-//          ]
-//          
-//          node [
-//            id "Z"
-//            label "Z"
-//          ]
-//          
-//          edge [
-//            source "X"
-//            target "Y"
-//            label "leq"
-//          ]
-//          
-//          node [
-//            id "cons1"
-//            label "leq"
-//            graphics [ fill "#FFAA00" ]
-//          ]
-//          
-//          edge [
-//            source "cons1"
-//            target "X"
-//          ]
-//          
-//          edge [
-//            source "cons1"
-//            target "Y"
-//          ]
-//          
-//          edge [
-//            source "cons1"
-//            target "Z"
-//          ]
-//          ]
-//"""
+    //directed 0
+    //
+    //          node [
+    //            id "X"
+    //            label "X"
+    //          ]
+    //          
+    //          node [
+    //            id "Y"
+    //            label "Y"
+    //          ]
+    //          
+    //          node [
+    //            id "Z"
+    //            label "Z"
+    //          ]
+    //          
+    //          edge [
+    //            source "X"
+    //            target "Y"
+    //            label "leq"
+    //          ]
+    //          
+    //          node [
+    //            id "cons1"
+    //            label "leq"
+    //            graphics [ fill "#FFAA00" ]
+    //          ]
+    //          
+    //          edge [
+    //            source "cons1"
+    //            target "X"
+    //          ]
+    //          
+    //          edge [
+    //            source "cons1"
+    //            target "Y"
+    //          ]
+    //          
+    //          edge [
+    //            source "cons1"
+    //            target "Z"
+    //          ]
+    //          ]
+    //"""
+  }
+
+  it should "correctly replace variables" in {
+    val cspom = CSPOM { implicit problem =>
+      val x = IntVariable(0 to 10) as "X"
+      val y = IntVariable(10 to 20) as "Y"
+      Seq(x, y) as "T"
+    }
+
+    val x = cspom.expression("X").get
+
+    val y = cspom.expression("Y").get
+    val rx = IntVariable(20 to 30)
+
+    cspom.replaceExpression(x, rx)
+    val t = cspom.expression("T").get
+
+    t shouldBe CSPOMSeq(rx, y)
+    cspom.expression("X").value shouldBe rx
+    cspom.expression("T[0]").value shouldBe rx
+    cspom.expression("T[1]").value shouldBe y
+    cspom.referencedExpressions should contain theSameElementsAs Seq(rx, y, t)
+
+    cspom.replaceExpression(t, x)
+    cspom.expression("X").value shouldBe rx
+    cspom.expression("T").value shouldBe x
+    cspom.expression("T[0]") shouldBe None
+    cspom.referencedExpressions should contain theSameElementsAs Seq(rx, y, x)
+
   }
 }
