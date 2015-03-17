@@ -5,15 +5,20 @@ import java.io.InputStream
 import java.net.URI
 import java.net.URL
 import java.util.zip.GZIPInputStream
+
 import scala.Iterator
 import scala.collection.JavaConversions
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
+
 import org.apache.tools.bzip2.CBZip2InputStream
+
 import com.typesafe.scalalogging.LazyLogging
+
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
+import cspom.extension.Table
 import cspom.extension.Table
 import cspom.flatzinc.FlatZincParser
 import cspom.variable.BoolVariable
@@ -25,7 +30,6 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
-import cspom.extension.Table
 
 object NameParser extends JavaTokenParsers {
 
@@ -62,6 +66,10 @@ class CSPOM extends LazyLogging {
    */
   val namedExpressions = collection.mutable.LinkedHashMap[String, CSPOMExpression[_]]()
 
+  private val expressionNames = collection.mutable.HashMap[CSPOMExpression[_], Set[String]]().withDefaultValue(Set.empty)
+
+  private val containers = collection.mutable.HashMap[CSPOMExpression[_], Set[(CSPOMSeq[_], Int)]]().withDefaultValue(Set.empty)
+
   def getExpressions = JavaConversions.asJavaCollection(namedExpressions)
 
   /**
@@ -87,24 +95,33 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
-    namedExpressions flatMap {
-      case (n, expr) => namesOf(e, n, expr)
+  private def namesInContainers(e: CSPOMExpression[_]): Iterable[String] = {
+    containers(e).flatMap {
+      case (seq, index) => namesOf(seq).map(s => s"$s[$index]")
     }
+
   }
 
-  private def namesOf(toFind: CSPOMExpression[_], root: String, expr: CSPOMExpression[_]): Iterable[String] = {
-    expr match {
-      case `toFind` => Iterable(root)
-      case s: CSPOMSeq[_] => s.zipWithIndex
-        .flatMap {
-          case (v, i) => namesOf(toFind, s"$root[$i]", v)
-        }
-        .toIterable
+  def namesOf(e: CSPOMExpression[_]): Iterable[String] = expressionNames(e) ++ namesInContainers(e)
 
-      case _ => Iterable()
-    }
-  }
+  //  {
+  //    namedExpressions flatMap {
+  //      case (n, expr) => namesOf(e, n, expr)
+  //    }
+  //  }
+
+  //  private def namesOf(toFind: CSPOMExpression[_], root: String, expr: CSPOMExpression[_]): Iterable[String] = {
+  //    expr match {
+  //      case `toFind` => Iterable(root)
+  //      case s: CSPOMSeq[_] => s.zipWithIndex
+  //        .flatMap {
+  //          case (v, i) => namesOf(toFind, s"$root[$i]", v)
+  //        }
+  //        .toIterable
+  //
+  //      case _ => Iterable()
+  //    }
+  //  }
 
   def variable(name: String): Option[CSPOMVariable[_]] = {
     expression(name).collect {
@@ -126,7 +143,20 @@ class CSPOM extends LazyLogging {
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
     namedExpressions += n -> e
+    expressionNames(e) += n
+    registerContainer(e)
     e
+  }
+
+  private def registerContainer(e: CSPOMExpression[_]): Unit = {
+    e match {
+      case s: CSPOMSeq[_] =>
+        for ((c, i) <- s.withIndex) {
+          containers(c) += ((s, i))
+          registerContainer(c)
+        }
+      case _ =>
+    }
   }
 
   private val ctrV = collection.mutable.LinkedHashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]()
@@ -283,11 +313,23 @@ class CSPOM extends LazyLogging {
     stb.append("]\n").toString
   }
 
-  def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]) = {
+  def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]): Unit = {
     logger.debug(s"replacing $which with $by from ${Thread.currentThread().getStackTrace.toSeq}")
-    for ((n, e) <- namedExpressions) {
-      namedExpressions(n) = e.replaceVar(which, by)
+    for (n <- expressionNames(which)) {
+      namedExpressions(n) = by
     }
+    expressionNames(by) = expressionNames(which)
+    expressionNames.remove(which)
+    for ((c, i) <- containers(which)) {
+      val nc = c.replaceVar(which, by)
+      replaceExpression(c, nc)
+      for ((contained, containedIndex) <- c.withIndex) {
+        containers(contained) -= ((c, containedIndex))
+      }
+      //containers.remove(which)
+      registerContainer(nc)
+    }
+
   }
 
   def referencedExpressions: Seq[CSPOMExpression[_]] = {
