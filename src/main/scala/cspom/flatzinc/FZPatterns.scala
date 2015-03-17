@@ -355,6 +355,10 @@ object FZPatterns {
      */
     case Ctr('int_lin_le, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
       CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
+      
+    case Ctr('bool_lin_le, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
+      CSPOMConstraint('pseudoboolean, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
+      
     /**
      * (i ∈ 1..n : as[i].bs[i] ≤ c) ↔ r where n is the common length of as and bs
      * int_lin_le_reif(array [int] of int: as, array [int] of var int: bs, int: c, var bool: r)
