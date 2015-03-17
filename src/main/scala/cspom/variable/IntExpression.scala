@@ -34,9 +34,9 @@ object IntExpression {
   }
 
   def isInt(e: CSPOMExpression[_]): Boolean = e match {
-    case i: IntVariable            => true
-    case c @ CSPOMConstant(_: Int) => true
-    case _                         => false
+    case i: IntVariable        => true
+    case CSPOMConstant(_: Int) => true
+    case _                     => false
   }
 
   def span(e: SimpleExpression[Int]): Interval[Infinitable] = e match {
