@@ -174,8 +174,8 @@ object FlatZincParser extends RegexParsers {
   }
 
   def exprInAnn: Parser[FZExpr[Any]] =
-    expr |
-      array_exprInAnn |
+    expr |||
+      array_exprInAnn |||
       annotation |
       stringLiteral ^^ FZStringLiteral
 
