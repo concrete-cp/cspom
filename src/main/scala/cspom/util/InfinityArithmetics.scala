@@ -33,6 +33,8 @@ sealed trait Infinitable extends Any {
 
   def <=(i: Int): Boolean
   def <(i: Int): Boolean
+  def >=(i: Int): Boolean
+  def >(i: Int): Boolean
 }
 case object MinInf extends Infinitable {
   def +(v: Infinitable) = MinInf
@@ -58,6 +60,8 @@ case object MinInf extends Infinitable {
   def unary_-() = PlusInf
   def <=(i: Int) = true
   def <(i: Int) = true
+  def >=(i: Int) = false
+  def >(i: Int) = false
   override def toString = "-∞"
 }
 case object PlusInf extends Infinitable {
@@ -75,6 +79,8 @@ case object PlusInf extends Infinitable {
   def divisible(v: Infinitable) = false
   def <=(i: Int) = false
   def <(i: Int) = false
+  def >=(i: Int) = false
+  def >(i: Int) = false
   override def toString = "+∞"
 }
 case class Finite(i: Int) extends AnyVal with Infinitable {
@@ -102,5 +108,8 @@ case class Finite(i: Int) extends AnyVal with Infinitable {
 
   def <=(j: Int) = i <= j
   def <(j: Int) = i < j
+  def >=(j: Int) = i >= j
+  def >(j: Int) = i > j
+  
   override def toString = i.toString
 }
