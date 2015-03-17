@@ -34,9 +34,9 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
     val domains: IndexedSeq[Set[Any]] = args.map {
       case CSPOMConstant(v: Any) => Set(v)
-      case v: IntVariable => v.asSortedSet.asInstanceOf[Set[Any]]
-      case b: BoolVariable => Set[Any](false, true)
-      case _ => ???
+      case v: IntVariable        => v.asSortedSet.asInstanceOf[Set[Any]]
+      case b: BoolVariable       => Set[Any](false, true)
+      case _                     => ???
     }
 
     val vars = c.arguments.zipWithIndex.collect {
@@ -48,23 +48,37 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
     val cached = cache.getOrElseUpdate((IdEq(relation), domains, vars), {
       logger.info("reducing !")
       val filtered = relation.filter((k, i) => domains(k)(i))
+      
+      logger.trace(s"filtered: ${filtered ne relation}")
 
       val projected = if (vars.size < c.arguments.size) {
         filtered.project(vars)
       } else {
         filtered
       }
+      
+      logger.trace(s"projected: ${projected ne filtered}")
 
-      projected match {
+      val reduced = projected match {
         case p: MDD[_] => p.reduce
-        case p => p
+        case p         => p
       }
+      
+      logger.trace(s"reduced: ${reduced ne projected}")
+      
+      reduced
     })
 
-    logger.info(s"$relation -> $cached")
-    replaceCtr(c,
-      CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", cached)),
-      problem)
+    if (relation ne cached) {
+
+      logger.info(s"$relation -> $cached")
+      replaceCtr(c,
+        CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", cached)),
+        problem)
+
+    } else {
+      Delta.empty
+    }
 
   }
 

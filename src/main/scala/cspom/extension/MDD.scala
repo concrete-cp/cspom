@@ -118,7 +118,7 @@ sealed trait MDD[A] extends Relation[A] {
 
   override final def equals(m: Any) = m match {
     case m: MDD[A] => equals(m, new IdMap())
-    case o => o equals this
+    case o         => o equals this
   }
 
   def equals(m: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean
@@ -191,8 +191,17 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
 
   def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A] = {
     //println(this.toSet)
-    mdds.getOrElseUpdate((depth, this),
-      new MDDNode(trie.map(e => e._1 -> e._2.reduce(mdds, depth + 1))))
+    mdds.getOrElseUpdate((depth, this), {
+
+      val reduced = trie.map(e => e._1 -> e._2.reduce(mdds, depth + 1))
+
+      if (same(trie, reduced)) {
+        this
+      } else {
+        new MDDNode(reduced)
+      }
+
+    })
     //println("cached: " + (reduced eq cached))
 
   }
