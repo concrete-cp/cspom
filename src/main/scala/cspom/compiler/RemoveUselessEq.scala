@@ -30,7 +30,7 @@ object RemoveUselessEq extends ConstraintCompiler {
     } else {
       require(c.result != CSPOMConstant(false))
       val d = replaceCtr(c, Nil, problem)
-      d ++ replace(Seq(c.result), CSPOMConstant(true), problem)
+      d ++ replace(c.result, CSPOMConstant(true), problem)
     }
 
   }

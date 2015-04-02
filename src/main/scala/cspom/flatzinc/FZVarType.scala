@@ -1,61 +1,58 @@
 package cspom.flatzinc
 
+import cspom.util.IntInterval
 import cspom.variable.BoolVariable
+import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
-import FlatZincParser.fzAnnotations
-import cspom.util.IntInterval
-import cspom.variable.CSPOMConstant
 
 sealed trait FZVarType[T] {
-  def genVariable(ann: Seq[FZAnnotation]): CSPOMExpression[T]
+  def genVariable: CSPOMExpression[T]
 }
 
 object FZBoolean extends FZVarType[Boolean] {
-  def genVariable(ann: Seq[FZAnnotation]) = new BoolVariable(fzAnnotations(ann))
+  def genVariable = new BoolVariable()
 }
 
 case object FZFloat extends FZVarType[Double] {
-  def genVariable(ann: Seq[FZAnnotation]) = ???
+  def genVariable = ???
 }
 
 final case class FZFloatInterval(lb: Double, ub: Double) extends FZVarType[Double] {
-  def genVariable(ann: Seq[FZAnnotation]) = ???
+  def genVariable = ???
 }
 
 case object FZInt extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.free(fzAnnotations(ann))
+  def genVariable = IntVariable.free()
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = {
+  def genVariable = {
     if (lb == ub) {
-      CSPOMConstant(lb, fzAnnotations(ann))
+      CSPOMConstant(lb)
     } else {
-      IntVariable(IntInterval(lb, ub), fzAnnotations(ann))
+      IntVariable(IntInterval(lb, ub))
     }
   }
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = IntVariable.ofSeq(values, fzAnnotations(ann))
+  def genVariable = IntVariable.ofSeq(values)
 }
 
 case object FZIntSet extends FZVarType[Int] {
-  def genVariable(ann: Seq[FZAnnotation]) = ???
+  def genVariable = ???
 }
 
 final case class FZArray[T](indices: Seq[IndexSet], typ: FZVarType[T]) extends FZVarType[T] {
-  def genVariable(ann: Seq[FZAnnotation]) = new CSPOMSeq(
+  def genVariable = new CSPOMSeq(
     indices.head.range.map(i => generate(indices.tail)),
-    indices.head.range,
-    fzAnnotations(ann))
+    indices.head.range)
 
   private def generate(indices: Seq[IndexSet]): CSPOMExpression[T] = {
     if (indices.isEmpty) {
-      typ.genVariable(Seq())
+      typ.genVariable
     } else {
       new CSPOMSeq(
         indices.head.range.map(i => generate(indices.tail)),

@@ -34,21 +34,20 @@ final class VariableNames(cspom: CSPOM) {
   var id = 0
 
   private def nextName(e: CSPOMExpression[_]) = e match {
-    case CSPOMConstant(v)  => v.toString
-    case CSPOMSeq(v) => v.map(names).mkString("CSPOMSeq(", ", ", ")")
+    case CSPOMConstant(v) => v.toString
+    case CSPOMSeq(v)      => v.map(names).mkString("CSPOMSeq(", ", ", ")")
     case _ =>
       id += 1
       "_" + id
   }
 
-  def names(expression: CSPOMExpression[_]): String =
-    generatedNames.getOrElseUpdate(expression, {
-      val cspomNames = cspom.namesOf(expression)
-      if (cspomNames.isEmpty) {
-        nextName(expression)
-      } else {
-        cspomNames.mkString("||")
-      }
-    })
+  def names(expression: CSPOMExpression[_]): String = {
+    val cspomNames = cspom.namesOf(expression)
+    if (cspomNames.isEmpty) {
+      generatedNames.getOrElseUpdate(expression, nextName(expression))
+    } else {
+      cspomNames.mkString("||")
+    }
+  }
 
 }

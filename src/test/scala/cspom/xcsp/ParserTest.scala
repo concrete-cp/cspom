@@ -13,8 +13,8 @@ final class ParserTest extends FlatSpec with Matchers {
 
     val cspom = XCSPParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1;
     //println(cspom);
-    cspom.namedExpressions should have size 25
-    assert(!cspom.namedExpressions.values.exists(_.params.contains("var_is_introduced")))
+    cspom.expressionsWithNames should have size 25
+    assert(!cspom.expressionsWithNames.exists(e => cspom.getAnnotations(e._1).hasParam("var_is_introduced")))
 
     cspom.constraints.size should be >= 55
   }

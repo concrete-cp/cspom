@@ -54,15 +54,15 @@ case class FZVarParId(value: String) extends FZExpr[String] {
 case class FZArrayExpr[+A](value: Seq[FZExpr[A]]) extends FZExpr[Seq[FZExpr[A]]] {
   def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) =
     new CSPOMSeq(
-        value.map(_.toCSPOM(declared)),
-        1 to value.size)
+      value.map(_.toCSPOM(declared)),
+      1 to value.size)
 
   def asConstant(indices: Range): CSPOMSeq[_] =
     new CSPOMSeq(value.map {
       case c: FZConstant[_] => c.asConstant
       //case a: FZArrayExpr[_] => a.asConstant(indices)
-      case _ => throw new IllegalArgumentException
-    }, indices, Map())
+      case _                => throw new IllegalArgumentException
+    }, indices)
 }
 
 case class FZStringLiteral(value: String) extends FZConstant[String] {

@@ -11,8 +11,8 @@ import scala.collection.mutable.HashMap
  *
  */
 
-class FreeVariable(params: Map[String, Any]) extends CSPOMVariable[Any](params) {
-  override def toString = s"free variable$displayParams"
+class FreeVariable extends CSPOMVariable[Any] {
+  override def toString = s"free var"
   def intersected(other: SimpleExpression[_ >: Any]) = other
   def contains[S >: Any](that: S) = true
   def iterator = throw new UnsupportedOperationException

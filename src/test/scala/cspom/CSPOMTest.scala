@@ -8,6 +8,8 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.OptionValues
 import cspom.variable.CSPOMSeq
+import cspom.compiler.MergeEq
+import cspom.compiler.ProblemCompiler
 
 class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
@@ -23,7 +25,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
     }
 
-    vars should contain theSameElementsAs cspom.namedExpressions.values
+    vars should contain theSameElementsAs cspom.expressionsWithNames.map(_._2)
 
     cspom.expression("test1").value shouldBe vars(0)
   }
@@ -155,12 +157,41 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
     cspom.expression("T[0]").value shouldBe rx
     cspom.expression("T[1]").value shouldBe y
     cspom.referencedExpressions should contain theSameElementsAs Seq(rx, y, t)
+    cspom.namesOf(x) shouldBe 'empty
+    cspom.namesOf(rx) should contain theSameElementsAs Seq("X", "T[0]")
+    cspom.namesOf(y) should contain theSameElementsAs Seq("Y", "T[1]")
 
     cspom.replaceExpression(t, x)
     cspom.expression("X").value shouldBe rx
     cspom.expression("T").value shouldBe x
     cspom.expression("T[0]") shouldBe None
     cspom.referencedExpressions should contain theSameElementsAs Seq(rx, y, x)
+    cspom.namesOf(x) should contain theSameElementsAs Seq("T")
+    cspom.namesOf(rx) should contain theSameElementsAs Seq("X")
+    cspom.namesOf(y) should contain theSameElementsAs Seq("Y")
 
+  }
+
+  it should "correctly merge variables" in {
+    val cspom = CSPOM { implicit problem =>
+      val x = IntVariable(0 to 10) as "X"
+      val y = IntVariable(10 to 20) as "Y"
+
+      val array = IndexedSeq.fill(2)(IntVariable.free()) as "Array"
+
+      ctr(x === array(0))
+      ctr(y === array(1))
+    }
+
+    ProblemCompiler.compile(cspom, Seq(MergeEq))
+
+//    println(cspom)
+//
+//    println("namedExpressions")
+//    println(cspom.namedExpressions.mkString("\n"))
+//    println("\nexpressionNames")
+//    println(cspom.expressionNames.mkString("\n"))
+//    println("\ncontainers")
+//    println(cspom.containers.mkString("\n"))
   }
 }

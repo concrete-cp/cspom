@@ -6,11 +6,12 @@ import cspom.CSPOM
 import cspom.Parameterized
 import cspom.util.ContiguousIntRangeSet
 import cspom.UNSATException
+import scala.collection.mutable.HashMap
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
  */
-sealed trait CSPOMExpression[+T] extends Parameterized {
+sealed trait CSPOMExpression[+T] {
 
   def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R]
 
@@ -57,35 +58,35 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
 object SimpleExpression {
   def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
-    case v: IntVariable   => new ContiguousIntRangeSet(v.domain)
-    case b: BoolVariable  => Iterable(false, true)
-    case CSPOMConstant(c) => Iterable[A](c)
-
+    case v: IntVariable      => new ContiguousIntRangeSet(v.domain)
+    case b: BoolVariable     => Iterable(false, true)
+    case CSPOMConstant(c)    => Iterable[A](c)
+    case _: CSPOMVariable[A] => throw new IllegalArgumentException(s"Cannot iterate over $e")
   }
 
 }
 
-class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) extends SimpleExpression[T] {
+case class CSPOMConstant[+T](value: T) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
 
   def contains[S >: T](that: S) = value == that
 
   def intersected(that: SimpleExpression[_ >: T]) = {
-    if (!that.contains(value)) {
-      throw new UNSATException("Empty intersection")
-    } else {
+    if (that.contains(value)) {
       this
+    } else {
+      throw new UNSATException("Empty intersection")
     }
   }
 
-  override def toString = s"[$value]$displayParams"
+  override def toString = s"[$value]"
 
-  override def equals(o: Any) = o match {
-    case i: CSPOMConstant[_] => i.value == value && i.params == params
-    case i: Any              => i == value && params.isEmpty
-  }
-
-  override def hashCode = 31 * value.hashCode + params.hashCode
+  //  override def equals(o: Any) = o match {
+  //    case i: CSPOMConstant[_] => i.value == value && i.params == params
+  //    case i: Any              => i == value && params.isEmpty
+  //  }
+  //
+  //  override def hashCode = 31 * value.hashCode + params.hashCode
 
   def isTrue = value == true
 
@@ -96,16 +97,16 @@ class CSPOMConstant[+T](val value: T, val params: Map[String, Any] = Map()) exte
   def searchSpace = 1
 }
 
-object CSPOMConstant {
-  val cache = new WeakHashMap[(Any, Map[String, Any]), CSPOMConstant[Any]]
+//object CSPOMConstant {
+//  val cache = new HashMap[Any, CSPOMConstant[Any]]
+//
+//  def apply[A](value: A): CSPOMConstant[A] =
+//    cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[A]]
+//
+//  def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
+//}
 
-  def apply[A](value: A, params: Map[String, Any] = Map()): CSPOMConstant[A] =
-    cache.getOrElseUpdate((value, params), new CSPOMConstant(value, params)).asInstanceOf[CSPOMConstant[A]]
-
-  def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
-}
-
-abstract class CSPOMVariable[+T](val params: Map[String, Any]) extends SimpleExpression[T] {
+abstract class CSPOMVariable[+T]() extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
   def isTrue = false
   def isFalse = false
@@ -123,8 +124,7 @@ object CSPOMSeq {
 
 final class CSPOMSeq[+T](
   val values: Seq[CSPOMExpression[T]],
-  val definedIndices: Range,
-  val params: Map[String, Any] = Map())
+  val definedIndices: Range)
   extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
 
   def +:[S >: T](v: CSPOMExpression[S]) = CSPOMSeq(v +: values: _*)
@@ -146,7 +146,11 @@ final class CSPOMSeq[+T](
       by
     } else {
       val replaced = values.map(_.replaceVar(which, by))
-      new CSPOMSeq(replaced, definedIndices, params)
+      if (values == replaced) {
+        this
+      } else {
+        new CSPOMSeq(replaced, definedIndices)
+      }
     }
   }
 
@@ -161,4 +165,11 @@ final class CSPOMSeq[+T](
   def searchSpace = values.foldLeft(1.0)(_ * _.searchSpace)
 
   def zipWithIndex = values.iterator.zip(definedIndices.iterator)
+  //
+  //  override def equals(o: Any) = o match {
+  //    case a: AnyRef => a eq this
+  //    case _         => false
+  //  }
+  //
+  //  override def hashCode() = System.identityHashCode(this)
 }

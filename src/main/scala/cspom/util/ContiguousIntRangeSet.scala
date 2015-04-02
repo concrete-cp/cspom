@@ -6,12 +6,9 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
 
   def ordering = Ordering.Int
 
-  def allValues(i: Interval[Infinitable]): Iterable[Int] = {
-    i.asInstanceOf[IntInterval]
-  }
+  def allValues(i: Interval[Infinitable]): Iterable[Int] = i.asInstanceOf[IntInterval]
 
-  def iterator: Iterator[Int] =
-    r.ranges.iterator.flatMap(allValues)
+  def iterator: Iterator[Int] = r.ranges.iterator.flatMap(allValues)
 
   override def isEmpty = r.isEmpty
 
@@ -35,9 +32,9 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
     new ContiguousIntRangeSet(r & i)
   }
 
-  override def last = {
-    val Finite(u) = r.upperBound
-    u
+  override def last = r.upperBound match {
+    case Finite(u) => u
+    case _         => throw new IllegalStateException(s"$r is not finite")
   }
 
   override def size = r.ranges.iterator.map(allValues(_).size).sum

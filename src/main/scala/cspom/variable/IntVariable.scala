@@ -12,8 +12,8 @@ import cspom.util.PlusInf
 import cspom.util.MinInf
 import cspom.UNSATException
 
-final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, Any] = Map())
-  extends CSPOMVariable[Int](params) with LazyLogging {
+final class IntVariable(val domain: RangeSet[Infinitable])
+  extends CSPOMVariable[Int] with LazyLogging {
 
   val asSortedSet = new ContiguousIntRangeSet(domain)
 
@@ -25,9 +25,7 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
     logger.warn(s"$domain: a variable domain should be of size 2 or more, created in ${Thread.currentThread().getStackTrace.toSeq}")
   }
 
-  override def toString = {
-    s"int variable ($domain)$displayParams"
-  }
+  override def toString = domain.toString
 
   def contains[S >: Int](that: S): Boolean = that match {
     case t: Int => domain.contains(Finite(t))
@@ -41,11 +39,12 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
       //        const.asInstanceOf[CSPOMConstant[Int]]
       //      //CSPOMConstant(c, Map("intersection" -> ((this, c))))
       case v: IntVariable => {
-        if (domain == v.domain) {
+        val d = domain & v.domain
+        if (domain == d) {
+          this
+        } else if (v.domain == d) {
           v
         } else {
-          val d = domain & v.domain
-
           new ContiguousIntRangeSet(d).singletonMatch match {
             case Some(s) => CSPOMConstant(s) //, Map("intersection" -> ((this, v))))
             case None    => new IntVariable(d) //, Map("intersection" -> ((this, v))))
@@ -69,32 +68,23 @@ final class IntVariable(val domain: RangeSet[Infinitable], params: Map[String, A
 }
 
 object IntVariable {
-  def apply(values: Range, params: Map[String, Any] = Map()): IntVariable = apply(
-    IntInterval(values.head, values.last), params)
+  def apply(values: Range): IntVariable = apply(
+    IntInterval(values.head, values.last))
 
-  def ofSeq(values: Seq[Int], params: Map[String, Any]): IntVariable = {
+  def ofSeq(values: Seq[Int]): IntVariable = {
     new IntVariable(RangeSet(values.map(
-      v => IntInterval.singleton(v))), params)
+      v => IntInterval.singleton(v))))
   }
 
-  def ofSeq(values: Int*): IntVariable = ofSeq(values, Map[String, Any]())
+  def apply(values: Int*): IntVariable = ofSeq(values)
 
-  def apply(values: RangeSet[Infinitable]): IntVariable = {
-    IntVariable(values, Map[String, Any]())
-  }
-
-  def apply(values: RangeSet[Infinitable], params: Map[String, Any]) =
-    new IntVariable(values, params)
-
-  def apply(values: IntInterval, params: Map[String, Any]): IntVariable = {
-    apply(RangeSet(values), params)
-  }
+  def apply(values: RangeSet[Infinitable]): IntVariable = new IntVariable(values)
 
   def apply(values: IntInterval): IntVariable = apply(RangeSet(values))
 
-  def free(params: Map[String, Any] = Map()): IntVariable =
-    new IntVariable(RangeSet.allInt, params)
+  def free(): IntVariable =
+    new IntVariable(RangeSet.allInt)
 
-  def unapply(v: IntVariable) = Some((v.domain, v.params))
+  def unapply(v: IntVariable) = Some(v.domain)
 
 }

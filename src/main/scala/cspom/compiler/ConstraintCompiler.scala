@@ -30,27 +30,49 @@ trait ConstraintCompiler extends LazyLogging {
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
 
-  def replace[T, S <: T](wh: Seq[CSPOMExpression[T]], by: CSPOMExpression[S], in: CSPOM): Delta = {
-    //println(s"Replacing $which with $by")
+  def replace[T, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
+    //println(s"Replacing $wh with $by")
 
-    val which = wh.filter(_ ne by)
+    if (wh == by) {
+      Delta()
+    } else {
 
-    which.foreach(in.replaceExpression(_, by))
+      (wh, by) match {
+        case (c1: CSPOMConstant[_], c2: CSPOMConstant[_]) =>
+          require(c1.value == c2.value)
 
-    val oldConstraints = which.flatMap(in.constraints).distinct
-
-    val newConstraints = for (c <- oldConstraints) yield {
-      which.foldLeft[CSPOMConstraint[_]](c) { (c, v) =>
-        c.replacedVar(v, by)
+        case _ =>
       }
+
+      var delta = Delta.empty
+      for ((w, b) <- in.replaceExpression(wh, by)) {
+        //println(s"replaced $w (${in.namesOf(w)}) with $b (${in.namesOf(b)})")
+        for (c <- in.constraints(w)) yield {
+
+          val c2 = c.replacedVar(w, b)
+          //println(s"rewriting $c to $c2")
+          delta ++= replaceCtr(c, c2, in)
+        }
+        assert(!in.isReferenced(w),
+          s"${w} (${in.namesOf(w)}) is still referenced: constraints = ${in.constraints(w)}, containers = ${in.getContainers(w)}")
+      }
+
+      //lazy val newConstraints = problem.deepConstraints(merged).map(_.toString).toSeq.sorted
+
+      //    assert(
+      //      oldConstraints == newConstraints,
+      //      s"${oldConstraints.mkString("\n")} is not the same as ${newConstraints.mkString("\n")}")
+      //      se.filter(_ ne merged).forall(problem.constraints(_).isEmpty),
+      //      s"$se is still involved by constraints: ${se.map(problem.constraints)}")
+      //assert(in.deepConstraints(by).nonEmpty, s"$by (${in.namesOf(by)}) is not involved by constraints")
+      assert(in.namesOf(wh).isEmpty, s"$wh (${in.namesOf(by)}) still have names: ${in.namesOf(wh)}")
+      assert(in.deepConstraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.deepConstraints(wh).mkString("\n")}")
+      delta //deltas.fold(Delta.empty)(_ ++ _)
     }
-
-    logger.debug("Replacing " + oldConstraints + " with " + newConstraints)
-
-    replaceCtr(oldConstraints, newConstraints, in)
   }
 
   def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta = {
+    //println(s"Replacing $which with $by")
     removeCtr(which, in) ++ addCtr(by, in)
   }
 
@@ -90,8 +112,8 @@ trait ConstraintCompiler extends LazyLogging {
       v
     } else {
       new ContiguousIntRangeSet(reduced).singletonMatch match {
-        case Some(s) => CSPOMConstant(s, v.params)
-        case None    => IntVariable(reduced, v.params)
+        case Some(s) => CSPOMConstant(s)
+        case None    => IntVariable(reduced)
       }
     }
   }
@@ -102,15 +124,15 @@ trait ConstraintCompiler extends LazyLogging {
       v
     } else {
       new ContiguousIntRangeSet(reduced).singletonMatch match {
-        case Some(s) => CSPOMConstant(s, v.params)
-        case None    => IntVariable(reduced, v.params)
+        case Some(s) => CSPOMConstant(s)
+        case None    => IntVariable(reduced)
       }
     }
   }
 
   def reduceDomain(v: SimpleExpression[Boolean], d: Boolean): SimpleExpression[Boolean] = {
     v match {
-      case b: CSPOMVariable[_] => CSPOMConstant(d, b.params)
+      case b: CSPOMVariable[_] => CSPOMConstant(d)
       case c @ CSPOMConstant(b) =>
         require(b == d, s"Reduced $v to $d: empty domain")
         c
@@ -155,6 +177,8 @@ final case class Delta private (
   def ++(d: Delta): Delta = removed(d.removed).added(d.added) //Delta(removed ++ d.removed, added ++ d.added)
 
   def nonEmpty = removed.nonEmpty || added.nonEmpty
+
+  override def toString = s"[ -- ${removed.mkString(", ")} ++ ${added.mkString(", ")} ]"
 }
 
 object Delta {
@@ -184,8 +208,4 @@ object Ctr {
       None
     }
   }
-}
-
-object CSeq {
-
 }

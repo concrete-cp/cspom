@@ -64,11 +64,20 @@ class CSPOM extends LazyLogging {
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  val namedExpressions = collection.mutable.LinkedHashMap[String, CSPOMExpression[_]]()
+  private val namedExpressions = collection.mutable.LinkedHashMap[String, CSPOMExpression[_]]()
 
   private val expressionNames = collection.mutable.HashMap[CSPOMExpression[_], Set[String]]().withDefaultValue(Set.empty)
 
   private val containers = collection.mutable.HashMap[CSPOMExpression[_], Set[(CSPOMSeq[_], Int)]]().withDefaultValue(Set.empty)
+
+  private val ctrV = collection.mutable.HashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]().withDefaultValue(Set.empty)
+
+  private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
+
+  /**
+   * Collection of all constraints of the problem.
+   */
+  private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
   def getExpressions = JavaConversions.asJavaCollection(namedExpressions)
 
@@ -84,6 +93,14 @@ class CSPOM extends LazyLogging {
 
   }
 
+  def getContainers(e: CSPOMExpression[_]) = containers(e)
+
+  def addAnnotation(expressionName: String, annotationName: String, annotation: Any): Unit = {
+    annotations(expressionName) += (annotationName -> annotation)
+  }
+
+  def getAnnotations(expressionName: String) = annotations(expressionName)
+
   private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = {
     if (s.isEmpty) {
       e
@@ -95,44 +112,15 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  private def namesInContainers(e: CSPOMExpression[_]): Iterable[String] = {
-    containers(e).flatMap {
-      case (seq, index) => namesOf(seq).map(s => s"$s[$index]")
-    }
-
+  def namesOf(e: CSPOMExpression[_]): Iterable[String] = expressionNames(e) ++ containers(e).flatMap {
+    case (seq, index) => namesOf(seq).map(s => s"$s[$index]")
   }
-
-  def namesOf(e: CSPOMExpression[_]): Iterable[String] = expressionNames(e) ++ namesInContainers(e)
-
-  //  {
-  //    namedExpressions flatMap {
-  //      case (n, expr) => namesOf(e, n, expr)
-  //    }
-  //  }
-
-  //  private def namesOf(toFind: CSPOMExpression[_], root: String, expr: CSPOMExpression[_]): Iterable[String] = {
-  //    expr match {
-  //      case `toFind` => Iterable(root)
-  //      case s: CSPOMSeq[_] => s.zipWithIndex
-  //        .flatMap {
-  //          case (v, i) => namesOf(toFind, s"$root[$i]", v)
-  //        }
-  //        .toIterable
-  //
-  //      case _ => Iterable()
-  //    }
-  //  }
 
   def variable(name: String): Option[CSPOMVariable[_]] = {
     expression(name).collect {
       case v: CSPOMVariable[_] => v
     }
   }
-
-  /**
-   * Collection of all constraints of the problem.
-   */
-  private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
   def constraints = _constraints.iterator
 
@@ -159,8 +147,6 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  private val ctrV = collection.mutable.LinkedHashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]()
-
   /**
    * Adds a constraint to the problem.
    *
@@ -175,10 +161,10 @@ class CSPOM extends LazyLogging {
     _constraints += constraint
 
     for (
-      e <- Iterator(constraint.result) ++ constraint.arguments;
-      v <- e.flatten
+      v <- constraint.fullScope
     ) {
-      ctrV(v) = ctrV.getOrElse(v, Set()) + constraint
+      ctrV(v) += constraint
+      registerContainer(v)
     }
 
     constraint
@@ -191,23 +177,92 @@ class CSPOM extends LazyLogging {
     //require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
 
     for (
-      e <- Iterator(c.result) ++ c.arguments;
-      v <- e.flatten;
-      oc <- ctrV.get(v)
+      v <- c.fullScope
     ) {
 
-      val s = oc - c
-
-      if (s.isEmpty) {
+      ctrV(v) -= c
+      if (ctrV(v).isEmpty) {
         ctrV -= v
-      } else {
-        ctrV(v) = s
+        //       freeContainer(v)
       }
+
+      if (!isReferenced(v)) {
+        removeContainer(v)
+      }
+
     }
   }
 
-  def constraints(v: CSPOMExpression[_]) = {
-    ctrV.getOrElse(v, Set())
+  def removeContainer(e: CSPOMExpression[_]): Unit = {
+    //assert(!isReferenced(e))
+    e match {
+      case s: CSPOMSeq[_] =>
+        for ((e, i) <- s.withIndex) {
+          containers(e) -= ((s, i))
+          if (!isReferenced(e)) {
+            removeContainer(e)
+          }
+        }
+      case _ =>
+    }
+  }
+
+  def isReferenced(e: CSPOMExpression[_]): Boolean =
+    ctrV(e).nonEmpty || expressionNames(e).nonEmpty || containers(e).nonEmpty 
+
+  def constraints(v: CSPOMExpression[_]): Set[CSPOMConstraint[_]] = {
+    ctrV(v) // ++ containers(v).flatMap { case (container, _) => constraints(container) }
+  }
+
+  def deepConstraints(v: CSPOMExpression[_]): Set[CSPOMConstraint[_]] = {
+    ctrV(v) ++ containers(v).flatMap { case (container, _) => deepConstraints(container) }
+  }
+
+  def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])] = {
+    //logger.warn(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
+    require(which != by, s"Replacing $which with $by")
+    //require((namesOf(which).toSet & namesOf(by).toSet).isEmpty)
+    var replaced = List[(CSPOMExpression[_], CSPOMExpression[_])]()
+
+    for (n <- expressionNames(which)) {
+      namedExpressions(n) = by
+      expressionNames(by) += n
+    }
+    expressionNames.remove(which)
+    for ((c, i) <- containers(which)) {
+      val nc = c.replaceVar(which, by)
+      replaced ++:= replaceExpression(c, nc)
+
+      removeContainer(c)
+      registerContainer(nc)
+    }
+
+    //    containers -= which
+
+    //    lazy val error = namedExpressions.filterNot {
+    //      case (n, v) => namesOf(v).exists(_ eq n)
+    //    }
+
+    //assert(error.isEmpty, error)
+
+    //    {
+    //      case (n, v) =>
+    //        val r = namesOf(v).exists(_ eq n)
+    //        //if (!r) println(s"$n not in namesOf($v)")
+    //        r
+    //    })
+
+    (which, by) :: replaced
+
+  }
+
+  def referencedExpressions: Seq[CSPOMExpression[_]] = {
+    (ctrV.keysIterator.flatMap(_.flatten) ++ namedExpressions.values).toSeq.distinct
+    // ctrV.keySet ++ namedExpressions.values
+  }
+
+  def expressionsWithNames: Seq[(String, CSPOMExpression[_])] = {
+    namedExpressions.toSeq
   }
 
   def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
@@ -224,26 +279,29 @@ class CSPOM extends LazyLogging {
   }
 
   def is(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
-    val result = new FreeVariable(Map("var_is_introduced" -> Unit))
-    ctr(new CSPOMConstraint(result, name, scope, params))
+    val result = new FreeVariable()
+    ctr(CSPOMConstraint(result, name, scope, params))
     result
   }
 
   def isInt(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): IntVariable = {
-    val result = IntVariable.free(Map("var_is_introduced" -> Unit))
-    ctr(new CSPOMConstraint(result, name, scope, params))
+    val result = IntVariable.free()
+    ctr(CSPOMConstraint(result, name, scope, params))
     result
   }
 
   def isBool(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): BoolVariable = {
-    val result = new BoolVariable(Map("var_is_introduced" -> Unit))
+    val result = new BoolVariable()
     ctr(CSPOMConstraint(result, name, scope, params))
     result
   }
 
   override def toString = {
-    val vars = namedExpressions.toSeq.sortBy(_._1).map { case (name, variable) => s"$name: $variable" }.mkString("\n")
     val vn = new VariableNames(this)
+    val vars = referencedExpressions.map(e => (vn.names(e), e)).sortBy(_._1).map {
+      case (name, variable) => s"$name: $variable"
+    }.mkString("\n")
+
     val cons = constraints.map(_.toString(vn)).mkString("\n")
 
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
@@ -311,30 +369,6 @@ class CSPOM extends LazyLogging {
     }.addString(stb)
 
     stb.append("]\n").toString
-  }
-
-  def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]): Unit = {
-    logger.debug(s"replacing $which with $by from ${Thread.currentThread().getStackTrace.toSeq}")
-    for (n <- expressionNames(which)) {
-      namedExpressions(n) = by
-    }
-    expressionNames(by) = expressionNames(which)
-    expressionNames.remove(which)
-    for ((c, i) <- containers(which)) {
-      val nc = c.replaceVar(which, by)
-      replaceExpression(c, nc)
-      for ((contained, containedIndex) <- c.withIndex) {
-        containers(contained) -= ((c, containedIndex))
-      }
-      //containers.remove(which)
-      registerContainer(nc)
-    }
-
-  }
-
-  def referencedExpressions: Seq[CSPOMExpression[_]] = {
-    (ctrV.keysIterator ++ namedExpressions.values).toSeq.distinct
-    // ctrV.keySet ++ namedExpressions.values
   }
 
 }

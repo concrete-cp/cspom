@@ -20,7 +20,7 @@ import scala.util.parsing.input.PagedSeqReader
 
 sealed trait FZDecl
 case class FZParamDecl(name: String, expression: CSPOMExpression[_]) extends FZDecl
-case class FZVarDecl(name: String, expression: CSPOMExpression[_], affectation: Option[FZExpr[_]])
+case class FZVarDecl(name: String, expression: CSPOMExpression[_], affectation: Option[FZExpr[_]], annotations: Seq[FZAnnotation])
 
 object FlatZincParser extends RegexParsers {
 
@@ -51,18 +51,24 @@ object FlatZincParser extends RegexParsers {
 
     val decl: Map[String, CSPOMExpression[Any]] = variables
       .map {
-        case FZVarDecl(name, single: CSPOMVariable[_], _) => name -> single
-        case FZVarDecl(name, seq: CSPOMSeq[_], _)         => name -> seq
-        case FZVarDecl(name, c: CSPOMConstant[_], _)      => name -> c
+        case FZVarDecl(name, e, _, _) => name -> e
+        //        case FZVarDecl(name, seq: CSPOMSeq[_], _, _)         => name -> seq
+        //        case FZVarDecl(name, c: CSPOMConstant[_], _, _)      => name -> c
         //throw new IllegalStateException(s"Unexpected constant $name: $c")
       }
       .toMap
 
-    val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
-      case FZVarDecl(_, expr, Some(aff)) => expr -> aff.toCSPOM(decl)
+    val affectations: Map[CSPOMExpression[_], CSPOMExpression[_]] = variables.collect {
+      case FZVarDecl(_, expr, Some(aff), _) => expr -> aff.toCSPOM(decl)
     }
+      .toMap
 
-    (params ++ decl, affectations)
+    val annotations: Map[String, Seq[FZAnnotation]] = variables.map {
+      case FZVarDecl(name, _, _, ann) => name -> ann
+    }
+      .toMap
+
+    (params ++ decl, affectations, annotations)
   }
 
   /*
@@ -77,14 +83,21 @@ object FlatZincParser extends RegexParsers {
         case v: FZVarDecl => v
       }
       require(params.size + variables.size == paramOrVar.size)
-      val (declared, affectations) = mapVariables(params, variables)
-      success((declared, affectations)) ~ rep(constraint(declared)) ~ solve_goal
+      val (declared, affectations, annotations) = mapVariables(params, variables)
+      success((declared, affectations, annotations)) ~ rep(constraint(declared)) ~ solve_goal
   } ^^ {
-    case (declared, affectations) ~ constraints ~ goal =>
+    case (declared, affectations, annotations) ~ constraints ~ goal =>
       val p = CSPOM { implicit problem =>
 
         for ((name, expr) <- declared) {
           expr as name
+          for (
+            annotation <- annotations.get(name);
+            (title, ann) <- fzAnnotations(annotation)
+          ) {
+            problem.addAnnotation(name, title, ann)
+          }
+
         }
         for (c <- constraints) {
           CSPOM.ctr(c)
@@ -220,7 +233,7 @@ object FlatZincParser extends RegexParsers {
 
   def var_decl: Parser[FZVarDecl] = {
     (var_type <~ ":") ~ var_par_id ~ annotations ~ opt("=" ~> expr) <~ ";" ^^ {
-      case varType ~ varParId ~ ann ~ aff => FZVarDecl(varParId.value, varType.genVariable(ann), aff)
+      case varType ~ varParId ~ ann ~ aff => FZVarDecl(varParId.value, varType.genVariable, aff, ann)
     }
 
   }

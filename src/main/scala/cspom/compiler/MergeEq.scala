@@ -13,37 +13,32 @@ import com.typesafe.scalalogging.LazyLogging
  * If given constraint is an all-equal constraint, merges and removes all
  * auxiliary variables.
  */
-object MergeEq extends ConstraintCompiler with LazyLogging {
+object MergeEq extends ConstraintCompilerNoData with LazyLogging {
 
-  type A = Seq[SimpleExpression[Any]]
-
-  override def mtch(c: CSPOMConstraint[_], p: CSPOM) = c match {
+  override def matchBool(c: CSPOMConstraint[_], p: CSPOM) = c match {
     case CSPOMConstraint(CSPOMConstant(true), 'eq, args: Seq[_], params) if params.get("neg").forall(_ == false) &&
       params.get("offset").forall(_ == 0) && args.forall(_.isInstanceOf[SimpleExpression[_]]) =>
-      val se = args.asInstanceOf[Seq[SimpleExpression[_]]].distinct
+      true
 
-      if (se.tail.nonEmpty) {
-        Some(se)
-      } else {
-        None
-      }
-
-    case _ => None
+    case _ => false
   }
 
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, se: A) = {
-    logger.debug("Merging " + se)
-    problem.removeConstraint(constraint)
-
-    val delta = Delta().removed(constraint)
-
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM) = {
+    val se = constraint.arguments.map(_.asInstanceOf[SimpleExpression[_]])
     val merged = se.reduceLeft(_ intersected _)
+
+    //   println(s"Merging $se to $merged")
+
+    //val oldConstraints = se.flatMap(problem.deepConstraints(_)).map(_.toString).sorted
 
     /**
      * Update the constraints of the problem
      */
-    delta ++ replace(se, merged, problem)
+    val d = removeCtr(constraint, problem) ++ se.map(replace(_, merged, problem)).reduce(_ ++ _)
 
+    //println(problem)
+
+    d
   }
 
   def selfPropagation = true

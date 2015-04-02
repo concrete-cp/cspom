@@ -19,11 +19,11 @@ final case class CSPOMConstraint[+T](
 
   require(result != null)
   require(arguments != null)
- // require(arguments.nonEmpty, "Must have at least one argument")
+  // require(arguments.nonEmpty, "Must have at least one argument")
 
-//  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
-//  require(function != 'alldifferent || arguments.forall(_.isInstanceOf[SimpleExpression[_]]))
-//  require(function != 'ge)
+  //  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
+  //  require(function != 'alldifferent || arguments.forall(_.isInstanceOf[SimpleExpression[_]]))
+  //  require(function != 'ge)
 
   def nonReified = result.isTrue
 
@@ -42,9 +42,17 @@ final case class CSPOMConstraint[+T](
     case _         => false
   }
 
+  private def replaceVarShallow[R, S <: R](candidate: CSPOMExpression[_], which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
+    if (candidate == which) {
+      by
+    } else {
+      candidate
+    }
+  }
+
   def replacedVar[R, S <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
-    val newResult = result.replaceVar(which, by)
-    val newArgs: Seq[CSPOMExpression[Any]] = arguments.map(_.replaceVar(which, by))
+    val newResult = replaceVarShallow(result, which, by) //result.replaceVar(which, by)
+    val newArgs: Seq[CSPOMExpression[Any]] = arguments.map(replaceVarShallow(_, which, by))//_.replaceVar(which, by))
 
     new CSPOMConstraint(newResult,
       function,

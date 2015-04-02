@@ -51,9 +51,9 @@ final class ProblemCompiler(
         while (toCompile(i).nonEmpty) {
 
           for (constraint <- constraints.get(toCompile(i).dequeue())) {
-
+            //lazy val string = constraint.toString(vn)
             val delta = compile(compiler, constraint)
-            logger.trace(s"${constraint.toString(vn)}: $delta")
+            //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
             changed |= delta.nonEmpty
 
             for (rc <- delta.removed) {
@@ -71,13 +71,13 @@ final class ProblemCompiler(
                 problem.constraints(_)).distinct
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
-//              if (j != i || compiler.selfPropagation) {
-                for (ac <- enqueue) {
-//                  if (i != j || (ac ne constraint)) {
-                    toCompile(j).enqueue(ac.id)
-//                  }
-                }
-//              }
+              //              if (j != i || compiler.selfPropagation) {
+              for (ac <- enqueue) {
+                //                  if (i != j || (ac ne constraint)) {
+                toCompile(j).enqueue(ac.id)
+                //                  }
+              }
+              //              }
             }
 
           }

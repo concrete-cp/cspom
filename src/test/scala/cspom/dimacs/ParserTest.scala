@@ -10,7 +10,7 @@ final class ParserTest extends FlatSpec with Matchers {
 
   "CNFParser" should s"parse $FILENAME" in {
     val cspom = CNFParser.parse(classOf[ParserTest].getResourceAsStream(FILENAME))._1
-    cspom.namedExpressions should have size 90
+    cspom.expressionsWithNames should have size 90
     cspom.constraints should have size 300
   }
 

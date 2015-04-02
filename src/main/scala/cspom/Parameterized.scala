@@ -31,3 +31,11 @@ trait Parameterized {
 
   def hasParam = params.contains(_)
 }
+
+object Annotations {
+  def apply(params: (String, Any)*) = new Annotations(params.toMap)
+}
+
+class Annotations(val params: Map[String, Any]) extends Parameterized {
+  def +(entry: (String, Any)) = new Annotations(params + entry)
+}

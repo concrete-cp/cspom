@@ -50,9 +50,7 @@ object FZPatterns {
      * (∃ i ∈ 1..n : as[i]) ↔ r where n is the length of as
      * array_bool_or(array [int] of var bool: as, var bool: r)
      */
-    case Ctr('array_bool_or, Seq(CSPOMSeq(as), v), p) =>
-      new CSPOMConstraint(v, 'clause, Seq(as, Nil), p)
-
+    
     /**
      * (((i ∈ 1..n : as[i]) mod 2) = 1) where n is the length of as
      * array_bool_xor(array [int] of var bool: as)

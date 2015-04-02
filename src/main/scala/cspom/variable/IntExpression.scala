@@ -15,6 +15,7 @@ object IntExpression {
     implicit def ranges(e: SimpleExpression[Int]): RangeSet[Infinitable] = e match {
       case v: IntVariable        => v.domain
       case CSPOMConstant(c: Int) => RangeSet(IntInterval.singleton(c))
+      case e                     => throw new IllegalStateException
     }
 
     implicit def arithmetics(e: SimpleExpression[Int]): RangeArithmetics = arithmetics(ranges(e))
@@ -27,7 +28,7 @@ object IntExpression {
   }
 
   def apply(e: CSPOMExpression[_]): SimpleExpression[Int] = e match {
-    case f: FreeVariable           => IntVariable.free(f.params)
+    case f: FreeVariable           => IntVariable.free()
     case i: IntVariable            => i
     case c @ CSPOMConstant(_: Int) => c.asInstanceOf[CSPOMConstant[Int]]
     case _                         => throw new IllegalArgumentException(s"Cannot convert $e to int variable")
