@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
 	"org.kohsuke" % "bzip2" % "1.0",
 	"org.scalatest" %% "scalatest" % "2.2.4" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.12.2" % "test",
-	"ch.qos.logback" % "logback-classic" % "1.1.2",
+	"ch.qos.logback" % "logback-classic" % "1.1.3",
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.3",
