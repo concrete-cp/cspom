@@ -37,17 +37,20 @@ trait ConstraintCompiler extends LazyLogging {
       Delta()
     } else {
 
-      (wh, by) match {
-        case (c1: CSPOMConstant[_], c2: CSPOMConstant[_]) =>
-          require(c1.value == c2.value)
-
-        case _ =>
-      }
+      /**
+       * Constants may not be equal when replacing boolean with 0/1 variable
+       */
+      //      (wh, by) match {
+      //        case (c1: CSPOMConstant[_], c2: CSPOMConstant[_]) =>
+      //          require(c1.value == c2.value, s"Constants $c1 and $c2 differ")
+      //
+      //        case _ =>
+      //      }
 
       var delta = Delta.empty
       for ((w, b) <- in.replaceExpression(wh, by)) {
         //println(s"replaced $w (${in.namesOf(w)}) with $b (${in.namesOf(b)})")
-        for (c <- in.constraints(w)) yield {
+        for (c <- in.constraints(w)) {
 
           val c2 = c.replacedVar(w, b)
           //println(s"rewriting $c to $c2")
@@ -66,7 +69,8 @@ trait ConstraintCompiler extends LazyLogging {
       //      s"$se is still involved by constraints: ${se.map(problem.constraints)}")
       //assert(in.deepConstraints(by).nonEmpty, s"$by (${in.namesOf(by)}) is not involved by constraints")
       assert(in.namesOf(wh).isEmpty, s"$wh (${in.namesOf(by)}) still have names: ${in.namesOf(wh)}")
-      assert(in.deepConstraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.deepConstraints(wh).mkString("\n")}")
+      assert(in.constraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.constraints(wh).mkString("\n")}")
+      assert(in.containers(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still contained in: ${in.containers(wh)}")
       delta //deltas.fold(Delta.empty)(_ ++ _)
     }
   }

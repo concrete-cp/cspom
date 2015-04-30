@@ -10,6 +10,8 @@ import cspom.StatisticsManager
 import cspom.TimedException
 import cspom.VariableNames
 import com.typesafe.scalalogging.LazyLogging
+import scala.collection.mutable.HashSet
+import scala.collection.mutable.LinkedHashSet
 
 /**
  * This class implements some known useful reformulation rules.
@@ -17,7 +19,7 @@ import com.typesafe.scalalogging.LazyLogging
  * @author vion
  *
  */
-final class ProblemCompiler(
+final class CSPOMCompiler(
   private val problem: CSPOM,
   private val constraintCompilers: IndexedSeq[ConstraintCompiler]) extends LazyLogging {
 
@@ -28,7 +30,6 @@ final class ProblemCompiler(
       constraintCompilers.size)
 
     val constraints = new HashMap[Int, CSPOMConstraint[_]]
-    //val reasons = new HashMap[Int, Set[Reason]]
 
     for (c <- problem.constraints) {
       constraints.put(c.id, c)
@@ -51,6 +52,7 @@ final class ProblemCompiler(
         while (toCompile(i).nonEmpty) {
 
           for (constraint <- constraints.get(toCompile(i).dequeue())) {
+            //println(s"Compiling ${constraint.toString(vn)}")
             //lazy val string = constraint.toString(vn)
             val delta = compile(compiler, constraint)
             //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
@@ -66,17 +68,24 @@ final class ProblemCompiler(
               constraints.put(c.id, c)
             }
 
-            val enqueue = delta.added.flatMap(
-              _.fullScope).distinct.flatMap(
-                problem.constraints(_)).distinct
+            val enqueueVar = new LinkedHashSet[CSPOMExpression[_]]
+
+            for (c <- delta.added) enqueueVar ++= c.fullScope
+            //
+            //            val enqueue = new HashSet[CSPOMConstraint[_]]
+            //
+            //            for (v <- enqueueVar) enqueue ++= problem.constraints(v)
+
+            //            val enqueue = delta.added.flatMap(
+            //              _.fullScope).distinct.flatMap(
+            //                problem.constraints(_)).distinct
 
             for (j <- if (first) { 0 to i } else { toCompile.indices }) {
               //              if (j != i || compiler.selfPropagation) {
-              for (ac <- enqueue) {
-                //                  if (i != j || (ac ne constraint)) {
+              for (v <- enqueueVar; ac <- problem.constraints(v)) {
                 toCompile(j).enqueue(ac.id)
-                //                  }
               }
+
               //              }
             }
 
@@ -98,11 +107,11 @@ final class ProblemCompiler(
       val vn = new VariableNames(problem)
       s"${constraint.toString(vn)} not in $problem"
     })
-    ProblemCompiler.matches += 1
+    CSPOMCompiler.matches += 1
 
     compiler.mtch(constraint, problem) match {
       case Some(data) =>
-        ProblemCompiler.compiles += 1
+        CSPOMCompiler.compiles += 1
         logger.debug(s"$compiler : ${constraint.toString(vn)}")
         compiler.compile(constraint, problem, data)
       case None => Delta()
@@ -112,9 +121,9 @@ final class ProblemCompiler(
 
 }
 
-object ProblemCompiler {
+object CSPOMCompiler {
   def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]) {
-    val pbc = new ProblemCompiler(problem, compilers.toIndexedSeq)
+    val pbc = new CSPOMCompiler(problem, compilers.toIndexedSeq)
 
     val (_, t) = try StatisticsManager.time(pbc.compile())
     catch {
