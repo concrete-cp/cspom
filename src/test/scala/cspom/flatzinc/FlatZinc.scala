@@ -6,7 +6,7 @@ import org.scalatest.FlatSpec
 
 import cspom.CSPOM
 import cspom.compiler.ConstraintCompiler
-import cspom.compiler.ProblemCompiler
+import cspom.compiler.CSPOMCompiler
 
 class FlatZinc extends FlatSpec {
 

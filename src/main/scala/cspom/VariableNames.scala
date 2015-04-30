@@ -46,7 +46,7 @@ final class VariableNames(cspom: CSPOM) {
     if (cspomNames.isEmpty) {
       generatedNames.getOrElseUpdate(expression, nextName(expression))
     } else {
-      cspomNames.mkString("||")
+      cspomNames.toSeq.sorted.mkString("||")
     }
   }
 

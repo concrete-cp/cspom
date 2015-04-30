@@ -37,7 +37,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
     //println(cspom)
 
-    ProblemCompiler.compile(cspom, Seq(MergeEq))
+    CSPOMCompiler.compile(cspom, Seq(MergeEq))
     //println("After merging")
     //println(cspom)
 
@@ -64,7 +64,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
       ctr(v1 === v2)
     }
 
-    ProblemCompiler.compile(problem, Seq(MergeSame, MergeEq))
+    CSPOMCompiler.compile(problem, Seq(MergeSame, MergeEq))
 
     //println(problem.namedExpressions("V1").params)
 
@@ -84,7 +84,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
       ctr(v0 === v1)
     }
 
-    ProblemCompiler.compile(cspom, Seq(MergeSame, MergeEq))
+    CSPOMCompiler.compile(cspom, Seq(MergeSame, MergeEq))
 
     val nv0 = cspom.expression("V0") collect {
       case v: SimpleExpression[_] => v

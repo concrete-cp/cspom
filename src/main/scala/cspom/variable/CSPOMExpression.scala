@@ -7,13 +7,16 @@ import cspom.Parameterized
 import cspom.util.ContiguousIntRangeSet
 import cspom.UNSATException
 import scala.collection.mutable.HashMap
+import scala.reflect.runtime.universe._
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
  */
 sealed trait CSPOMExpression[+T] {
 
-  def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R]
+  implicit def tpe: Type
+
+  def replaceVar[R >: T: TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R]
 
   def as(n: String)(implicit cspom: CSPOM): this.type = {
     cspom.nameExpression(this, n)
@@ -42,11 +45,20 @@ sealed trait CSPOMExpression[+T] {
   def searchSpace: Double
 }
 
+object CSPOMExpression {
+  def unapply[T: TypeTag](c: CSPOMExpression[_]): Option[CSPOMExpression[T]] =
+    if (c.tpe <:< typeOf[T]) {
+      Some(c.asInstanceOf[CSPOMExpression[T]])
+    } else {
+      None
+    }
+}
+
 /*
  * Simple expressions are typed (int or boolean)
  */
 sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
-  final def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) =
+  final def replaceVar[R >: T: TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) =
     if (which == this) by else this
 
   def intersected(that: SimpleExpression[_ >: T]): SimpleExpression[T]
@@ -64,10 +76,20 @@ object SimpleExpression {
     case _: CSPOMVariable[A] => throw new IllegalArgumentException(s"Cannot iterate over $e")
   }
 
+  class Typed[T: TypeTag] {
+    def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[T]] = Some(c).collect {
+      case c: SimpleExpression[_] if (c.tpe <:< typeOf[T]) =>
+        c.asInstanceOf[SimpleExpression[T]]
+    }
+
+  }
+
 }
 
-case class CSPOMConstant[+T](value: T) extends SimpleExpression[T] {
+case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
+
+  def tpe = typeOf[T]
 
   def contains[S >: T](that: S) = value == that
 
@@ -106,7 +128,8 @@ case class CSPOMConstant[+T](value: T) extends SimpleExpression[T] {
 //  def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
 //}
 
-abstract class CSPOMVariable[+T]() extends SimpleExpression[T] {
+abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
+  def tpe = typeOf[T]
   def flattenVariables = Seq(this)
   def isTrue = false
   def isFalse = false
@@ -115,21 +138,23 @@ abstract class CSPOMVariable[+T]() extends SimpleExpression[T] {
 object CSPOMSeq {
   def empty: CSPOMSeq[Nothing] = CSPOMSeq()
   @annotation.varargs
-  def apply[T](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq, seq.indices)
-  def apply[T](seq: Seq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] = new CSPOMSeq(seq, indices)
+  def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
+  def apply[T: TypeTag](seq: IndexedSeq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] = new CSPOMSeq(seq, indices)
 
   def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
     Some(s.values)
 }
 
-final class CSPOMSeq[+T](
-  val values: Seq[CSPOMExpression[T]],
+final class CSPOMSeq[+T: TypeTag](
+  val values: IndexedSeq[CSPOMExpression[T]],
   val definedIndices: Range)
   extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
 
-  def +:[S >: T](v: CSPOMExpression[S]) = CSPOMSeq(v +: values: _*)
+  def tpe = typeOf[T]
 
-  def :+[S >: T](v: CSPOMExpression[S]) = CSPOMSeq(values :+ v: _*)
+  def +:[S >: T: TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(v +: values: _*)
+
+  def :+[S >: T: TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(values :+ v: _*)
 
   require(values.size == definedIndices.size)
 
@@ -141,7 +166,7 @@ final class CSPOMSeq[+T](
 
   def length: Int = values.length
 
-  def replaceVar[R >: T](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) = {
+  def replaceVar[R >: T: TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) = {
     if (which == this) {
       by
     } else {
@@ -152,6 +177,11 @@ final class CSPOMSeq[+T](
         new CSPOMSeq(replaced, definedIndices)
       }
     }
+  }
+
+  def replaceIndex[R >: T: TypeTag](index: Int, by: CSPOMExpression[R]) = {
+    val realIndex = definedIndices.indexOf(index)
+    new CSPOMSeq(values.updated(realIndex, by), definedIndices)
   }
 
   def flatten = values.flatMap(_.flatten)

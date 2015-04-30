@@ -1,15 +1,15 @@
 package cspom.variable
 
 import scala.language.implicitConversions
-
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.Infinitable
 import cspom.util.IntInterval
 import cspom.util.Interval
 import cspom.util.RangeSet
 import cspom.util.IntervalsArithmetic.RangeArithmetics
+import scala.reflect.runtime.universe._
 
-object IntExpression {
+object IntExpression extends SimpleExpression.Typed[Int] {
   object implicits {
 
     implicit def ranges(e: SimpleExpression[Int]): RangeSet[Infinitable] = e match {
@@ -27,17 +27,12 @@ object IntExpression {
 
   }
 
-  def apply(e: CSPOMExpression[_]): SimpleExpression[Int] = e match {
-    case f: FreeVariable           => IntVariable.free()
-    case i: IntVariable            => i
-    case c @ CSPOMConstant(_: Int) => c.asInstanceOf[CSPOMConstant[Int]]
-    case _                         => throw new IllegalArgumentException(s"Cannot convert $e to int variable")
-  }
-
-  def isInt(e: CSPOMExpression[_]): Boolean = e match {
-    case i: IntVariable        => true
-    case CSPOMConstant(_: Int) => true
-    case _                     => false
+  def coerce(e: CSPOMExpression[_]): SimpleExpression[Int] = {
+    e match {
+      case f: FreeVariable  => IntVariable.free()
+      case IntExpression(e) => e
+      case _                => throw new IllegalArgumentException(s"Cannot coerce $e to int variable")
+    }
   }
 
   def span(e: SimpleExpression[Int]): Interval[Infinitable] = e match {
@@ -46,4 +41,12 @@ object IntExpression {
     case CSPOMConstant(i: Int) => IntInterval.singleton(i)
     case _                     => throw new IllegalArgumentException(s"Cannot span $e")
   }
+
+  def is01(e: SimpleExpression[Int]) = implicits.iterable(e).forall(i => i == 0 || i == 1)
+
+  object IntExpression01 extends SimpleExpression.Typed[Int] {
+    override def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[Int]] =
+      super.unapply(c).filter(is01)
+  }
+
 }

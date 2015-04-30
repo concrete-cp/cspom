@@ -10,7 +10,7 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.StatisticsManager
-import cspom.compiler.ProblemCompiler
+import cspom.compiler.CSPOMCompiler
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
@@ -40,7 +40,7 @@ object FlatZincParser extends RegexParsers {
 
     parseResult match {
       case Success((cspom, goal), _) =>
-        ProblemCompiler.compile(cspom, FZPatterns())
+        CSPOMCompiler.compile(cspom, FZPatterns())
         (cspom, Map('goal -> goal))
       case n: NoSuccess => throw new CSPParseException(n.toString, null, n.next.pos.line)
     }
@@ -52,16 +52,13 @@ object FlatZincParser extends RegexParsers {
     val decl: Map[String, CSPOMExpression[Any]] = variables
       .map {
         case FZVarDecl(name, e, _, _) => name -> e
-        //        case FZVarDecl(name, seq: CSPOMSeq[_], _, _)         => name -> seq
-        //        case FZVarDecl(name, c: CSPOMConstant[_], _, _)      => name -> c
-        //throw new IllegalStateException(s"Unexpected constant $name: $c")
       }
       .toMap
 
-    val affectations: Map[CSPOMExpression[_], CSPOMExpression[_]] = variables.collect {
+    // /!\ do not use Map to avoid non-determinism between runs
+    val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
       case FZVarDecl(_, expr, Some(aff), _) => expr -> aff.toCSPOM(decl)
     }
-      .toMap
 
     val annotations: Map[String, Seq[FZAnnotation]] = variables.map {
       case FZVarDecl(name, _, _, ann) => name -> ann

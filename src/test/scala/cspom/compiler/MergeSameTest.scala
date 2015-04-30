@@ -15,7 +15,7 @@ class MergeSameTest extends FlatSpec with Matchers with Timeouts {
     val (cspom, _) = CSPOM.load(url)
 
     failAfter(Span(10, Seconds)) {
-      ProblemCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
+      CSPOMCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
     }
   }
 
@@ -23,7 +23,7 @@ class MergeSameTest extends FlatSpec with Matchers with Timeouts {
     val url = XCSPParser.getClass.getResource("queens-8.xml")
     val (cspom, _) = CSPOM.load(url)
 
-    ProblemCompiler.compile(cspom, Seq(MergeSame, MergeEq, RemoveUselessEq))
+    CSPOMCompiler.compile(cspom, Seq(MergeSame, MergeEq, RemoveUselessEq))
 
   }
 }

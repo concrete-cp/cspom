@@ -9,7 +9,12 @@ import org.scalatest.FlatSpec
 import org.scalatest.OptionValues
 import cspom.variable.CSPOMSeq
 import cspom.compiler.MergeEq
-import cspom.compiler.ProblemCompiler
+import cspom.compiler.CSPOMCompiler
+import cspom.variable.BoolVariable
+import cspom.variable.BoolExpression
+import cspom.variable.IntExpression
+import cspom.variable.CSPOMExpression
+import cspom.compiler.MergeSame
 
 class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
@@ -183,15 +188,54 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
       ctr(y === array(1))
     }
 
-    ProblemCompiler.compile(cspom, Seq(MergeEq))
+    CSPOMCompiler.compile(cspom, Seq(MergeEq))
 
-//    println(cspom)
-//
-//    println("namedExpressions")
-//    println(cspom.namedExpressions.mkString("\n"))
-//    println("\nexpressionNames")
-//    println(cspom.expressionNames.mkString("\n"))
-//    println("\ncontainers")
-//    println(cspom.containers.mkString("\n"))
+    //    println(cspom)
+    //
+    //    println("namedExpressions")
+    //    println(cspom.namedExpressions.mkString("\n"))
+    //    println("\nexpressionNames")
+    //    println(cspom.expressionNames.mkString("\n"))
+    //    println("\ncontainers")
+    //    println(cspom.containers.mkString("\n"))
+  }
+
+  it should "correctly post constraint graphs" in {
+    val cspom = CSPOM { implicit problem =>
+      //      val month = IntVariable(5 to 8) as "month"
+      //      val day = IntVariable(14 to 19) as "day"
+      //
+      //      ctr(Seq(month, day) in Seq(Seq(5, 15), Seq(6, 17), Seq(7, 14), Seq(8, 14), Seq(5, 16), Seq(6, 18), Seq(7, 16), Seq(8, 15), Seq(5, 19), Seq(8, 17)))
+      //
+      //      val albert1 = for (i <- 5 to 8) yield for (j <- 14 to 19) yield new BoolVariable() as s"albert1 $i/$j"
+      def lt(x: CSPOMExpression[_], y: CSPOMExpression[_]) = (x, y) match {
+        case (BoolExpression(xi), BoolExpression(yi)) => problem.isBool('clause, Seq(Seq(yi), Seq(xi)))
+        case (IntExpression(xi), IntExpression(yi))   => problem.isBool('lt, Seq(xi, yi))
+      }
+
+      val x = for (i <- 0 until 5) yield new BoolVariable() as s"X$i"
+      val y = for (i <- 0 until 5) yield new BoolVariable() as s"Y$i"
+
+      val n = x.size
+      require(y.size == n)
+
+      val disjunction = Seq(
+        lt(x(0), y(0)),
+        problem.isBool('and, (0 until n).map(i => x(i) === y(i)))) ++
+        (0 until n - 1).map { i =>
+          val conjunction =
+            (0 until i).map(j => x(j) === y(j)) :+ lt(x(i + 1), y(i + 1))
+          problem.isBool('and, conjunction)
+        }
+
+      ctr(problem.isBool('or, disjunction))
+
+    }
+
+    cspom.getPostponed shouldBe empty
+
+    CSPOMCompiler.compile(cspom, Seq(MergeEq, MergeSame))
+
+    println(cspom)
   }
 }

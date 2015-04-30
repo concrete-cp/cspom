@@ -50,7 +50,7 @@ object FZPatterns {
      * (∃ i ∈ 1..n : as[i]) ↔ r where n is the length of as
      * array_bool_or(array [int] of var bool: as, var bool: r)
      */
-    
+
     /**
      * (((i ∈ 1..n : as[i]) mod 2) = 1) where n is the length of as
      * array_bool_xor(array [int] of var bool: as)
@@ -353,10 +353,10 @@ object FZPatterns {
      */
     case Ctr('int_lin_le, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
       CSPOMConstraint('sum, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
-      
+
     case Ctr('bool_lin_le, Seq(CSPOMSeq(as: Seq[CSPOMConstant[_]] @unchecked), bs, c: CSPOMConstant[_]), p) =>
       CSPOMConstraint('pseudoboolean, Seq(bs, c), p + ("coefficients" -> as.map(_.value), "mode" -> "le"))
-      
+
     /**
      * (i ∈ 1..n : as[i].bs[i] ≤ c) ↔ r where n is the common length of as and bs
      * int_lin_le_reif(array [int] of int: as, array [int] of var int: bs, int: c, var bool: r)
@@ -451,7 +451,8 @@ object FZPatterns {
      * (a ∈ b) ↔ r
      * set_in_reif(var int: a, var set of int: b, var bool: r)
      */
-    case Ctr('set_in_reif, Seq(a, CSPOMConstant(b: Seq[_]), r), p) => {
+    case Ctr('set_in_reif, Seq(a, CSPOMConstant(b: Seq[AnyVal]), r), p) => {
+
       new CSPOMConstraint(r, 'in, Seq(a, b.map(CSPOMConstant(_))), p)
     }
     /**

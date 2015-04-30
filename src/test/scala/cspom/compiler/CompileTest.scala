@@ -5,7 +5,7 @@ import cspom.CSPOM
 import org.scalatest.FlatSpec
 
 final class CompileTest extends FlatSpec {
-  "ProblemCompiler" should "compile zebra" in {
+  "CSPOMCompiler" should "compile zebra" in {
     compileTest("zebra.xml");
   }
 
@@ -32,11 +32,11 @@ final class CompileTest extends FlatSpec {
   def compileTest(fn: String) {
     {
       val cspom = CSPOM.load(classOf[CompileTest].getResource(fn))._1;
-      ProblemCompiler.compile(cspom, StandardCompilers())
+      CSPOMCompiler.compile(cspom, StandardCompilers())
     }
     {
       val cspom = CSPOM.load(classOf[CompileTest].getResource(fn))._1;
-      ProblemCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
+      CSPOMCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
     }
   }
 

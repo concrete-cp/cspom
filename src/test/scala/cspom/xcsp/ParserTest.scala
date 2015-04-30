@@ -4,7 +4,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import cspom.CSPOM
-import cspom.compiler.ProblemCompiler
+import cspom.compiler.CSPOMCompiler
 
 final class ParserTest extends FlatSpec with Matchers {
   val FILENAME = "crossword-m1-debug-05-01.xml";

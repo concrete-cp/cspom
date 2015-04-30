@@ -41,8 +41,6 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
   def lastInterval: Interval[T] = contents.last
   def headInterval: Interval[T] = contents.head
 
-  //implicit def ordering: Ordering[A]
-
   def span = headInterval span lastInterval
 
   def ++(i: Interval[T]): RangeSet[T] = {
@@ -61,33 +59,6 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
         (contents -- colliding) + collSpan)
     }
   }
-
-  //  def ++(i: RangeSet): RangeSet = {
-  //    import IntIntervalOrdering.compare
-  //    var it1 = contents.toStream
-  //    var it2 = i.contents.toStream
-  //    var result = TreeSet.newBuilder(IntIntervalOrdering)
-  //    result.sizeHint(contents.size + i.contents.size)
-  //
-  //    while (it1.nonEmpty && it2.nonEmpty) {
-  //      val comp = compare(it1.head, it2.head)
-  //      if (comp == 0) {
-  //        it1 = (it1.head span it2.head) +: it1.tail
-  //        it2 = it2.tail
-  //      } else if (comp < 0) {
-  //        result += it1.head
-  //        it1 = it1.tail
-  //      } else {
-  //        result += it2.head
-  //        it2 = it2.tail
-  //      }
-  //    }
-  //
-  //    result ++= it1
-  //    result ++= it2
-  //
-  //    RangeSet(result.result)
-  //  }
 
   def --(i: Interval[T]): RangeSet[T] = {
     val itvOrdering = contents.ordering
@@ -147,4 +118,5 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
   }
 
   override def toString = ranges.mkString("{", ", ", "}")
+  
 }

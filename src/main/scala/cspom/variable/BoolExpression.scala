@@ -3,19 +3,20 @@ package cspom.variable
 import cspom.util.IntInterval
 import cspom.util.Interval
 import cspom.util.Infinitable
+import cspom.util.RangeSet
+import scala.reflect.runtime.universe._
+import IntExpression.implicits._
 
-object BoolExpression {
-  def apply(e: CSPOMExpression[_]): SimpleExpression[Boolean] = e match {
-    case f: FreeVariable               => new BoolVariable()
-    case b: BoolVariable               => b
-    case c @ CSPOMConstant(_: Boolean) => c.asInstanceOf[CSPOMConstant[Boolean]]
-    case e                             => throw new IllegalArgumentException(s"Cannot convert $e to boolean expression")
+object BoolExpression extends SimpleExpression.Typed[Boolean] {
+  def coerce(e: CSPOMExpression[_]): SimpleExpression[Boolean] = e match {
+    case f: FreeVariable   => new BoolVariable()
+    case BoolExpression(e) => e
+    case e                 => throw new IllegalArgumentException(s"Cannot convert $e to boolean expression")
   }
 
-  def isBool(e: CSPOMExpression[_]): Boolean = e match {
-    case b: BoolVariable           => true
-    case CSPOMConstant(_: Boolean) => true
-    case _                         => false
+  def is01(e: CSPOMExpression[_]): Boolean = e match {
+    case IntExpression(e) => IntExpression.is01(e)
+    case _                => false
   }
 
   def span(b: SimpleExpression[Boolean]): Interval[Infinitable] = b match {

@@ -5,17 +5,13 @@ import java.io.InputStream
 import java.net.URI
 import java.net.URL
 import java.util.zip.GZIPInputStream
-
 import scala.Iterator
 import scala.collection.JavaConversions
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
-
 import org.apache.tools.bzip2.CBZip2InputStream
-
 import com.typesafe.scalalogging.LazyLogging
-
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
 import cspom.extension.Table
@@ -30,6 +26,9 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
+import scala.collection.SortedSet
+import scala.collection.mutable.LinkedHashSet
+import scala.reflect.runtime.universe._
 
 object NameParser extends JavaTokenParsers {
 
@@ -61,16 +60,18 @@ object NameParser extends JavaTokenParsers {
  */
 class CSPOM extends LazyLogging {
 
+  implicit private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
+
   /**
    * Map used to easily retrieve a variable according to its name.
    */
-  private val namedExpressions = collection.mutable.LinkedHashMap[String, CSPOMExpression[_]]()
+  private val namedExpressions = collection.mutable.HashMap[String, CSPOMExpression[_]]()
 
-  private val expressionNames = collection.mutable.HashMap[CSPOMExpression[_], Set[String]]().withDefaultValue(Set.empty)
+  private val expressionNames = collection.mutable.HashMap[CSPOMExpression[_], SortedSet[String]]().withDefaultValue(SortedSet.empty)
 
-  private val containers = collection.mutable.HashMap[CSPOMExpression[_], Set[(CSPOMSeq[_], Int)]]().withDefaultValue(Set.empty)
+  private[cspom] val containers = collection.mutable.HashMap[CSPOMExpression[_], LinkedHashSet[(CSPOMSeq[_], Int)]]()
 
-  private val ctrV = collection.mutable.HashMap[CSPOMExpression[_], Set[CSPOMConstraint[_]]]().withDefaultValue(Set.empty)
+  private val ctrV = collection.mutable.LinkedHashMap[CSPOMExpression[_], SortedSet[CSPOMConstraint[_]]]().withDefaultValue(SortedSet.empty)
 
   private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
 
@@ -80,6 +81,8 @@ class CSPOM extends LazyLogging {
   private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
   def getExpressions = JavaConversions.asJavaCollection(namedExpressions)
+
+  private val postponed = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
   /**
    * @param variableName
@@ -112,8 +115,11 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def namesOf(e: CSPOMExpression[_]): Iterable[String] = expressionNames(e) ++ containers(e).flatMap {
-    case (seq, index) => namesOf(seq).map(s => s"$s[$index]")
+  def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
+    val direct = expressionNames(e)
+    val inContainers = for (cl <- containers.get(e).toIterable; (seq, index) <- cl; s <- namesOf(seq)) yield s"$s[$index]"
+
+    direct ++ inContainers
   }
 
   def variable(name: String): Option[CSPOMVariable[_]] = {
@@ -140,7 +146,7 @@ class CSPOM extends LazyLogging {
     e match {
       case s: CSPOMSeq[_] =>
         for ((c, i) <- s.withIndex) {
-          containers(c) += ((s, i))
+          containers.getOrElseUpdate(c, new LinkedHashSet()) += ((s, i))
           registerContainer(c)
         }
       case _ =>
@@ -198,7 +204,8 @@ class CSPOM extends LazyLogging {
     e match {
       case s: CSPOMSeq[_] =>
         for ((e, i) <- s.withIndex) {
-          containers(e) -= ((s, i))
+          val set = containers(e)
+          set -= ((s, i))
           if (!isReferenced(e)) {
             removeContainer(e)
           }
@@ -208,15 +215,15 @@ class CSPOM extends LazyLogging {
   }
 
   def isReferenced(e: CSPOMExpression[_]): Boolean =
-    ctrV(e).nonEmpty || expressionNames(e).nonEmpty || containers(e).nonEmpty 
+    ctrV(e).nonEmpty || expressionNames(e).nonEmpty || containers.get(e).exists(_.nonEmpty)
 
-  def constraints(v: CSPOMExpression[_]): Set[CSPOMConstraint[_]] = {
+  def constraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
     ctrV(v) // ++ containers(v).flatMap { case (container, _) => constraints(container) }
   }
 
-  def deepConstraints(v: CSPOMExpression[_]): Set[CSPOMConstraint[_]] = {
-    ctrV(v) ++ containers(v).flatMap { case (container, _) => deepConstraints(container) }
-  }
+  //  def deepConstraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
+  //    ctrV(v) ++ containers(v).flatMap { case (container, _) => deepConstraints(container) }
+  //  }
 
   def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])] = {
     //logger.warn(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
@@ -229,8 +236,11 @@ class CSPOM extends LazyLogging {
       expressionNames(by) += n
     }
     expressionNames.remove(which)
-    for ((c, i) <- containers(which)) {
-      val nc = c.replaceVar(which, by)
+    for (
+      containerList <- containers.get(which);
+      (c, i) <- containerList
+    ) {
+      val nc = c.replaceIndex(i, by)
       replaced ++:= replaceExpression(c, nc)
 
       removeContainer(c)
@@ -257,7 +267,7 @@ class CSPOM extends LazyLogging {
   }
 
   def referencedExpressions: Seq[CSPOMExpression[_]] = {
-    (ctrV.keysIterator.flatMap(_.flatten) ++ namedExpressions.values).toSeq.distinct
+    (ctrV.keysIterator.flatMap(_.flatten) ++ expressionNames.keys).toSeq.distinct
     // ctrV.keySet ++ namedExpressions.values
   }
 
@@ -270,31 +280,60 @@ class CSPOM extends LazyLogging {
       logger.warn(s"$c already belongs to the problem")
       c
     } else {
-      addConstraint(c)
+      resolvePostponed(c)
+      //addConstraint(c)
+      c
     }
   }
 
-  def ctr(v: SimpleExpression[Boolean]) = {
-    addConstraint(CSPOMConstraint('eq, Seq(v, CSPOMConstant(true))))
+  def ctr(v: SimpleExpression[Boolean]): CSPOMConstraint[Boolean] = {
+    val c = CSPOMConstraint('eq, Seq(v, CSPOMConstant(true)))
+    resolvePostponed(c)
+    c
+    //addConstraint(c)
   }
 
-  def is(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
+  def postpone[A](c: CSPOMConstraint[A]) = {
+    postponed += c
+    c
+  }
+
+  def is(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
     val result = new FreeVariable()
-    ctr(CSPOMConstraint(result, name, scope, params))
+    postpone(CSPOMConstraint(result, name, scope, params))
     result
   }
 
-  def isInt(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): IntVariable = {
+  def isInt(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): IntVariable = {
     val result = IntVariable.free()
-    ctr(CSPOMConstraint(result, name, scope, params))
+    postpone(CSPOMConstraint(result, name, scope, params))
     result
   }
 
-  def isBool(name: Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): BoolVariable = {
+  def isBool(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): BoolVariable = {
     val result = new BoolVariable()
-    ctr(CSPOMConstraint(result, name, scope, params))
+    postpone(CSPOMConstraint(result, name, scope, params))
     result
   }
+
+  def resolvePostponed(c: CSPOMConstraint[_]): Unit = {
+    for (p <- crawl(c)) {
+      addConstraint(p)
+      postponed -= p
+    }
+  }
+
+  private def crawl(c: CSPOMConstraint[_], visited: Set[CSPOMConstraint[_]] = Set()): Set[CSPOMConstraint[_]] = {
+    if (visited(c)) {
+      visited
+    } else {
+      postponed.filter(const => const.fullScope.exists(c.fullScope.contains)).foldLeft(visited + c) {
+        case (visit, c) => visit ++ crawl(c, visit)
+      }
+    }
+  }
+
+  def getPostponed = postponed.toSet
 
   override def toString = {
     val vn = new VariableNames(this)
@@ -420,7 +459,7 @@ object CSPOM {
    * @throws DimacsParseException
    */
   @throws(classOf[CSPParseException])
-  def load(xcspFile: String): (CSPOM, Map[Symbol, Any]) = {
+  def load(xcspFile: String): (CSPOM, Map[scala.Symbol, Any]) = {
     val uri = new URI(xcspFile)
 
     if (uri.isAbsolute) {
@@ -446,7 +485,7 @@ object CSPOM {
    */
   @throws(classOf[CSPParseException])
   @throws(classOf[IOException])
-  def load(url: URL): (CSPOM, Map[Symbol, Any]) = {
+  def load(url: URL): (CSPOM, Map[scala.Symbol, Any]) = {
     val problemIS = problemInputStream(url);
 
     url.getFile match {
@@ -478,11 +517,11 @@ object CSPOM {
 
   implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)
 
-  implicit def constant[A <: AnyVal](c: A): CSPOMConstant[A] = CSPOMConstant(c)
+  implicit def constant[A <: AnyVal: TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
-  implicit def seq2CSPOMSeq[A](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = CSPOMSeq(c: _*)
+  implicit def seq2CSPOMSeq[A: TypeTag](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = CSPOMSeq(c: _*)
 
-  implicit def constantSeq[A <: AnyVal](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
+  implicit def constantSeq[A <: AnyVal: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
   import language.experimental.macros
 
