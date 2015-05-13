@@ -7,7 +7,7 @@ import org.scalameter.reporting.RegressionReporter
 import org.scalameter.reporting.HtmlReporter
 import org.scalameter.Reporter
 
-object RangeMicrobenchmark extends PerformanceTest.OfflineRegressionReport {
+object RangeMicrobenchmark extends PerformanceTest.OfflineReport {
 
   val sizes: Gen[Int] = Gen.range("size")(0, 100, 20)
 
