@@ -3,8 +3,12 @@ package cspom.compiler;
 import cspom.xcsp.{ ParserTest, XCSPParser }
 import cspom.CSPOM
 import org.scalatest.FlatSpec
+import scala.util.Failure
+import scala.util.Success
+import org.scalatest.TryValues
+import org.scalatest.Matchers
 
-final class CompileTest extends FlatSpec {
+final class CompileTest extends FlatSpec with Matchers with TryValues {
   "CSPOMCompiler" should "compile zebra" in {
     compileTest("zebra.xml");
   }
@@ -30,14 +34,13 @@ final class CompileTest extends FlatSpec {
   }
 
   def compileTest(fn: String) {
-    {
-      val cspom = CSPOM.load(classOf[CompileTest].getResource(fn))._1;
-      CSPOMCompiler.compile(cspom, StandardCompilers())
-    }
-    {
-      val cspom = CSPOM.load(classOf[CompileTest].getResource(fn))._1;
-      CSPOMCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
-    }
+    CSPOM.load(classOf[CompileTest].getResource(fn)).map {
+      case (cspom, _) => CSPOMCompiler.compile(cspom, StandardCompilers())
+    } should be a 'success
+
+    CSPOM.load(classOf[CompileTest].getResource(fn)).map {
+      case (cspom, _) => CSPOMCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
+    } should be a 'success
   }
 
 }

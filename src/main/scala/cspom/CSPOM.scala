@@ -5,16 +5,19 @@ import java.io.InputStream
 import java.net.URI
 import java.net.URL
 import java.util.zip.GZIPInputStream
-import scala.Iterator
+import scala.annotation.migration
 import scala.collection.JavaConversions
+import scala.collection.SortedSet
+import scala.collection.mutable.LinkedHashSet
 import scala.language.implicitConversions
+import scala.reflect.macros.blackbox.Context
+import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
 import org.apache.tools.bzip2.CBZip2InputStream
 import com.typesafe.scalalogging.LazyLogging
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
-import cspom.extension.Table
 import cspom.extension.Table
 import cspom.flatzinc.FlatZincParser
 import cspom.variable.BoolVariable
@@ -26,9 +29,9 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
-import scala.collection.SortedSet
-import scala.collection.mutable.LinkedHashSet
 import scala.reflect.runtime.universe._
+import scala.collection.JavaConverters._
+import scala.util.Failure
 
 object NameParser extends JavaTokenParsers {
 
@@ -80,7 +83,7 @@ class CSPOM extends LazyLogging {
    */
   private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
-  def getExpressions = JavaConversions.asJavaCollection(namedExpressions)
+  def getExpressions: java.util.Map[String, CSPOMExpression[_]] = namedExpressions.asJava
 
   private val postponed = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
 
@@ -104,20 +107,25 @@ class CSPOM extends LazyLogging {
 
   def getAnnotations(expressionName: String) = annotations(expressionName)
 
-  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = {
-    if (s.isEmpty) {
+  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = s match {
+    case Seq() => e
+    case head +: tail =>
       e
-    } else {
-      e.collect {
-        case v: CSPOMSeq[_] => getInSeq(Some(v(s.head)), s.tail)
-      }
+        .collect {
+          case v: CSPOMSeq[_] => getInSeq(Some(v(head)), tail)
+        }
         .flatten
-    }
   }
 
   def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
     val direct = expressionNames(e)
-    val inContainers = for (cl <- containers.get(e).toIterable; (seq, index) <- cl; s <- namesOf(seq)) yield s"$s[$index]"
+    val inContainers = for {
+      cl <- containers.get(e).toIterable
+      (seq, index) <- cl
+      s <- namesOf(seq)
+    } yield {
+      s"$s[$index]"
+    }
 
     direct ++ inContainers
   }
@@ -132,7 +140,7 @@ class CSPOM extends LazyLogging {
 
   def constraintSet = _constraints //.toSet
 
-  val getConstraints = JavaConversions.asJavaIterator(constraints)
+  val getConstraints: java.util.Iterator[CSPOMConstraint[_]] = constraints.asJava
 
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
@@ -236,39 +244,25 @@ class CSPOM extends LazyLogging {
       expressionNames(by) += n
     }
     expressionNames.remove(which)
-    for (
-      containerList <- containers.get(which);
-      (c, i) <- containerList
-    ) {
-      val nc = c.replaceIndex(i, by)
-      replaced ++:= replaceExpression(c, nc)
+    for {
+      get <- containers.get(which)
+      (container, index) <- get
+    } {
+      val nc = container.replaceIndex(index, by)
+      replaced ++:= replaceExpression(container, nc)
 
-      removeContainer(c)
+      removeContainer(container)
       registerContainer(nc)
     }
-
-    //    containers -= which
-
-    //    lazy val error = namedExpressions.filterNot {
-    //      case (n, v) => namesOf(v).exists(_ eq n)
-    //    }
-
-    //assert(error.isEmpty, error)
-
-    //    {
-    //      case (n, v) =>
-    //        val r = namesOf(v).exists(_ eq n)
-    //        //if (!r) println(s"$n not in namesOf($v)")
-    //        r
-    //    })
 
     (which, by) :: replaced
 
   }
 
   def referencedExpressions: Seq[CSPOMExpression[_]] = {
-    (ctrV.keysIterator.flatMap(_.flatten) ++ expressionNames.keys).toSeq.distinct
-    // ctrV.keySet ++ namedExpressions.values
+    val involvedInConstraints = for (e <- ctrV.keysIterator; f <- e.flatten) yield f
+
+    (involvedInConstraints ++ expressionNames.keys).toSeq.distinct
   }
 
   def expressionsWithNames: Seq[(String, CSPOMExpression[_])] = {
@@ -323,11 +317,11 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  private def crawl(c: CSPOMConstraint[_], visited: Set[CSPOMConstraint[_]] = Set()): Set[CSPOMConstraint[_]] = {
+  private def crawl(c: CSPOMConstraint[_], visited: Set[CSPOMConstraint[_]] = Set.empty): Set[CSPOMConstraint[_]] = {
     if (visited(c)) {
       visited
     } else {
-      postponed.filter(const => const.fullScope.exists(c.fullScope.contains)).foldLeft(visited + c) {
+      postponed.filter(const => const.fullScope.exists(c.fullScope.contains(_))).foldLeft(visited + c) {
         case (visit, c) => visit ++ crawl(c, visit)
       }
     }
@@ -361,7 +355,6 @@ class CSPOM extends LazyLogging {
     val vn = new VariableNames(this)
 
     val variables = referencedExpressions
-      .flatMap(_.flatten)
       .collect {
         case e: CSPOMVariable[_] => e -> vn.names(e)
       }
@@ -427,7 +420,7 @@ object CSPOM {
    *             If the InputStream could not be opened
    */
   @throws(classOf[IOException])
-  def problemInputStream(url: URL): InputStream = {
+  def problemInputStream(url: URL): Try[InputStream] = Try {
 
     val path = url.getPath
 
@@ -459,7 +452,7 @@ object CSPOM {
    * @throws DimacsParseException
    */
   @throws(classOf[CSPParseException])
-  def load(xcspFile: String): (CSPOM, Map[scala.Symbol, Any]) = {
+  def load(xcspFile: String): Try[(CSPOM, Map[scala.Symbol, Any])] = {
     val uri = new URI(xcspFile)
 
     if (uri.isAbsolute) {
@@ -485,14 +478,14 @@ object CSPOM {
    */
   @throws(classOf[CSPParseException])
   @throws(classOf[IOException])
-  def load(url: URL): (CSPOM, Map[scala.Symbol, Any]) = {
-    val problemIS = problemInputStream(url);
-
-    url.getFile match {
-      case name if name.contains(".xml") => XCSPParser.parse(problemIS)
-      case name if name.contains(".cnf") => CNFParser.parse(problemIS)
-      case name if name.contains(".fzn") => FlatZincParser.parse(problemIS)
-      case _                             => throw new IllegalArgumentException("Unhandled file format");
+  def load(url: URL): Try[(CSPOM, Map[scala.Symbol, Any])] = {
+    problemInputStream(url).flatMap { problemIS =>
+      url.getFile match {
+        case name if name.contains(".xml") => Try(XCSPParser.parse(problemIS))
+        case name if name.contains(".cnf") => Try(CNFParser.parse(problemIS))
+        case name if name.contains(".fzn") => Try(FlatZincParser.parse(problemIS))
+        case _                             => Failure(new IllegalArgumentException("Unhandled file format"))
+      }
     }
 
   }

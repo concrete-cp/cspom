@@ -6,6 +6,7 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.Field
 import scala.annotation.tailrec
 import com.typesafe.scalalogging.LazyLogging
+import scala.util.Try
 
 class StatisticsManager extends LazyLogging {
 
@@ -148,18 +149,14 @@ object StatisticsManager {
     }
   }
 
-  def time[A](f: => A): (A, Double) = {
+  def timeTry[A](f: => Try[A]): (Try[A], Double) = {
     var t = -System.nanoTime
-    try {
-      val r = f
-      t += System.nanoTime
-      (r, t / 1e9)
-    } catch {
-      case e: Throwable =>
-        t += System.nanoTime
-        throw new TimedException(t / 1e9, e)
-    }
+    val r = Try(f).flatten
+    t += System.nanoTime
+    (r, t / 1e9)
   }
+
+  def time[A](f: => A): (Try[A], Double) = timeTry(Try(f))
 
 }
 

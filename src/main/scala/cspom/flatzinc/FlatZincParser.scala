@@ -36,7 +36,7 @@ object FlatZincParser extends RegexParsers {
     val jreader = new InputStreamReader(is)
     val sreader = new PagedSeqReader(PagedSeq.fromReader(jreader))
 
-    val (parseResult, time) = StatisticsManager.time(flatzincModel(sreader))
+    val parseResult = flatzincModel(sreader)
 
     parseResult match {
       case Success((cspom, goal), _) =>
