@@ -16,6 +16,7 @@ import cspom.util.RangeSet
 import cspom.util.Infinitable
 import cspom.variable.IntExpression
 import cspom.util.Interval
+import scala.reflect.runtime.universe._
 
 trait ConstraintCompiler extends LazyLogging {
   type A
@@ -30,7 +31,7 @@ trait ConstraintCompiler extends LazyLogging {
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
 
-  def replace[T, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
+  def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $wh with $by")
 
     if (wh == by) {
@@ -202,7 +203,7 @@ abstract class GlobalCompiler(
 }
 
 object Ctr {
-  def unapply(c: CSPOMConstraint[_]): Option[(Symbol, Seq[CSPOMExpression[_]], Map[String, Any])] = {
+  def unapply(c: CSPOMConstraint[_]): Option[(scala.Symbol, Seq[CSPOMExpression[_]], Map[String, Any])] = {
     if (c.nonReified) {
       Some((c.function, c.arguments, c.params))
     } else {

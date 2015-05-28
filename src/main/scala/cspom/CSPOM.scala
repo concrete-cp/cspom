@@ -78,6 +78,9 @@ class CSPOM extends LazyLogging {
 
   private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
 
+  private def getContainers[R](e: CSPOMExpression[R]): Option[collection.Set[(CSPOMSeq[R], Int)]] =
+    containers.get(e).map(_.asInstanceOf[collection.Set[(CSPOMSeq[R], Int)]])
+
   /**
    * Collection of all constraints of the problem.
    */
@@ -233,11 +236,11 @@ class CSPOM extends LazyLogging {
     ctrV(v) ++ containers.getOrElse(v, Set.empty).flatMap { case (container, _) => deepConstraints(container) }
   }
 
-  def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])] = {
+  def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[R], CSPOMExpression[R])] = {
     //logger.warn(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
     require(which != by, s"Replacing $which with $by")
     //require((namesOf(which).toSet & namesOf(by).toSet).isEmpty)
-    var replaced = List[(CSPOMExpression[_], CSPOMExpression[_])]()
+    var replaced = List[(CSPOMExpression[R], CSPOMExpression[R])]()
 
     for (n <- expressionNames(which)) {
       namedExpressions(n) = by
@@ -245,7 +248,7 @@ class CSPOM extends LazyLogging {
     }
     expressionNames.remove(which)
     for {
-      get <- containers.get(which)
+      get <- getContainers(which)
       (container, index) <- get
     } {
       val nc = container.replaceIndex(index, by)
