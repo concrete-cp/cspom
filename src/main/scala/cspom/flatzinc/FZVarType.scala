@@ -7,68 +7,45 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.IntVariable
 import scala.reflect.runtime.universe._
+import cspom.variable.IntExpression
 sealed trait FZVarType[T] {
-  implicit def tpe: TypeTag[T]
-  def genVariable: CSPOMExpression[T]
+  implicit def tpe: TypeTag[T] = typeTag[T]
+  def genVariable(): CSPOMExpression[T]
 }
 
 object FZBoolean extends FZVarType[Boolean] {
-  def tpe = typeTag[Boolean]
-  def genVariable = new BoolVariable()
+  def genVariable() = new BoolVariable()
 }
 
 case object FZFloat extends FZVarType[Double] {
-  def tpe = typeTag[Double]
-  def genVariable = ???
+  def genVariable() = ???
 }
 
 final case class FZFloatInterval(lb: Double, ub: Double) extends FZVarType[Double] {
-  def tpe = typeTag[Double]
-  def genVariable = ???
+  def genVariable() = ???
 }
 
 case object FZInt extends FZVarType[Int] {
-  def tpe = typeTag[Int]
-  def genVariable = IntVariable.free()
+  def genVariable() = IntVariable.free()
 }
 
 final case class FZIntInterval(lb: Int, ub: Int) extends FZVarType[Int] {
-  def tpe = typeTag[Int]
-  def genVariable = {
-    if (lb == ub) {
-      CSPOMConstant(lb)
-    } else {
-      IntVariable(IntInterval(lb, ub))
-    }
-  }
+  def genVariable() = IntExpression(IntInterval(lb, ub))
 }
 
 final case class FZIntSeq(values: Seq[Int]) extends FZVarType[Int] {
-  def tpe = typeTag[Int]
-  def genVariable = IntVariable.ofSeq(values)
+  def genVariable() = IntExpression.ofSeq(values)
 }
 
 case object FZIntSet extends FZVarType[Int] {
-  def tpe = typeTag[Int]
-  def genVariable = ???
+  def genVariable() = ???
 }
 
 final case class FZArray[T: TypeTag](indices: Seq[IndexSet], typ: FZVarType[T]) extends FZVarType[T] {
-  def tpe = typeTag[T]
-  def genVariable = new CSPOMSeq(
-    indices.head.range.map(i => generate(indices.tail)),
-    indices.head.range)
-
-  private def generate(indices: Seq[IndexSet]): CSPOMExpression[T] = {
-    if (indices.isEmpty) {
-      typ.genVariable
-    } else {
-      new CSPOMSeq(
-        indices.head.range.map(i => generate(indices.tail)),
-        indices.head.range)
-    }
+  def genVariable() = indices match {
+    case Seq()        => typ.genVariable()
+    case head +: tail => new CSPOMSeq(IndexedSeq.fill(head.range.size)(FZArray(tail, typ).genVariable()), head.range)
   }
-
 }
 
 sealed trait IndexSet {

@@ -32,6 +32,8 @@ scalacOptions ++= Seq("-optimise"
 //	"-Yinline-warnings"
 )
 
+//wartremoverWarnings ++= Warts.all
+
 javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 
 
@@ -47,3 +49,6 @@ testOptions in Test <+= (target in Test) map {
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
 parallelExecution in Test := false
+
+EclipseKeys.eclipseOutput in Compile := Some("target/scala-2.11/classes")
+EclipseKeys.eclipseOutput in Test := Some("target/scala-2.11/test-classes")

@@ -151,7 +151,7 @@ object StatisticsManager {
 
   def timeTry[A](f: => Try[A]): (Try[A], Double) = {
     var t = -System.nanoTime
-    val r = Try(f).flatten
+    val r: Try[A] = f //.apply()
     t += System.nanoTime
     (r, t / 1e9)
   }

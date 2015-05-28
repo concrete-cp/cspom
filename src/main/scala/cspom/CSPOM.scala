@@ -226,12 +226,12 @@ class CSPOM extends LazyLogging {
     ctrV(e).nonEmpty || expressionNames(e).nonEmpty || containers.get(e).exists(_.nonEmpty)
 
   def constraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
-    ctrV(v) // ++ containers(v).flatMap { case (container, _) => constraints(container) }
+    ctrV(v) //++ containers(v).flatMap { case (container, _) => constraints(container) }
   }
 
-  //  def deepConstraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
-  //    ctrV(v) ++ containers(v).flatMap { case (container, _) => deepConstraints(container) }
-  //  }
+  def deepConstraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
+    ctrV(v) ++ containers.getOrElse(v, Set.empty).flatMap { case (container, _) => deepConstraints(container) }
+  }
 
   def replaceExpression(which: CSPOMExpression[_], by: CSPOMExpression[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])] = {
     //logger.warn(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
@@ -407,6 +407,8 @@ class CSPOM extends LazyLogging {
 
 object CSPOM {
 
+  type Parser = InputStream => Try[(CSPOM, Map[scala.Symbol, Any])]
+
   val VERSION = "CSPOM 2.4"
 
   /**
@@ -421,11 +423,8 @@ object CSPOM {
    */
   @throws(classOf[IOException])
   def problemInputStream(url: URL): Try[InputStream] = Try {
-
     val path = url.getPath
-
     val is = url.openStream
-
     if (path endsWith ".gz") {
       new GZIPInputStream(is)
     } else if (path endsWith ".bz2") {
@@ -435,7 +434,6 @@ object CSPOM {
     } else {
       is
     }
-
   }
 
   /**
@@ -445,22 +443,20 @@ object CSPOM {
    *            Either a filename or an URI. Filenames ending with .gz or .bz2
    *            will be inflated accordingly.
    * @return The loaded CSPOM
-   * @throws CSPParseException
-   *             If the given file could not be parsed.
-   * @throws IOException
-   *             If the given file could not be read.
-   * @throws DimacsParseException
    */
-  @throws(classOf[CSPParseException])
-  def load(xcspFile: String): Try[(CSPOM, Map[scala.Symbol, Any])] = {
-    val uri = new URI(xcspFile)
+  def loadXCSP(file: String): Try[(CSPOM, Map[scala.Symbol, Any])] = load(file2url(file), XCSPParser)
 
-    if (uri.isAbsolute) {
-      load(uri.toURL)
+  def loadFZ(file: String) = load(file2url(file), FlatZincParser)
+
+  def loadCNF(file: String) = load(file2url(file), CNFParser)
+
+  def file2url(file: String): URL = {
+    val uri = new URI(file)
+    if (uri.isAbsolute && uri.getScheme != null) {
+      uri.toURL
     } else {
-      load(new URL("file://" + uri));
+      new URL("file:" + uri)
     }
-
   }
 
   /**
@@ -470,24 +466,23 @@ object CSPOM {
    *            An URL locating the XCSP file. Filenames ending with .gz or
    *            .bz2 will be inflated accordingly.
    * @return The loaded CSPOM and the list of original variable names
-   * @throws CSPParseException
-   *             If the given file could not be parsed.
-   * @throws IOException
-   *             If the given file could not be read.
-   * @throws DimacsParseException
    */
-  @throws(classOf[CSPParseException])
-  @throws(classOf[IOException])
-  def load(url: URL): Try[(CSPOM, Map[scala.Symbol, Any])] = {
-    problemInputStream(url).flatMap { problemIS =>
-      url.getFile match {
-        case name if name.contains(".xml") => Try(XCSPParser.parse(problemIS))
-        case name if name.contains(".cnf") => Try(CNFParser.parse(problemIS))
-        case name if name.contains(".fzn") => Try(FlatZincParser.parse(problemIS))
-        case _                             => Failure(new IllegalArgumentException("Unhandled file format"))
-      }
-    }
+  def load(url: URL, format: Parser): Try[(CSPOM, Map[scala.Symbol, Any])] = {
+    problemInputStream(url).flatMap(format)
+  }
 
+  def load(url: URL): Try[(CSPOM, Map[scala.Symbol, Any])] =
+    autoParser(url)
+      .map(p => load(url, p))
+      .getOrElse(Failure(new IllegalArgumentException("Unknown file format")))
+
+  def load(file: String): Try[(CSPOM, Map[scala.Symbol, Any])] = load(file2url(file))
+
+  def autoParser(url: URL): Option[Parser] = url.getFile match {
+    case name if name.contains(".xml") => Some(XCSPParser)
+    case name if name.contains(".cnf") => Some(CNFParser)
+    case name if name.contains(".fzn") => Some(FlatZincParser)
+    case _                             => None
   }
 
   def apply(f: CSPOM => Any): CSPOM = {

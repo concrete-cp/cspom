@@ -12,6 +12,7 @@ import cspom.VariableNames
 import com.typesafe.scalalogging.LazyLogging
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.LinkedHashSet
+import scala.util.Try
 
 /**
  * This class implements some known useful reformulation rules.
@@ -20,12 +21,12 @@ import scala.collection.mutable.LinkedHashSet
  *
  */
 final class CSPOMCompiler(
-  private val problem: CSPOM,
-  private val constraintCompilers: IndexedSeq[ConstraintCompiler]) extends LazyLogging {
+    private val problem: CSPOM,
+    private val constraintCompilers: IndexedSeq[ConstraintCompiler]) extends LazyLogging {
 
   val vn = new VariableNames(problem)
 
-  private def compile() {
+  private def compile(): CSPOM = {
     val toCompile = Array.ofDim[QueueSet](
       constraintCompilers.size)
 
@@ -44,7 +45,7 @@ final class CSPOMCompiler(
 
         val compiler = constraintCompilers(i)
         logger.info(compiler.toString)
-        //println(compiler)
+        // println(compiler)
         if (first) {
           toCompile(i) = new QueueSet(constraints.keys)
         }
@@ -57,6 +58,9 @@ final class CSPOMCompiler(
             val delta = compile(compiler, constraint)
             //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
             changed |= delta.nonEmpty
+
+            if (delta.nonEmpty)
+              logger.info("change")
 
             for (rc <- delta.removed) {
               assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")
@@ -100,6 +104,7 @@ final class CSPOMCompiler(
 
       first = false
     }
+    problem
   }
 
   def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
@@ -122,16 +127,14 @@ final class CSPOMCompiler(
 }
 
 object CSPOMCompiler {
-  def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]) {
+  def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]): Try[CSPOM] = {
     val pbc = new CSPOMCompiler(problem, compilers.toIndexedSeq)
 
-    val (_, t) = try StatisticsManager.time(pbc.compile())
-    catch {
-      case e: TimedException =>
-        compileTime += e.time
-        throw e.getCause()
-    }
+    val (r, t) = StatisticsManager.time(pbc.compile())
+
     compileTime += t
+
+    r
   }
 
   @Statistic

@@ -4,6 +4,7 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMExpression
 import cspom.UNSATException
+import cspom.variable.CSPOMConstant
 
 abstract class VariableCompiler(
   val function: Symbol) extends ConstraintCompiler {
@@ -17,7 +18,16 @@ abstract class VariableCompiler(
       val m = try {
         compiler(c).filter { case (k, v) => k != v }
       } catch {
-        case e: UNSATException => throw new UNSATException(s"$c is inconsistent", e)
+        case e: UNSATException =>
+          for (
+            v <- c.flattenedScope;
+            if (!v.isInstanceOf[CSPOMConstant[_]]);
+            n <- problem.deepConstraints(v)
+          ) {
+            logger.debug(n.toString)
+          }
+
+          throw new UNSATException(s"$c is inconsistent", e)
       }
       require(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
 

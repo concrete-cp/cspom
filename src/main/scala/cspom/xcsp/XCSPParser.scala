@@ -15,13 +15,15 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.util.Infinitable
+import cspom.variable.IntExpression
+import scala.util.Try
 
 /**
  * This class implements an XCSP 2.0 parser.
  *
  * @author vion
  */
-final object XCSPParser {
+final object XCSPParser extends CSPOM.Parser {
 
   /**
    * Parse the given expression given as a String. Domains are usually sequence of
@@ -60,7 +62,7 @@ final object XCSPParser {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
+  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] = Try {
     val document = XML.load(is)
     val declaredVariables = parseVariables(document);
 
@@ -90,10 +92,7 @@ final object XCSPParser {
       val domain = domains((node \ "@domain").text)
       val name = (node \ "@name").text
 
-      name -> (new ContiguousIntRangeSet(domain).singletonMatch match {
-        case Some(s) => CSPOMConstant(s)
-        case None    => new IntVariable(domain)
-      })
+      name -> IntExpression(domain)
     }
 
   }

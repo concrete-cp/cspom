@@ -49,4 +49,24 @@ object IntExpression extends SimpleExpression.Typed[Int] {
       super.unapply(c).filter(is01)
   }
 
+  def apply(values: Range): SimpleExpression[Int] = apply(
+    IntInterval(values.head, values.last))
+
+  def ofSeq(values: Seq[Int]): SimpleExpression[Int] = values match {
+    case Seq(single) => CSPOMConstant(single)
+    case values      => IntVariable.ofSeq(values)
+  }
+
+  def apply(v: Int): SimpleExpression[Int] = CSPOMConstant(v)
+  def apply(v0: Int, v: Int*): SimpleExpression[Int] = IntVariable.ofSeq(v0 +: v)
+
+  def apply(values: RangeSet[Infinitable]): SimpleExpression[Int] = {
+    new ContiguousIntRangeSet(values).singletonMatch match {
+      case Some(s) => CSPOMConstant(s)
+      case None    => IntVariable(values)
+    }
+  }
+
+  def apply(values: IntInterval): SimpleExpression[Int] = apply(RangeSet(values))
+
 }

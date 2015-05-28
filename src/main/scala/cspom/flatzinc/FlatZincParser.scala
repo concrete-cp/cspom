@@ -17,12 +17,13 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMVariable
 import scala.collection.immutable.PagedSeq
 import scala.util.parsing.input.PagedSeqReader
+import scala.util.Try
 
 sealed trait FZDecl
 case class FZParamDecl(name: String, expression: CSPOMExpression[_]) extends FZDecl
 case class FZVarDecl(name: String, expression: CSPOMExpression[_], affectation: Option[FZExpr[_]], annotations: Seq[FZAnnotation])
 
-object FlatZincParser extends RegexParsers {
+object FlatZincParser extends RegexParsers with CSPOM.Parser {
 
   def fzAnnotations(ann: Seq[FZAnnotation]): Map[String, Seq[FZAnnotation]] = {
     if (ann.isEmpty) {
@@ -32,7 +33,7 @@ object FlatZincParser extends RegexParsers {
     }
   }
 
-  def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
+  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] = Try {
     val jreader = new InputStreamReader(is)
     val sreader = new PagedSeqReader(PagedSeq.fromReader(jreader))
 
@@ -79,7 +80,7 @@ object FlatZincParser extends RegexParsers {
       val variables = paramOrVar.collect {
         case v: FZVarDecl => v
       }
-      require(params.size + variables.size == paramOrVar.size)
+      assert(params.size + variables.size == paramOrVar.size)
       val (declared, affectations, annotations) = mapVariables(params, variables)
       success((declared, affectations, annotations)) ~ rep(constraint(declared)) ~ solve_goal
   } ^^ {
@@ -193,7 +194,7 @@ object FlatZincParser extends RegexParsers {
 
   def pred_ann_id: Parser[String] = """[A-Za-z][A-Za-z0-9_]*""".r
 
-  def var_par_id: Parser[FZVarParId] = """_*[A-Za-z][A-Za-z0-9_]*""".r ^^ FZVarParId
+  def var_par_id: Parser[FZVarParId[Any]] = """_*[A-Za-z][A-Za-z0-9_]*""".r ^^ { id => FZVarParId[Any](id) }
 
   def bool_const: Parser[FZBoolConst] = "true" ^^^ FZBoolConst(true) |
     "false" ^^^ FZBoolConst(false)
@@ -225,12 +226,12 @@ object FlatZincParser extends RegexParsers {
         case _ => throw new IllegalArgumentException("Constant expected")
       }
 
-      FZParamDecl(id.value, e)
+      FZParamDecl(id.ident, e)
   }
 
   def var_decl: Parser[FZVarDecl] = {
     (var_type <~ ":") ~ var_par_id ~ annotations ~ opt("=" ~> expr) <~ ";" ^^ {
-      case varType ~ varParId ~ ann ~ aff => FZVarDecl(varParId.value, varType.genVariable, aff, ann)
+      case varType ~ varParId ~ ann ~ aff => FZVarDecl(varParId.ident, varType.genVariable, aff, ann)
     }
 
   }

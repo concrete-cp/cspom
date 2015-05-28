@@ -1,8 +1,11 @@
 package cspom;
 
-import org.scalatest.Matchers
-import org.scalacheck.Test
+import scala.util.Failure
+import scala.util.Success
 import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.TryValues
+import scala.util.Try
 
 object StatisticsManagerTest {
   @Statistic
@@ -15,7 +18,7 @@ object StatisticsManagerTest {
   val testDouble = 11.0;
 }
 
-final class StatisticsManagerTest extends FlatSpec with Matchers {
+final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues {
 
   "StatisticsManager" should "register objects" in {
     val stats = new StatisticsManager
@@ -34,6 +37,42 @@ final class StatisticsManagerTest extends FlatSpec with Matchers {
     StatisticsManager.median(seq) shouldBe 50
     StatisticsManager.stDev(seq) shouldBe 24.81187 +- 0.00001
 
+  }
+
+  it should "measure time in regular case" in {
+    val (r, t) = StatisticsManager.time {
+      Thread.sleep(1000)
+    }
+
+    t shouldBe 1.0 +- .01
+    r should be a 'success
+  }
+
+  it should "measure time in exception case" in {
+    val (r, t) = StatisticsManager.time {
+      Thread.sleep(1000)
+      throw new Exception
+    }
+
+    t shouldBe 1.0 +- .01
+    r should be a 'failure
+  }
+
+  it should "measure time in success case" in {
+    val (r, t) = StatisticsManager.timeTry(Try(Thread.sleep(1000)))
+
+    t shouldBe 1.0 +- .01
+    r should be a 'success
+  }
+
+  it should "measure time in failure case" in {
+    val (r, t) = StatisticsManager.timeTry {
+      Thread.sleep(1000)
+      Failure(new Exception)
+    }
+
+    t shouldBe 1.0 +- .01
+    r should be a 'failure
   }
 
 }

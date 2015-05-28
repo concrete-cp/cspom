@@ -49,11 +49,11 @@ trait ConstraintCompiler extends LazyLogging {
 
       var delta = Delta.empty
       for ((w, b) <- in.replaceExpression(wh, by)) {
-        //println(s"replaced $w (${in.namesOf(w)}) with $b (${in.namesOf(b)})")
+        logger.debug(s"replaced $w (${in.namesOf(w)}) with $b (${in.namesOf(b)})")
         for (c <- in.constraints(w)) {
 
           val c2 = c.replacedVar(w, b)
-          //println(s"rewriting $c to $c2")
+          logger.debug(s"rewriting $c to $c2")
           delta ++= replaceCtr(c, c2, in)
         }
         assert(!in.isReferenced(w),
@@ -76,7 +76,7 @@ trait ConstraintCompiler extends LazyLogging {
   }
 
   def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta = {
-    //println(s"Replacing $which with $by")
+
     removeCtr(which, in) ++ addCtr(by, in)
   }
 
@@ -93,6 +93,7 @@ trait ConstraintCompiler extends LazyLogging {
   }
 
   def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+    logger.debug(s"Removing $c")
     c.foreach(in.removeConstraint)
     Delta.empty.removed(c)
   }
@@ -101,7 +102,9 @@ trait ConstraintCompiler extends LazyLogging {
 
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+
     c.foreach(in.ctr(_))
+    logger.debug(s"Adding $c")
     Delta.empty.added(c)
   }
 
@@ -115,10 +118,7 @@ trait ConstraintCompiler extends LazyLogging {
     if (old == reduced) {
       v
     } else {
-      new ContiguousIntRangeSet(reduced).singletonMatch match {
-        case Some(s) => CSPOMConstant(s)
-        case None    => IntVariable(reduced)
-      }
+      IntExpression(reduced)
     }
   }
 
@@ -127,10 +127,7 @@ trait ConstraintCompiler extends LazyLogging {
     if (old == reduced) {
       v
     } else {
-      new ContiguousIntRangeSet(reduced).singletonMatch match {
-        case Some(s) => CSPOMConstant(s)
-        case None    => IntVariable(reduced)
-      }
+      IntExpression(reduced)
     }
   }
 
@@ -156,9 +153,9 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
 }
 
-final case class Delta private (
-  removed: Seq[CSPOMConstraint[_]],
-  added: Seq[CSPOMConstraint[_]]) {
+case class Delta private (
+    removed: Seq[CSPOMConstraint[_]],
+    added: Seq[CSPOMConstraint[_]]) {
   def removed(c: CSPOMConstraint[_]): Delta = {
     Delta(c +: removed, added.filter(_ ne c))
   }
@@ -196,7 +193,7 @@ object Delta {
  */
 abstract class GlobalCompiler(
   override val constraintMatcher: PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]])
-  extends ConstraintCompiler {
+    extends ConstraintCompiler {
   type A = CSPOMConstraint[_]
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {

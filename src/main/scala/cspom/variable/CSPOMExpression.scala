@@ -28,7 +28,8 @@ sealed trait CSPOMExpression[+T] {
     (this, n)
   }
 
-  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = problem.isBool('ne, Seq(this, other))
+  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable =
+    problem.isBool('not, Seq(problem.isBool('eq, Seq(this, other))))
 
   def ≠(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = this !== other
 
@@ -77,9 +78,8 @@ object SimpleExpression {
   }
 
   class Typed[T: TypeTag] {
-    def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[T]] = Some(c).collect {
-      case c: SimpleExpression[_] if (c.tpe <:< typeOf[T]) =>
-        c.asInstanceOf[SimpleExpression[T]]
+    def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[T]] = PartialFunction.condOpt(c) {
+      case c: SimpleExpression[_] if (c.tpe <:< typeOf[T]) => c.asInstanceOf[SimpleExpression[T]]
     }
 
   }
@@ -136,10 +136,11 @@ abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
 }
 
 object CSPOMSeq {
-  def empty: CSPOMSeq[Nothing] = CSPOMSeq()
+  lazy val empty: CSPOMSeq[Nothing] = new CSPOMSeq(IndexedSeq.empty, IndexedSeq.empty.indices)
   @annotation.varargs
   def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
-  def apply[T: TypeTag](seq: IndexedSeq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] = new CSPOMSeq(seq, indices)
+  def apply[T: TypeTag](seq: IndexedSeq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] =
+    if (seq.isEmpty) empty else new CSPOMSeq(seq, indices)
 
   def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
     Some(s.values)
@@ -148,7 +149,7 @@ object CSPOMSeq {
 final class CSPOMSeq[+T: TypeTag](
   val values: IndexedSeq[CSPOMExpression[T]],
   val definedIndices: Range)
-  extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
+    extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
 
   def tpe = typeOf[T]
 

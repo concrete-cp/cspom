@@ -13,13 +13,14 @@ import cspom.variable.CSPOMVariable
 import CSPOM._
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
+import scala.util.Try
 
-final object CNFParser {
+final object CNFParser extends CSPOM.Parser {
 
   private val PARAMETER = new Regex("""^p cnf (\d+) (\d+)$""");
   private val VAR = new Regex("""(-?\d+)""");
 
-  def parse(is: InputStream): (CSPOM, Map[Symbol, Any]) = {
+  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] = Try {
     val reader = new BufferedReader(new InputStreamReader(is));
 
     val lines = Source.fromInputStream(is).getLines.filter(
@@ -62,7 +63,7 @@ final object CNFParser {
     require(!currentClause.contains(0))
 
     val (positive, negative) = currentClause.partition(_ > 0)
-    
+
     /**
      * Variable indices starts at 1 in Dimacs format, 0 in IndexedSeq
      */
