@@ -60,7 +60,7 @@ final class CSPOMCompiler(
             changed |= delta.nonEmpty
 
             if (delta.nonEmpty)
-              logger.info("change")
+              logger.info(delta.toString)
 
             for (rc <- delta.removed) {
               assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")

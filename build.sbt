@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes.concrete"
 
-version := "2.5-SNAPSHOT"
+version := "2.5"
 
 // For BZip2
 resolvers += "Concrete repository" at "http://concrete-cp.github.io/concrete/repository"

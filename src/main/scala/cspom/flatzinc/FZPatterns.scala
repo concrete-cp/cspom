@@ -386,13 +386,13 @@ object FZPatterns {
      * int_lt(var int: a, var int: b)
      */
     case Ctr('int_lt, Seq(a, b), p) =>
-      CSPOMConstraint('gt, Seq(b, a), p)
+      CSPOMConstraint('sum, Seq(CSPOMSeq(a, b), CSPOMConstant(0)), p + ("coefficients" -> Seq(1, -1), "mode" -> "lt"))
     /**
      * (a < b) ↔ r
      * int_lt_reif(var int: a, var int: b, var bool: r)
      */
     case Ctr('int_lt_reif, Seq(a, b, r), p) =>
-      CSPOMConstraint(r, 'gt, Seq(b, a), p)
+      CSPOMConstraint(r, 'sum, Seq(CSPOMSeq(a, b), CSPOMConstant(0)), p + ("coefficients" -> Seq(1, -1), "mode" -> "lt"))
     /**
      * max(a, b) = c
      * int_max(var int: a, var int: b, var int: c)
@@ -425,7 +425,7 @@ object FZPatterns {
      * int_plus(var int: a, var int: b, var int: c)
      */
     case Ctr('int_plus, Seq(a, b, c), p) =>
-      new CSPOMConstraint(c, 'add, Seq(a, b), p)
+      CSPOMConstraint('sum, Seq(CSPOMSeq(a, b, c), CSPOMConstant(0)), p + ("coefficients" -> Seq(1, 1, -1), "mode" -> "eq"))
     /**
      * a×b = c
      * int_times(var int: a, var int: b, var int: c)

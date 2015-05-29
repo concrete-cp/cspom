@@ -154,14 +154,16 @@ class CSPOM extends LazyLogging {
   }
 
   private def registerContainer(e: CSPOMExpression[_]): Unit = {
-    e match {
-      case s: CSPOMSeq[_] =>
-        for ((c, i) <- s.withIndex) {
-          containers.getOrElseUpdate(c, new LinkedHashSet()) += ((s, i))
-          registerContainer(c)
-        }
-      case _ =>
+
+    for {
+      s <- PartialFunction.condOpt(e) { case s: CSPOMSeq[_] => s }
+      (c, i) <- s.withIndex
+    } {
+      logger.trace(s"Registering $s")
+      containers.getOrElseUpdate(c, new LinkedHashSet()) += ((s, i))
+      registerContainer(c)
     }
+
   }
 
   /**
@@ -211,17 +213,16 @@ class CSPOM extends LazyLogging {
   }
 
   def removeContainer(e: CSPOMExpression[_]): Unit = {
-    //assert(!isReferenced(e))
-    e match {
-      case s: CSPOMSeq[_] =>
-        for ((e, i) <- s.withIndex) {
-          val set = containers(e)
-          set -= ((s, i))
-          if (!isReferenced(e)) {
-            removeContainer(e)
-          }
-        }
-      case _ =>
+    for {
+      s <- PartialFunction.condOpt(e) { case s: CSPOMSeq[_] => s }
+      (e, i) <- s.withIndex
+    } {
+      logger.trace(s"Deregistering $s")
+      val set = containers(e)
+      set -= ((s, i))
+      if (!isReferenced(e)) {
+        removeContainer(e)
+      }
     }
   }
 
@@ -237,7 +238,7 @@ class CSPOM extends LazyLogging {
   }
 
   def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[R], CSPOMExpression[R])] = {
-    //logger.warn(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
+    logger.info(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
     require(which != by, s"Replacing $which with $by")
     //require((namesOf(which).toSet & namesOf(by).toSet).isEmpty)
     var replaced = List[(CSPOMExpression[R], CSPOMExpression[R])]()

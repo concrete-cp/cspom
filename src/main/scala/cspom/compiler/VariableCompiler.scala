@@ -7,16 +7,21 @@ import cspom.UNSATException
 import cspom.variable.CSPOMConstant
 
 abstract class VariableCompiler(
-  val function: Symbol) extends ConstraintCompiler {
+    val function: Symbol) extends ConstraintCompiler {
 
   def compiler(c: CSPOMConstraint[_]): Map[CSPOMExpression[_], CSPOMExpression[_]]
 
-  type A = Map[CSPOMExpression[_], CSPOMExpression[_]]
+  def compilerWEntail(c: CSPOMConstraint[_]): (Map[CSPOMExpression[_], CSPOMExpression[_]], Boolean) = {
+    (compiler(c), false)
+  }
+
+  type A = (Map[CSPOMExpression[_], CSPOMExpression[_]], Boolean)
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {
     if (c.function == function) {
-      val m = try {
-        compiler(c).filter { case (k, v) => k != v }
+      val (reductions, entail) = try {
+        compilerWEntail(c)
+
       } catch {
         case e: UNSATException =>
           for (
@@ -29,11 +34,14 @@ abstract class VariableCompiler(
 
           throw new UNSATException(s"$c is inconsistent", e)
       }
+
+      val m = reductions.filter { case (k, v) => k != v }
+
       require(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
 
-      if (m.nonEmpty) {
+      if (m.nonEmpty || entail) {
         logger.info(s"$c: $m")
-        Some(m)
+        Some((m, entail))
 
       } else {
         None
@@ -43,8 +51,17 @@ abstract class VariableCompiler(
     }
   }
 
-  def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) =
-    data.map { case (k, v) => replace(k, v, problem) }.reduce(_ ++ _)
+  def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {
+    val (reductions, entail) = data
+    (if (entail) {
+      removeCtr(c, problem)
+    } else {
+      Delta.empty
+    }) ++
+      reductions.map { case (k, v) => replace(k, v, problem) }.reduce(_ ++ _)
+
+  }
+
   //}
   //    var d = Delta()
   //    for ((k, v) <- data) {

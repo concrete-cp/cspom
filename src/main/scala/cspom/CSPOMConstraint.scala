@@ -12,10 +12,10 @@ import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
 
 final case class CSPOMConstraint[+T](
-  val result: CSPOMExpression[T],
-  val function: Symbol,
-  val arguments: Seq[CSPOMExpression[Any]],
-  val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
+    val result: CSPOMExpression[T],
+    val function: Symbol,
+    val arguments: Seq[CSPOMExpression[Any]],
+    val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
 
   require(result != null)
   require(arguments != null)
@@ -23,7 +23,9 @@ final case class CSPOMConstraint[+T](
 
   //  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
   //  require(function != 'alldifferent || arguments.forall(_.isInstanceOf[SimpleExpression[_]]))
-  //  require(function != 'ge)
+  require(function != 'add)
+  
+  require(fullScope.distinct == fullScope, this)
 
   def nonReified = result.isTrue
 
@@ -52,7 +54,7 @@ final case class CSPOMConstraint[+T](
 
   def replacedVar[R, S <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
     val newResult = replaceVarShallow(result, which, by) //result.replaceVar(which, by)
-    val newArgs: Seq[CSPOMExpression[Any]] = arguments.map(replaceVarShallow(_, which, by))//_.replaceVar(which, by))
+    val newArgs: Seq[CSPOMExpression[Any]] = arguments.map(replaceVarShallow(_, which, by)) //_.replaceVar(which, by))
 
     new CSPOMConstraint(newResult,
       function,
