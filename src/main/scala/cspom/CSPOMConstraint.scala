@@ -24,8 +24,12 @@ final case class CSPOMConstraint[+T](
   //  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
   //  require(function != 'alldifferent || arguments.forall(_.isInstanceOf[SimpleExpression[_]]))
   require(function != 'add)
-  
-  require(fullScope.distinct == fullScope, this)
+
+//  require(
+//    {
+//      val variables = fullScope.collect { case v: CSPOMVariable[_] => v }
+//      variables.distinct == variables
+//    }, this)
 
   def nonReified = result.isTrue
 
