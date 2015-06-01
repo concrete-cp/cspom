@@ -2,22 +2,19 @@ package cspom.flatzinc
 
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.text.ParseException
+
+import scala.collection.immutable.PagedSeq
+import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.combinator.RegexParsers
-import scala.util.parsing.input.StreamReader
+import scala.util.parsing.input.PagedSeqReader
+
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
-import cspom.StatisticsManager
-import cspom.compiler.CSPOMCompiler
-import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMVariable
-import scala.collection.immutable.PagedSeq
-import scala.util.parsing.input.PagedSeqReader
-import scala.util.Try
 
 sealed trait FZDecl
 case class FZParamDecl(name: String, expression: CSPOMExpression[_]) extends FZDecl
@@ -37,15 +34,12 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
     val jreader = new InputStreamReader(is)
     val sreader = new PagedSeqReader(PagedSeq.fromReader(jreader))
 
-    val parseResult = flatzincModel(sreader)
-
-    parseResult match {
-      case Success((cspom, goal), _) =>
-        CSPOMCompiler.compile(cspom, FZPatterns())
-        (cspom, Map('goal -> goal))
-      case n: NoSuccess => throw new CSPParseException(n.toString, null, n.next.pos.line)
-    }
+    flatzincModel(sreader)
   }
+    .flatMap {
+      case Success((cspom, goal), _) => util.Success((cspom, Map('goal -> goal)))
+      case n: NoSuccess              => util.Failure(new CSPParseException(n.toString, null, n.next.pos.line))
+    }
 
   private def mapVariables(params: Map[String, CSPOMExpression[_]],
                            variables: Seq[FZVarDecl]) = {
