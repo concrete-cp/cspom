@@ -102,13 +102,13 @@ class CSPOM extends LazyLogging {
 
   }
 
-  def getContainers(e: CSPOMExpression[_]) = containers(e)
+  def getContainers(e: CSPOMExpression[_]): collection.Set[(CSPOMSeq[_], Int)] = containers(e)
 
   def addAnnotation(expressionName: String, annotationName: String, annotation: Any): Unit = {
     annotations(expressionName) += (annotationName -> annotation)
   }
 
-  def getAnnotations(expressionName: String) = annotations(expressionName)
+  def getAnnotations(expressionName: String): Annotations = annotations(expressionName)
 
   private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = s match {
     case Seq() => e
@@ -139,9 +139,9 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def constraints = _constraints.iterator
+  def constraints: Iterator[CSPOMConstraint[_]] = _constraints.iterator
 
-  def constraintSet = _constraints //.toSet
+  def constraintSet: collection.Set[CSPOMConstraint[_]] = _constraints //.toSet
 
   val getConstraints: java.util.Iterator[CSPOMConstraint[_]] = constraints.asJava
 
@@ -172,7 +172,7 @@ class CSPOM extends LazyLogging {
    * @param constraint
    *            The constraint to add.
    */
-  private def addConstraint[A](constraint: CSPOMConstraint[A]) = {
+  private def addConstraint[A](constraint: CSPOMConstraint[A]): CSPOMConstraint[A] = {
 
     require(!_constraints(constraint),
       "The constraint " + constraint + " already belongs to the problem");
@@ -189,7 +189,7 @@ class CSPOM extends LazyLogging {
     constraint
   }
 
-  def removeConstraint(c: CSPOMConstraint[_]) {
+  def removeConstraint(c: CSPOMConstraint[_]): Unit = {
     require(_constraints(c), s"$c does not involve $this (not in ${_constraints})")
     _constraints -= c
 
@@ -291,7 +291,7 @@ class CSPOM extends LazyLogging {
     //addConstraint(c)
   }
 
-  def postpone[A](c: CSPOMConstraint[A]) = {
+  def postpone[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
     postponed += c
     c
   }
@@ -331,9 +331,9 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def getPostponed = postponed.toSet
+  def getPostponed: Set[CSPOMConstraint[_]] = postponed.toSet
 
-  override def toString = {
+  override def toString: String = {
     val vn = new VariableNames(this)
     val vars = referencedExpressions.map(e => (vn.names(e), e)).sortBy(_._1).map {
       case (name, variable) => s"$name: $variable"
@@ -351,7 +351,7 @@ class CSPOM extends LazyLogging {
    * @return a String containing the GML representation of the constraint
    *         network.
    */
-  def toGML = {
+  def toGML: String = {
     val stb = new StringBuilder();
     stb.append("graph [\n");
     stb.append("directed 0\n");
@@ -450,13 +450,13 @@ object CSPOM {
    */
   def loadXCSP(file: String): Try[(CSPOM, Map[scala.Symbol, Any])] = load(file2url(file), XCSPParser)
 
-  def loadFZ(file: String) = load(file2url(file), FlatZincParser)
+  def loadFZ(file: String): Try[(CSPOM, Map[scala.Symbol, Any])] = load(file2url(file), FlatZincParser)
 
-  def loadCNF(file: String) = load(file2url(file), CNFParser)
+  def loadCNF(file: String): Try[(CSPOM, Map[scala.Symbol, Any])] = load(file2url(file), CNFParser)
 
   def file2url(file: String): URL = {
     val uri = new URI(file)
-    if (uri.isAbsolute && uri.getScheme != null) {
+    if (uri.isAbsolute && Option(uri.getScheme).isDefined) {
       uri.toURL
     } else {
       new URL("file:" + uri)
@@ -504,10 +504,10 @@ object CSPOM {
     def notIn(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = notIn(new Table(rel))
 
     def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension, vars, Map("init" -> false, "relation" -> rel))
-    def notIn(rel: Relation[A]) = CSPOMConstraint('extension, vars, Map("init" -> true, "relation" -> rel))
+    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension, vars, Map("init" -> true, "relation" -> rel))
   }
 
-  implicit def seq2Rel(s: Seq[Seq[Int]]) = new Table(s)
+  implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
 
   implicit def constant[A <: AnyVal: TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 

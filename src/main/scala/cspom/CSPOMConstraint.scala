@@ -3,7 +3,7 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMConstant
 import javax.script.ScriptException
 import cspom.variable.CSPOMVariable
-import scala.collection.JavaConversions
+import scala.collection.JavaConverters._
 import scala.collection.mutable.HashMap
 import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
@@ -17,8 +17,6 @@ final case class CSPOMConstraint[+T](
     val arguments: Seq[CSPOMExpression[Any]],
     val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
 
-  require(result != null)
-  require(arguments != null)
   // require(arguments.nonEmpty, "Must have at least one argument")
 
   //  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
@@ -31,24 +29,24 @@ final case class CSPOMConstraint[+T](
   //      variables.distinct == variables
   //    }, this)
 
-  def nonReified = result.isTrue
+  def nonReified: Boolean = result.isTrue
 
-  def fullScope = result +: arguments
+  def fullScope: Seq[CSPOMExpression[_]] = result +: arguments
 
-  def flattenedScope = fullScope.flatMap(_.flatten)
+  def flattenedScope: Seq[CSPOMExpression[_]] = fullScope.flatMap(_.flatten)
 
-  val id = CSPOMConstraint.id
+  val id: Int = CSPOMConstraint.id
   CSPOMConstraint.id += 1
 
-  def getArgs = JavaConversions.seqAsJavaList(arguments)
+  def getArgs: java.util.List[CSPOMExpression[_]] = arguments.asJava
 
-  override final def hashCode = id
-  override final def equals(o: Any) = o match {
+  override final def hashCode: Int = id
+  override final def equals(o: Any): Boolean = o match {
     case o: AnyRef => o eq this
     case _         => false
   }
 
-  private def replaceVarShallow[R, S <: R](candidate: CSPOMExpression[_], which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
+  private def replaceVarShallow[R, S <: R](candidate: CSPOMExpression[R], which: CSPOMExpression[R], by: CSPOMExpression[S]): CSPOMExpression[R] = {
     if (candidate == which) {
       by
     } else {
@@ -56,9 +54,9 @@ final case class CSPOMConstraint[+T](
     }
   }
 
-  def replacedVar[R, S <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]) = {
+  def replacedVar[R >: T, S >: T <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]): CSPOMConstraint[R] = {
     val newResult = replaceVarShallow(result, which, by) //result.replaceVar(which, by)
-    val newArgs: Seq[CSPOMExpression[Any]] = arguments.map(replaceVarShallow(_, which, by)) //_.replaceVar(which, by))
+    val newArgs = arguments.map(replaceVarShallow(_, which, by)) //_.replaceVar(which, by))
 
     new CSPOMConstraint(newResult,
       function,
@@ -66,7 +64,7 @@ final case class CSPOMConstraint[+T](
       params)
   }
 
-  override def toString = {
+  override def toString: String = {
     val args = arguments.map(_.toString)
     if (result.isTrue) {
       toString(None, args)
@@ -98,7 +96,7 @@ final case class CSPOMConstraint[+T](
 object CSPOMConstraint {
   var id = 0
 
-  def param(key: String, v: Any) = ConstraintParameters(Map(key -> v))
+  def param(key: String, v: Any): ConstraintParameters = ConstraintParameters(Map(key -> v))
 
   def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]]): CSPOMConstraint[Boolean] =
     CSPOMConstraint(function, arguments, Map[String, Any]())
@@ -108,7 +106,7 @@ object CSPOMConstraint {
 }
 
 case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {
-  def param(key: String, v: Any) = ConstraintParameters(m + (key -> v))
+  def param(key: String, v: Any): ConstraintParameters = ConstraintParameters(m + (key -> v))
   def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = ConstraintParameters(m + kv)
   def -(key: String): scala.collection.immutable.Map[String, Any] = ConstraintParameters(m - key)
   def get(key: String): Option[Any] = m.get(key)
