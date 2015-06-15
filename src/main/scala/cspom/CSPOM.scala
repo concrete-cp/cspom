@@ -150,6 +150,12 @@ class CSPOM extends LazyLogging {
     namedExpressions += n -> e
     expressionNames(e) += n
     registerContainer(e)
+
+    val post = postponed.filter(_.flattenedScope.contains(e))
+    for (c <- post) {
+      if (postponed(c)) resolvePostponed(c)
+    }
+
     e
   }
 
@@ -278,17 +284,14 @@ class CSPOM extends LazyLogging {
       logger.warn(s"$c already belongs to the problem")
       c
     } else {
-      resolvePostponed(c)
       //addConstraint(c)
+      resolvePostponed(c)
       c
     }
   }
 
   def ctr(v: SimpleExpression[Boolean]): CSPOMConstraint[Boolean] = {
-    val c = CSPOMConstraint('eq, Seq(v, CSPOMConstant(true)))
-    resolvePostponed(c)
-    c
-    //addConstraint(c)
+    ctr(CSPOMConstraint('eq, Seq(v, CSPOMConstant(true))))
   }
 
   def postpone[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
