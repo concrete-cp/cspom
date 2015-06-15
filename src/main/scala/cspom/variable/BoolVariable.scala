@@ -10,7 +10,7 @@ final class BoolVariable() extends CSPOMVariable[Boolean]() {
     case _: BoolVariable => this
     case c: CSPOMConstant[_] =>
       require(c.value.isInstanceOf[Boolean]); c.asInstanceOf[CSPOMConstant[Boolean]]
-    case _ => throw new IllegalArgumentException
+    case _ => EmptyVariable
   }
 
   def contains[S >: Boolean](that: S) = {
@@ -21,4 +21,5 @@ final class BoolVariable() extends CSPOMVariable[Boolean]() {
 
   def fullyDefined = true
   def searchSpace = 2
+  def isEmpty = false
 }

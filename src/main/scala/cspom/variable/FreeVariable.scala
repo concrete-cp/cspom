@@ -18,7 +18,15 @@ class FreeVariable extends CSPOMVariable[Any] {
   def iterator = throw new UnsupportedOperationException
   def fullyDefined = false
   def searchSpace = Double.PositiveInfinity
+  def isEmpty = false
 }
 
-
-
+object EmptyVariable extends CSPOMVariable[Nothing] {
+  override def toString = s"empty var"
+  def intersected(other: SimpleExpression[_]) = this
+  def contains[S](that: S) = false
+  def fullyDefined = true
+  def iterator = Iterator.empty
+  def searchSpace = 0
+  def isEmpty = true
+}

@@ -8,6 +8,7 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
+import cspom.variable.BoolExpression
 
 /**
  * If given constraint is an all-equal constraint, merges and removes all
@@ -15,30 +16,28 @@ import com.typesafe.scalalogging.LazyLogging
  */
 object MergeEq extends ConstraintCompilerNoData with LazyLogging {
 
-  override def matchBool(c: CSPOMConstraint[_], p: CSPOM) = c match {
-    case CSPOMConstraint(CSPOMConstant(true), 'eq, args: Seq[_], params) if params.get("neg").forall(_ == false) &&
-      params.get("offset").forall(_ == 0) && args.forall(_.isInstanceOf[SimpleExpression[_]]) =>
-      true
-
-    case _ => false
-  }
+  override def matchBool(c: CSPOMConstraint[_], p: CSPOM) =
+    c.function == 'eq && c.arguments.forall(_.isInstanceOf[SimpleExpression[_]])
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM) = {
+    require(!constraint.params.contains("neg") && !constraint.params.contains("offset"), "neg and offset parameters are deprecated for the eq constraint")
+
     val se = constraint.arguments.map(_.asInstanceOf[SimpleExpression[_]])
+
     val merged = se.reduceLeft(_ intersected _)
 
-    //   println(s"Merging $se to $merged")
-
-    //val oldConstraints = se.flatMap(problem.deepConstraints(_)).map(_.toString).sorted
-
-    /**
-     * Update the constraints of the problem
-     */
-    val d = removeCtr(constraint, problem) ++ se.map(replace(_, merged, problem)).reduce(_ ++ _)
-
-    //println(problem)
-
-    d
+    if (merged.isEmpty) {
+      removeCtr(constraint, problem) ++
+        replace(constraint.result, CSPOMConstant(false), problem)
+    } else if (se.forall(_ == merged)) {
+      removeCtr(constraint, problem) ++
+        replace(constraint.result, CSPOMConstant(true), problem)
+    } else if (constraint.result.isTrue) {
+      removeCtr(constraint, problem) ++
+        se.map(replace(_, merged, problem)).reduce(_ ++ _)
+    } else {
+      replace(constraint.result, BoolExpression.coerce(constraint.result), problem)
+    }
   }
 
   def selfPropagation = true

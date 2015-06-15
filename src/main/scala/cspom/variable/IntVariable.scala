@@ -13,7 +13,7 @@ import cspom.util.MinInf
 import cspom.UNSATException
 
 final class IntVariable(val domain: RangeSet[Infinitable])
-  extends CSPOMVariable[Int] with LazyLogging {
+    extends CSPOMVariable[Int] with LazyLogging {
 
   val asSortedSet = new ContiguousIntRangeSet(domain)
 
@@ -31,6 +31,8 @@ final class IntVariable(val domain: RangeSet[Infinitable])
     case t: Int => domain.contains(Finite(t))
     case _      => false
   }
+  
+  def isEmpty = false
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
@@ -40,7 +42,9 @@ final class IntVariable(val domain: RangeSet[Infinitable])
       //      //CSPOMConstant(c, Map("intersection" -> ((this, c))))
       case v: IntVariable => {
         val d = domain & v.domain
-        if (domain == d) {
+        if (d.isEmpty) {
+          EmptyVariable
+        } else if (domain == d) {
           this
         } else if (v.domain == d) {
           v

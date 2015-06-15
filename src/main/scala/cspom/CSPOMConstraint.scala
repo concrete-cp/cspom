@@ -10,6 +10,7 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMSeq
 import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
+import cspom.variable.EmptyVariable
 
 final case class CSPOMConstraint[+T](
     val result: CSPOMExpression[T],
@@ -28,6 +29,8 @@ final case class CSPOMConstraint[+T](
   //      val variables = fullScope.collect { case v: CSPOMVariable[_] => v }
   //      variables.distinct == variables
   //    }, this)
+
+  if (flattenedScope.contains(EmptyVariable)) logger.warn(s"Empty variable in scope of $this")
 
   def nonReified: Boolean = result.isTrue
 

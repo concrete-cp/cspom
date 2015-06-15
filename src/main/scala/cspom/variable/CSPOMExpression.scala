@@ -66,7 +66,9 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
   def contains[S >: T](that: S): Boolean
 
-  def flatten = Seq(this)
+  def flatten: Seq[SimpleExpression[T]] = Seq(this)
+  
+  def isEmpty: Boolean
 }
 
 object SimpleExpression {
@@ -97,7 +99,7 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
     if (that.contains(value)) {
       this
     } else {
-      throw new UNSATException("Empty intersection")
+      EmptyVariable
     }
   }
 
@@ -117,6 +119,8 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   def fullyDefined = true
 
   def searchSpace = 1
+  
+  def isEmpty = false
 }
 
 //object CSPOMConstant {
