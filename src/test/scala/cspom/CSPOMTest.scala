@@ -148,8 +148,8 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
       //
       //      val albert1 = for (i <- 5 to 8) yield for (j <- 14 to 19) yield new BoolVariable() as s"albert1 $i/$j"
       def lt(x: CSPOMExpression[_], y: CSPOMExpression[_]) = (x, y) match {
-        case (BoolExpression(xi), BoolExpression(yi)) => problem.isBool('clause, Seq(Seq(yi), Seq(xi)))
-        case (IntExpression(xi), IntExpression(yi))   => problem.isBool('lt, Seq(xi, yi))
+        case (BoolExpression(xi), BoolExpression(yi)) => problem.defineBool(r => CSPOMConstraint(r)('clause)(Seq(yi), Seq(xi)))
+        case (IntExpression(xi), IntExpression(yi))   => problem.defineBool(r => CSPOMConstraint(r)('lt)(xi, yi))
       }
 
       val x = for (i <- 0 until 5) yield new BoolVariable() as s"X$i"
@@ -160,14 +160,15 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
       val disjunction = Seq(
         lt(x(0), y(0)),
-        problem.isBool('and, (0 until n).map(i => x(i) === y(i)))) ++
+        problem.defineBool(r =>
+          CSPOMConstraint(r)('and)((0 until n).map(i => x(i) === y(i)): _*))) ++
         (0 until n - 1).map { i =>
           val conjunction =
             (0 until i).map(j => x(j) === y(j)) :+ lt(x(i + 1), y(i + 1))
-          problem.isBool('and, conjunction)
+          problem.defineBool(r => CSPOMConstraint(r)('and)(conjunction))
         }
 
-      ctr(problem.isBool('or, disjunction))
+      ctr(problem.defineBool(r => CSPOMConstraint(r)('or)(disjunction)))
 
     }
 
@@ -183,7 +184,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
       val r = problem.defineInt(r => CSPOMConstraint('sum)(Seq(v0, v1, r), 0))
 
-      val r2 = problem.isInt('abs, Seq(r)) as "r2"
+      val r2 = problem.defineInt(result => CSPOMConstraint(result)('abs)(r)) as "r2"
 
     }
 

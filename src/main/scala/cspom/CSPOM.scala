@@ -293,18 +293,18 @@ class CSPOM extends LazyLogging {
   def ctr(v: SimpleExpression[Boolean]): CSPOMConstraint[Boolean] = {
     ctr(CSPOMConstraint('eq)(v, CSPOMConstant(true)))
   }
-
-  def is(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[_] = {
-    defineFree(result => CSPOMConstraint(result, name, scope, params))
-  }
-
-  def isInt(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Int] = {
-    defineInt(result => CSPOMConstraint(result, name, scope, params))
-  }
-
-  def isBool(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Boolean] = {
-    defineBool(result => CSPOMConstraint(result, name, scope, params))
-  }
+//
+//  def is(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[_] = {
+//    defineFree(result => CSPOMConstraint(result, name, scope, params))
+//  }
+//
+//  def isInt(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Int] = {
+//    defineInt(result => CSPOMConstraint(result, name, scope, params))
+//  }
+//
+//  def isBool(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Boolean] = {
+//    defineBool(result => CSPOMConstraint(result, name, scope, params))
+//  }
 
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f

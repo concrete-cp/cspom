@@ -8,6 +8,7 @@ import cspom.util.ContiguousIntRangeSet
 import cspom.UNSATException
 import scala.collection.mutable.HashMap
 import scala.reflect.runtime.universe._
+import cspom.CSPOMConstraint
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -28,14 +29,15 @@ sealed trait CSPOMExpression[+T] {
     (this, n)
   }
 
-  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
-    problem.isBool('not, Seq(problem.isBool('eq, Seq(this, other))))
+  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] = {
+    problem.defineBool(result => CSPOMConstraint(result)('not)(this === other))
+  }
 
   def ≠(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
     this !== other
 
   def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
-    problem.isBool('eq, Seq(this, other))
+    problem.defineBool(result => CSPOMConstraint(result)('eq)(this, other))
 
   def flatten: Seq[SimpleExpression[T]]
 

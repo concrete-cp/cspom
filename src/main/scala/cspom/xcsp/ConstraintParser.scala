@@ -60,8 +60,8 @@ final object ConstraintParser extends JavaTokenParsers {
     node match {
       case PredicateConstant(value)      => CSPOMConstant(value)
       case PredicateVariable(variableId) => declaredVariables(variableId)
-      case PredicateConstraint(operator, arguments) =>
-        cspom.is(Symbol(operator), arguments.map(toVariable(_, declaredVariables, cspom)))
+      case PredicateConstraint(operator, arguments) => cspom.defineFree(result =>
+        CSPOMConstraint(result)(Symbol(operator))(arguments.map(toVariable(_, declaredVariables, cspom)): _*))
     }
   }
 
