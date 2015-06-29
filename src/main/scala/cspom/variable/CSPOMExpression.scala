@@ -28,12 +28,14 @@ sealed trait CSPOMExpression[+T] {
     (this, n)
   }
 
-  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable =
+  def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
     problem.isBool('not, Seq(problem.isBool('eq, Seq(this, other))))
 
-  def ≠(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = this !== other
+  def ≠(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
+    this !== other
 
-  def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): BoolVariable = problem.isBool('eq, Seq(this, other))
+  def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
+    problem.isBool('eq, Seq(this, other))
 
   def flatten: Seq[SimpleExpression[T]]
 
@@ -67,7 +69,7 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   def contains[S >: T](that: S): Boolean
 
   def flatten: Seq[SimpleExpression[T]] = Seq(this)
-  
+
   def isEmpty: Boolean
 }
 
@@ -119,7 +121,7 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   def fullyDefined = true
 
   def searchSpace = 1
-  
+
   def isEmpty = false
 }
 

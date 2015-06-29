@@ -30,6 +30,9 @@ final case class CSPOMConstraint[+T](
   //      variables.distinct == variables
   //    }, this)
 
+  def withParam(addParams: (String, Any)*) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
+  def withParams(addParams: Map[String, Any]) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
+
   if (flattenedScope.contains(EmptyVariable)) logger.warn(s"Empty variable in scope of $this")
 
   def nonReified: Boolean = result.isTrue
@@ -101,11 +104,17 @@ object CSPOMConstraint {
 
   def param(key: String, v: Any): ConstraintParameters = ConstraintParameters(Map(key -> v))
 
-  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]]): CSPOMConstraint[Boolean] =
-    CSPOMConstraint(function, arguments, Map[String, Any]())
+  //  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]]): CSPOMConstraint[Boolean] =
+  //    CSPOMConstraint(function, arguments, Map[String, Any]())
 
-  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any]): CSPOMConstraint[Boolean] =
-    new CSPOMConstraint(CSPOMConstant(true), function, arguments, params)
+  //  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any]): CSPOMConstraint[Boolean] =
+  //    new CSPOMConstraint(CSPOMConstant(true), function, arguments, params)
+  def apply(function: Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
+    apply(CSPOMConstant(true))(function)(arguments: _*)
+
+  def apply[R](result: CSPOMExpression[R])(function: Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[R] =
+    new CSPOMConstraint(result, function, arguments)
+
 }
 
 case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {

@@ -22,11 +22,11 @@ case class FZVarDecl(name: String, expression: CSPOMExpression[_], affectation: 
 
 object FlatZincParser extends RegexParsers with CSPOM.Parser {
 
-  def fzAnnotations(ann: Seq[FZAnnotation]): Map[String, Seq[FZAnnotation]] = {
+  def fzAnnotations(ann: Seq[FZAnnotation]): Seq[(String, Seq[FZAnnotation])] = {
     if (ann.isEmpty) {
-      Map()
+      Seq()
     } else {
-      Map("fzAnnotations" -> ann)
+      Seq("fzAnnotations" -> ann)
     }
   }
 
@@ -96,7 +96,7 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
         }
 
         for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
-          CSPOM.ctr(CSPOMConstraint('eq, Seq(e, a)))
+          CSPOM.ctr(CSPOMConstraint('eq)(e, a))
         }
       }
       (p, goal)
@@ -234,10 +234,8 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
     {
       "constraint" ~> pred_ann_id ~ ("(" ~> repsep(expr, ",") <~ ")") ~ annotations <~ ";" ^^ {
         case predAnnId ~ expr ~ annotations =>
-          CSPOMConstraint(
-            Symbol(predAnnId),
-            expr.map(_.toCSPOM(declared)),
-            fzAnnotations(annotations))
+          CSPOMConstraint(Symbol(predAnnId))(expr.map(_.toCSPOM(declared)): _*) withParam
+            (fzAnnotations(annotations): _*)
       }
     }
 

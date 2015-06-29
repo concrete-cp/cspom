@@ -48,7 +48,7 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
     val cached = cache.getOrElseUpdate((IdEq(relation), domains, vars), {
       logger.info("reducing !")
       val filtered = relation.filter((k, i) => domains(k)(i))
-      
+
       logger.trace(s"filtered: ${filtered ne relation}")
 
       val projected = if (vars.size < c.arguments.size) {
@@ -56,16 +56,16 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
       } else {
         filtered
       }
-      
+
       logger.trace(s"projected: ${projected ne filtered}")
 
       val reduced = projected match {
         case p: MDD[_] => p.reduce
         case p         => p
       }
-      
+
       logger.trace(s"reduced: ${reduced ne projected}")
-      
+
       reduced
     })
 
@@ -73,7 +73,7 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
       logger.info(s"$relation -> $cached")
       replaceCtr(c,
-        CSPOMConstraint('extension, vars.map(args), c.params.updated("relation", cached)),
+        CSPOMConstraint('extension)(vars.map(args): _*) withParams (c.withParam("relation" -> cached).params),
         problem)
 
     } else {
