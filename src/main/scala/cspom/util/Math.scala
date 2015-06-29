@@ -36,36 +36,32 @@ object Math {
    */
   def divide(p: Int, q: Int, mode: RoundingMode): Int = {
     import RoundingMode._
-    if (q == 0) {
-      throw new ArithmeticException("/ by zero"); // for GWT
-    }
-    val div = p / q;
-    val rem = p - q * div; // equal to p % q
+
+    val div = p / q
+    val rem = p - q * div // equal to p % q
 
     if (rem == 0) {
-      div;
+      div
     } else {
 
-      /*
-     * Normal Java division rounds towards 0, consistently with RoundingMode.DOWN. We just have to
-     * deal with the cases where rounding towards 0 is wrong, which typically depends on the sign of
-     * p / q.
-     *
-     * signum is 1 if p and q are both nonnegative or both negative, and -1 otherwise.
-     */
+      /**
+       * Normal Java division rounds towards 0, consistently with RoundingMode.DOWN. We just have to
+       * deal with the cases where rounding towards 0 is wrong, which typically depends on the sign of
+       * p / q.
+       *
+       * signum is 1 if p and q are both nonnegative or both negative, and -1 otherwise.
+       */
       val signum = 1 | ((p ^ q) >> (Integer.SIZE - 1));
       val increment = mode match {
         case UNNECESSARY if (rem == 0) =>
           throw new ArithmeticException("mode was UNNECESSARY, but rounding was necessary");
 
-        case UNNECESSARY | DOWN => false;
-        case UP => true
-        case CEILING => signum > 0;
-        case FLOOR => signum < 0;
+        case UNNECESSARY | DOWN => false
+        case UP                 => true
+        case CEILING            => signum > 0;
+        case FLOOR              => signum < 0;
 
-        case HALF_EVEN |
-          HALF_DOWN |
-          HALF_UP =>
+        case HALF_EVEN | HALF_DOWN | HALF_UP =>
           val absRem = math.abs(rem);
           val cmpRemToHalfDivisor = absRem - (math.abs(q) - absRem);
           // subtracting two nonnegative ints can't overflow
@@ -75,8 +71,7 @@ object Math {
           } else {
             cmpRemToHalfDivisor > 0; // closer to the UP value
           }
-        case _ =>
-          throw new AssertionError();
+        case _ => throw new AssertionError();
       }
       if (increment) div + signum else div;
     }

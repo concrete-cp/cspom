@@ -29,7 +29,7 @@ sealed trait Infinitable extends Any {
   def div(v: Infinitable, rm: RoundingMode): Infinitable
   def divisible(v: Infinitable): Boolean
   def unary_-(): Infinitable
-  def isInfinity = (this == MinInf) || (this == PlusInf)
+  def isInfinity: Boolean = (this == MinInf) || (this == PlusInf)
 
   def <=(i: Int): Boolean
   def <(i: Int): Boolean
@@ -110,6 +110,6 @@ case class Finite(i: Int) extends AnyVal with Infinitable {
   def <(j: Int) = i < j
   def >=(j: Int) = i >= j
   def >(j: Int) = i > j
-  
+
   override def toString = i.toString
 }
