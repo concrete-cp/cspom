@@ -15,6 +15,7 @@ import cspom.variable.BoolExpression
 import cspom.variable.IntExpression
 import cspom.variable.CSPOMExpression
 import cspom.compiler.MergeSame
+import cspom.variable.CSPOMConstant
 
 class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
@@ -45,8 +46,8 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
   it should "accept and reference bool variables" in {
     val cspom = CSPOM { implicit problem =>
-      ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
-      ctr(CSPOMConstraint('dummy, Seq(new BoolVariable())))
+      ctr(CSPOMConstraint('dummy)(new BoolVariable()))
+      ctr(CSPOMConstraint('dummy)(new BoolVariable()))
     }
     // Third is CSPOMConstant(true) !
     cspom.referencedExpressions should have size 3
@@ -63,7 +64,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
       //v foreach { cspom.addVariable(_) }
 
-      leq = ctr(CSPOMConstraint('leq, Seq(v(0), v(1))))
+      leq = ctr(CSPOMConstraint('leq)(v(0), v(1)))
     }
 
     cspom.constraints(v(0)) should contain(leq)
@@ -78,68 +79,6 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
     cspom.referencedExpressions shouldBe empty
 
-  }
-
-  it should "generate proper GML" in {
-    val cspom = CSPOM { implicit problem =>
-      val (x, y, z) = (
-        IntVariable(0 to 10) as "X",
-        IntVariable(0 to 10) as "Y",
-        IntVariable(0 to 10) as "Z");
-
-      ctr(CSPOMConstraint('leq, Seq(x, y)))
-      ctr(CSPOMConstraint('leq, Seq(x, y, z)))
-
-    }
-
-    val gml = cspom.toGML
-
-    //shouldBe """graph [
-    //directed 0
-    //
-    //          node [
-    //            id "X"
-    //            label "X"
-    //          ]
-    //          
-    //          node [
-    //            id "Y"
-    //            label "Y"
-    //          ]
-    //          
-    //          node [
-    //            id "Z"
-    //            label "Z"
-    //          ]
-    //          
-    //          edge [
-    //            source "X"
-    //            target "Y"
-    //            label "leq"
-    //          ]
-    //          
-    //          node [
-    //            id "cons1"
-    //            label "leq"
-    //            graphics [ fill "#FFAA00" ]
-    //          ]
-    //          
-    //          edge [
-    //            source "cons1"
-    //            target "X"
-    //          ]
-    //          
-    //          edge [
-    //            source "cons1"
-    //            target "Y"
-    //          ]
-    //          
-    //          edge [
-    //            source "cons1"
-    //            target "Z"
-    //          ]
-    //          ]
-    //"""
   }
 
   it should "correctly replace variables" in {
@@ -235,7 +174,23 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
     cspom.getPostponed shouldBe empty
 
     CSPOMCompiler.compile(cspom, Seq(MergeEq, MergeSame))
+  }
 
-    println(cspom)
+  it should "correctly post constraint graphs with named expressions" in {
+    val cspom = CSPOM { implicit problem =>
+      val v0 = IntVariable(1 to 3)
+      val v1 = IntVariable(2 to 4)
+
+      val r = problem.defineInt(r => CSPOMConstraint('sum)(Seq(v0, v1, r), 0))
+
+      val r2 = problem.isInt('abs, Seq(r)) as "r2"
+
+    }
+
+    withClue(cspom) {
+      cspom.getPostponed shouldBe empty
+      cspom.constraints should have size 2
+      cspom.referencedExpressions should have size 6
+    }
   }
 }

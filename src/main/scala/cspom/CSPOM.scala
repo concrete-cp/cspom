@@ -291,30 +291,40 @@ class CSPOM extends LazyLogging {
   }
 
   def ctr(v: SimpleExpression[Boolean]): CSPOMConstraint[Boolean] = {
-    ctr(CSPOMConstraint('eq, Seq(v, CSPOMConstant(true))))
+    ctr(CSPOMConstraint('eq)(v, CSPOMConstant(true)))
   }
+
+  def is(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[_] = {
+    defineFree(result => CSPOMConstraint(result, name, scope, params))
+  }
+
+  def isInt(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Int] = {
+    defineInt(result => CSPOMConstraint(result, name, scope, params))
+  }
+
+  def isBool(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Boolean] = {
+    defineBool(result => CSPOMConstraint(result, name, scope, params))
+  }
+
+  def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
+    val r = f
+    postpone(g(r))
+    r
+  }
+
+  def defineInt(f: SimpleExpression[Int] => CSPOMConstraint[_]): SimpleExpression[Int] = {
+    define(IntVariable.free)(f)
+  }
+
+  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
+    define(new FreeVariable)(f)
+
+  def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
+    define(new BoolVariable())(f)
 
   def postpone[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
     postponed += c
     c
-  }
-
-  def is(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): FreeVariable = {
-    val result = new FreeVariable()
-    postpone(CSPOMConstraint(result, name, scope, params))
-    result
-  }
-
-  def isInt(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): IntVariable = {
-    val result = IntVariable.free()
-    postpone(CSPOMConstraint(result, name, scope, params))
-    result
-  }
-
-  def isBool(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): BoolVariable = {
-    val result = new BoolVariable()
-    postpone(CSPOMConstraint(result, name, scope, params))
-    result
   }
 
   def resolvePostponed(c: CSPOMConstraint[_]): Unit = {
@@ -328,7 +338,8 @@ class CSPOM extends LazyLogging {
     if (visited(c)) {
       visited
     } else {
-      postponed.filter(const => const.fullScope.exists(c.fullScope.contains(_))).foldLeft(visited + c) {
+      val inCScope = c.flattenedScope.toSet
+      postponed.filter(const => const.flattenedScope.exists(inCScope)).foldLeft(visited + c) {
         case (visit, c) => visit ++ crawl(c, visit)
       }
     }
@@ -347,76 +358,11 @@ class CSPOM extends LazyLogging {
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
 
-  /**
-   * Generates the constraint network graph in the GML format. N-ary
-   * constraints are represented as nodes.
-   *
-   * @return a String containing the GML representation of the constraint
-   *         network.
-   */
-  def toGML: String = {
-    val stb = new StringBuilder();
-    stb.append("graph [\n");
-    stb.append("directed 0\n");
-
-    val vn = new VariableNames(this)
-
-    val variables = referencedExpressions
-      .collect {
-        case e: CSPOMVariable[_] => e -> vn.names(e)
-      }
-      .toMap
-
-    for (k <- variables.values.toSeq.sorted) {
-      stb.append(s"""
-          node [
-            id "$k"
-            label "$k"
-          ]
-          """)
-
-    }
-
-    var gen = 0;
-
-    constraints.flatMap { c =>
-      c.fullScope.flatMap(_.flatten).collect {
-        case v: CSPOMVariable[_] => variables(v)
-      } match {
-        case Seq(source, target) => s"""
-          edge [
-            source "$source"
-            target "$target"
-            label "${c.function.name}"
-          ]
-          """
-        case s =>
-          gen += 1
-          s"""
-          node [
-            id "cons$gen"
-            label "${c.function.name}"
-            graphics [ fill "#FFAA00" ]
-          ]
-          """ ++ s.flatMap(v => s"""
-          edge [
-            source "cons$gen"
-            target "$v"
-          ]
-          """)
-      }
-    }.addString(stb)
-
-    stb.append("]\n").toString
-  }
-
 }
 
 object CSPOM {
 
   type Parser = InputStream => Try[(CSPOM, Map[scala.Symbol, Any])]
-
-  val VERSION = "CSPOM 2.4"
 
   /**
    * Opens an InputStream according to the given URL. If URL ends with ".gz"
@@ -506,8 +452,8 @@ object CSPOM {
     def in(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = in(new Table(rel))
     def notIn(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = notIn(new Table(rel))
 
-    def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension, vars, Map("init" -> false, "relation" -> rel))
-    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension, vars, Map("init" -> true, "relation" -> rel))
+    def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam ("init" -> false, "relation" -> rel)
+    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam ("init" -> true, "relation" -> rel)
   }
 
   implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
@@ -534,7 +480,7 @@ object CSPOM {
       c.prefix.tree match {
         case Apply(_, List(Apply(_, List(Literal(Constant(raw: String)))))) =>
 
-          def toArrayAST(c: List[TermTree]) =
+          def toArrayAST(c: List[TermTree]): Apply =
             Apply(Select(Select(Ident(TermName("scala")), TermName("Array")), TermName("apply")), c)
 
           val matrix = raw

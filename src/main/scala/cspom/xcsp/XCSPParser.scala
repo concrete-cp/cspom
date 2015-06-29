@@ -178,9 +178,9 @@ final object XCSPParser extends CSPOM.Parser {
     } else {
       relations.get(reference) match {
 
-        case Some(extension: Extension) => cspom.ctr(CSPOMConstraint(
-          'extension, scope.map(_._2),
-          Map("init" -> extension.init, "relation" -> extension.relation)))
+        case Some(extension: Extension) => cspom.ctr(
+          CSPOMConstraint('extension)(scope.map(_._2): _*) withParam (
+            "init" -> extension.init, "relation" -> extension.relation))
 
         case Some(predicate: XCSPPredicate) =>
           try {

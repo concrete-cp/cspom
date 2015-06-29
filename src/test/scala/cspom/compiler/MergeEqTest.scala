@@ -25,11 +25,11 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
       val seq = CSPOMSeq(contents: _*) as "array"
 
       for ((v1, v2) <- vars zip seq) {
-        ctr(CSPOMConstraint('eq, Seq(v1, v2)))
+        ctr(CSPOMConstraint('eq)(v1, v2))
       }
 
-      ctr(CSPOMConstraint('clause, Seq(CSPOMSeq(seq(1), seq(2)), CSPOMSeq(seq(3)))))
-      ctr(CSPOMConstraint('clause, Seq(CSPOMSeq(vars(0)), CSPOMSeq(vars(1)))))
+      ctr(CSPOMConstraint('clause)(CSPOMSeq(seq(1), seq(2)), CSPOMSeq(seq(3))))
+      ctr(CSPOMConstraint('clause)(CSPOMSeq(vars(0)), CSPOMSeq(vars(1))))
 
     }
 
@@ -79,7 +79,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
     val cspom = CSPOM { implicit problem =>
       val v0 = IntVariable(1, 2, 3) as "V0"
-      ctr(CSPOMConstraint('dummy, Seq(v0)))
+      ctr(CSPOMConstraint('dummy)(v0))
       val v1 = IntVariable(2, 3, 4)
       ctr(v0 === v1)
     }
