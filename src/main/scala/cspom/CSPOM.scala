@@ -293,18 +293,6 @@ class CSPOM extends LazyLogging {
   def ctr(v: SimpleExpression[Boolean]): CSPOMConstraint[Boolean] = {
     ctr(CSPOMConstraint('eq)(v, CSPOMConstant(true)))
   }
-//
-//  def is(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[_] = {
-//    defineFree(result => CSPOMConstraint(result, name, scope, params))
-//  }
-//
-//  def isInt(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Int] = {
-//    defineInt(result => CSPOMConstraint(result, name, scope, params))
-//  }
-//
-//  def isBool(name: scala.Symbol, scope: Seq[CSPOMExpression[_]], params: Map[String, Any] = Map()): SimpleExpression[Boolean] = {
-//    defineBool(result => CSPOMConstraint(result, name, scope, params))
-//  }
 
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f
@@ -313,11 +301,11 @@ class CSPOM extends LazyLogging {
   }
 
   def defineInt(f: SimpleExpression[Int] => CSPOMConstraint[_]): SimpleExpression[Int] = {
-    define(IntVariable.free)(f)
+    define(IntVariable.free())(f)
   }
 
   def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
-    define(new FreeVariable)(f)
+    define(new FreeVariable())(f)
 
   def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
     define(new BoolVariable())(f)
@@ -327,7 +315,7 @@ class CSPOM extends LazyLogging {
     c
   }
 
-  def resolvePostponed(c: CSPOMConstraint[_]): Unit = {
+  private def resolvePostponed(c: CSPOMConstraint[_]): Unit = {
     for (p <- crawl(c)) {
       addConstraint(p)
       postponed -= p
@@ -464,46 +452,7 @@ object CSPOM {
 
   implicit def constantSeq[A <: AnyVal: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
-  import language.experimental.macros
-
-  import scala.reflect.macros.blackbox.Context
-  import scala.util.Try
-
-  implicit class MatrixContext(sc: StringContext) {
-    def matrix(): Array[Array[Int]] = macro matrixImpl
-  }
-
-  def matrixImpl(c: Context)(): c.Expr[Array[Array[Int]]] = {
-    import c.universe.{ Try => _, _ }
-
-    val matrix = Try {
-      c.prefix.tree match {
-        case Apply(_, List(Apply(_, List(Literal(Constant(raw: String)))))) =>
-
-          def toArrayAST(c: List[TermTree]): Apply =
-            Apply(Select(Select(Ident(TermName("scala")), TermName("Array")), TermName("apply")), c)
-
-          val matrix = raw
-            .split("\n")
-            .map(_.trim)
-            .filter(_.nonEmpty)
-            .map {
-              _.split(",").map(_.trim.toInt)
-            }
-          if (matrix.map(_.length).distinct.size != 1) {
-            c.abort(c.enclosingPosition, "rows of matrix do not have the same length")
-          }
-
-          val matrixAST = matrix
-            .map(_.map(i => Literal(Constant(i))))
-            .map(i => toArrayAST(i.toList))
-
-          toArrayAST(matrixAST.toList)
-      }
-    }
-
-    c.Expr(matrix.getOrElse(c.abort(c.enclosingPosition, "not a matrix of Int")))
-  }
+  implicit def matrix(sc: StringContext) = Table.MatrixContext(sc)
 
 }
 

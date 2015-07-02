@@ -90,6 +90,29 @@ object SimpleExpression {
 
   }
 
+  object seq {
+    def unapply[A: TypeTag](e: CSPOMExpression[A]): Option[Seq[SimpleExpression[A]]] =
+      PartialFunction.condOpt(e) {
+        case s: CSPOMSeq[A] => s
+      }
+        .flatMap {
+          CSPOMSeq.collectAll(_) {
+            case c: SimpleExpression[_] if (c.tpe <:< typeOf[A]) => c.asInstanceOf[SimpleExpression[A]]
+          }
+        }
+  }
+
+}
+
+object CSPOMConstant {
+  object seq {
+    def unapply[T: TypeTag](e: CSPOMExpression[T]): Option[Seq[T]] = e match {
+      case s: CSPOMSeq[T] => CSPOMSeq.collectAll(s) {
+        case CSPOMConstant(v) => v
+      }
+      case _ => None
+    }
+  }
 }
 
 case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
@@ -152,6 +175,15 @@ object CSPOMSeq {
 
   def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
     Some(s.values)
+
+  @annotation.tailrec
+  def collectAll[A, B](s: Seq[A], r: Seq[B] = Seq())(f: PartialFunction[A, B]): Option[Seq[B]] = s match {
+    case Seq() => Some(r)
+    case h +: t => f.lift(h) match {
+      case None    => None
+      case Some(a) => collectAll(t, a +: r)(f)
+    }
+  }
 }
 
 final class CSPOMSeq[+T: TypeTag](

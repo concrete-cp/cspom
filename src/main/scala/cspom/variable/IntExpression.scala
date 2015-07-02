@@ -44,9 +44,9 @@ object IntExpression extends SimpleExpression.Typed[Int] {
 
   def is01(e: SimpleExpression[Int]) = implicits.iterable(e).forall(i => i == 0 || i == 1)
 
-  object IntExpression01 extends SimpleExpression.Typed[Int] {
-    override def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[Int]] =
-      super.unapply(c).filter(is01)
+  object IntExpression01 {
+    def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[Int]] =
+      IntExpression.unapply(c).filter(is01)
   }
 
   def apply(values: Range): SimpleExpression[Int] = apply(
@@ -69,4 +69,25 @@ object IntExpression extends SimpleExpression.Typed[Int] {
 
   def apply(values: IntInterval): SimpleExpression[Int] = apply(RangeSet(values))
 
+  object seq {
+    def unapply(c: CSPOMExpression[_]): Option[CSPOMSeq[Int]] =
+      c match {
+        case s: CSPOMSeq[_] =>
+          CSPOMSeq.collectAll(s) {
+            case IntExpression(e) => e
+          }
+            .map(CSPOMSeq(_: _*))
+        case _ => None
+      }
+  }
+
+  object simpleSeq {
+    def unapply(c: CSPOMExpression[_]): Option[Seq[SimpleExpression[Int]]] =
+      seq.unapply(c).flatMap(SimpleExpression.seq.unapply)
+  }
+
+  object constSeq {
+    def unapply(c: CSPOMExpression[_]): Option[Seq[Int]] =
+      seq.unapply(c).flatMap(CSPOMConstant.seq.unapply)
+  }
 }
