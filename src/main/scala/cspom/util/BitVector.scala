@@ -137,6 +137,38 @@ trait BitVector extends Any {
       this
     }
   }
+
+  def addAllArray(a: Array[Int]): BitVector = {
+    var words = getWords
+    var change = false
+
+    var p = a.length - 1
+    while (p >= 0) {
+      val i = a(p)
+      val wordPos = word(i)
+      if (wordPos >= words.length) {
+        words = Arrays.copyOf(words, wordPos + 1)
+      }
+      val oldWord = words(wordPos)
+      val newWord = oldWord | (1L << i)
+      if (oldWord != newWord) {
+        change = true
+        words(wordPos) = newWord
+      }
+      p -= 1
+    }
+
+    if (change) {
+      words.size match {
+        case 0 => EmptyBitVector
+        case 1 => new SmallBitVector(words(0))
+        case _ => new LargeBitVector(words)
+      }
+    } else {
+      this
+    }
+  }
+  
   def --(p: Traversable[Int]) = p.foldLeft(this)(_ - _)
 
   def apply(position: Int): Boolean
