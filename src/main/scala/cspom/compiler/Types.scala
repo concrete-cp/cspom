@@ -3,20 +3,22 @@ package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.FreeVariable
+import cspom.variable.CSPOMExpression
 
-trait Types extends ConstraintCompilerNoData {
+trait Types extends ConstraintCompiler {
+  type A = Map[CSPOMExpression[_], CSPOMExpression[_]]
 
-  def matchBool(constraint: CSPOMConstraint[_], problem: CSPOM): Boolean = {
-    _types.contains(constraint.function) &&
-      constraint.fullScope.iterator.flatMap(_.flatten).exists(_.isInstanceOf[FreeVariable])
-  }
+  def types: PartialFunction[CSPOMConstraint[_], A]
 
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM) =
-    _types(constraint.function)(constraint, problem)
-
-  private val _types = types
-
-  def types: Map[Symbol, Function2[CSPOMConstraint[_], CSPOM, Delta]]
+  override def mtch(constraint: CSPOMConstraint[_], problem: CSPOM) =
+    types
+      .lift(constraint)
+      .map(m => m.filter { case (k, v) => k ne v })
+      .filter(_.nonEmpty)
 
   def selfPropagation: Boolean = true
+
+  def compile(c: CSPOMConstraint[_], p: CSPOM, d: A) = {
+    d.map { case (k, v) => replace(k, v, p) }.reduce(_ ++ _)
+  }
 }
