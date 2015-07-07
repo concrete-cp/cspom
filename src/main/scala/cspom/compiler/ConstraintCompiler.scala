@@ -109,7 +109,7 @@ trait ConstraintCompiler extends LazyLogging {
     Delta.empty.added(c)
   }
 
-  def selfPropagation: Boolean
+  //def selfPropagation: Boolean
 
   def reduceDomain(v: SimpleExpression[Int], d: Interval[Infinitable]): SimpleExpression[Int] = reduceDomain(v, RangeSet(d))
 

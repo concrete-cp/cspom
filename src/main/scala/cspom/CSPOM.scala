@@ -32,6 +32,8 @@ import cspom.xcsp.XCSPParser
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
 import scala.util.Failure
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
 object NameParser extends JavaTokenParsers {
 
@@ -239,8 +241,30 @@ class CSPOM extends LazyLogging {
     ctrV(v) //++ containers(v).flatMap { case (container, _) => constraints(container) }
   }
 
-  def deepConstraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
-    ctrV(v) ++ containers.getOrElse(v, Set.empty).flatMap { case (container, _) => deepConstraints(container) }
+  def deepConstraints(v: CSPOMExpression[_]): Iterable[CSPOMConstraint[_]] = {
+    containers.get(v) match {
+      case None => ctrV(v)
+      case Some(c) =>
+        val buf = new ArrayBuffer() ++ ctrV(v)
+        for ((container, _) <- c) {
+          deepConstraints(container, buf)
+        }
+        buf
+    }
+  }
+
+  private def deepConstraints(v: CSPOMExpression[_], c: ArrayBuffer[CSPOMConstraint[_]]): ArrayBuffer[CSPOMConstraint[_]] = {
+    c ++= ctrV(v)
+    for (
+      cont <- containers.get(v);
+      (container, _) <- cont
+    ) {
+      deepConstraints(container, c)
+    }
+    //    containers.getOrElse(v, Nil).foldLeft(ctrV(v).toList ::: c) {
+    //      case (acc, (container, _)) => deepConstraints(container, acc)
+    //    }
+    c
   }
 
   def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[R], CSPOMExpression[R])] = {

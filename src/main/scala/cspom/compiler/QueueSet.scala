@@ -1,51 +1,42 @@
 package cspom.compiler
 
-import scala.collection.mutable.Queue
-import scala.collection.mutable.HashSet
-import java.util.BitSet
+import scala.collection.immutable.BitSet
+import cspom.util.BitVector
 
-final class QueueSet {
-  private val present = new BitSet()
+object QueueSet {
+  val empty: QueueSet = QueueSet(BitVector.empty, -1)
+  def apply(init: Traversable[Int]): QueueSet =
+    QueueSet(BitVector(init), -1)
+}
 
-  private var first = -1
+case class QueueSet(present: BitVector, first: Int) {
 
-  //def enqueue(e: A*): Unit = e.foreach(enqueue)
-
-  def this(init: Iterable[Int]) = {
-    this()
-    enqueueAll(init)
+  def enqueue(c: Int): QueueSet = {
+    new QueueSet(present + c, first)
   }
 
-  def enqueue(c: Int): Unit = {
-    present.set(c)
-  }
-
-  def dequeue(): Int = {
-    assume(nonEmpty)
-    first = present.nextSetBit(first + 1)
-    if (first < 0) {
-      first = present.nextSetBit(0)
+  def dequeue(): (Int, QueueSet) = {
+    require(nonEmpty)
+    val next = present.nextSetBit(first + 1) match {
+      case n if n < 0 => present.nextSetBit(0)
+      case n          => n
     }
-    present.clear(first)
-    first
+
+    (next, new QueueSet(present - next, next))
   }
 
-  def contains(e: Int) = present.get(e)
+  def contains(e: Int): Boolean = present(e)
 
-  def nonEmpty = !present.isEmpty()
+  def nonEmpty: Boolean = !present.isEmpty
 
-  def enqueueAll(init: Iterable[Int]): Unit = {
-    for (c <- init) {
-      present.set(c)
-    }
+  def enqueueAll(init: Array[Int]): QueueSet = {
+    QueueSet(present.addAllArray(init), first)
   }
 
-  def remove(e: Int*): Unit = removeAll(e)
+  def remove(e: Int*): QueueSet = removeAll(e)
 
-  def removeAll(e: Iterable[Int]): Unit = {
-    for (c <- e) {
-      present.clear(c)
-    }
+  def removeAll(e: Iterable[Int]): QueueSet = {
+    QueueSet(present -- e, first)
   }
 
 }

@@ -1,18 +1,20 @@
 package cspom.compiler;
 
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.HashMap
+import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable.WrappedArray
+import scala.util.Try
+
+import com.typesafe.scalalogging.LazyLogging
+
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
-import cspom.variable.CSPOMExpression
-import scala.collection.mutable.HashMap
 import cspom.StatisticsManager
 import cspom.TimedException
 import cspom.VariableNames
-import com.typesafe.scalalogging.LazyLogging
-import scala.collection.mutable.HashSet
-import scala.collection.mutable.LinkedHashSet
-import scala.util.Try
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMVariable
 
 /**
  * This class implements some known useful reformulation rules.
@@ -27,8 +29,8 @@ final class CSPOMCompiler(
   val vn = new VariableNames(problem)
 
   private def compile(): CSPOM = {
-    val toCompile = Array.ofDim[QueueSet](
-      constraintCompilers.size)
+
+    logger.info(constraintCompilers.zipWithIndex.toString)
 
     val constraints = new HashMap[Int, CSPOMConstraint[_]]
 
@@ -36,61 +38,33 @@ final class CSPOMCompiler(
       constraints.put(c.id, c)
     }
 
+    val fullQS = QueueSet(constraints.keys)
+    val toCompile = Array.fill(constraintCompilers.size)(fullQS)
+
     var changed = true
-    var first = true
 
     while (changed) {
+      logger.info("Turn")
       changed = false
       for (i <- toCompile.indices) {
 
         val compiler = constraintCompilers(i)
         logger.info(compiler.toString)
-        // println(compiler)
-        if (first) {
-          toCompile(i) = new QueueSet(constraints.keys)
-        }
 
         while (toCompile(i).nonEmpty) {
 
-          for (constraint <- constraints.get(toCompile(i).dequeue())) {
+          val (next, nextQueue) = toCompile(i).dequeue
+          toCompile(i) = nextQueue
+
+          for (constraint <- constraints.get(next)) {
             //println(s"Compiling ${constraint.toString(vn)}")
             //lazy val string = constraint.toString(vn)
             val delta = compile(compiler, constraint)
-            //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
-            changed |= delta.nonEmpty
 
-            if (delta.nonEmpty)
-              logger.info(delta.toString)
-
-            for (rc <- delta.removed) {
-              assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")
-              constraints.remove(rc.id)
-            }
-
-            for (c <- delta.added) {
-              assert(problem.constraintSet(c), s"$compiler: $c is not present")
-              constraints.put(c.id, c)
-            }
-
-            val enqueueVar = new LinkedHashSet[CSPOMExpression[_]]
-
-            for (c <- delta.added) enqueueVar ++= c.fullScope
-            //
-            //            val enqueue = new HashSet[CSPOMConstraint[_]]
-            //
-            //            for (v <- enqueueVar) enqueue ++= problem.constraints(v)
-
-            //            val enqueue = delta.added.flatMap(
-            //              _.fullScope).distinct.flatMap(
-            //                problem.constraints(_)).distinct
-
-            for (j <- if (first) { 0 to i } else { toCompile.indices }) {
-              //              if (j != i || compiler.selfPropagation) {
-              for (v <- enqueueVar; ac <- problem.constraints(v)) {
-                toCompile(j).enqueue(ac.id)
-              }
-
-              //              }
+            if (delta.nonEmpty) {
+              //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
+              changed = true
+              updateQueues(compiler, delta, constraints, toCompile)
             }
 
           }
@@ -102,9 +76,42 @@ final class CSPOMCompiler(
 
       }
 
-      first = false
     }
     problem
+  }
+
+  private def updateQueues(
+    compiler: ConstraintCompiler,
+    delta: Delta,
+    constraints: HashMap[Int, CSPOMConstraint[_]],
+    queues: Array[QueueSet]): Unit = {
+    logger.info(delta.toString)
+
+    for (rc <- delta.removed) {
+      assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")
+      constraints.remove(rc.id)
+    }
+
+    val enqueueVar = new LinkedHashSet[CSPOMExpression[_]]
+    for (c <- delta.added) {
+      assert(problem.constraintSet(c), s"$compiler: $c is not present")
+      constraints.put(c.id, c)
+      enqueueVar ++= c.flattenedScope
+    }
+
+    logger.info(s"Enqueuing constraints for ${enqueueVar.map(v => v -> problem.deepConstraints(v).map(c => s"${c.id}.$c"))}")
+    for (
+      v <- enqueueVar
+    ) {
+      val enqueueCons = problem.deepConstraints(v).iterator.map(_.id).toArray
+      for (i <- queues.indices) {
+        queues(i) = queues(i).enqueueAll(enqueueCons)
+      }
+    }
+  }
+
+  private def enqueueNeighbors(enqueueVars: Iterable[CSPOMExpression[_]], queues: Array[QueueSet]): Unit = {
+
   }
 
   def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
