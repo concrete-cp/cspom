@@ -30,8 +30,6 @@ final class CSPOMCompiler(
 
   private def compile(): CSPOM = {
 
-    logger.info(constraintCompilers.zipWithIndex.toString)
-
     val constraints = new HashMap[Int, CSPOMConstraint[_]]
 
     for (c <- problem.constraints) {
@@ -99,7 +97,7 @@ final class CSPOMCompiler(
       enqueueVar ++= c.flattenedScope
     }
 
-    logger.info(s"Enqueuing constraints for ${enqueueVar.map(v => v -> problem.deepConstraints(v).map(c => s"${c.id}.$c"))}")
+    logger.debug(s"Enqueuing constraints for ${enqueueVar.map(v => v -> problem.deepConstraints(v).map(c => s"${c.id}.$c"))}")
     for (
       v <- enqueueVar
     ) {
