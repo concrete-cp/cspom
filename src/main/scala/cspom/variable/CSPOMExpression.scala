@@ -113,6 +113,8 @@ object CSPOMConstant {
       case _ => None
     }
   }
+
+  def ofSeq[T: TypeTag](s: Seq[T]): CSPOMSeq[T] = CSPOMSeq(s.map(CSPOMConstant(_)): _*)
 }
 
 case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
@@ -178,7 +180,7 @@ object CSPOMSeq {
 
   @annotation.tailrec
   def collectAll[A, B](s: Seq[A], r: Seq[B] = Seq())(f: PartialFunction[A, B]): Option[Seq[B]] = s match {
-    case Seq() => Some(r)
+    case Seq() => Some(r.reverse)
     case h +: t => f.lift(h) match {
       case None    => None
       case Some(a) => collectAll(t, a +: r)(f)
