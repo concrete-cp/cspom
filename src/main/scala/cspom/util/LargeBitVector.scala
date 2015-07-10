@@ -5,7 +5,7 @@ import BitVector._
 
 class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
 
-  def -(position: Int) = {
+  def -(position: Int): BitVector = {
     val wordPos: Int = word(position)
     val oldWord = words(wordPos)
     val newWord = oldWord & ~(1L << position)
@@ -16,7 +16,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     }
   }
 
-  def apply(position: Int) = {
+  def apply(position: Int): Boolean = {
     val wordPos = word(position)
     wordPos < nbWords && (words(wordPos) & (1L << position)) != 0L
   }
@@ -82,7 +82,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     (1 + position) * WORD_SIZE - java.lang.Long.numberOfLeadingZeros(word) - 1;
   }
 
-  def ^(bv: BitVector) = {
+  def ^(bv: BitVector): BitVector = {
     val n = math.max(nbWords, bv.nbWords)
 
     val words = Array.ofDim[Long](n)
@@ -94,7 +94,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     new LargeBitVector(words)
   }
 
-  def &(bv: BitVector) = {
+  def &(bv: BitVector): BitVector = {
     val n = math.min(nbWords, bv.nbWords)
     val newWords = Array.ofDim[Long](n)
     var i = n - 1
@@ -105,7 +105,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     new LargeBitVector(newWords)
   }
 
-  def |(bv: BitVector) = {
+  def |(bv: BitVector): BitVector = {
     val newWords = words.padTo(bv.nbWords, 0L)
     var i = bv.nbWords - 1
     while (i >= 0) {
@@ -115,7 +115,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     new LargeBitVector(newWords)
   }
 
-  def clearFrom(from: Int) = {
+  def clearFrom(from: Int): BitVector = {
     if (from <= 0) {
       BitVector.empty
     } else {
@@ -142,7 +142,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     }
   }
 
-  def clearUntil(until: Int) = {
+  def clearUntil(until: Int): BitVector = {
     if (until < 0) {
       this
     } else {
@@ -193,7 +193,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
   //    result.toInt;
   //  }
 
-  def intersects(bv: BitVector, position: Int) = {
+  def intersects(bv: BitVector, position: Int): Boolean = {
     (bv.getWord(position) & getWord(position)) != 0;
   }
 
@@ -209,7 +209,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     -1;
   }
 
-  def nbWords = words.length
+  def nbWords: Int = words.length
 
   def isEmpty: Boolean = {
     for (l <- words) {
@@ -220,7 +220,7 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     return true;
   }
 
-  def cardinality = {
+  def cardinality: Int = {
     var cardinality = 0;
     for (w <- words) {
       cardinality += java.lang.Long.bitCount(w);
@@ -237,20 +237,20 @@ class LargeBitVector(val words: Array[Long]) extends AnyVal with BitVector {
     true;
   }
 
-  def getWord(i: Int) = {
+  def getWord(i: Int): Long = {
     if (i >= words.length)
       0L;
     else
       words(i);
   }
 
-  def setWord(pos: Int, word: Long) = {
+  def setWord(pos: Int, word: Long): BitVector = {
     val newWords = Arrays.copyOf(words, math.max(words.length, pos + 1)) //, x$2)words.padTo(pos + 1, 0L)
     newWords(pos) = word;
     new LargeBitVector(newWords)
   }
 
-  def filter(f: Int => Boolean) = {
+  def filter(f: Int => Boolean): BitVector = {
     val words = new Array[Long](nbWords)
     var i = nextSetBit(0)
     while (i >= 0) {

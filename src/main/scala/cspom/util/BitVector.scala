@@ -5,12 +5,12 @@ import java.util.Arrays
 
 final object BitVector {
   private val ADDRESS_BITS_PER_WORD = 6
-  val WORD_SIZE = 1 << ADDRESS_BITS_PER_WORD
-  val MASK = 0xFFFFFFFFFFFFFFFFL
+  val WORD_SIZE: Int = 1 << ADDRESS_BITS_PER_WORD
+  val MASK: Long = 0xFFFFFFFFFFFFFFFFL
 
   val empty: BitVector = EmptyBitVector
 
-  def filled(size: Int) = empty.set(0, size)
+  def filled(size: Int): BitVector = empty.set(0, size)
 
   //  def nbWords(nbBits: Int) = {
   //    if (nbBits % WORD_SIZE > 0) {
@@ -20,16 +20,16 @@ final object BitVector {
   //    }
   //  }
 
-  def word(bit: Int) = bit >> ADDRESS_BITS_PER_WORD
+  def word(bit: Int): Int = bit >> ADDRESS_BITS_PER_WORD
 
-  def apply(v: Traversable[Int]) = {
+  def apply(v: Traversable[Int]): BitVector = {
     empty ++ v
   }
 }
 
 trait BitVector extends Any {
 
-  def iterator = new Iterator[Int] {
+  def iterator: Iterator[Int] = new Iterator[Int] {
     var current = nextSetBit(0)
     def hasNext = current >= 0
     def next() = {
@@ -41,7 +41,7 @@ trait BitVector extends Any {
 
   override def toString(): String = iterator.mkString("{", ", ", "}")
 
-  def set(position: Int, status: Boolean) = {
+  def set(position: Int, status: Boolean): BitVector = {
     if (status) {
       this + position
     } else {
@@ -168,8 +168,8 @@ trait BitVector extends Any {
       this
     }
   }
-  
-  def --(p: Traversable[Int]) = p.foldLeft(this)(_ - _)
+
+  def --(p: Traversable[Int]): BitVector = p.foldLeft(this)(_ - _)
 
   def apply(position: Int): Boolean
 
@@ -209,15 +209,15 @@ trait BitVector extends Any {
 }
 
 object EmptyBitVector extends BitVector {
-  def &(bv: BitVector) = this
-  def |(bv: BitVector) = bv
-  def -(position: Int) = this
-  def ^(bv: BitVector) = bv
+  def &(bv: BitVector): BitVector = this
+  def |(bv: BitVector): BitVector = bv
+  def -(position: Int): BitVector = this
+  def ^(bv: BitVector): BitVector = bv
   def apply(position: Int): Boolean = false
-  def cardinality = 0
-  def clearFrom(from: Int) = this
-  def clearUntil(to: Int) = this
-  def filter(f: Int => Boolean) = this
+  def cardinality: Int = 0
+  def clearFrom(from: Int): BitVector = this
+  def clearUntil(to: Int): BitVector = this
+  def filter(f: Int => Boolean): BitVector = this
   def getWord(i: Int): Long = 0L
   def getWords: Array[Long] = Array()
   def intersects(bV: BitVector): Int = -1
@@ -227,7 +227,7 @@ object EmptyBitVector extends BitVector {
   def nbWords: Int = 0
   def nextSetBit(start: Int): Int = -1
   def prevSetBit(start: Int): Int = -1
-  def setWord(pos: Int, word: Long) = {
+  def setWord(pos: Int, word: Long): BitVector = {
     if (pos == 0) {
       new SmallBitVector(word)
     } else {
