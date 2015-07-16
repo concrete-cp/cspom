@@ -10,7 +10,7 @@ object MergeSame extends ConstraintCompiler {
   type A = Seq[CSPOMConstraint[_]]
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[A] = {
-    val s = c.arguments.flatMap(problem.constraints).filter(_ ne c).distinct.collect {
+    val s = c.arguments.view.flatMap(problem.constraints).filter(_ ne c).distinct.collect {
       case (same @ CSPOMConstraint(
         _, c.function, args, c.params)) if (isSame(args, c.arguments)) =>
         same
