@@ -17,6 +17,7 @@ import cspom.variable.SimpleExpression
 import cspom.util.Infinitable
 import cspom.variable.IntExpression
 import scala.util.Try
+import scala.xml.Elem
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -62,8 +63,13 @@ final object XCSPParser extends CSPOM.Parser {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] = Try {
-    val document = XML.load(is)
+  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] =
+    for (
+      document <- Try(XML.load(is));
+      result <- XCSPParser(document)
+    ) yield result
+
+  def apply(document: Elem): Try[(CSPOM, Map[Symbol, Any])] = Try {
     val declaredVariables = parseVariables(document);
 
     val problem = CSPOM { implicit cspom: CSPOM =>
