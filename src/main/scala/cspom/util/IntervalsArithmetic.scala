@@ -39,6 +39,8 @@ object IntervalsArithmetic {
     def -(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r - i }, r)
     def *(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r * i }, r)
     def /(i: Interval[Infinitable]) = IntervalsArithmetic({ r => r / i }, r)
+
+    def /(i: Int) = IntervalsArithmetic({ r => r / i }, r)
   }
 
   implicit class Arithmetics(val r: Interval[Infinitable]) extends AnyVal {
