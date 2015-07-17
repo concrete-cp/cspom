@@ -12,14 +12,6 @@ final object BitVector {
 
   def filled(size: Int): BitVector = empty.set(0, size)
 
-  //  def nbWords(nbBits: Int) = {
-  //    if (nbBits % WORD_SIZE > 0) {
-  //      word(nbBits) + 1
-  //    } else {
-  //      word(nbBits)
-  //    }
-  //  }
-
   def word(bit: Int): Int = bit >> ADDRESS_BITS_PER_WORD
 
   def apply(v: Traversable[Int]): BitVector = {
@@ -125,37 +117,6 @@ trait BitVector extends Any {
         change = true
         words(wordPos) = newWord
       }
-    }
-
-    if (change) {
-      words.size match {
-        case 0 => EmptyBitVector
-        case 1 => new SmallBitVector(words(0))
-        case _ => new LargeBitVector(words)
-      }
-    } else {
-      this
-    }
-  }
-
-  def addAllArray(a: Array[Int]): BitVector = {
-    var words = getWords
-    var change = false
-
-    var p = a.length - 1
-    while (p >= 0) {
-      val i = a(p)
-      val wordPos = word(i)
-      if (wordPos >= words.length) {
-        words = Arrays.copyOf(words, wordPos + 1)
-      }
-      val oldWord = words(wordPos)
-      val newWord = oldWord | (1L << i)
-      if (oldWord != newWord) {
-        change = true
-        words(wordPos) = newWord
-      }
-      p -= 1
     }
 
     if (change) {

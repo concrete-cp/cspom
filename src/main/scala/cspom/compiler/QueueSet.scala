@@ -29,8 +29,8 @@ case class QueueSet(present: BitVector, first: Int) {
 
   def nonEmpty: Boolean = !present.isEmpty
 
-  def enqueueAll(init: Array[Int]): QueueSet = {
-    QueueSet(present.addAllArray(init), first)
+  def enqueueAll(init: BitVector): QueueSet = {
+    QueueSet(present | init, first)
   }
 
   def remove(e: Int*): QueueSet = removeAll(e)

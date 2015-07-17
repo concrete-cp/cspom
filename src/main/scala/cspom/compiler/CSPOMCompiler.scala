@@ -4,9 +4,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedHashSet
 import scala.collection.mutable.WrappedArray
 import scala.util.Try
-
 import com.typesafe.scalalogging.LazyLogging
-
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
@@ -15,6 +13,7 @@ import cspom.TimedException
 import cspom.VariableNames
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
+import cspom.util.BitVector
 
 /**
  * This class implements some known useful reformulation rules.
@@ -101,15 +100,11 @@ final class CSPOMCompiler(
     for (
       v <- enqueueVar
     ) {
-      val enqueueCons = problem.deepConstraints(v).iterator.map(_.id).toArray
+      val enqueueCons = BitVector(problem.deepConstraints(v).view.map(_.id))
       for (i <- queues.indices) {
         queues(i) = queues(i).enqueueAll(enqueueCons)
       }
     }
-  }
-
-  private def enqueueNeighbors(enqueueVars: Iterable[CSPOMExpression[_]], queues: Array[QueueSet]): Unit = {
-
   }
 
   def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
