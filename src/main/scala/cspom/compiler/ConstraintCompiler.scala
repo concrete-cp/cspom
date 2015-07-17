@@ -71,7 +71,7 @@ trait ConstraintCompiler extends LazyLogging {
       //assert(in.deepConstraints(by).nonEmpty, s"$by (${in.namesOf(by)}) is not involved by constraints")
       assert(in.namesOf(wh).isEmpty, s"$wh (${in.namesOf(by)}) still have names: ${in.namesOf(wh)}")
       assert(in.constraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.constraints(wh).mkString("\n")}")
-      assert(in.containers(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still contained in: ${in.containers(wh)}")
+      assert(in.containers.get(wh).toSeq.flatten.isEmpty, s"$wh (${in.namesOf(by)}) is still contained in: ${in.containers(wh)}")
       delta //deltas.fold(Delta.empty)(_ ++ _)
     }
   }
