@@ -1,6 +1,6 @@
 name := "cspom"
 
-organization := "fr.univ-valenciennes.concrete"
+organization := "fr.univ-valenciennes"
 
 version := "2.6-SNAPSHOT"
 
@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
 	)
 
 scalacOptions ++= Seq("-optimise"
-	      , "-Xdisable-assertions"
+//	      , "-Xdisable-assertions"
 //	      , "-target:jvm-1.7"
 //	"-deprecation", 
 //	"-unchecked", 

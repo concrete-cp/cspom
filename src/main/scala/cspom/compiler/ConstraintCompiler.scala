@@ -37,7 +37,7 @@ trait ConstraintCompiler extends LazyLogging {
     if (wh == by) {
       Delta()
     } else {
-
+      require(!wh.isInstanceOf[CSPOMConstant[_]])
       /**
        * Constants may not be equal when replacing boolean with 0/1 variable
        */
