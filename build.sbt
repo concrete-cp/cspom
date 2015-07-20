@@ -37,9 +37,19 @@ scalacOptions ++= Seq("-optimise"
 //javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 
 
-publishTo := Some(
-	Resolver.file("Concrete local repository",
-		new File(Path.userHome.absolutePath+"/concrete/repository")))
+publishTo :=  {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
+
+publishArtifact in Test := false
+
+// Some(
+//	Resolver.file("Concrete local repository",
+//		new File(Path.userHome.absolutePath+"/concrete/repository")))
 
 testOptions in Test <+= (target in Test) map {
   t => Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${t / "test-reports"}")
@@ -49,3 +59,24 @@ testOptions in Test <+= (target in Test) map {
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
 parallelExecution in Test := false
+
+licenses := Seq("LGPL 2.1" -> url("https://www.gnu.org/licenses/lgpl-3.0.txt"))
+
+homepage := Some(url("https://github.com/concrete-cp/cspom"))
+
+publishMavenStyle := true
+
+pomExtra in Global := {
+  <scm>
+    <connection>scm:git:github.com/concrete-cp/cspom.git</connection>
+    <url>github.com/concrete-cp/cspom.git</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>scand1sk</id>
+      <name>Julien Vion</name>
+      <url>http://vion.free.fr/perso</url>
+    </developer>
+  </developers>
+}
