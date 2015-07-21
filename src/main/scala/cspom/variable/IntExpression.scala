@@ -76,14 +76,14 @@ object IntExpression extends SimpleExpression.Typed[Int] {
           CSPOMSeq.collectAll(s) {
             case IntExpression(e) => e
           }
-            .map(CSPOMSeq(_: _*))
+            .map(intSeq => CSPOMSeq(intSeq, s.definedIndices))
         case _ => None
       }
   }
 
   object simpleSeq {
     def unapply(c: CSPOMExpression[_]): Option[Seq[SimpleExpression[Int]]] =
-      seq.unapply(c).flatMap(SimpleExpression.seq.unapply)
+      seq.unapply(c).flatMap(SimpleExpression.simpleSeq.unapply)
   }
 
   object constSeq {

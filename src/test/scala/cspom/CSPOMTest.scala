@@ -96,7 +96,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
     cspom.replaceExpression(x, rx)
     val t = cspom.expression("T").get
 
-    t shouldBe CSPOMSeq(rx, y)
+    t shouldBe CSPOMSeq(IndexedSeq(rx, y), 0 to 1)
     cspom.expression("X").value shouldBe rx
     cspom.expression("T[0]").value shouldBe rx
     cspom.expression("T[1]").value shouldBe y

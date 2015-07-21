@@ -5,7 +5,7 @@ import org.scalatest.Matchers
 import org.scalatest.OptionValues
 
 import cspom.CSPOM
-import cspom.CSPOM.ctr
+import cspom.CSPOM._
 import cspom.CSPOMConstraint
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
@@ -21,15 +21,14 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
       val contents = Array.fill[CSPOMExpression[Boolean]](4)(new BoolVariable)
       contents(2) = CSPOMConstant(false)
-
-      val seq = CSPOMSeq(contents: _*) as "array"
+      val seq = contents.toSeq as "array"
 
       for ((v1, v2) <- vars zip seq) {
         ctr(CSPOMConstraint('eq)(v1, v2))
       }
 
-      ctr(CSPOMConstraint('clause)(CSPOMSeq(seq(1), seq(2)), CSPOMSeq(seq(3))))
-      ctr(CSPOMConstraint('clause)(CSPOMSeq(vars(0)), CSPOMSeq(vars(1))))
+      ctr(CSPOMConstraint('clause)(Seq(contents(1), contents(2)), Seq(contents(3))))
+      ctr(CSPOMConstraint('clause)(Seq(vars(0)), Seq(vars(1))))
 
     }
 

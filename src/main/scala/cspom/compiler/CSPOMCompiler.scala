@@ -82,7 +82,7 @@ final class CSPOMCompiler(
     delta: Delta,
     constraints: HashMap[Int, CSPOMConstraint[_]],
     queues: Array[QueueSet]): Unit = {
-    logger.info(delta.toString)
+    logger.info(delta.toString(vn))
 
     for (rc <- delta.removed) {
       assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")

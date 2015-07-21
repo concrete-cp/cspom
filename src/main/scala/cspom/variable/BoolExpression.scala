@@ -33,14 +33,14 @@ object BoolExpression extends SimpleExpression.Typed[Boolean] {
           CSPOMSeq.collectAll(s) {
             case BoolExpression(e) => e
           }
-            .map(CSPOMSeq(_: _*))
+            .map(CSPOMSeq(_, s.definedIndices))
         case _ => None
       }
   }
 
   object simpleSeq {
     def unapply(c: CSPOMExpression[_]): Option[Seq[SimpleExpression[Boolean]]] =
-      seq.unapply(c).flatMap(SimpleExpression.seq.unapply)
+      seq.unapply(c).flatMap(SimpleExpression.simpleSeq.unapply)
   }
 
 }

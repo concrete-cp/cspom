@@ -44,11 +44,9 @@ final class VariableNames(cspom: CSPOM) {
   val names: CSPOMExpression[_] => String = {
     case CSPOMConstant(c) => c.toString
     case expression =>
-      val cspomNames = cspom.namesOf(expression)
-      if (cspomNames.isEmpty) {
-        generatedNames.getOrElseUpdate(expression, nextName(expression))
-      } else {
-        cspomNames.toSeq.sorted.mkString("||")
+      cspom.namesOf(expression).toSeq match {
+        case Seq()      => generatedNames.getOrElseUpdate(expression, nextName(expression))
+        case cspomNames => cspomNames.sorted.mkString("||")
       }
   }
 

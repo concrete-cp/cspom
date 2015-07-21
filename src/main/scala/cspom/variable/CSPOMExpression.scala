@@ -9,6 +9,7 @@ import cspom.UNSATException
 import scala.collection.mutable.HashMap
 import scala.reflect.runtime.universe._
 import cspom.CSPOMConstraint
+import com.typesafe.scalalogging.LazyLogging
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -90,13 +91,13 @@ object SimpleExpression {
 
   }
 
-  object seq {
+  object simpleSeq {
     def unapply[A: TypeTag](e: CSPOMExpression[A]): Option[Seq[SimpleExpression[A]]] =
       PartialFunction.condOpt(e) {
         case s: CSPOMSeq[A] => s
       }
-        .flatMap {
-          CSPOMSeq.collectAll(_) {
+        .flatMap { cspomSeq =>
+          CSPOMSeq.collectAll(cspomSeq) {
             case c: SimpleExpression[_] if (c.tpe <:< typeOf[A]) => c.asInstanceOf[SimpleExpression[A]]
           }
         }
@@ -113,8 +114,8 @@ object CSPOMConstant {
       case _ => None
     }
   }
-
-  def ofSeq[T: TypeTag](s: Seq[T]): CSPOMSeq[T] = CSPOMSeq(s.map(CSPOMConstant(_)): _*)
+  //
+  //  def ofSeq[T: TypeTag](s: Seq[T]): CSPOMSeq[T] = CSPOMSeq(s.map(CSPOMConstant(_)), 0 until s.size)
 }
 
 case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
@@ -170,8 +171,8 @@ abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
 
 object CSPOMSeq {
   lazy val empty: CSPOMSeq[Nothing] = new CSPOMSeq(IndexedSeq.empty, IndexedSeq.empty.indices)
-  @annotation.varargs
-  def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
+  // @annotation.varargs def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
+
   def apply[T: TypeTag](seq: IndexedSeq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] =
     if (seq.isEmpty) empty else new CSPOMSeq(seq, indices)
 
@@ -179,29 +180,37 @@ object CSPOMSeq {
     Some(s.values)
 
   @annotation.tailrec
-  def collectAll[A, B](s: Seq[A], r: Seq[B] = Seq())(f: PartialFunction[A, B]): Option[Seq[B]] = s match {
+  def collectAll[A, B](s: IndexedSeq[A], r: IndexedSeq[B] = IndexedSeq())(f: PartialFunction[A, B]): Option[IndexedSeq[B]] = s match {
     case Seq() => Some(r.reverse)
     case h +: t => f.lift(h) match {
       case None    => None
       case Some(a) => collectAll(t, a +: r)(f)
     }
   }
+
+  def searchSpace(s: Seq[CSPOMExpression[_]]): Double = {
+    s.foldLeft(1.0)(_ * _.searchSpace)
+  }
 }
 
 final class CSPOMSeq[+T: TypeTag](
   val values: IndexedSeq[CSPOMExpression[T]],
   val definedIndices: Range)
-    extends CSPOMExpression[T] with Seq[CSPOMExpression[T]] {
+    extends CSPOMExpression[T] with IndexedSeq[CSPOMExpression[T]] with LazyLogging {
+
+//  if (definedIndices.headOption.contains(0)) {
+//    logger.info(s"$this is 0-indexed CSPOMSeq")
+//  }
 
   def tpe = typeOf[T]
 
-  def +:[S >: T: TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(v +: values: _*)
+  def +:[S >: T: TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(v +: values, definedIndices.head - 1 to definedIndices.last)
 
-  def :+[S >: T: TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(values :+ v: _*)
+  def :+[S >: T: TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(values :+ v, definedIndices.head to definedIndices.last + 1)
 
   require(values.size == definedIndices.size)
 
-  def iterator: Iterator[CSPOMExpression[T]] = values.iterator
+  override def iterator: Iterator[CSPOMExpression[T]] = values.iterator
 
   def withIndex = values zip definedIndices
 
@@ -235,9 +244,14 @@ final class CSPOMSeq[+T: TypeTag](
 
   def fullyDefined = values.forall(_.fullyDefined)
 
-  def searchSpace = values.foldLeft(1.0)(_ * _.searchSpace)
+  def searchSpace = CSPOMSeq.searchSpace(values)
 
   def zipWithIndex = values.iterator.zip(definedIndices.iterator)
+
+  override def equals(o: Any) = o match {
+    case a: CSPOMSeq[_] => a.values == values && a.definedIndices == definedIndices
+    case _              => false
+  }
   //
   //  override def equals(o: Any) = o match {
   //    case a: AnyRef => a eq this

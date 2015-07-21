@@ -17,6 +17,7 @@ import cspom.util.Infinitable
 import cspom.variable.IntExpression
 import cspom.util.Interval
 import scala.reflect.runtime.universe._
+import cspom.VariableNames
 
 trait ConstraintCompiler extends LazyLogging {
   type A
@@ -181,6 +182,7 @@ case class Delta private (
   def nonEmpty = removed.nonEmpty || added.nonEmpty
 
   override def toString = s"[ -- ${removed.mkString(", ")} ++ ${added.mkString(", ")} ]"
+  def toString(vn: VariableNames) = s"[ -- ${removed.map(e => e.toString(vn)).mkString(", ")} ++ ${added.map(_.toString(vn)).mkString(", ")} ]"
 }
 
 object Delta {
