@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.6-SNAPSHOT"
+version := "2.6"
 
 // For BZip2
 resolvers += "Concrete repository" at "http://concrete-cp.github.io/concrete/repository"
@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
 	)
 
 scalacOptions ++= Seq("-optimise"
-//	      , "-Xdisable-assertions"
+	      , "-Xdisable-assertions"
 //	      , "-target:jvm-1.7"
 //	"-deprecation", 
 //	"-unchecked", 
