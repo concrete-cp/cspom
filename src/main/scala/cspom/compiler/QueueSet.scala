@@ -33,6 +33,10 @@ case class QueueSet(present: BitVector, first: Int) {
     QueueSet(present | init, first)
   }
 
+  def enqueueAll(init: Traversable[Int]): QueueSet = {
+    QueueSet(present ++ init, first)
+  }
+
   def remove(e: Int*): QueueSet = removeAll(e)
 
   def removeAll(e: Iterable[Int]): QueueSet = {
