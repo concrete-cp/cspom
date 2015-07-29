@@ -3,16 +3,7 @@ package cspom.util;
 import BitVector._
 
 final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
-  def -(position: Int): BitVector = {
-    val newWord = word & ~(1L << position)
-    if (word == newWord) {
-      this
-    } else if (word == 0L) {
-      BitVector.empty
-    } else {
-      new SmallBitVector(newWord)
-    }
-  }
+  def -(position: Int): BitVector = setWord0(word & ~(1L << position))
 
   def apply(position: Int): Boolean = {
     position < WORD_SIZE && (word & (1L << position)) != 0L;
@@ -85,24 +76,21 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
   def getWords: Array[Long] = Array(word)
 
   def ^(bv: BitVector): BitVector = {
-    bv.setWord(0, bv.getWord(0) ^ this.word)
+    bv.setWordExpand(0, bv.getWord(0) ^ this.word)
   }
 
-  def &(bv: BitVector): BitVector = {
-    val newWord = (bv.getWord(0) & this.word) //& (MASK >>> -size)
-    if (newWord == word) {
-      this
-    } else {
-      new SmallBitVector(word)
-    }
-  }
+  def &(bv: BitVector): BitVector =
+    setWord0(bv.getWord(0) & this.word)
 
   def |(bv: BitVector): BitVector = {
     val newWord = (bv.getWord(0) | this.word) //& (MASK >>> -size)
-    bv.setWord(0, newWord)
+    bv.setWordExpand(0, newWord)
   }
 
-  def isEmpty: Boolean = word == 0L;
+  def isEmpty: Boolean = {
+    assert(word != 0L)
+    false
+  }
 
   def cardinality: Int = java.lang.Long.bitCount(word);
 
@@ -117,19 +105,30 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
       word;
   }
 
-  def setWord(pos: Int, word: Long): BitVector = {
+  private def setWord0(word: Long): BitVector = {
+    if (word == this.word) {
+      this
+    } else if (word == 0L) {
+      EmptyBitVector
+    } else {
+      new SmallBitVector(word)
+    }
+  }
+
+  def setWordExpand(pos: Int, word: Long): BitVector = {
     if (pos == 0) {
-      if (word == this.word) {
-        this
-      } else {
-        new SmallBitVector(word)
-      }
+      setWord0(word)
     } else {
       val array = new Array[Long](pos + 1)
       array(0) = this.word
       array(pos) = word
-      new LargeBitVector(array)
+      LargeBitVector.noShrink(array)
     }
+  }
+
+  def setWordShrink(pos: Int, word: Long): BitVector = {
+    require(pos == 0)
+    setWord0(word)
   }
 
   def filter(f: Int => Boolean): BitVector = {
@@ -141,6 +140,28 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
       }
       i = nextSetBit(i + 1)
     }
+    if (newWord == word) {
+      this
+    } else {
+      new SmallBitVector(newWord)
+    }
+  }
+
+  def filterBounds(f: Int => Boolean): BitVector = {
+    var newWord = word
+    var i = nextSetBit(0)
+    while (i >= 0 && !f(i)) {
+      newWord &= ~(1L << i)
+      i = nextSetBit(i + 1)
+    }
+    if (i >= 0) {
+      i = lastSetBit
+      while (i >= 0 && !f(i)) {
+        newWord &= ~(1L << i)
+        i = prevSetBit(i)
+      }
+    }
+
     if (newWord == word) {
       this
     } else {

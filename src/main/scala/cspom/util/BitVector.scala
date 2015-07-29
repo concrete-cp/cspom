@@ -78,7 +78,7 @@ trait BitVector extends Any {
         if (newWords.length == 1) {
           new SmallBitVector(newWords.head)
         } else {
-          new LargeBitVector(newWords)
+          LargeBitVector.noShrink(newWords)
         }
       } else {
         this
@@ -98,7 +98,7 @@ trait BitVector extends Any {
     if (oldWord == newWord) {
       this
     } else {
-      setWord(wordPos, newWord)
+      setWordExpand(wordPos, newWord)
     }
   }
 
@@ -123,7 +123,7 @@ trait BitVector extends Any {
       words.size match {
         case 0 => EmptyBitVector
         case 1 => new SmallBitVector(words(0))
-        case _ => new LargeBitVector(words)
+        case _ => LargeBitVector.noShrink(words)
       }
     } else {
       this
@@ -164,9 +164,13 @@ trait BitVector extends Any {
 
   def subsetOf(bv: BitVector): Boolean
 
-  def setWord(pos: Int, word: Long): BitVector
+  def setWordExpand(pos: Int, word: Long): BitVector
+
+  def setWordShrink(pos: Int, word: Long): BitVector
 
   def filter(f: Int => Boolean): BitVector
+  def filterBounds(f: Int => Boolean): BitVector
+
 }
 
 object EmptyBitVector extends BitVector {
@@ -179,6 +183,7 @@ object EmptyBitVector extends BitVector {
   def clearFrom(from: Int): BitVector = this
   def clearUntil(to: Int): BitVector = this
   def filter(f: Int => Boolean): BitVector = this
+  def filterBounds(f: Int => Boolean): BitVector = this
   def getWord(i: Int): Long = 0L
   def getWords: Array[Long] = Array()
   def intersects(bV: BitVector): Int = -1
@@ -188,14 +193,15 @@ object EmptyBitVector extends BitVector {
   def nbWords: Int = 0
   def nextSetBit(start: Int): Int = -1
   def prevSetBit(start: Int): Int = -1
-  def setWord(pos: Int, word: Long): BitVector = {
+  def setWordExpand(pos: Int, word: Long): BitVector = {
     if (pos == 0) {
       new SmallBitVector(word)
     } else {
       val array = new Array[Long](pos + 1)
       array(pos) = word
-      new LargeBitVector(array)
+      LargeBitVector.noShrink(array)
     }
   }
+  def setWordShrink(pos: Int, word: Long): BitVector = ???
   def subsetOf(bv: BitVector): Boolean = true
 }
