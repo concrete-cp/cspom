@@ -268,7 +268,7 @@ class CSPOM extends LazyLogging {
   }
 
   def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[R], CSPOMExpression[R])] = {
-    logger.info(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
+    logger.debug(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
     require(which != by, s"Replacing $which with $by")
     //require((namesOf(which).toSet & namesOf(by).toSet).isEmpty)
     var replaced = List[(CSPOMExpression[R], CSPOMExpression[R])]()
@@ -288,6 +288,8 @@ class CSPOM extends LazyLogging {
       removeContainer(container)
       registerContainer(nc)
     }
+
+
 
     (which, by) :: replaced
 
