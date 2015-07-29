@@ -42,6 +42,8 @@ sealed trait CSPOMExpression[+T] {
 
   def flatten: Seq[SimpleExpression[T]]
 
+  def flattenVariables: Seq[CSPOMVariable[T]]
+
   def isTrue: Boolean
 
   def isFalse: Boolean
@@ -49,6 +51,8 @@ sealed trait CSPOMExpression[+T] {
   def fullyDefined: Boolean
 
   def searchSpace: Double
+
+  def isConstant: Boolean
 }
 
 object CSPOMExpression {
@@ -151,6 +155,10 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   def searchSpace = 1
 
   def isEmpty = false
+
+  def isConstant = true
+  
+  def flattenVariables = Seq()
 }
 
 //object CSPOMConstant {
@@ -167,6 +175,7 @@ abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
   def flattenVariables = Seq(this)
   def isTrue = false
   def isFalse = false
+  def isConstant = false
 }
 
 object CSPOMSeq {
@@ -191,6 +200,7 @@ object CSPOMSeq {
   def searchSpace(s: Seq[CSPOMExpression[_]]): Double = {
     s.foldLeft(1.0)(_ * _.searchSpace)
   }
+
 }
 
 final class CSPOMSeq[+T: TypeTag](
@@ -198,9 +208,9 @@ final class CSPOMSeq[+T: TypeTag](
   val definedIndices: Range)
     extends CSPOMExpression[T] with IndexedSeq[CSPOMExpression[T]] with LazyLogging {
 
-//  if (definedIndices.headOption.contains(0)) {
-//    logger.info(s"$this is 0-indexed CSPOMSeq")
-//  }
+  //  if (definedIndices.headOption.contains(0)) {
+  //    logger.info(s"$this is 0-indexed CSPOMSeq")
+  //  }
 
   def tpe = typeOf[T]
 
@@ -236,22 +246,28 @@ final class CSPOMSeq[+T: TypeTag](
     new CSPOMSeq(values.updated(realIndex, by), definedIndices)
   }
 
-  def flatten = values.flatMap(_.flatten)
+  lazy val flatten = values.flatMap(_.flatten)
 
   def isTrue = false
 
   def isFalse = false
 
-  def fullyDefined = values.forall(_.fullyDefined)
+  lazy val fullyDefined = values.forall(_.fullyDefined)
 
   def searchSpace = CSPOMSeq.searchSpace(values)
 
   def zipWithIndex = values.iterator.zip(definedIndices.iterator)
 
+  lazy val isConstant = values.forall(_.isConstant)
+  
+  lazy val flattenVariables = values.flatMap(_.flattenVariables)
+
   override def equals(o: Any) = o match {
     case a: CSPOMSeq[_] => a.values == values && a.definedIndices == definedIndices
     case _              => false
   }
+
+  override lazy val hashCode = super.hashCode
   //
   //  override def equals(o: Any) = o match {
   //    case a: AnyRef => a eq this
