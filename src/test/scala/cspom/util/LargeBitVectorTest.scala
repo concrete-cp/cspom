@@ -42,6 +42,19 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with Inspectors {
     assert(!bitVector(100))
   }
 
+  it should "shrink" in {
+    var bitVector = BitVector.empty + 16 + 100
+    bitVector -= 100
+    bitVector shouldBe a[SmallBitVector]
+    bitVector.iterator.toSeq should contain theSameElementsAs Seq(16)
+    bitVector - 16 shouldBe BitVector.empty
+
+    LargeBitVector(Array(10L, 10L)) shouldBe a[LargeBitVector]
+    LargeBitVector(Array(987L, 0L)) shouldBe a[SmallBitVector]
+    LargeBitVector(Array(0L, 0L)) shouldBe EmptyBitVector
+
+  }
+
   it should "get bits" in {
     val bitVector = BitVector.empty + 46
     assert(!bitVector(0));
@@ -83,6 +96,8 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with Inspectors {
 
   it should "compute prev set bit" in {
     var bitVector = BitVector.empty + 46 + 49 + 100;
+
+    bitVector.lastSetBit shouldBe 100
 
     bitVector.prevSetBit(47) shouldBe 46
     bitVector.prevSetBit(46) shouldBe -1
@@ -234,5 +249,15 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with Inspectors {
     bv += 26
 
     forAll(Seq(203, 202, 134, 104, 86, 50, 38, 26)) { e => assert(bv(e)) }
+
+    bv.iterator.toSeq should contain theSameElementsAs Seq(203, 202, 134, 104, 86, 50, 38, 26)
+    bv.lastSetBit shouldBe 203
+  }
+
+  it should "filter bounds" in {
+    val bv = BitVector(Seq(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70))
+
+    bv.filterBounds(_ > 10).iterator.toSeq shouldBe Seq(15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70)
+    bv.filterBounds(_ < 30).iterator.toSeq shouldBe Seq(5, 10, 15, 20, 25)
   }
 }
