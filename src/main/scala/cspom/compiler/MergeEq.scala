@@ -26,17 +26,21 @@ object MergeEq extends ConstraintCompilerNoData with LazyLogging {
 
     val merged = se.reduceLeft(_ intersected _)
 
+    val result = BoolExpression.coerce(constraint.result)
+
     if (merged.isEmpty) {
       removeCtr(constraint, problem) ++
-        replace(constraint.result, CSPOMConstant(false), problem)
+        replace(constraint.result, result intersected CSPOMConstant(false), problem)
     } else if (se.forall(_ == merged)) {
       removeCtr(constraint, problem) ++
-        replace(constraint.result, CSPOMConstant(true), problem)
-    } else if (constraint.result.isTrue) {
-      removeCtr(constraint, problem) ++
+        replace(constraint.result, result intersected CSPOMConstant(true), problem)
+    } else if (result.isTrue) {
+      val delta = removeCtr(constraint, problem) ++
         se.map(replace(_, merged, problem)).reduce(_ ++ _)
+      //println(se + " : " + delta)
+      delta
     } else {
-      replace(constraint.result, BoolExpression.coerce(constraint.result), problem)
+      replace(constraint.result, result, problem)
     }
   }
 
