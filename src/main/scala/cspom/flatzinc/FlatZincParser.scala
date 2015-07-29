@@ -2,19 +2,19 @@ package cspom.flatzinc
 
 import java.io.InputStream
 import java.io.InputStreamReader
-
 import scala.collection.immutable.PagedSeq
 import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.PagedSeqReader
-
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.CSPParseException
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMVariable
+import cspom.compiler.ConstraintCompiler
+import cspom.variable.SimpleExpression
 
 sealed trait FZDecl
 case class FZParamDecl(name: String, expression: CSPOMExpression[_]) extends FZDecl
@@ -91,12 +91,15 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
           }
 
         }
+
         for (c <- constraints) {
           CSPOM.ctr(c)
         }
 
         for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
-          CSPOM.ctr(CSPOMConstraint('eq)(e, a))
+          ConstraintCompiler.deepReplace(e, a, problem)
+
+          //CSPOM.ctr(CSPOMConstraint('eq)(e, a))
         }
       }
       (p, goal)

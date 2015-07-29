@@ -19,19 +19,7 @@ import cspom.util.Interval
 import scala.reflect.runtime.universe._
 import cspom.VariableNames
 
-trait ConstraintCompiler extends LazyLogging {
-  type A
-
-  def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
-
-  def matcher: PartialFunction[(CSPOMConstraint[_], CSPOM), A] = PartialFunction.empty
-
-  def matchConstraint(c: CSPOMConstraint[_]) = constraintMatcher.lift(c)
-
-  def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = PartialFunction.empty
-
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
-
+object ConstraintCompiler extends LazyLogging {
   def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $wh with $by")
 
@@ -77,20 +65,21 @@ trait ConstraintCompiler extends LazyLogging {
     }
   }
 
+  def deepReplace(e: CSPOMExpression[_], a: CSPOMExpression[_], problem: CSPOM): Delta = {
+    (e, a) match {
+      case (w: CSPOMSeq[_], b: CSPOMSeq[_]) =>
+        require(w.indices == b.indices)
+
+        (w.values, b.values).zipped.foldLeft(replace(w, b, problem)) {
+          case (acc, (wv, bv)) => acc ++ deepReplace(wv, bv, problem)
+        }
+      case (wv: SimpleExpression[_], bv: SimpleExpression[_]) =>
+        replace(wv, bv, problem)
+      case (e, f) => throw new IllegalArgumentException(s"Incompatible replacement $e by $f")
+    }
+  }
+
   def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta = {
-
-    removeCtr(which, in) ++ addCtr(by, in)
-  }
-
-  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: CSPOMConstraint[_], in: CSPOM): Delta = {
-    removeCtr(which, in) ++ addCtr(by, in)
-  }
-
-  def replaceCtr(which: CSPOMConstraint[_], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    replaceCtr(Seq(which), by, in)
-  }
-
-  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     removeCtr(which, in) ++ addCtr(by, in)
   }
 
@@ -109,8 +98,52 @@ trait ConstraintCompiler extends LazyLogging {
     logger.debug(s"Adding $c")
     Delta.empty.added(c)
   }
+}
 
-  //def selfPropagation: Boolean
+trait ConstraintCompiler extends LazyLogging {
+  type A
+
+  def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
+
+  def matcher: PartialFunction[(CSPOMConstraint[_], CSPOM), A] = PartialFunction.empty
+
+  def matchConstraint(c: CSPOMConstraint[_]) = constraintMatcher.lift(c)
+
+  def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = PartialFunction.empty
+
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
+
+  def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta =
+    ConstraintCompiler.replace(wh, by, in)
+
+  def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta =
+    ConstraintCompiler.replaceCtr(which, by, in)
+
+  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: CSPOMConstraint[_], in: CSPOM): Delta = {
+    removeCtr(which, in) ++ addCtr(by, in)
+  }
+
+  def replaceCtr(which: CSPOMConstraint[_], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+    replaceCtr(Seq(which), by, in)
+  }
+
+  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
+    removeCtr(which, in) ++ addCtr(by, in)
+  }
+
+  def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta =
+    ConstraintCompiler.removeCtr(c, in)
+
+  def removeCtr(c: CSPOMConstraint[_], in: CSPOM): Delta =
+    ConstraintCompiler.removeCtr(c, in)
+
+  def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta =
+    ConstraintCompiler.addCtr(c, in)
+
+  def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta =
+    ConstraintCompiler.addCtr(c, in)
+
+  def selfPropagation: Boolean
 
   def reduceDomain(v: SimpleExpression[Int], d: Interval[Infinitable]): SimpleExpression[Int] = reduceDomain(v, RangeSet(d))
 
