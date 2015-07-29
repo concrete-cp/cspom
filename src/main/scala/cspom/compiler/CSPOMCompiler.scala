@@ -2,18 +2,19 @@ package cspom.compiler;
 
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.WrappedArray
 import scala.util.Try
+
 import com.typesafe.scalalogging.LazyLogging
+
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
 import cspom.StatisticsManager
 import cspom.TimedException
 import cspom.VariableNames
+import cspom.util.BitVector
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
-import cspom.util.BitVector
 
 /**
  * This class implements some known useful reformulation rules.
@@ -31,49 +32,82 @@ final class CSPOMCompiler(
 
     val constraints = new HashMap[Int, CSPOMConstraint[_]]
 
+    //   val allCompilers = BitVector(constraintCompilers.indices)
+    //
+    //    val toCompile = new HashMap[Int, BitVector]
+
     for (c <- problem.constraints) {
       constraints.put(c.id, c)
+      // toCompile.put(c.id, allCompilers)
     }
 
-    val fullQS = QueueSet(constraints.keys)
-    val toCompile = Array.fill(constraintCompilers.size)(fullQS)
+    var queue = QueueSet(constraints.keys)
 
-    var changed = true
+    //val toCompile = Array.fill(constraintCompilers.size)(fullQS)
 
-    while (changed) {
-      logger.info("Turn")
-      changed = false
-      for (i <- toCompile.indices) {
+    while (queue.nonEmpty) {
 
-        val compiler = constraintCompilers(i)
-        logger.info(compiler.toString)
+      val (next, nextQueue) = queue.dequeue
+      queue = nextQueue
+      //println(s"$next / ${CSPOMConstraint.id} : ${constraints.get(next)}")
 
-        while (toCompile(i).nonEmpty) {
+      //      val willCompile = toCompile.get(next)
+      //      toCompile.remove(next)
 
-          val (next, nextQueue) = toCompile(i).dequeue
-          toCompile(i) = nextQueue
+      for {
+        //        wc <- willCompile
+        //        c <- wc.iterator
+        //        c <- 
+        compiler <- constraintCompilers
+        constraint <- constraints.get(next)
+      } {
+        //println(s"$next, $compiler")
+        // println(s"Compiling ${constraint.toString(vn)}")
+        //lazy val string = constraint.toString(vn)
+        val delta = compile(compiler, constraint)
 
-          for (constraint <- constraints.get(next)) {
-            //println(s"Compiling ${constraint.toString(vn)}")
-            //lazy val string = constraint.toString(vn)
-            val delta = compile(compiler, constraint)
-
-            if (delta.nonEmpty) {
-              //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
-              changed = true
-              updateQueues(compiler, delta, constraints, toCompile)
-            }
-
-          }
-
-          //toCompile(i).remove(constraint.id)
-          //println
-
+        for (rc <- delta.removed) {
+          assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")
+          constraints.remove(rc.id)
+          //toCompile.remove(rc.id)
         }
 
+        for (ac <- delta.added) {
+          assert(problem.constraintSet(ac), s"$compiler: $ac is not present")
+          constraints.put(ac.id, ac)
+        }
+
+        //val addToCompile = if (compiler.selfPropagation) allCompilers else allCompilers - c
+        val enqueueVar = vars(delta.added)
+        for (
+          v <- enqueueVar
+        ) {
+          val constraints = problem.deepConstraints(v).view.map(_.id).toSet
+          queue = queue.enqueueAll(constraints)
+
+          //          for (cons <- constraints) {
+          //            toCompile(cons) = addToCompile
+          //          }
+        }
+
+        //            //println(s"enqueueing $enqueueCons")
+        //            for (i <- queues.indices) {
+        //              if (self || i != currentQueue)
+        //                queues(i) = queues(i).enqueueAll(enqueueCons)
+        //            }
+
+        //          if (delta.nonEmpty) {
+        //            //if (delta.nonEmpty && compiler == MergeEq) println(s"$string: $delta")
+        //            changed = true
+        //            updateQueues(compiler, delta, constraints, toCompile, i)
+        //          }
       }
 
+      //toCompile(i).remove(constraint.id)
+      //println  
+
     }
+
     problem
   }
 
@@ -81,28 +115,42 @@ final class CSPOMCompiler(
     compiler: ConstraintCompiler,
     delta: Delta,
     constraints: HashMap[Int, CSPOMConstraint[_]],
-    queues: Array[QueueSet]): Unit = {
-    logger.info(delta.toString(vn))
+    queues: Array[QueueSet],
+    currentQueue: Int): Unit = {
+    logger.debug(delta.toString(vn))
 
     for (rc <- delta.removed) {
       assert(!problem.constraintSet(rc), s"$compiler: $rc is still present")
       constraints.remove(rc.id)
     }
 
-    val enqueueVar = new LinkedHashSet[CSPOMExpression[_]]
     for (c <- delta.added) {
       assert(problem.constraintSet(c), s"$compiler: $c is not present")
       constraints.put(c.id, c)
-      enqueueVar ++= c.flattenedScope
     }
 
-    logger.debug(s"Enqueuing constraints for ${enqueueVar.map(v => v -> problem.deepConstraints(v).map(c => s"${c.id}.$c"))}")
+    val enqueueVar = vars(delta.added)
+    logger.debug(s"${delta.added}: Enqueuing constraints for ${enqueueVar.map(v => v -> problem.deepConstraints(v).map(c => s"${c.id}.$c"))}")
+    enqueue(enqueueVar, compiler.selfPropagation, queues, currentQueue)
+  }
+
+  private def vars(added: Seq[CSPOMConstraint[_]]): collection.Set[CSPOMVariable[_]] = {
+    val enqueueVar = new LinkedHashSet[CSPOMVariable[_]]
+    for (c <- added) {
+      enqueueVar ++= c.fullScope.flatMap(_.flattenVariables)
+    }
+    enqueueVar
+  }
+
+  private def enqueue(vars: Iterable[CSPOMVariable[_]], self: Boolean, queues: Array[QueueSet], currentQueue: Int) = {
     for (
-      v <- enqueueVar
+      v <- vars
     ) {
-      val enqueueCons = BitVector(problem.deepConstraints(v).view.map(_.id))
+      val enqueueCons = problem.deepConstraints(v).view.map(_.id).toSet
+      //println(s"enqueueing $enqueueCons")
       for (i <- queues.indices) {
-        queues(i) = queues(i).enqueueAll(enqueueCons)
+        if (self || i != currentQueue)
+          queues(i) = queues(i).enqueueAll(enqueueCons)
       }
     }
   }
