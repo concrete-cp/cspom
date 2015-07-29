@@ -13,13 +13,14 @@ import scala.collection.mutable.WeakHashMap
 import cspom.variable.IntVariable
 import cspom.extension.IdEq
 import cspom.variable.BoolVariable
+import cspom.variable.CSPOMExpression
 
 /**
  * Detects and removes constants from extensional constraints
  */
 object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[Set[Any]], Seq[Int]), Relation[_]]
+  val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[SimpleExpression[_]]), (Seq[Int], Relation[Any])]
 
   override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
     //println(c)
@@ -30,26 +31,22 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
     val Some(relation: Relation[Any] @unchecked) = c.params.get("relation")
 
-    val args = c.arguments.toIndexedSeq
-
-    val domains: IndexedSeq[Set[Any]] = args.map {
-      case CSPOMConstant(v: Any) => Set(v)
-      case v: IntVariable        => v.asSortedSet.asInstanceOf[Set[Any]]
-      case b: BoolVariable       => Set[Any](false, true)
-      case _                     => ???
-    }
-
-    val vars = c.arguments.zipWithIndex.collect {
-      case (c: CSPOMVariable[_], i) => i
-    }
+    val args = c.arguments.map {
+      case s: SimpleExpression[_] => s
+      case _                      => throw new IllegalArgumentException()
+    }.toIndexedSeq
 
     logger.info(s"will reduce $relation for $args")
 
-    val cached = cache.getOrElseUpdate((IdEq(relation), domains, vars), {
+    val (vars, cached) = cache.getOrElseUpdate((IdEq(relation), args), {
       logger.info("reducing !")
-      val filtered = relation.filter((k, i) => domains(k)(i))
+      val vars = c.arguments.zipWithIndex.collect {
+        case (c: CSPOMVariable[_], i) => i
+      }
 
-      logger.trace(s"filtered: ${filtered ne relation}")
+      val filtered = relation.filter((k, i) => args(k).contains(i))
+
+      logger.info(s"filtered: ${filtered ne relation}")
 
       val projected = if (vars.size < c.arguments.size) {
         filtered.project(vars)
@@ -57,16 +54,16 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
         filtered
       }
 
-      logger.trace(s"projected: ${projected ne filtered}")
+      logger.info(s"projected: ${projected ne filtered}")
 
       val reduced = projected match {
         case p: MDD[_] => p.reduce
         case p         => p
       }
 
-      logger.trace(s"reduced: ${reduced ne projected}")
+      logger.info(s"reduced: ${reduced ne projected}")
 
-      reduced
+      (vars, reduced)
     })
 
     if (relation ne cached) {

@@ -16,7 +16,14 @@ class Table[A](val table: Set[Seq[A]]) extends Relation[A] {
   def arity: Int = table.head.length
   def contains(t: Seq[A]): Boolean = table.exists(_ sameElements t)
   def filter(f: (Int, A) => Boolean) = {
-    new Table(table.filter(t => t.zipWithIndex.forall { case (v, k) => f(k, v) }))
+    val filt = table.filter(t => t.zipWithIndex.forall { case (v, k) => f(k, v) })
+    
+    if (filt.size < table.size) {
+      new Table(filt)
+    } else {
+      this
+    }
+    
   }
 
   override def toString = "Table(\n  " + table.map(_.mkString(", ")).mkString("\n  ") + ")"
