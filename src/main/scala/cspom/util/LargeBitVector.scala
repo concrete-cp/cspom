@@ -33,7 +33,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
 
   def -(position: Int): BitVector = {
     val wordPos: Int = word(position)
-    val oldWord = words(wordPos)
+    val oldWord = getWord(wordPos)
     val newWord = oldWord & ~(1L << position)
     if (oldWord == newWord) {
       this
