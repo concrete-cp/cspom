@@ -72,23 +72,27 @@ final class CSPOMCompiler(
           //toCompile.remove(rc.id)
         }
 
-        for (ac <- delta.added) {
-          assert(problem.constraintSet(ac), s"$compiler: $ac is not present")
-          constraints.put(ac.id, ac)
-        }
+//        for (ac <- delta.added) {
+//          assert(problem.constraintSet(ac), s"$compiler: $ac is not present")
+//          constraints.put(ac.id, ac)
+//        }
+
+        constraints ++= delta.added.map(c => c.id -> c)
+
+        queue = queue.enqueueAll(delta.added.view.map(_.id))
 
         //val addToCompile = if (compiler.selfPropagation) allCompilers else allCompilers - c
-        val enqueueVar = vars(delta.added)
-        for (
-          v <- enqueueVar
-        ) {
-          val constraints = problem.deepConstraints(v).view.map(_.id).toSet
-          queue = queue.enqueueAll(constraints)
-
-          //          for (cons <- constraints) {
-          //            toCompile(cons) = addToCompile
-          //          }
-        }
+        //        val enqueueVar = vars(delta.added)
+        //        for (
+        //          v <- enqueueVar
+        //        ) {
+        //          val constraints = problem.deepConstraints(v).view.map(_.id).toSet
+        //          queue = queue.enqueueAll(constraints)
+        //
+        //          //          for (cons <- constraints) {
+        //          //            toCompile(cons) = addToCompile
+        //          //          }
+        //        }
 
         //            //println(s"enqueueing $enqueueCons")
         //            for (i <- queues.indices) {
