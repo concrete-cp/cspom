@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.6.1"
+version := "2.6.2-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 

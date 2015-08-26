@@ -142,6 +142,8 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
     }
     if (newWord == word) {
       this
+    } else if (newWord == 0L) {
+      EmptyBitVector
     } else {
       new SmallBitVector(newWord)
     }
