@@ -97,9 +97,9 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
         }
 
         for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
-          ConstraintCompiler.deepReplace(e, a, problem)
+          //ConstraintCompiler.deepReplace(e, a, problem)
 
-          //CSPOM.ctr(CSPOMConstraint('eq)(e, a))
+          CSPOM.ctr(CSPOMConstraint('eq)(e, a))
         }
       }
       (p, goal)

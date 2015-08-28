@@ -3,13 +3,17 @@ package cspom.flatzinc
 import org.scalatest.FlatSpec
 import org.scalatest.TryValues
 import cspom.VariableNames
+import org.scalatest.Matchers
+import cspom.variable.CSPOMConstant
+import cspom.compiler.StandardCompilers
+import cspom.compiler.CSPOMCompiler
 
-class FlatZincTest extends FlatSpec with TryValues {
+class FlatZincTest extends FlatSpec with Matchers {
 
   val url = classOf[FlatZincTest].getResource("photo.fzn")
 
   "FlatZinc parser" should s"parse $url" in {
-    val (cspom, variables) = FlatZincParser(url.openStream).success.get
+    val (cspom, variables) = FlatZincParser(url.openStream).get
 
     // CSPOMCompiler.compile(cspom, FZPatterns()).get
 
@@ -23,6 +27,15 @@ class FlatZincTest extends FlatSpec with TryValues {
 
     //println(cspom)
 
+  }
+
+  it should "correctly affect values" in {
+    val (cspom, variables) = FlatZincParser(classOf[FlatZincTest].getResource("affectations.fzn").openStream).get
+    CSPOMCompiler.compile(cspom, StandardCompilers())
+    withClue(cspom) {
+      cspom.expression("X") shouldBe Some(CSPOMConstant(true))
+      cspom.expression("a[1]") shouldBe Some(CSPOMConstant(true))
+    }
   }
 
 }
