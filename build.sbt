@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
 	"ch.qos.logback" % "logback-classic" % "1.1.3",
 	"org.scalatest" %% "scalatest" % "2.2.5" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.12.4" % "test",
-	"com.storm-enroute" %% "scalameter" % "0.6" % "test"
+	"com.storm-enroute" %% "scalameter" % "0.7" % "test"
 	)
 
 scalacOptions ++= Seq("-optimise"
