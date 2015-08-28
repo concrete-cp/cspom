@@ -171,6 +171,15 @@ trait BitVector extends Any {
   def filter(f: Int => Boolean): BitVector
   def filterBounds(f: Int => Boolean): BitVector
 
+  def nextOrLoop(i: Int) = {
+    val n = nextSetBit(i)
+    if (n < 0) {
+      nextSetBit(0)
+    } else {
+      n
+    }
+  }
+
 }
 
 object EmptyBitVector extends BitVector {
