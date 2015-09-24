@@ -3,9 +3,7 @@ package cspom.compiler;
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedHashSet
 import scala.util.Try
-
 import com.typesafe.scalalogging.LazyLogging
-
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
@@ -15,6 +13,7 @@ import cspom.VariableNames
 import cspom.util.BitVector
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
+import org.scalameter.Quantity
 
 /**
  * This class implements some known useful reformulation rules.
@@ -72,10 +71,10 @@ final class CSPOMCompiler(
           //toCompile.remove(rc.id)
         }
 
-//        for (ac <- delta.added) {
-//          assert(problem.constraintSet(ac), s"$compiler: $ac is not present")
-//          constraints.put(ac.id, ac)
-//        }
+        //        for (ac <- delta.added) {
+        //          assert(problem.constraintSet(ac), s"$compiler: $ac is not present")
+        //          constraints.put(ac.id, ac)
+        //        }
 
         constraints ++= delta.added.map(c => c.id -> c)
 
@@ -182,9 +181,9 @@ object CSPOMCompiler {
   def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]): Try[CSPOM] = {
     val pbc = new CSPOMCompiler(problem, compilers.toIndexedSeq)
 
-    val (r, t) = StatisticsManager.time(pbc.compile())
+    val (r, t) = StatisticsManager.measure(pbc.compile())
 
-    compileTime += t
+    compileTime = t
 
     r
   }
@@ -196,7 +195,7 @@ object CSPOMCompiler {
   var compiles = 0
 
   @Statistic
-  var compileTime = 0.0
+  var compileTime: Quantity[Double] = Quantity(0, "")
 
 }
 

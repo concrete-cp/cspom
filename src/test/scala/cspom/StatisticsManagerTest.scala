@@ -40,38 +40,38 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
   }
 
   it should "measure time in regular case" in {
-    val (r, t) = StatisticsManager.time {
+    val (r, t) = StatisticsManager.measure {
       Thread.sleep(1000)
     }
 
-    t shouldBe 1.0 +- .01
+    t.value shouldBe 1000.0 +- 10
     r should be a 'success
   }
 
   it should "measure time in exception case" in {
-    val (r, t) = StatisticsManager.time {
+    val (r, t) = StatisticsManager.measure {
       Thread.sleep(1000)
       throw new Exception
     }
 
-    t shouldBe 1.0 +- .01
+    t.value shouldBe 1000.0 +- 10
     r should be a 'failure
   }
 
   it should "measure time in success case" in {
-    val (r, t) = StatisticsManager.timeTry(Try(Thread.sleep(1000)))
+    val (r, t) = StatisticsManager.measureTry(Try(Thread.sleep(1000)))
 
-    t shouldBe 1.0 +- .01
+    t.value shouldBe 1000.0 +- 10
     r should be a 'success
   }
 
   it should "measure time in failure case" in {
-    val (r, t) = StatisticsManager.timeTry {
+    val (r, t) = StatisticsManager.measureTry {
       Thread.sleep(1000)
       Failure(new Exception)
     }
 
-    t shouldBe 1.0 +- .01
+    t.value shouldBe 1000.0 +- 10
     r should be a 'failure
   }
 

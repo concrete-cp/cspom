@@ -7,6 +7,8 @@ import java.lang.reflect.Field
 import scala.annotation.tailrec
 import com.typesafe.scalalogging.LazyLogging
 import scala.util.Try
+import scala.util.Failure
+import org.scalameter._
 
 class StatisticsManager extends LazyLogging {
 
@@ -149,14 +151,21 @@ object StatisticsManager {
     }
   }
 
-  def timeTry[A](f: => Try[A]): (Try[A], Double) = {
-    var t = -System.nanoTime
-    val r: Try[A] = f //.apply()
-    t += System.nanoTime
-    (r, t / 1e9)
+  def measureTry[A, T, U](f: => Try[A], measureBuilder: MeasureBuilder[T, U] = org.scalameter.`package`): (Try[A], Quantity[U]) = {
+    var r: Try[A] = Failure(new IllegalStateException("No execution"))
+    val t = measureBuilder.measure {
+      r = f
+    }
+    (r, t)
+
+    //    var t = -System.nanoTime
+    //    val r: Try[A] = f //.apply()
+    //    t += System.nanoTime
+    //    (r, t / 1e9)
   }
 
-  def time[A](f: => A): (Try[A], Double) = timeTry(Try(f))
+  def measure[A, T, U](f: => A, measureBuilder: MeasureBuilder[T, U] = org.scalameter.`package`): (Try[A], Quantity[U]) =
+    measureTry(Try(f), measureBuilder)
 
 }
 
