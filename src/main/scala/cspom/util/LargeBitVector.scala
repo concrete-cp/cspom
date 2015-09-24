@@ -163,16 +163,21 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
         new SmallBitVector(words(0) & ~(MASK << from))
       } else {
 
-        val newWords = Arrays.copyOf(words, startWordIndex + 1)
+        val lastWord = words(startWordIndex) & ~(MASK << from)
 
-        val w = newWords(startWordIndex);
-
-        newWords(startWordIndex) &= ~(MASK << from);
-
-        if (newWords.length < nbWords || w != newWords(startWordIndex)) {
-          LargeBitVector(newWords)
+        if (lastWord == 0L) {
+          LargeBitVector(Arrays.copyOf(words, startWordIndex))
         } else {
-          this
+
+          val newWords = Arrays.copyOf(words, startWordIndex + 1)
+
+          newWords(startWordIndex) = lastWord
+
+          if (newWords.length < nbWords || lastWord != words(startWordIndex)) {
+            LargeBitVector(newWords)
+          } else {
+            this
+          }
         }
       }
     }

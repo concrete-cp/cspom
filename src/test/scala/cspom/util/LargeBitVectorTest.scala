@@ -3,8 +3,10 @@ package cspom.util;
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.Inspectors
+import org.scalatest.prop.PropertyChecks
+import org.scalacheck.Gen
 
-final class LargeBitVectorTest extends FlatSpec with Matchers with Inspectors {
+final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyChecks {
 
   "LargeBitVectors" should "be filled" in {
     val bitVector = BitVector.filled(125)
@@ -248,7 +250,7 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with Inspectors {
     bv += 38
     bv += 26
 
-    forAll(Seq(203, 202, 134, 104, 86, 50, 38, 26)) { e => assert(bv(e)) }
+    for (e <- Seq(203, 202, 134, 104, 86, 50, 38, 26)) { assert(bv(e)) }
 
     bv.iterator.toSeq should contain theSameElementsAs Seq(203, 202, 134, 104, 86, 50, 38, 26)
     bv.lastSetBit shouldBe 203
@@ -259,5 +261,14 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with Inspectors {
 
     bv.filterBounds(_ > 10).iterator.toSeq shouldBe Seq(15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70)
     bv.filterBounds(_ < 30).iterator.toSeq shouldBe Seq(5, 10, 15, 20, 25)
+  }
+
+  it should "behave as sets" in {
+    val gen: Gen[Set[Int]] = Gen.buildableOf[Set[Int], Int](Gen.choose(0, 100000))
+
+    forAll(gen, Gen.choose(0, 100000)) { (ps, c) =>
+      BitVector(ps).iterator.toStream should contain theSameElementsAs ps
+      BitVector(ps).clearFrom(c).iterator.toStream should contain theSameElementsAs ps.filter(_ < c)
+    }
   }
 }
