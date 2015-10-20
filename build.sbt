@@ -9,12 +9,12 @@ scalaVersion := "2.11.7"
 libraryDependencies ++= Seq(
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
-	"org.scala-lang.modules" %% "scala-xml" % "1.0.4",
+	"org.scala-lang.modules" %% "scala-xml" % "1.0.5",
 	"fr.univ-valenciennes" % "bzip2" % "1.0",
 	"ch.qos.logback" % "logback-classic" % "1.1.3",
 	"com.storm-enroute" %% "scalameter-core" % "0.7",
 	"org.scalatest" %% "scalatest" % "2.2.5" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.12.4" % "test",
+	"org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
 	"com.storm-enroute" %% "scalameter" % "0.7" % "test"
 	)
 

@@ -32,7 +32,7 @@ object GML {
     var gen = 0;
 
     constraints.flatMap { c =>
-      c.fullScope.flatMap(_.flatten).collect {
+      c.flattenedScope.collect {
         case v: CSPOMVariable[_] => variables(v)
       } match {
         case Seq(source, target) => s"""
@@ -75,7 +75,7 @@ object GML {
 
     val (variables, strings) = vars(problem)
 
-    strings.addString(stb)
+    strings.toList.addString(stb)
 
     ctr(variables, problem.constraints).addString(stb)
 
