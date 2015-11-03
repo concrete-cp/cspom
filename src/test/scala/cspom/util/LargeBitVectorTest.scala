@@ -40,7 +40,7 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
     assert(!bitVector(100))
     bitVector += 100
     assert(bitVector(100))
-    bitVector = bitVector.set(100, false)
+    bitVector = bitVector - 100
     assert(!bitVector(100))
   }
 
@@ -269,6 +269,30 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
     forAll(gen, Gen.choose(0, 100000)) { (ps, c) =>
       BitVector(ps).iterator.toStream should contain theSameElementsAs ps
       BitVector(ps).clearFrom(c).iterator.toStream should contain theSameElementsAs ps.filter(_ < c)
+    }
+  }
+
+  it should "shift" in {
+    val ps = BitVector(Set(82, 24, 51, 89, 52))
+    val c = 64
+    
+
+    ps.shift(c).iterator.toSeq should contain theSameElementsAs
+      ps.iterator.toSeq.map(_ + c)
+
+    BitVector(Set(82091, 24461, 51961, 89508, 52141)).shift(192).iterator.toSeq should contain theSameElementsAs
+      Set(82283, 52153, 89700, 52333, 24653)
+
+    val gen: Gen[Set[Int]] = Gen.buildableOf[Set[Int], Int](Gen.choose(0, 100000))
+    forAll(gen, Gen.choose(-1000, 1000)) { (ps, c) =>
+      if (ps.nonEmpty && ps.min + c < 0) {
+        an[IllegalArgumentException] should be thrownBy BitVector(ps).shift(c)
+      } else {
+        val bv = BitVector(ps)
+        val sh = bv.shift(c)
+        println(s"$bv.shift($c) = $sh")
+        sh.iterator.toSeq should contain theSameElementsAs ps.map(_ + c)
+      }
     }
   }
 }

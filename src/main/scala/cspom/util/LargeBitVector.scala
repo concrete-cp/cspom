@@ -48,29 +48,28 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def nextSetBit(start: Int): Int = {
-    var position = word(start);
+    var position = word(start)
 
     if (position >= nbWords) {
       -1
     } else {
-      var word = words(position) & (MASK << start);
+      var word = words(position) & (MASK << start)
 
       while (word == 0) {
         position += 1
         if (position == nbWords) {
-          return -1;
+          return -1
         }
-        word = words(position);
+        word = words(position)
       }
-      (position * WORD_SIZE) + java.lang.Long.numberOfTrailingZeros(word);
+      position * WORD_SIZE + java.lang.Long.numberOfTrailingZeros(word)
     }
   }
 
   def prevSetBit(start: Int): Int = {
-
-    val wordsInUse = words.length;
+    val wordsInUse = words.length
     val startWord = BitVector.word(start)
-    var position: Int = math.min(wordsInUse - 1, startWord);
+    var position: Int = math.min(wordsInUse - 1, startWord)
 
     var word = words(position);
     if (position == startWord) {
@@ -80,12 +79,12 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
     while (word == 0) {
       position -= 1
       if (position < 0) {
-        return -1;
+        return -1
       }
       word = words(position)
     }
-    return (1 + position) * WORD_SIZE - java.lang.Long.numberOfLeadingZeros(word) - 1;
 
+    (1 + position) * WORD_SIZE - java.lang.Long.numberOfLeadingZeros(word) - 1
   }
 
   def prevClearBit(start: Int): Int = {

@@ -2,6 +2,7 @@ package cspom.util
 
 import BitVector._
 import java.util.Arrays
+import com.sun.xml.internal.ws.addressing.WsaActionUtil
 
 final object BitVector {
   private val ADDRESS_BITS_PER_WORD = 6
@@ -31,15 +32,15 @@ trait BitVector extends Any {
     }
   }
 
-  override def toString(): String = iterator.mkString("{", ", ", "}")
-
-  def set(position: Int, status: Boolean): BitVector = {
-    if (status) {
-      this + position
-    } else {
-      this - position
+  def foreach[U](f: Int => U): Unit = {
+    var i = nextSetBit(0)
+    while (i >= 0) {
+      f(i)
+      i = nextSetBit(i + 1)
     }
   }
+
+  override def toString(): String = iterator.mkString("{", ", ", "}")
 
   def set(from: Int, until: Int): BitVector = {
     if (from >= until) {
@@ -180,6 +181,57 @@ trait BitVector extends Any {
     }
   }
 
+  def shift(n: Int): BitVector = {
+    assert(!isEmpty)
+
+    if (n == 0) {
+      this
+    } else if (n > 0) {
+
+      val wordShift = n / WORD_SIZE
+
+      val words = new Array[Long](BitVector.word(lastSetBit + n) + 1)
+      System.arraycopy(getWords, 0, words, wordShift, getWords.length)
+
+      if (n % WORD_SIZE != 0) {
+        // Do the shift
+        var i = words.length - 1
+        while (i > wordShift) {
+          words(i) <<= n; // Shift current word
+          words(i) |= words(i - 1) >>> (WORD_SIZE - n); // Do the carry
+          i -= 1
+        }
+        words(i) <<= n; // shift [words.length-1] separately, since no carry
+      }
+      LargeBitVector.noShrink(words)
+
+    } else {
+
+      val nn = -n
+
+      require(nn <= nextSetBit(0))
+
+      val wordShift = nn / WORD_SIZE
+
+      val words = new Array[Long](getWords.length - wordShift)
+      System.arraycopy(getWords, wordShift, words, 0, getWords.length - wordShift)
+
+      if (n % WORD_SIZE != 0) {
+        // Do the shift
+        var i = 0
+        while (i < words.length - 1) {
+          words(i) >>>= nn; // Shift current word
+          words(i) |= words(i + 1) << (WORD_SIZE - nn); // Do the carry
+          i += 1
+        }
+        words(i) >>>= nn;
+      }
+
+      LargeBitVector(words)
+
+    }
+
+  }
 }
 
 object EmptyBitVector extends BitVector {
@@ -213,4 +265,5 @@ object EmptyBitVector extends BitVector {
   }
   def setWordShrink(pos: Int, word: Long): BitVector = ???
   def subsetOf(bv: BitVector): Boolean = true
+  override def shift(n: Int): BitVector = this
 }

@@ -29,16 +29,19 @@ class StatisticsManager extends LazyLogging {
 
   private def annoted(f: Field) = f.getAnnotation(classOf[cspom.Statistic]) != null
 
-  def apply(name: String): AnyRef = {
+  def apply(name: String): AnyRef = get(name).get
+
+  def get(name: String): Option[AnyRef] = {
 
     val fieldNameAt = name.lastIndexOf('.')
     val obj = objects.get(name.substring(0, fieldNameAt)).get
     val fieldName = name.substring(fieldNameAt + 1, name.length)
-    fields(obj.getClass).find(f => f.getName == fieldName) match {
-      case Some(f) => { f.setAccessible(true); f.get(obj) }
-      case None => throw new IllegalArgumentException(
-        s"Could not find $name ($fieldName in ${fields(obj.getClass)})")
-    }
+    fields(obj.getClass)
+      .find(f => f.getName == fieldName)
+      .map { f =>
+        f.setAccessible(true)
+        f.get(obj)
+      }
 
   }
 

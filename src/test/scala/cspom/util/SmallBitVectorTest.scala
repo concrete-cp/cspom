@@ -24,7 +24,7 @@ class SmallBitVectorTest extends FlatSpec with Matchers with PropertyChecks {
     assert(bitVector(30))
     bitVector -= 30
     assert(!bitVector(30))
-    bitVector = bitVector.set(30, true)
+    bitVector = bitVector + 30
     assert(bitVector(30))
   }
 
