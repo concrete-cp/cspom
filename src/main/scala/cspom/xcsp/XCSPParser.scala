@@ -1,23 +1,23 @@
 package cspom.xcsp;
 
 import java.io.InputStream
+
+import scala.util.Try
 import scala.util.parsing.input.CharSequenceReader
+import scala.xml.Elem
 import scala.xml.NodeSeq
 import scala.xml.XML
+
 import cspom.CSPOM
 import cspom.CSPOMConstraint
+import cspom.CSPOMGoal
 import cspom.CSPParseException
 import cspom.extension.Relation
-import cspom.util.ContiguousIntRangeSet
+import cspom.util.Infinitable
 import cspom.util.IntInterval
 import cspom.util.RangeSet
-import cspom.variable.CSPOMConstant
-import cspom.variable.IntVariable
-import cspom.variable.SimpleExpression
-import cspom.util.Infinitable
 import cspom.variable.IntExpression
-import scala.util.Try
-import scala.xml.Elem
+import cspom.variable.SimpleExpression
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -63,23 +63,25 @@ final object XCSPParser extends CSPOM.Parser {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] =
-    for (
-      document <- Try(XML.load(is));
-      result <- XCSPParser(document)
-    ) yield result
+  def apply(is: InputStream): Try[CSPOM] = {
+    Try(XML.load(is))
+      .flatMap(XCSPParser(_))
+  }
 
-  def apply(document: Elem): Try[(CSPOM, Map[Symbol, Any])] = Try {
+  def apply(document: Elem): Try[CSPOM] = Try {
     val declaredVariables = parseVariables(document);
 
-    val problem = CSPOM { implicit cspom: CSPOM =>
+    CSPOM { implicit cspom: CSPOM =>
       for ((name, variable) <- declaredVariables) {
         variable as name
       }
 
       parseConstraints(document, declaredVariables.toMap, cspom)
+
+      CSPOM.goal {
+        CSPOMGoal.Satisfy(Map("variables" -> declaredVariables.map(_._1)))
+      }
     }
-    (problem, Map('variables -> declaredVariables.map(_._1)))
 
   }
 
@@ -102,6 +104,8 @@ final object XCSPParser extends CSPOM.Parser {
     }
 
   }
+
+  case class Extension(val init: Boolean, val relation: Relation[Int])
 
   /**
    * Parse constraints, defined either by relations or predicates.
@@ -203,4 +207,3 @@ final object XCSPParser extends CSPOM.Parser {
   }
 }
 
-final case class Extension(val init: Boolean, val relation: Relation[Int])

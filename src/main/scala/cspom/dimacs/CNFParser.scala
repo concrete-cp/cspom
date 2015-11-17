@@ -14,13 +14,14 @@ import CSPOM._
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
 import scala.util.Try
+import cspom.CSPOMGoal
 
 final object CNFParser extends CSPOM.Parser {
 
   private val PARAMETER = new Regex("""^p cnf (\d+) (\d+)$""");
   private val VAR = new Regex("""(-?\d+)""");
 
-  def apply(is: InputStream): Try[(CSPOM, Map[Symbol, Any])] = Try {
+  def apply(is: InputStream): Try[CSPOM] = Try {
     val reader = new BufferedReader(new InputStreamReader(is));
 
     val lines = Source.fromInputStream(is).getLines.filter(
@@ -31,7 +32,6 @@ final object CNFParser extends CSPOM.Parser {
       case e: Exception => throw new CSPParseException("Parameter line not found", e, -1)
     }
 
-    var names: Seq[String] = null
     var countClauses = 0
     val problem = CSPOM { implicit problem =>
 
@@ -51,12 +51,12 @@ final object CNFParser extends CSPOM.Parser {
         }
       }
 
-      names = ns
+      CSPOM.goal(CSPOMGoal.Satisfy())
     }
 
     require(countClauses == nbClauses.toInt)
 
-    (problem, Map('variables -> names))
+    problem
   }
 
   private def clause(currentClause: List[Int], variables: IndexedSeq[CSPOMExpression[Boolean]]) = {

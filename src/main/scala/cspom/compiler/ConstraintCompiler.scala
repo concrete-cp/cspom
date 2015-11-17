@@ -93,8 +93,7 @@ object ConstraintCompiler extends LazyLogging {
 
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-
-    c.foreach(in.ctr(_))
+    c.foreach(in.addConstraint(_))
     logger.debug(s"Adding $c")
     Delta.empty.added(c)
   }

@@ -14,6 +14,10 @@ class FreeVariable extends CSPOMVariable[Any] {
   def isEmpty = false
 }
 
+object FreeVariable {
+  def apply(): CSPOMVariable[Any] = new FreeVariable()
+}
+
 object EmptyVariable extends CSPOMVariable[Nothing] {
   override def toString = s"empty var"
   def intersected(other: SimpleExpression[_]) = this

@@ -23,3 +23,7 @@ final class BoolVariable() extends CSPOMVariable[Boolean]() {
   def searchSpace = 2
   def isEmpty = false
 }
+
+object BoolVariable {
+  def apply(): CSPOMVariable[Boolean] = new BoolVariable()
+}

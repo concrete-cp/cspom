@@ -35,11 +35,11 @@ final class CompileTest extends FlatSpec with Matchers with TryValues {
 
   def compileTest(fn: String) {
     CSPOM.load(classOf[CompileTest].getResource(fn)).map {
-      case (cspom, _) => CSPOMCompiler.compile(cspom, StandardCompilers())
+      case cspom => CSPOMCompiler.compile(cspom, StandardCompilers())
     } should be a 'success
 
     CSPOM.load(classOf[CompileTest].getResource(fn)).map {
-      case (cspom, _) => CSPOMCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
+      case cspom => CSPOMCompiler.compile(cspom, StandardCompilers() ++ StandardCompilers.improve())
     } should be a 'success
   }
 

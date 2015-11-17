@@ -39,7 +39,8 @@ final case class CSPOMConstraint[+T](
 
   def fullScope: Seq[CSPOMExpression[_]] = result +: arguments
 
-  def flattenedScope: Seq[CSPOMExpression[_]] = fullScope.flatMap(_.flatten)
+  lazy val flattenedScope: Set[CSPOMExpression[_]] = 
+    fullScope.iterator.flatMap(_.flatten).toSet
 
   val id: Int = CSPOMConstraint.id
   CSPOMConstraint.id += 1

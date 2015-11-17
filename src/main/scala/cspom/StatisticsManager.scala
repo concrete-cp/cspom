@@ -58,7 +58,7 @@ class StatisticsManager extends LazyLogging {
         f.setAccessible(true)
         val map = f.get(o) match {
           case sm: StatisticsManager => sm.digest
-          case v: AnyRef             => Map(f.getName -> v)
+          case v                     => Map(f.getName -> v)
         }
         map.map { case (k, v) => s"$s.$k" -> v }
       }

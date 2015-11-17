@@ -14,13 +14,13 @@ final class ParserTest extends FlatSpec with Matchers {
   "XCSPParser" should s"parse $FILENAME" in {
 
     XCSPParser(classOf[ParserTest].getResourceAsStream(FILENAME)) match {
-      case Success((cspom, _)) =>
+      case Success(cspom) =>
         cspom.expressionsWithNames should have size 25
         assert(!cspom.expressionsWithNames.exists(e => cspom.getAnnotations(e._1).hasParam("var_is_introduced")))
 
         cspom.constraints.size should be >= 55
 
-      case Failure(e) => fail(e)//throw new TestFailedException(e)
+      case Failure(e) => fail(e) //throw new TestFailedException(e)
     }
     //println(cspom);
 
