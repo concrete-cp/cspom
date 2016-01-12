@@ -3,31 +3,35 @@ import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 import scala.collection.mutable.AbstractMap
 import scala.collection.mutable.ResizableArray
+import java.util.Arrays
 
-class VecMap[T >: Null: ClassTag](buckets: Int = 16)
+class VecMap[T](buckets: Int = 16)
     extends AbstractMap[Int, T] with collection.mutable.Map[Int, T] with collection.mutable.MapLike[Int, T, VecMap[T]] {
-  var map: Array[T] = new Array(buckets)
+  var map: Array[Option[T]] = Array.fill(buckets)(None)
 
   def get(key: Int): Option[T] =
-    if (key < map.length && map(key) != null) Some(map(key))
-    else None
+    if (key < map.length) {
+      map(key)
+    } else None
 
   def iterator: Iterator[(Int, T)] =
-    map.iterator.zipWithIndex.filter {
-      null != _._1
+    map.iterator.zipWithIndex.collect {
+      case (Some(v), i) => i -> v
     }
-      .map(_.swap)
 
   def -=(key: Int): this.type = {
-    map(key) = null
+    map(key) = None
     this
   }
 
   def +=(kv: (Int, T)): this.type = {
-    val (key, value) = kv
-    ensureCapacity(key)
-    map(key) = value
+    update(kv._1, kv._2)
     this
+  }
+
+  override def update(key: Int, value: T): Unit = {
+    ensureCapacity(key)
+    map(key) = Some(value)
   }
 
   private def ensureCapacity(n: Int): Unit = {
@@ -40,9 +44,7 @@ class VecMap[T >: Null: ClassTag](buckets: Int = 16)
       // Clamp newSize to Int.MaxValue
       if (newSize > Int.MaxValue) newSize = Int.MaxValue
 
-      val newArray: Array[T] = new Array(newSize.toInt)
-      scala.compat.Platform.arraycopy(map, 0, newArray, 0, map.length)
-      map = newArray
+      map = map.padTo(newSize.toInt, None)
     }
 
   }
