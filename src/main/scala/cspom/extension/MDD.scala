@@ -90,12 +90,59 @@ sealed trait MDD[A] extends Relation[A] {
   final def lambda: BigInt = lambda(new IdMap[MDD[A], BigInt]())
   def lambda(ls: IdMap[MDD[A], BigInt]): BigInt
 
-  /*
-   * Do not use IdMap here as reduceable MDDs are equal but not ident
-   */
-  final def reduce: MDD[A] = reduce(new HashMap[(Int, MDD[A]), MDD[A]](), 0)
+  def reduce(): MDD[A] = {
 
-  def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A]
+    val cache = new HashMap[Map[A, Int], MDD[A]]()
+    val id = new IdMap[MDD[A], Int]()
+
+    id(MDD.leaf) = 0
+    var i = 1
+
+    def step1(node: MDD[A]): Unit = {
+      if (node eq MDDLeaf) {
+        ()
+      } else {
+        val n = node.asInstanceOf[MDDNode[A]]
+        for ((_, c) <- n.trie) step1(c)
+
+        val idc = n.trie
+          .map { case (i, c) => i -> id(c) }
+          .toMap
+
+        cache.get(idc) match {
+          case Some(m) => id(n) = id(m)
+          case None    => id(n) = i; i += 1
+        }
+
+        cache.update(idc, n)
+      }
+    }
+
+    step1(this)
+
+    val common = new Array[MDD[A]](i + 1)
+    common(0) = MDD.leaf
+
+    def step2(node: MDD[A]): MDD[A] = {
+
+      val idn = id(node)
+      if (common(idn) == null) {
+        val n = node.asInstanceOf[MDDNode[A]]
+        common(idn) = new MDDNode(n.trie.map { case (k, v) => k -> step2(v) }) //new MDDLinkNode(nt.index, step2(nt.child), step2(nt.sibling))
+      }
+      common(idn)
+
+    }
+
+    step2(this)
+
+  }
+  //  /*
+  //   * Do not use IdMap here as reduceable MDDs are equal but not ident
+  //   */
+  //  final def reduce: MDD[A] = reduce(new HashMap[(Int, MDD[A]), MDD[A]](), 0)
+  //
+  //  def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A]
 
   override def toString = s"MDD with $edges edges representing $lambda tuples"
 
@@ -189,22 +236,22 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
       case _ => false
     })
 
-  def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A] = {
-    //println(this.toSet)
-    mdds.getOrElseUpdate((depth, this), {
-
-      val reduced = trie.map(e => e._1 -> e._2.reduce(mdds, depth + 1))
-
-      if (same(trie, reduced)) {
-        this
-      } else {
-        new MDDNode(reduced)
-      }
-
-    })
-    //println("cached: " + (reduced eq cached))
-
-  }
+//  def reduce(mdds: mutable.Map[(Int, MDD[A]), MDD[A]], depth: Int): MDD[A] = {
+//    //println(this.toSet)
+//    mdds.getOrElseUpdate((depth, this), {
+//
+//      val reduced = trie.map(e => e._1 -> e._2.reduce(mdds, depth + 1))
+//
+//      if (same(trie, reduced)) {
+//        this
+//      } else {
+//        new MDDNode(reduced)
+//      }
+//
+//    })
+//    //println("cached: " + (reduced eq cached))
+//
+//  }
 
   def filter(f: (Int, A) => Boolean, k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A] = mdds.getOrElseUpdate(this, {
     val newTrie: Map[A, MDD[A]] = trie
