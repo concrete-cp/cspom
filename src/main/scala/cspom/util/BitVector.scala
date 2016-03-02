@@ -1,8 +1,8 @@
 package cspom.util
 
-import BitVector._
 import java.util.Arrays
-import com.sun.xml.internal.ws.addressing.WsaActionUtil
+
+import BitVector._
 
 final object BitVector {
   private val ADDRESS_BITS_PER_WORD = 6
@@ -17,6 +17,17 @@ final object BitVector {
 
   def apply(v: Traversable[Int]): BitVector = {
     empty ++ v
+  }
+
+  def fromIntervals(v: Traversable[(Int, Int)]): BitVector = {
+    v.foldLeft(empty) {
+      case (bv, (l, u)) =>
+        bv.set(l, u + 1)
+    }
+  }
+
+  def apply(words: Array[Long]): BitVector = {
+    if (words.length == 1) new SmallBitVector(words(0)) else LargeBitVector(words)
   }
 }
 
@@ -40,7 +51,7 @@ trait BitVector extends Any {
     }
   }
 
-  override def toString(): String = iterator.mkString("{", ", ", "}")
+  override def toString(): String = this.getClass().toString() + iterator.mkString("{", ", ", "}")
 
   def set(from: Int, until: Int): BitVector = {
     if (from >= until) {
@@ -51,7 +62,7 @@ trait BitVector extends Any {
       val lastWordIndex = word(until - 1)
       val maskTo = MASK >>> -until
 
-      val newWords = getWords.padTo(lastWordIndex + 1, 0L)
+      val newWords = Arrays.copyOf(getWords, math.max(nbWords, lastWordIndex + 1)) //getWords.padTo(lastWordIndex + 1, 0L)
       val sw = newWords(startWordIndex)
 
       var changed = false
@@ -203,13 +214,13 @@ trait BitVector extends Any {
         }
         words(i) <<= n; // shift [words.length-1] separately, since no carry
       }
-      LargeBitVector.noShrink(words)
+      BitVector(words)
 
     } else {
 
       val nn = -n
 
-      require(nn <= nextSetBit(0))
+      assert(nn <= nextSetBit(0))
 
       val wordShift = nn / WORD_SIZE
 
@@ -227,7 +238,7 @@ trait BitVector extends Any {
         words(i) >>>= nn;
       }
 
-      LargeBitVector(words)
+      BitVector(words)
 
     }
 

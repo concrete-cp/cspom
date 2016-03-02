@@ -14,23 +14,27 @@ object LargeBitVector {
       trimTo match {
         case -1 => EmptyBitVector
         case 0  => new SmallBitVector(words.head)
-        case _  => new LargeBitVector(Arrays.copyOf(words, trimTo + 1))
+        case _ =>
+          assert(words.length > 1)
+          new LargeBitVector(Arrays.copyOf(words, trimTo + 1))
       }
 
     } else {
+      assert(words.length > 1)
       new LargeBitVector(words)
     }
 
   }
 
   def noShrink(words: Array[Long]) = {
-    assert(words.last != 0L)
+    assert(words.length > 1 && words.last != 0L, s"${Arrays.toString(words)} should be shrinked")
     new LargeBitVector(words)
   }
 }
 
 class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVector {
-
+//  assert(words.length > 1)
+//  assert(words(words.length - 1) != 0)
   def -(position: Int): BitVector = {
     val wordPos: Int = word(position)
     val oldWord = getWord(wordPos)
@@ -151,6 +155,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def clearFrom(from: Int): BitVector = {
+    require(words.size > 1)
     if (from <= 0) {
       BitVector.empty
     } else {
@@ -165,7 +170,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
         val lastWord = words(startWordIndex) & ~(MASK << from)
 
         if (lastWord == 0L) {
-          LargeBitVector(Arrays.copyOf(words, startWordIndex))
+          BitVector(Arrays.copyOf(words, startWordIndex))
         } else {
 
           val newWords = Arrays.copyOf(words, startWordIndex + 1)
@@ -183,6 +188,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def clearUntil(until: Int): BitVector = {
+    require(words.size > 1)
     if (until < 0) {
       this
     } else {

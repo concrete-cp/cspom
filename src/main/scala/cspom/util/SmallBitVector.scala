@@ -127,7 +127,7 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
   }
 
   def setWordShrink(pos: Int, word: Long): BitVector = {
-    require(pos == 0)
+    assert(pos == 0)
     setWord0(word)
   }
 
@@ -170,4 +170,9 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
       new SmallBitVector(newWord)
     }
   }
+
+//  override def equals(o: Any) = o match {
+//    case bv: SmallBitVector => bv.word == word
+//    case _                  => false
+//  }
 }

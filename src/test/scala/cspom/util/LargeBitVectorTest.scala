@@ -275,7 +275,6 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
   it should "shift" in {
     val ps = BitVector(Set(82, 24, 51, 89, 52))
     val c = 64
-    
 
     ps.shift(c).iterator.toSeq should contain theSameElementsAs
       ps.iterator.toSeq.map(_ + c)
@@ -294,5 +293,11 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
         sh.iterator.toSeq should contain theSameElementsAs ps.map(_ + c)
       }
     }
+  }
+
+  it should "also shift" in {
+    val bv = BitVector(Seq(146, 160, 174))
+    bv.shift(-146).iterator.toStream should contain theSameElementsAs Seq(0, 14, 28)
+
   }
 }
