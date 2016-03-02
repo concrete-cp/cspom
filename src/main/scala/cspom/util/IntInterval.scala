@@ -25,10 +25,16 @@ object IntInterval {
 
 }
 
+object FiniteIntInterval {
+  def unapply(itv: IntInterval) = Interval.unapply(itv).collect {
+    case (Finite(l), Finite(u)) => (l, u)
+  }
+}
+
 final class IntInterval(
   val lb: Infinitable, val ub: Infinitable)
-  extends Interval[Infinitable] with Iterable[Int]
-  with LazyLogging {
+    extends Interval[Infinitable] with Iterable[Int]
+    with LazyLogging {
 
   //require(lb != PlusInf)
   //require(ub != MinInf)
@@ -110,12 +116,12 @@ final class IntInterval(
 
   def finiteLb = lb match {
     case Finite(l) => l
-    case _ => throw new AssertionError("lb is not finite")
+    case _         => throw new AssertionError("lb is not finite")
   }
 
   def finiteUb = ub match {
     case Finite(u) => u
-    case _ => throw new AssertionError("ub is not finite")
+    case _         => throw new AssertionError("ub is not finite")
   }
 
   override def isEmpty = {
@@ -128,26 +134,26 @@ final class IntInterval(
 
   def isBefore(h: Interval[Infinitable]): Boolean = {
     h.lb match {
-      case MinInf => false
+      case MinInf    => false
       case Finite(i) => isBefore(i)
-      case PlusInf => throw new IllegalArgumentException
+      case PlusInf   => throw new IllegalArgumentException
     }
   }
 
   def isBefore(elem: Int): Boolean = {
     elem > Int.MinValue && (
       ub match {
-        case PlusInf => false
+        case PlusInf   => false
         case Finite(i) => i < elem - 1
-        case MinInf => throw new IllegalArgumentException
+        case MinInf    => throw new IllegalArgumentException
       })
   }
 
   def isAfter(h: Interval[Infinitable]): Boolean = {
     h.ub match {
-      case PlusInf => false
+      case PlusInf   => false
       case Finite(i) => isAfter(i)
-      case MinInf => throw new IllegalArgumentException
+      case MinInf    => throw new IllegalArgumentException
     }
   }
 
@@ -164,7 +170,7 @@ final class IntInterval(
   override def equals(o: Any) = {
     o match {
       case Interval(l, u) => lb == l && ub == u
-      case _ => super.equals(o)
+      case _              => super.equals(o)
     }
   }
 
@@ -174,14 +180,14 @@ final class IntInterval(
 
   override def toString = {
     val l = lb match {
-      case MinInf => "(-\u221e"
+      case MinInf    => "(-\u221e"
       case Finite(i) => s"[$i"
-      case PlusInf => "(+\u221e"
+      case PlusInf   => "(+\u221e"
     }
     val u = ub match {
       case Finite(i) => s"$i]"
-      case PlusInf => "+\u221e)"
-      case MinInf => "-\u221e)"
+      case PlusInf   => "+\u221e)"
+      case MinInf    => "-\u221e)"
     }
 
     s"$l‥$u"
