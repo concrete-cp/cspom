@@ -74,4 +74,5 @@ final class MDDTest extends FlatSpec with Matchers with Timeouts {
 
     r2.edges shouldBe (80)
   }
+
 }
