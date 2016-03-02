@@ -9,6 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.util.Try
 import scala.util.Failure
 import org.scalameter._
+import scala.reflect.runtime.universe._
 
 class StatisticsManager extends LazyLogging {
 
@@ -21,7 +22,7 @@ class StatisticsManager extends LazyLogging {
     }
 
     if (fields(o.getClass()).isEmpty) {
-      logger.warn(s"$o does not contain any statistic field")
+      logger.info(s"$o does not contain any statistic field")
     }
 
     objects += name -> o
@@ -29,20 +30,29 @@ class StatisticsManager extends LazyLogging {
 
   private def annoted(f: Field) = f.getAnnotation(classOf[cspom.Statistic]) != null
 
-  def apply(name: String): AnyRef = get(name).get
+  def tagged[T: TypeTag](name: String): T = get(name).map {
+    case t => t.asInstanceOf[T]
+  }
+    .getOrElse {
+      throw new NoSuchElementException(name + " not in " + objects.keys.toString)
+    }
+
+  def apply(name: String): AnyRef = tagged(name)
 
   def get(name: String): Option[AnyRef] = {
 
     val fieldNameAt = name.lastIndexOf('.')
-    val obj = objects.get(name.substring(0, fieldNameAt)).get
-    val fieldName = name.substring(fieldNameAt + 1, name.length)
-    fields(obj.getClass)
-      .find(f => f.getName == fieldName)
-      .map { f =>
-        f.setAccessible(true)
-        f.get(obj)
+    objects
+      .get(name.substring(0, fieldNameAt))
+      .flatMap { obj =>
+        val fieldName = name.substring(fieldNameAt + 1, name.length)
+        fields(obj.getClass)
+          .find(f => f.getName == fieldName)
+          .map { f =>
+            f.setAccessible(true)
+            f.get(obj)
+          }
       }
-
   }
 
   private def fields(c: Class[_], f: List[Field] = Nil): List[Field] =
@@ -158,6 +168,7 @@ object StatisticsManager {
     var r: Try[A] = Failure(new IllegalStateException("No execution"))
     val t = measureBuilder.measure {
       r = f
+      r.isSuccess
     }
     (r, t)
 
