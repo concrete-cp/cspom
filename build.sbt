@@ -4,7 +4,7 @@ organization := "fr.univ-valenciennes"
 
 version := "2.7-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
@@ -18,15 +18,15 @@ libraryDependencies ++= Seq(
 	"com.storm-enroute" %% "scalameter" % "0.7" % "test"
 	)
 
-scalacOptions ++= Seq("-optimise"
-	      , "-Xdisable-assertions"
-//	      , "-target:jvm-1.7"
-//	"-deprecation", 
-//	"-unchecked", 
-//	"-optimise", 
-//	"-Xlint", 
+scalacOptions ++= Seq(
+  "-optimise"
+  , "-Xdisable-assertions"
+  , "-deprecation" 
+//	"-unchecked" 
+  , "-optimise" 
+  , "-Xlint" 
 //	
-//	"-feature",
+//	"-feature"
 //	"-Yinline-warnings"
 )
 
@@ -50,9 +50,13 @@ testOptions in Test <+= (target in Test) map {
 }
 
 
-testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+val scalaMeterFramework = new TestFramework("org.scalameter.ScalaMeterFramework")
+ 
+testFrameworks += scalaMeterFramework 
 
 parallelExecution in Test := false
+
+testOptions += Tests.Argument(scalaMeterFramework, "-silent")
 
 licenses := Seq("LGPL 3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.txt"))
 

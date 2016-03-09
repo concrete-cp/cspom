@@ -83,7 +83,7 @@ class SmallBitVectorTest extends FlatSpec with Matchers with PropertyChecks {
   }
 
   it should "convert to String" in {
-    (BitVector.empty + 46 + 49).toString shouldBe "{46, 49}"
+    (BitVector.empty + 46 + 49).toString shouldBe "SmallBitVector{46, 49}"
   }
 
   it should "clear bits from" in {

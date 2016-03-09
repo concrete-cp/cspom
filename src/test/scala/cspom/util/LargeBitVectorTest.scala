@@ -122,7 +122,7 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
 
   it should "be converted to String" in {
     val bitVector = BitVector.empty + 46 + 49 + 100
-    bitVector.toString shouldBe "{46, 49, 100}"
+    bitVector.toString shouldBe "LargeBitVector{46, 49, 100}"
   }
 
   it should "compute correct word positions" in {
@@ -285,11 +285,12 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
     val gen: Gen[Set[Int]] = Gen.buildableOf[Set[Int], Int](Gen.choose(0, 100000))
     forAll(gen, Gen.choose(-1000, 1000)) { (ps, c) =>
       if (ps.nonEmpty && ps.min + c < 0) {
+        
         an[IllegalArgumentException] should be thrownBy BitVector(ps).shift(c)
       } else {
         val bv = BitVector(ps)
         val sh = bv.shift(c)
-        println(s"$bv.shift($c) = $sh")
+        //println(s"$bv.shift($c) = $sh")
         sh.iterator.toSeq should contain theSameElementsAs ps.map(_ + c)
       }
     }

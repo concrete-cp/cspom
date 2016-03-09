@@ -51,7 +51,8 @@ trait BitVector extends Any {
     }
   }
 
-  override def toString(): String = this.getClass().toString() + iterator.mkString("{", ", ", "}")
+  override def toString(): String =
+    this.getClass().getSimpleName() + iterator.mkString("{", ", ", "}")
 
   def set(from: Int, until: Int): BitVector = {
     if (from >= until) {
@@ -220,7 +221,7 @@ trait BitVector extends Any {
 
       val nn = -n
 
-      assert(nn <= nextSetBit(0))
+      require(nn <= nextSetBit(0))
 
       val wordShift = nn / WORD_SIZE
 
