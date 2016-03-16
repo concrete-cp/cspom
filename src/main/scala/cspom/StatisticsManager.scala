@@ -182,5 +182,3 @@ object StatisticsManager {
     measureTry(Try(f), measureBuilder)
 
 }
-
-class TimedException(val time: Double, cause: Throwable) extends Exception(cause)
