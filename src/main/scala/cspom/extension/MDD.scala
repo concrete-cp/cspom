@@ -99,8 +99,8 @@ sealed trait MDD[A] extends Relation[A] {
     var i = 0
 
     def step1(node: MDD[A]): Int = node match {
-      case n if n eq MDDLeaf => 0
-      case n: MDDNode[A] =>
+ //     case n if n eq MDDLeaf => 0
+      case n: MDDNode[A] if !id.contains(n) =>
         for ((_, c) <- n.trie) step1(c)
 
         val idc = n.trie
@@ -117,6 +117,7 @@ sealed trait MDD[A] extends Relation[A] {
         id(n) = idn
 
         idn
+      case _ => 0
 
     }
 
