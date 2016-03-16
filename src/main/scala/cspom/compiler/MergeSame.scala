@@ -27,7 +27,7 @@ object MergeSame extends ConstraintCompiler {
     }
   }
 
-  private def isSame[A <: AnyRef](a: Seq[A], b: Seq[A]): Boolean = {
+  private def isSame[B <: AnyRef](a: Seq[B], b: Seq[B]): Boolean = {
     val ai = a.iterator
     val bi = b.iterator
 

@@ -8,7 +8,6 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
 import cspom.StatisticsManager
-import cspom.TimedException
 import cspom.VariableNames
 import cspom.util.BitVector
 import cspom.variable.CSPOMExpression
