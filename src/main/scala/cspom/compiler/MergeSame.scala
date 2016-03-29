@@ -42,7 +42,7 @@ object MergeSame extends ConstraintCompiler {
   def compile(c: CSPOMConstraint[_], problem: CSPOM, same: A) = {
 
     val eqC = CSPOMConstraint('eq)(c.result +: same.map(_.result): _*)
-    replaceCtr(same, eqC, problem)
+    replaceCtr(same.distinct, eqC, problem)
 
   }
 

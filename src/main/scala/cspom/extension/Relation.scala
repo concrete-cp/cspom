@@ -7,7 +7,9 @@ trait Relation[A] extends Set[Seq[A]] {
   def contains(t: Seq[A]): Boolean
 
   def filter(f: (Int, A) => Boolean): Relation[A]
-  
+
   def project(c: Seq[Int]): Relation[A]
+
+  def arity: Int
 
 }

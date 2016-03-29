@@ -254,14 +254,13 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
 
   }
 
-  def constraint(declared: Map[String, CSPOMExpression[Any]]): Parser[CSPOMConstraint[Boolean]] =
-    {
-      "constraint" ~> pred_ann_id ~ ("(" ~> repsep(expr, ",") <~ ")") ~ annotations <~ ";" ^^ {
-        case predAnnId ~ expr ~ annotations =>
-          CSPOMConstraint(Symbol(predAnnId))(expr.map(_.toCSPOM(declared)): _*) withParam
-            (fzAnnotations(annotations): _*)
-      }
+  def constraint(declared: Map[String, CSPOMExpression[Any]]): Parser[CSPOMConstraint[Boolean]] = {
+    "constraint" ~> pred_ann_id ~ ("(" ~> repsep(expr, ",") <~ ")") ~ annotations <~ ";" ^^ {
+      case predAnnId ~ expr ~ annotations =>
+        CSPOMConstraint(Symbol(predAnnId))(expr.map(_.toCSPOM(declared)): _*) withParam
+          (fzAnnotations(annotations): _*)
     }
+  }
 
   def solve_goal: Parser[FZSolve] =
     "solve" ~> annotations <~ "satisfy" ~ ";" ^^ { ann => FZSolve(Satisfy, ann) } |

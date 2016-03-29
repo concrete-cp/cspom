@@ -155,7 +155,6 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def clearFrom(from: Int): BitVector = {
-    require(words.size > 1)
     if (from <= 0) {
       BitVector.empty
     } else {
@@ -188,7 +187,6 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def clearUntil(until: Int): BitVector = {
-    require(words.size > 1)
     if (until < 0) {
       this
     } else {

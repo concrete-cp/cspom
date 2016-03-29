@@ -82,7 +82,13 @@ sealed trait MDD[A] extends Relation[A] {
 
   def -(t: Seq[A]) = ???
 
-  def iterator: Iterator[List[A]]
+  final def iterator: Iterator[List[A]] = {
+    val l = lambda
+    require(l < Int.MaxValue, s"relation is too large (${l.toDouble}) to iterate")
+    mddIterator
+  }
+  
+  def mddIterator:Iterator[List[A]]
 
   final def edges: Int = edges(new IdSet[MDD[A]]())
   def edges(es: IdSet[MDD[A]]): Int
@@ -99,7 +105,7 @@ sealed trait MDD[A] extends Relation[A] {
     var i = 0
 
     def step1(node: MDD[A]): Int = node match {
- //     case n if n eq MDDLeaf => 0
+      //     case n if n eq MDDLeaf => 0
       case n: MDDNode[A] if !id.contains(n) =>
         for ((_, c) <- n.trie) step1(c)
 
@@ -183,12 +189,13 @@ sealed trait MDD[A] extends Relation[A] {
 }
 
 case object MDDLeaf extends MDD[Any] {
+  def arity = 0
   override def isEmpty = false
   def +(t: Seq[Any]) = {
     require(t.isEmpty)
     this
   }
-  def iterator = Iterator(Nil)
+  def mddIterator = Iterator(Nil)
   def contains(t: Seq[Any]) = {
     require(t.isEmpty)
     true
@@ -208,6 +215,8 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
   override def isEmpty = trie.isEmpty
   assert(trie.forall(e => e._2.nonEmpty))
 
+  def arity = 1 + trie.head._2.arity
+  
   def +(t: Seq[A]) = {
     if (t.isEmpty) { MDD.leaf }
     else {
@@ -217,7 +226,9 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
     }
 
   }
-  def iterator = trie.iterator.flatMap { case (k, t) => t.iterator.map(k :: _) }
+  def mddIterator = {
+    trie.iterator.flatMap { case (k, t) => t.iterator.map(k :: _) }
+  }
   def contains(t: Seq[A]) = {
     trie.get(t.head).exists(_.contains(t.tail))
   }
