@@ -173,6 +173,8 @@ trait ConstraintCompiler extends LazyLogging {
         c
     }
   }
+  
+  override def toString = getClass.getSimpleName
 }
 
 trait ConstraintCompilerNoData extends ConstraintCompiler {
