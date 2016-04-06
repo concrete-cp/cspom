@@ -26,7 +26,7 @@ class Table[A](val table: Set[Seq[A]]) extends Relation[A] {
     
   }
 
-  override def toString = "Table(\n  " + table.map(_.mkString(", ")).mkString("\n  ") + ")"
+  override def toString = s"Table with $arity columns and $size rows"
 
   def project(c: Seq[Int]) = new Table(table.map(t => c.map(t)))
 
