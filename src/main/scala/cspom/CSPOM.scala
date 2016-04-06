@@ -65,7 +65,7 @@ object NameParser extends JavaTokenParsers {
  */
 class CSPOM extends LazyLogging {
 
-  implicit private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
+  private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
 
   /**
    * Map used to easily retrieve a variable according to its name.
@@ -76,7 +76,9 @@ class CSPOM extends LazyLogging {
 
   private[cspom] val containers = collection.mutable.HashMap[CSPOMExpression[_], LinkedHashSet[(CSPOMSeq[_], Int)]]()
 
-  private val ctrV = collection.mutable.LinkedHashMap[CSPOMExpression[_], SortedSet[CSPOMConstraint[_]]]().withDefaultValue(SortedSet.empty)
+  private val ctrV =
+    collection.mutable.LinkedHashMap[CSPOMExpression[_], SortedSet[CSPOMConstraint[_]]]()
+      .withDefaultValue(SortedSet.empty(ConstraintOrdering))
 
   private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
 
