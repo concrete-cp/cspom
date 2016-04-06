@@ -81,7 +81,7 @@ final case class CSPOMConstraint[+T](
   }
 
   private def toString(result: Option[String], arguments: Seq[String]): String = {
-    val content = s"$function(${arguments.mkString(", ")})$displayParams"
+    val content = s"$id. $function(${arguments.mkString(", ")})$displayParams"
     result match {
       case None    => s"constraint $content"
       case Some(r) => s"constraint $r == $content"
