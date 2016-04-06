@@ -9,13 +9,14 @@ import cspom.variable.CSPOMConstant
 abstract class VariableCompiler(
     val function: Symbol) extends ConstraintCompiler {
 
-  def compiler(c: CSPOMConstraint[_]): Map[CSPOMExpression[_], CSPOMExpression[_]]
+  def compiler(c: CSPOMConstraint[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])]
 
-  def compilerWEntail(c: CSPOMConstraint[_]): (Map[CSPOMExpression[_], CSPOMExpression[_]], Boolean) = {
+  def compilerWEntail(c: CSPOMConstraint[_]): (Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean) = {
     (compiler(c), false)
   }
 
-  type A = (Map[CSPOMExpression[_], CSPOMExpression[_]], Boolean)
+  // Do not use Maps to avoid hash undeterminism
+  type A = (Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean)
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {
     if (c.function == function) {
