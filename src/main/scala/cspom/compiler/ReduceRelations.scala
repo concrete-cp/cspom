@@ -37,13 +37,13 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
   def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
 
     val Some(relation: Relation[Int] @unchecked) = c.params.get("relation")
-
-    val args: IndexedSeq[RangeSet[Infinitable]] = c.arguments.map {
+    val cargs = c.arguments.toIndexedSeq
+    val args: IndexedSeq[RangeSet[Infinitable]] = cargs.map {
       case IntExpression(e)  => IntExpression.implicits.ranges(e)
       case BoolExpression(e) => RangeSet(BoolExpression.span(e))
       case _: FreeVariable   => RangeSet.allInt
       case _                 => throw new IllegalArgumentException()
-    }.toIndexedSeq
+    }
 
     logger.info(s"will reduce $relation for $args")
 
@@ -79,7 +79,7 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
       logger.info(s"$relation -> $cached")
       replaceCtr(c,
-        CSPOMConstraint('extension)(c.arguments: _*) withParams (c.withParam("relation" -> cached).params),
+        CSPOMConstraint('extension)(vars.map(cargs): _*) withParams (c.withParam("relation" -> cached).params),
         problem)
 
     } else {
