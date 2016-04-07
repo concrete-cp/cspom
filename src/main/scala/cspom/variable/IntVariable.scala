@@ -28,7 +28,7 @@ final class IntVariable(val domain: RangeSet[Infinitable])
   override def toString = domain.toString
 
   def contains[S >: Int](that: S): Boolean = that match {
-    case t: Int => domain.contains(Finite(t))
+    case t: Int => domain.intersects(IntInterval.singleton(t))
     case _      => false
   }
   

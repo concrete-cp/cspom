@@ -14,13 +14,20 @@ import cspom.variable.IntVariable
 import cspom.extension.IdEq
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
+import cspom.variable.IntExpression
+import cspom.variable.BoolExpression
+import cspom.util.RangeSet
+import cspom.util.Infinitable
+import cspom.util.Finite
+import cspom.variable.FreeVariable
+import cspom.util.IntInterval
 
 /**
  * Detects and removes constants from extensional constraints
  */
 object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[SimpleExpression[_]]), (Seq[Int], Relation[Any])]
+  val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[RangeSet[Infinitable]]), (Seq[Int], Relation[Int])]
 
   override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
     //println(c)
@@ -29,11 +36,13 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
 
-    val Some(relation: Relation[Any] @unchecked) = c.params.get("relation")
+    val Some(relation: Relation[Int] @unchecked) = c.params.get("relation")
 
-    val args = c.arguments.map {
-      case s: SimpleExpression[_] => s
-      case _                      => throw new IllegalArgumentException()
+    val args: IndexedSeq[RangeSet[Infinitable]] = c.arguments.map {
+      case IntExpression(e)  => IntExpression.implicits.ranges(e)
+      case BoolExpression(e) => RangeSet(BoolExpression.span(e))
+      case _: FreeVariable   => RangeSet.allInt
+      case _                 => throw new IllegalArgumentException()
     }.toIndexedSeq
 
     logger.info(s"will reduce $relation for $args")
@@ -44,7 +53,7 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
         case (c: CSPOMVariable[_], i) => i
       }
 
-      val filtered = relation.filter((k, i) => args(k).contains(i))
+      val filtered = relation.filter((k, i) => args(k).intersects(IntInterval.singleton(i)))
 
       logger.info(s"filtered: ${filtered ne relation}")
 
@@ -70,7 +79,7 @@ object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
       logger.info(s"$relation -> $cached")
       replaceCtr(c,
-        CSPOMConstraint('extension)(vars.map(args): _*) withParams (c.withParam("relation" -> cached).params),
+        CSPOMConstraint('extension)(c.arguments: _*) withParams (c.withParam("relation" -> cached).params),
         problem)
 
     } else {

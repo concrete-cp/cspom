@@ -18,7 +18,7 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
   def +(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r ++ IntInterval.singleton(elem))
 
-  def contains(elem: Infinitable): Boolean = r.contains(elem)
+  def contains(elem: Infinitable): Boolean = r.intersects(IntInterval.singleton(elem))
 
   def contains(elem: Int) = contains(Finite(elem))
 

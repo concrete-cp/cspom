@@ -19,7 +19,11 @@ object IntInterval {
   def apply(lower: Infinitable, upper: Infinitable): IntInterval =
     new IntInterval(lower, upper)
 
-  def singleton(v: Int): IntInterval = IntInterval(v, v)
+  def singleton(v: Infinitable): IntInterval = IntInterval(v, v)
+
+  def singleton(v: Int): IntInterval = {
+    singleton(Finite(v))
+  }
 
   val ordering = new IntIntervalOrdering[Infinitable]
 
@@ -70,6 +74,10 @@ final class IntInterval(
     }
   }
 
+  def intersects(si: Interval[Infinitable]) = {
+    compare(lb, si.ub) <= 0 && compare(ub, si.lb) >= 0
+  }
+
   def lessThan(siub: Infinitable) = {
     if (siub <= Int.MinValue) {
       IntInterval(lb, MinInf)
@@ -101,15 +109,18 @@ final class IntInterval(
   def isConnected(si: Interval[Infinitable]) = !((this isAfter si) || (this isBefore si))
 
   def span(si: Interval[Infinitable]) = {
-    val lowerCmp = compare(lb, si.lb)
-    val upperCmp = compare(ub, si.ub)
+    val spanned = span(si.lb, si.ub)
+    if (spanned == si) si else spanned
+  }
+
+  def span(silb: Infinitable, siub: Infinitable) = {
+    val lowerCmp = compare(lb, silb)
+    val upperCmp = compare(ub, siub)
     if (lowerCmp <= 0 && upperCmp >= 0) {
       this
-    } else if (lowerCmp >= 0 && upperCmp <= 0) {
-      si
     } else {
-      val newLower = if (lowerCmp <= 0) lb else si.lb
-      val newUpper = if (upperCmp >= 0) ub else si.ub
+      val newLower = if (lowerCmp <= 0) lb else silb
+      val newUpper = if (upperCmp >= 0) ub else siub
       IntInterval(newLower, newUpper);
     }
   }

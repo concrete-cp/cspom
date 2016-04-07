@@ -189,4 +189,15 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     s.iterator.toStream shouldBe Stream(-1, 0)
 
   }
+
+  it should "detect containment" in {
+    forAll { s: Set[Int] =>
+      val r = RangeSet(s.map(e => IntInterval.singleton(e)))
+
+      forAll { i: Int =>
+        s.contains(i) shouldBe r.intersects(IntInterval.singleton(i))
+      }
+
+    }
+  }
 } 

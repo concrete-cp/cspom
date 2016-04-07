@@ -52,7 +52,7 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
       val collSpan = if (colliding.isEmpty) {
         i
       } else {
-        i span Interval(colliding.head.lb, colliding.last.ub)
+        i.span(colliding.head.lb, colliding.last.ub)
       }
 
       new RangeSet(
@@ -106,8 +106,14 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
 
   def isEmpty: Boolean = contents.isEmpty
 
-  def contains(elem: T): Boolean =
-    contents.exists(_.contains(elem))
+  def intersects(elem: Interval[T]): Boolean = {
+    val interval = contents.keysIteratorFrom(elem)
+    interval.hasNext && interval.next().intersects(elem)
+    //    } else {
+    //      
+    //    }
+    //    contents.exists(_.contains(elem))
+  }
 
   override def equals(o: Any): Boolean = {
     // println(this.ranges == o.asInstanceOf[RangeSet[_]].ranges)
@@ -118,5 +124,5 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
   }
 
   override def toString = ranges.mkString("{", ", ", "}")
-  
+
 }
