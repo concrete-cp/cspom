@@ -6,8 +6,9 @@ import org.scalameter.persistence.SerializationPersistor
 import org.scalameter.reporting.RegressionReporter
 import org.scalameter.reporting.HtmlReporter
 import org.scalameter.Reporter
+import org.scalameter.Bench
 
-object RangeMicrobenchmark extends PerformanceTest.OfflineReport {
+object RangeMicrobenchmark extends Bench.OfflineReport {
 
   val sizes: Gen[Int] = Gen.range("size")(0, 100, 20)
 

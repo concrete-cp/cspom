@@ -47,7 +47,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
     for (i <- 0 until 4) {
       val b = cspom.expression(s"b$i").value
       cspom.expression(s"array[$i]").value shouldBe theSameInstanceAs(b)
-      cspom.getContainers(b) should contain(array, i)
+      cspom.getContainers(b) should contain((array, i))
       array(i) shouldBe theSameInstanceAs(b)
       cspom.namesOf(b) should contain theSameElementsAs Seq(s"b$i", s"array[$i]")
     }

@@ -7,13 +7,14 @@ import org.scalatest.Matchers
 import cspom.variable.CSPOMConstant
 import cspom.compiler.StandardCompilers
 import cspom.compiler.CSPOMCompiler
+import cspom.CSPOM
 
 class FlatZincTest extends FlatSpec with Matchers {
 
-  val url = classOf[FlatZincTest].getResource("photo.fzn")
+  val url = classOf[FlatZincTest].getResource("1d_rubiks_cube.fzn.xz")
 
   "FlatZinc parser" should s"parse $url" in {
-    val cspom = FlatZincParser(url.openStream).get
+    val cspom = CSPOM.load(url, FlatZincParser).get
 
     // CSPOMCompiler.compile(cspom, FZPatterns()).get
 
@@ -30,7 +31,8 @@ class FlatZincTest extends FlatSpec with Matchers {
   }
 
   it should "correctly affect values" in {
-    val cspom = FlatZincParser(classOf[FlatZincTest].getResource("affectations.fzn").openStream).get
+    val cspom = CSPOM.load(
+      classOf[FlatZincTest].getResource("affectations.fzn"), FlatZincParser).get
     CSPOMCompiler.compile(cspom, StandardCompilers())
     withClue(cspom) {
       cspom.expression("X") shouldBe Some(CSPOMConstant(true))

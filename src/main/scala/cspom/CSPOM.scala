@@ -14,7 +14,6 @@ import scala.reflect.macros.blackbox.Context
 import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
-import org.apache.tools.bzip2.CBZip2InputStream
 import com.typesafe.scalalogging.LazyLogging
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
@@ -34,6 +33,8 @@ import scala.collection.JavaConverters._
 import scala.util.Failure
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
+import org.apache.commons.compress.compressors.CompressorStreamFactory
+import org.apache.commons.compress.compressors.CompressorException
 
 object NameParser extends JavaTokenParsers {
 
@@ -398,7 +399,7 @@ class CSPOM extends LazyLogging {
 
 }
 
-object CSPOM {
+object CSPOM extends LazyLogging {
 
   type Parser = InputStream => Try[CSPOM]
 
@@ -416,14 +417,13 @@ object CSPOM {
   def problemInputStream(url: URL): Try[InputStream] = Try {
     val path = url.getPath
     val is = url.openStream
-    if (path endsWith ".gz") {
-      new GZIPInputStream(is)
-    } else if (path endsWith ".bz2") {
-      is.read()
-      is.read()
-      new CBZip2InputStream(is)
-    } else {
-      is
+
+    try {
+      new CompressorStreamFactory().createCompressorInputStream(is)
+    } catch {
+      case e: CompressorException =>
+        logger.warn(e.getMessage)
+        is
     }
   }
 
@@ -459,7 +459,11 @@ object CSPOM {
    * @return The loaded CSPOM and the list of original variable names
    */
   def load(url: URL, format: Parser): Try[CSPOM] = {
-    problemInputStream(url).flatMap(format)
+    problemInputStream(url).flatMap { pis =>
+      val cspom = format(pis)
+      pis.close()
+      cspom
+    }
   }
 
   def load(url: URL): Try[CSPOM] =

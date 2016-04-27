@@ -6,16 +6,21 @@ version := "2.7-SNAPSHOT"
 
 scalaVersion := "2.11.8"
 
+resolvers += "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
+
+
 libraryDependencies ++= Seq(
-	"com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
+	"com.typesafe.scala-logging" %% "scala-logging" % "3.4.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.5",
-	"fr.univ-valenciennes" % "bzip2" % "1.0",
-	"ch.qos.logback" % "logback-classic" % "1.1.5",
+	"org.apache.commons" % "commons-compress" % "1.11",
+	"ch.qos.logback" % "logback-classic" % "1.1.7",
 	"com.storm-enroute" %% "scalameter-core" % "0.7",
 	"org.scalatest" %% "scalatest" % "2.2.6" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
-	"com.storm-enroute" %% "scalameter" % "0.7" % "test"
+	"com.storm-enroute" %% "scalameter" % "0.7" % "test",
+	"xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT",
+	"org.tukaani" % "xz" % "1.5"
 	)
 
 scalacOptions ++= Seq(
