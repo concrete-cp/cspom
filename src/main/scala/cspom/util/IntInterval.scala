@@ -25,8 +25,6 @@ object IntInterval {
     singleton(Finite(v))
   }
 
-  val ordering = new IntIntervalOrdering[Infinitable]
-
 }
 
 object FiniteIntInterval {
@@ -40,14 +38,11 @@ final class IntInterval(
     extends Interval[Infinitable] with Iterable[Int]
     with LazyLogging {
 
-  //require(lb != PlusInf)
-  //require(ub != MinInf)
-
-  def compare(i: Infinitable, j: Infinitable) = InfinitableOrdering.compare(i, j)
-
   def iterator: Iterator[Int] = {
-    val finiteLb = this.finiteLb
-    Iterator.range(0, size).map(Math.checkedAdd(finiteLb, _))
+    val from = finiteLb
+    //val to = Math.checkedAdd(finiteUb, 1)
+    //Iterator.from(from).takeWhile(_ <= finiteUb) // => ??? }range(from, to) //.map(Math.checkedAdd(finiteLb, _))
+    (from to finiteUb).iterator
   }
 
   def itvSize = {
@@ -55,14 +50,12 @@ final class IntInterval(
     if (s <= 0) Finite(0) else s
   }
 
-  def contains(c: Infinitable) = compare(lb, c) <= 0 && compare(ub, c) >= 0
-
   def contains(c: Int) = lb <= c && !(ub < c)
 
   def &(si: Interval[Infinitable]) = {
 
-    val lowerCmp = compare(lb, si.lb)
-    val upperCmp = compare(ub, si.ub)
+    val lowerCmp = InfinitableOrdering.compare(lb, si.lb)
+    val upperCmp = InfinitableOrdering.compare(ub, si.ub)
     if (lowerCmp >= 0 && upperCmp <= 0) {
       this
     } else if (lowerCmp <= 0 && upperCmp >= 0) {
@@ -74,16 +67,12 @@ final class IntInterval(
     }
   }
 
-  def intersects(si: Interval[Infinitable]) = {
-    compare(lb, si.ub) <= 0 && compare(ub, si.lb) >= 0
-  }
-
   def lessThan(siub: Infinitable) = {
     if (siub <= Int.MinValue) {
       IntInterval(lb, MinInf)
     } else {
       val rsiub = siub - Finite(1)
-      val upperCmp = compare(ub, rsiub)
+      val upperCmp = InfinitableOrdering.compare(ub, rsiub)
       if (upperCmp <= 0) {
         this
       } else {
@@ -97,7 +86,7 @@ final class IntInterval(
       IntInterval(PlusInf, ub)
     } else {
       val rsilb = silb + Finite(1)
-      val lowerCmp = compare(lb, rsilb)
+      val lowerCmp = InfinitableOrdering.compare(lb, rsilb)
       if (lowerCmp >= 0) {
         this
       } else {
@@ -106,16 +95,14 @@ final class IntInterval(
     }
   }
 
-  def isConnected(si: Interval[Infinitable]) = !((this isAfter si) || (this isBefore si))
-
   def span(si: Interval[Infinitable]) = {
     val spanned = span(si.lb, si.ub)
     if (spanned == si) si else spanned
   }
 
   def span(silb: Infinitable, siub: Infinitable) = {
-    val lowerCmp = compare(lb, silb)
-    val upperCmp = compare(ub, siub)
+    val lowerCmp = InfinitableOrdering.compare(lb, silb)
+    val upperCmp = InfinitableOrdering.compare(ub, siub)
     if (lowerCmp <= 0 && upperCmp >= 0) {
       this
     } else {
@@ -138,7 +125,7 @@ final class IntInterval(
   override def isEmpty = {
     lb == PlusInf ||
       ub == MinInf ||
-      compare(lb, ub) > 0
+      InfinitableOrdering.compare(lb, ub) > 0
   }
 
   override def size: Int = Math.checkedAdd(Math.checkedSubtract(finiteUb, finiteLb), 1)
@@ -183,10 +170,6 @@ final class IntInterval(
       case Interval(l, u) => lb == l && ub == u
       case _              => super.equals(o)
     }
-  }
-
-  override def hashCode = {
-    41 * lb.hashCode + ub.hashCode
   }
 
   override def toString = {

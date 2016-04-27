@@ -6,15 +6,17 @@ import scala.collection.mutable.HashMap
 import com.typesafe.scalalogging.LazyLogging
 import java.util.IdentityHashMap
 import scala.collection.JavaConversions
+import scala.util.Try
 
 object MDD {
   def leaf[A] = MDDLeaf.asInstanceOf[MDD[A]]
 
-  val _empty = MDDNode[Nothing](Map())
+  val _empty = MDDNode[Nothing](Map(), true)
 
   def empty[A] = _empty.asInstanceOf[MDD[A]]
   def apply[A](t: Iterable[Seq[A]]): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + _)
 
+  def node[A](t: Iterable[(A, MDD[A])], isReduced: Boolean): MDD[A] = new MDDNode(t.filter(_._2.nonEmpty).toMap, isReduced)
 }
 
 final class IdMap[A, B] extends mutable.Map[A, B] {
@@ -34,22 +36,24 @@ final class IdMap[A, B] extends mutable.Map[A, B] {
 
   def iterator = JavaConversions.mapAsScalaMap(idMap).iterator
 
+  override def size = idMap.size
+
 }
 
-final case class ShallowEq[A](val m: MDD[A]) {
-  override def hashCode = m.hashCode
-
-  override def equals(o: Any) = {
-    val ShallowEq(m1) = o
-    (m1 eq m) || m1.isInstanceOf[MDDNode[_]] && m.isInstanceOf[MDDNode[_]] && {
-      val n = m1.asInstanceOf[MDDNode[A]]
-      val m2 = m.asInstanceOf[MDDNode[A]]
-      m2.trie.size == n.trie.size && n.trie.forall {
-        case (k1, v1) => m2.trie.get(k1).exists(v1 eq _)
-      }
-    }
-  }
-}
+//final case class ShallowEq[A](val m: MDD[A]) {
+//  override def hashCode = m.hashCode
+//
+//  override def equals(o: Any) = {
+//    val ShallowEq(m1) = o
+//    (m1 eq m) || m1.isInstanceOf[MDDNode[_]] && m.isInstanceOf[MDDNode[_]] && {
+//      val n = m1.asInstanceOf[MDDNode[A]]
+//      val m2 = m.asInstanceOf[MDDNode[A]]
+//      m2.trie.size == n.trie.size && n.trie.forall {
+//        case (k1, v1) => m2.trie.get(k1).exists(v1 eq _)
+//      }
+//    }
+//  }
+//}
 
 final case class IdEq[A <: AnyRef](val m: A) {
   override def hashCode = m.hashCode
@@ -87,8 +91,8 @@ sealed trait MDD[A] extends Relation[A] {
     require(l < Int.MaxValue, s"relation is too large (${l.toDouble}) to iterate")
     mddIterator
   }
-  
-  def mddIterator:Iterator[List[A]]
+
+  def mddIterator: Iterator[List[A]]
 
   final def edges: Int = edges(new IdSet[MDD[A]]())
   def edges(es: IdSet[MDD[A]]): Int
@@ -98,59 +102,64 @@ sealed trait MDD[A] extends Relation[A] {
 
   def reduce(): MDD[A] = {
 
-    val cache = new HashMap[Map[A, Int], MDD[A]]()
-    val id = new IdMap[MDD[A], Int]()
+    if (isReduced) this
+    else {
 
-    id(MDD.leaf) = 0
-    var i = 0
+      val cache = new HashMap[Map[A, Int], MDD[A]]()
+      val id = new IdMap[MDD[A], Int]()
 
-    def step1(node: MDD[A]): Int = node match {
-      //     case n if n eq MDDLeaf => 0
-      case n: MDDNode[A] if !id.contains(n) =>
-        for ((_, c) <- n.trie) step1(c)
+      id(MDD.leaf) = 0
+      var i = 0
 
-        val idc = n.trie
-          .map { case (i, c) => i -> id(c) }
-          .toMap
+      def step1(node: MDD[A]): Int = node match {
+        //     case n if n eq MDDLeaf => 0
+        case n: MDDNode[A] if !id.contains(n) =>
+          for ((_, c) <- n.trie) step1(c)
 
-        val idn = cache.get(idc) match {
-          case Some(m) => id(m)
-          case None    => i += 1; i
-        }
+          val idc = n.trie
+            .map { case (i, c) => i -> id(c) }
+            .toMap
 
-        cache.update(idc, n)
+          val idn = cache.get(idc) match {
+            case Some(m) => id(m)
+            case None    => i += 1; i
+          }
 
-        id(n) = idn
+          cache.update(idc, n)
 
-        idn
-      case _ => 0
+          id(n) = idn
 
-    }
+          idn
+        case _ => 0
 
-    step1(this)
-
-    val common = new Array[MDD[A]](i + 1)
-    common(0) = MDD.leaf
-
-    def step2(node: MDD[A]): MDD[A] = {
-
-      val idn = id(node)
-      if (common(idn) == null) {
-        val n = node.asInstanceOf[MDDNode[A]]
-
-        val newTrie = n.trie.map { case (k, v) => k -> step2(v) }
-
-        common(idn) =
-          if (newTrie.forall { case (k, v) => n.trie.get(k).exists(_ eq v) })
-            n
-          else
-            new MDDNode(newTrie)
       }
-      common(idn)
+
+      step1(this)
+
+      val common = new Array[MDD[A]](i + 1)
+      common(0) = MDD.leaf
+
+      def step2(node: MDD[A]): MDD[A] = {
+
+        val idn = id(node)
+        if (common(idn) == null) {
+          val n = node.asInstanceOf[MDDNode[A]]
+
+          val newTrie = n.trie.map { case (k, v) => k -> step2(v) }
+
+          common(idn) =
+            if (newTrie.forall { case (k, v) => n.trie.get(k).exists(_ eq v) })
+              n
+            else
+              new MDDNode(newTrie, true)
+        }
+        common(idn)
+
+      }
+
+      step2(this)
 
     }
-
-    step2(this)
 
   }
   //  /*
@@ -179,6 +188,15 @@ sealed trait MDD[A] extends Relation[A] {
   final def union(m: MDD[A]): MDD[A] = union(m, new IdMap()).reduce
   def union(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
 
+  final def intersect(m: MDD[A]): MDD[A] = intersect(m, new IdMap()) //.reduce
+  def intersect(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
+
+  final def boundIntersect(m: MDD[A], bound: Int): Try[MDD[A]] = Try {
+    boundIntersect(m, bound, new IdMap()).reduce
+  }
+
+  def boundIntersect(m: MDD[A], bound: Int, mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
+
   override final def equals(m: Any) = m match {
     case m: MDD[A] => equals(m, new IdMap())
     case o         => o equals this
@@ -186,6 +204,16 @@ sealed trait MDD[A] extends Relation[A] {
 
   def equals(m: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean
 
+  final def insertDim(pos: Int, domain: Iterable[A]): MDD[A] =
+    insertDim(pos, domain, new IdMap())
+  def insertDim(pos: Int, domain: Iterable[A], mdds: IdMap[MDD[A], MDD[A]]): MDD[A]
+
+  //  override def equals(m: Any) = m match {
+  //    case a: AnyRef => this eq a
+  //    case _         => false
+  //  }
+
+  def isReduced: Boolean
 }
 
 case object MDDLeaf extends MDD[Any] {
@@ -206,23 +234,40 @@ case object MDDLeaf extends MDD[Any] {
   def filter(f: (Int, Any) => Boolean, k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def union(m: MDD[Any], mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = this
+
   def equals(m: MDD[Any], mdds: mutable.Map[MDD[Any], Boolean]) = {
     m eq this
   }
+
+  def insertDim(pos: Int, domain: Iterable[Any], mdds: IdMap[MDD[Any], MDD[Any]]): MDD[Any] = {
+    require(pos == 0)
+    mdds.getOrElseUpdate(this, {
+      new MDDNode(domain.map(i => i -> this).toMap, isReduced)
+    })
+
+  }
+
+  def intersect(m: MDD[Any], mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = m
+  def boundIntersect(m: MDD[Any], bound: Int, mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = m
+
+  override val hashCode = 0
+
+  def isReduced = true
 }
 
-final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLogging {
+final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) extends MDD[A] with LazyLogging {
   override def isEmpty = trie.isEmpty
   assert(trie.forall(e => e._2.nonEmpty))
+  assert(!isReduced || trie.forall(_._2.isReduced))
 
   def arity = 1 + trie.head._2.arity
-  
+
   def +(t: Seq[A]) = {
     if (t.isEmpty) { MDD.leaf }
     else {
       val v = t.head
       val newTrie = trie.updated(v, trie.getOrElse(v, MDD.empty) + t.tail)
-      new MDDNode(newTrie)
+      new MDDNode(newTrie, false)
     }
 
   }
@@ -285,7 +330,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
     } else if (same(trie, newTrie)) {
       this
     } else {
-      new MDDNode(newTrie)
+      new MDDNode(newTrie, false)
     }
   })
 
@@ -298,17 +343,56 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
     mdds.getOrElseUpdate((this, m), m match {
       case l if l eq MDDLeaf =>
         logger.warn("Union with shorter MDD"); l
-      case MDDNode(t2) =>
+      case MDDNode(t2, _) =>
         new MDDNode(trie ++ t2 map {
           case (k, m) => k -> trie.get(k).map(_ union m).getOrElse(m)
-        })
+        }, false)
+
+    })
+
+  def intersect(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]) =
+    mdds.getOrElseUpdate((this, m), m match {
+      case l if l eq MDDLeaf =>
+        logger.warn("Intersection with longer MDD"); this
+      case MDDNode(t2, _) =>
+
+        new MDDNode(
+          for {
+            (i, next) <- trie
+            next2 <- t2.get(i)
+            its = next.intersect(next2, mdds)
+            if its.nonEmpty
+          } yield {
+            i -> its
+          },
+          false)
+
+    })
+
+  def boundIntersect(m: MDD[A], bound: Int, mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A] =
+    mdds.getOrElseUpdate((this, m), m match {
+      case l if l eq MDDLeaf =>
+        logger.warn("Intersection with longer MDD"); this
+      case MDDNode(t2, _) =>
+        if (mdds.size >= bound) throw new IndexOutOfBoundsException
+
+        new MDDNode(
+          for {
+            (i, next) <- trie
+            next2 <- t2.get(i)
+            its = next.boundIntersect(next2, bound, mdds)
+            if its.nonEmpty
+          } yield {
+            i -> its
+          },
+          false)
 
     })
 
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A] =
     mdds.getOrElseUpdate(this, {
       if (c(k)) {
-        new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)))
+        new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)), false)
       } else {
         val t = trie.values.map(_.project(c, k + 1, mdds))
         if (t.isEmpty) {
@@ -318,5 +402,15 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
         }
       }
     })
+
+  def insertDim(pos: Int, domain: Iterable[A], mdds: IdMap[MDD[A], MDD[A]]): MDD[A] =
+    mdds.getOrElseUpdate(this, {
+      if (pos == 0) {
+        new MDDNode(domain.map(i => i -> this).toMap, isReduced)
+      } else {
+        new MDDNode(trie.map(e => e._1 -> e._2.insertDim(pos - 1, domain, mdds)), isReduced)
+      }
+    })
+
 }
 

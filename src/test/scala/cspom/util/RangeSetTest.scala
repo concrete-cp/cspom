@@ -18,7 +18,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
   "RangeSet" should "be conform" in {
 
-    val rangeSet1 = RangeSet[Infinitable]()
+    val rangeSet1 = RangeSet.empty[Infinitable]
     val rs2 = rangeSet1 ++ IntInterval(1, 10); // {[1, 10]}
     val rs3 = rs2 ++ IntInterval(12, 15); // disconnected range: {[1, 10], [12, 15]} 
     val rs4 = rs3 ++ IntInterval(16, 20); // connected range; {[1, 10], [12, 20]}
@@ -67,7 +67,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   }
 
   it should "handle empty RangeSet" in {
-    val itv1 = RangeSet[Infinitable]()
+    val itv1 = RangeSet.empty[Infinitable]
     itv1 shouldBe empty
 
     itv1 ++ IntInterval(5, 10) shouldBe RangeSet(IntInterval(5, 10))
@@ -75,15 +75,15 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
   it should "handle large values" in {
 
-    asSet(RangeSet[Infinitable]() ++ List(0, 2, 1).map(IntInterval.singleton)) should contain theSameElementsInOrderAs
+    asSet(RangeSet.empty[Infinitable] ++ List(0, 2, 1).map(IntInterval.singleton)) should contain theSameElementsInOrderAs
       Seq(0, 1, 2)
 
-    asSet(RangeSet[Infinitable]() ++ IntInterval.singleton(Int.MinValue) ++ IntInterval.singleton(Int.MaxValue - 1) ++ IntInterval.singleton(0)) should contain theSameElementsInOrderAs
+    asSet(RangeSet.empty[Infinitable] ++ IntInterval.singleton(Int.MinValue) ++ IntInterval.singleton(Int.MaxValue - 1) ++ IntInterval.singleton(0)) should contain theSameElementsInOrderAs
       Seq(Int.MinValue, 0, Int.MaxValue - 1)
 
     val s = Set(0, -2147483648, 2, -2).map(IntInterval.singleton)
 
-    (RangeSet() ++ s).ranges should contain theSameElementsAs s
+    (RangeSet.empty ++ s).ranges should contain theSameElementsAs s
 
   }
 
@@ -108,7 +108,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
     val i = RangeSet(Seq(IntInterval.singleton(2147483647), IntInterval.singleton(0)))
     (i -- IntInterval.singleton(2147483647)) shouldBe RangeSet(IntInterval.singleton(0))
-
+    (RangeSet(IntInterval.singleton(2147483647)) -- IntInterval(1, 688162636)) shouldBe RangeSet(IntInterval.singleton(2147483647))
     RangeSet(IntInterval(0, 5)) -- IntInterval(10, 15) shouldBe RangeSet(IntInterval(0, 5))
     RangeSet(IntInterval(10, 15)) -- IntInterval(0, 5) shouldBe RangeSet(IntInterval(10, 15))
     (RangeSet(IntInterval(0, 10)) -- IntInterval(3, 7)) shouldBe
@@ -117,10 +117,11 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
       RangeSet(IntInterval(6, 10))
     (RangeSet(IntInterval(0, 10)) -- IntInterval(5, 10)) shouldBe
       RangeSet(IntInterval(0, 4))
-    RangeSet(IntInterval(0, 5)) -- IntInterval(-5, 15) shouldBe RangeSet()
-    RangeSet(IntInterval(0, 5)) -- IntInterval(0, 5) shouldBe RangeSet()
+    RangeSet(IntInterval(0, 5)) -- IntInterval(-5, 15) shouldBe RangeSet.empty
+    RangeSet(IntInterval(0, 5)) -- IntInterval(0, 5) shouldBe RangeSet.empty
 
     forAll(smallIntervals, validIntervals) { (i1, i2) =>
+      //println(s"$i1 -- $i2")
       asSet(RangeSet(i1) -- i2) should contain theSameElementsInOrderAs
         i1.filterNot(i2.contains)
     }
@@ -142,7 +143,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
       RangeSet(Seq(IntInterval(0, 5), IntInterval(10, 15)))
 
     RangeSet(Seq(IntInterval(0, 5), IntInterval(10, 15))) -- IntInterval.atMost(15) shouldBe
-      RangeSet()
+      RangeSet.empty
 
     forAll { (s1: Seq[Int], b: Int) =>
       val s = RangeSet(s1.map(IntInterval.singleton(_)))

@@ -25,9 +25,9 @@ import cspom.util.IntInterval
 /**
  * Detects and removes constants from extensional constraints
  */
-object ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
+class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[RangeSet[Infinitable]]), (Seq[Int], Relation[Int])]
+  private val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[RangeSet[Infinitable]]), (Seq[Int], Relation[Int])]
 
   override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
     //println(c)

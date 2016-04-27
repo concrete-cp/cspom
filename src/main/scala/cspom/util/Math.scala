@@ -44,7 +44,7 @@ object Math {
       div
     } else {
 
-      /**
+      /*
        * Normal Java division rounds towards 0, consistently with RoundingMode.DOWN. We just have to
        * deal with the cases where rounding towards 0 is wrong, which typically depends on the sign of
        * p / q.

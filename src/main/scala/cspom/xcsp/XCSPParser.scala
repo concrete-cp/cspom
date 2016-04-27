@@ -37,7 +37,7 @@ final object XCSPParser extends CSPOM.Parser {
    * @return The resulting Domain object
    */
   def parseDomain(desc: String): RangeSet[Infinitable] = {
-    desc.trim.split(" +").foldLeft(RangeSet[Infinitable]()) { (i, v) =>
+    desc.trim.split(" +").foldLeft(RangeSet.empty[Infinitable]) { (i, v) =>
       if (v.contains("..")) {
         i ++ parseRange(v)
       } else {

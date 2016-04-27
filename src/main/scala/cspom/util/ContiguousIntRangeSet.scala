@@ -10,6 +10,12 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
 
   def iterator: Iterator[Int] = r.ranges.iterator.flatMap(allValues)
 
+  override def foreach[U](f: Int => U): Unit = {
+    for (rs <- r.ranges) {
+      rs.asInstanceOf[IntInterval].foreach(f)
+    }
+  }
+
   override def isEmpty = r.isEmpty
 
   def -(elem: Int): SortedSet[Int] =

@@ -8,7 +8,7 @@ object IntervalsArithmetic {
   def apply(
     f: (Interval[Infinitable], Interval[Infinitable]) => Interval[Infinitable],
     ii: RangeSet[Infinitable], jj: RangeSet[Infinitable]): RangeSet[Infinitable] = {
-    var result = RangeSet[Infinitable]()
+    var result = RangeSet.empty[Infinitable]
     for (i <- ii.ranges; j <- jj.ranges) {
       result ++= f(i, j)
     }
@@ -16,7 +16,7 @@ object IntervalsArithmetic {
   }
 
   def apply(f: Interval[Infinitable] => Interval[Infinitable], ii: RangeSet[Infinitable]): RangeSet[Infinitable] = {
-    ii.ranges.foldLeft(RangeSet[Infinitable]())(_ ++ f(_))
+    ii.ranges.foldLeft(RangeSet.empty[Infinitable])(_ ++ f(_))
   }
 
   private def asRange(l: Infinitable, u: Infinitable) = {
@@ -55,6 +55,10 @@ object IntervalsArithmetic {
       asRange(r.lb + i.lb, r.ub + i.ub)
     }
 
+    def +(i: Infinitable): Interval[Infinitable] = {
+      asRange(r.lb + i, r.ub + i)
+    }
+
     def unary_-(): Interval[Infinitable] = {
       asRange(-r.ub, -r.lb)
     }
@@ -72,6 +76,18 @@ object IntervalsArithmetic {
 
       asRange(l.min, l.max)
 
+    }
+
+    def shrink(i: Interval[Infinitable]): Interval[Infinitable] = {
+      asRange(r.lb - i.lb, r.ub - i.ub)
+    }
+
+    def *(i: Infinitable): Interval[Infinitable] = {
+      val Interval(a, b) = r
+      val b1 = a * i
+      val b2 = b * i
+
+      if (Infinitable.InfinitableOrdering.lt(b1, b2)) asRange(b1, b2) else asRange(b2, b1)
     }
 
     def /(i: Interval[Infinitable]): Interval[Infinitable] = {

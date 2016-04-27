@@ -3,18 +3,6 @@ package cspom.util
 import scala.collection.immutable.SortedSet
 import scala.collection.immutable.TreeSet
 
-class IntIntervalOrdering[@specialized T] extends Ordering[Interval[T]] {
-  def compare(i: Interval[T], j: Interval[T]) = {
-    if (i isAfter j) {
-      1
-    } else if (i isBefore j) {
-      -1
-    } else {
-      0
-    }
-  }
-}
-
 object RangeSet {
   //  def apply(s: Iterable[A]): RangeSet = s match {
   //    case r: Range if r.step == 1 => RangeSet(
@@ -24,16 +12,20 @@ object RangeSet {
   //  }
 
   def apply[T](s: Iterable[Interval[T]]): RangeSet[T] = {
-    s.foldLeft(RangeSet[T]())(_ ++ _)
+    s.foldLeft(empty[T])(_ ++ _)
   }
 
   def apply[T](s: Interval[T]): RangeSet[T] = {
-    RangeSet[T]() ++ s
+    if (s.isEmpty) empty else
+      new RangeSet(itvTreeSet(s))
+
   }
 
   val allInt: RangeSet[Infinitable] = apply(IntInterval.all)
 
-  def apply[T](): RangeSet[T] = new RangeSet(TreeSet()(new IntIntervalOrdering))
+  def empty[T]: RangeSet[T] = new RangeSet(itvTreeSet())
+
+  def itvTreeSet[T](itv: Interval[T]*) = TreeSet[Interval[T]](itv: _*)(new IntervalOrdering)
 
 }
 

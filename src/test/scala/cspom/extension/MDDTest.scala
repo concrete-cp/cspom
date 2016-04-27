@@ -75,4 +75,18 @@ final class MDDTest extends FlatSpec with Matchers with Timeouts {
     r2.edges shouldBe (80)
   }
 
+  it should "add dimensions" in {
+
+    val r2 = relation.insertDim(3, Seq(2, 4, 6))
+    r2 should have('lambda(3 * relation.lambda))
+
+  }
+
+  it should "intersect" in {
+    val r3 = MDD.empty + Seq(3, 5, 5) + Seq(1, 2, 2)
+    val ri = relation.intersect(r3)
+    ri should have('lambda(1))
+    ri should have('edges(3))
+  }
+
 }
