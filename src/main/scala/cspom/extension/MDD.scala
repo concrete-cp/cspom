@@ -14,7 +14,8 @@ object MDD {
   val _empty = MDDNode[Nothing](Map(), true)
 
   def empty[A] = _empty.asInstanceOf[MDD[A]]
-  def apply[A](t: Iterable[Seq[A]]): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + _)
+  def apply[A](t: Traversable[List[A]]): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + _)
+  def apply[A](t: Iterator[List[A]]): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + _)
 
   def node[A](t: Iterable[(A, MDD[A])], isReduced: Boolean): MDD[A] = new MDDNode(t.filter(_._2.nonEmpty).toMap, isReduced)
 }
@@ -82,7 +83,7 @@ final class IdSet[A] extends mutable.Set[A] {
 
 sealed trait MDD[A] extends Relation[A] {
 
-  def +(t: Seq[A]): MDD[A]
+  def +(t: List[A]): MDD[A]
 
   def -(t: Seq[A]) = ???
 
@@ -219,7 +220,7 @@ sealed trait MDD[A] extends Relation[A] {
 case object MDDLeaf extends MDD[Any] {
   def arity = 0
   override def isEmpty = false
-  def +(t: Seq[Any]) = {
+  def +(t: List[Any]) = {
     require(t.isEmpty)
     this
   }
@@ -262,7 +263,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
 
   def arity = 1 + trie.head._2.arity
 
-  def +(t: Seq[A]) = {
+  def +(t: List[A]) = {
     if (t.isEmpty) { MDD.leaf }
     else {
       val v = t.head

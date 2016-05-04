@@ -98,6 +98,14 @@ object StatisticsManager {
     m
   }
 
+  def geom[A](s: Seq[A])(implicit n: Numeric[A]): Double = {
+    import Numeric._
+    val p = s.iterator.map(i => math.log(n.toDouble(i))).sum
+    val d = p / s.length
+    math.exp(d)
+
+  }
+
   def variance[A](xs: Iterator[A])(implicit n: Numeric[A]): Double = {
     var m = n.toDouble(xs.next)
     var s = 0.0

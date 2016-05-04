@@ -15,9 +15,9 @@ object JCSPOM {
 
   def emptyMDD(): MDD[Nothing] = MDD.empty
 
-  def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + t
+  def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + t.toList
 
-  def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toSeq))
+  def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toList))
 
   // Required to avoid incompatibility between Int and Integer
   def constant(a: Int) = CSPOMConstant(a)

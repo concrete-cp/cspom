@@ -13,11 +13,11 @@ import cspom.variable.CSPOMConstant
 import cspom.variable.FreeVariable
 import java.util.StringTokenizer
 import scala.collection.mutable.ArrayBuffer
-import cspom.extension.Table
 import scala.util.parsing.input.Reader
 import cspom.extension.MDD
 import cspom.extension.Relation
 import cspom.variable.SimpleExpression
+import java.util.regex.Pattern
 
 sealed trait PredicateNode
 
@@ -73,21 +73,34 @@ final object ConstraintParser extends JavaTokenParsers {
       readerToString(r.rest, stb.append(r.first))
     }
 
-  def parseTable(reader: Reader[Char], arity: Int, size: Int): Relation[Int] = {
+  def parseTable(text: String, arity: Int, size: Int): Relation[Int] = {
 
-    val text = readerToString(reader)
+    MDD[Int] {
+      text.split("\\|")
+        .iterator
+        .map { nt =>
+          val t = nt.trim.split(" +").toList.filter(_.nonEmpty)
+          require(t.isEmpty || t.length == arity, s"${t.toSeq} should have length $arity, has length ${t.length}, empty = ${t.isEmpty}")
+          t.map(_.toInt)
+        }
+        .filter(_.nonEmpty)
 
-    val st = new StringTokenizer(text, "|")
-
-    var table = MDD.empty[Int]
-
-    while (st.hasMoreTokens) {
-      val t = st.nextToken().trim.split(" +")
-      require(t.length == arity, t.toSeq.toString)
-      table += t.map(_.toInt)
     }
-
-    table.reduce
+    //    .reduce
+    //
+    //    val st = new StringTokenizer(text, "|")
+    //
+    //    var table = MDD.empty[Int]
+    //
+    //    while (st.hasMoreTokens) {
+    //      val nt = st.nextToken()
+    //      println(nt)
+    //      val t = nt.trim.split(" +")
+    //      require(t.length == arity, s"${t.toSeq} should have length $arity")
+    //      table += t.map(_.toInt)
+    //    }
+    //
+    //    table.reduce
   }
 
 }

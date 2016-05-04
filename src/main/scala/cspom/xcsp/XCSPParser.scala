@@ -120,7 +120,7 @@ final object XCSPParser extends CSPOM.Parser {
   private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM) = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
-        val text = new CharSequenceReader(node.text) //new StringReader(node.text)
+        val text = node.text //new StringReader(node.text)
         val arity = (node \ "@arity").text.toInt
         val nbTuples = (node \ "@nbTuples").text.toInt
         val init = "conflicts" == (node \ "@semantics").text

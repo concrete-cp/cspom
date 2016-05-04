@@ -17,7 +17,6 @@ import scala.util.parsing.input.CharSequenceReader
 import com.typesafe.scalalogging.LazyLogging
 import cspom.dimacs.CNFParser
 import cspom.extension.Relation
-import cspom.extension.Table
 import cspom.flatzinc.FlatZincParser
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
@@ -35,6 +34,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import org.apache.commons.compress.compressors.CompressorStreamFactory
 import org.apache.commons.compress.compressors.CompressorException
+import cspom.extension.MDD
 
 object NameParser extends JavaTokenParsers {
 
@@ -491,14 +491,14 @@ object CSPOM extends LazyLogging {
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
   implicit class SeqOperations[A](vars: Seq[SimpleExpression[A]]) {
-    def in(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = in(new Table(rel))
-    def notIn(rel: Seq[Seq[A]]): CSPOMConstraint[Boolean] = notIn(new Table(rel))
+    def in(rel: Seq[List[A]]): CSPOMConstraint[Boolean] = in(MDD(rel))
+    def notIn(rel: Seq[List[A]]): CSPOMConstraint[Boolean] = notIn(MDD(rel))
 
     def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam ("init" -> false, "relation" -> rel)
     def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam ("init" -> true, "relation" -> rel)
   }
 
-  implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
+  //implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
 
   implicit def constant[A <: AnyVal: TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
@@ -508,7 +508,7 @@ object CSPOM extends LazyLogging {
 
   implicit def constantSeq[A <: AnyVal: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant), 0 until c.size)
 
-  implicit def matrix(sc: StringContext) = Table.MatrixContext(sc)
+  //implicit def matrix(sc: StringContext) = Table.MatrixContext(sc)
 
   def goal(g: CSPOMGoal)(implicit problem: CSPOM): Unit = {
     problem.goal = g
