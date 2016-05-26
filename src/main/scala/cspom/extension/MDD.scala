@@ -11,13 +11,30 @@ import scala.util.Try
 object MDD {
   def leaf[A] = MDDLeaf.asInstanceOf[MDD[A]]
 
-  val _empty = MDDNode[Nothing](Map(), true)
+  val _empty = MDDNode[Nothing](Map())
 
   def empty[A] = _empty.asInstanceOf[MDD[A]]
-  def apply[A](t: Traversable[List[A]]): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + _)
+  def apply[A](t: Traversable[List[A]]): MDD[A] = {
+    var i = 0
+    var r = 1024.0
+
+    t.foldLeft[MDD[A]](empty) {
+      (acc, tuple) =>
+
+        if (i < r) {
+          i += 1
+          acc + tuple
+        } else {
+          i = 0
+          r *= 2
+          acc.reduce + tuple
+        }
+
+    }
+  }
   def apply[A](t: Iterator[List[A]]): MDD[A] = t.foldLeft[MDD[A]](empty)(_ + _)
 
-  def node[A](t: Iterable[(A, MDD[A])], isReduced: Boolean): MDD[A] = new MDDNode(t.filter(_._2.nonEmpty).toMap, isReduced)
+  def node[A](t: Iterable[(A, MDD[A])]): MDD[A] = new MDDNode(t.filter(_._2.nonEmpty).toMap)
 }
 
 final class IdMap[A, B] extends mutable.Map[A, B] {
@@ -103,64 +120,59 @@ sealed trait MDD[A] extends Relation[A] {
 
   def reduce(): MDD[A] = {
 
-    if (isReduced) this
-    else {
+    val cache = new HashMap[Map[A, Int], MDD[A]]()
+    val id = new IdMap[MDD[A], Int]()
 
-      val cache = new HashMap[Map[A, Int], MDD[A]]()
-      val id = new IdMap[MDD[A], Int]()
+    id(MDD.leaf) = 0
+    var i = 0
 
-      id(MDD.leaf) = 0
-      var i = 0
+    def step1(node: MDD[A]): Int = node match {
+      //     case n if n eq MDDLeaf => 0
+      case n: MDDNode[A] if !id.contains(n) =>
+        for ((_, c) <- n.trie) step1(c)
 
-      def step1(node: MDD[A]): Int = node match {
-        //     case n if n eq MDDLeaf => 0
-        case n: MDDNode[A] if !id.contains(n) =>
-          for ((_, c) <- n.trie) step1(c)
+        val idc = n.trie
+          .map { case (i, c) => i -> id(c) }
+          .toMap
 
-          val idc = n.trie
-            .map { case (i, c) => i -> id(c) }
-            .toMap
-
-          val idn = cache.get(idc) match {
-            case Some(m) => id(m)
-            case None    => i += 1; i
-          }
-
-          cache.update(idc, n)
-
-          id(n) = idn
-
-          idn
-        case _ => 0
-
-      }
-
-      step1(this)
-
-      val common = new Array[MDD[A]](i + 1)
-      common(0) = MDD.leaf
-
-      def step2(node: MDD[A]): MDD[A] = {
-
-        val idn = id(node)
-        if (common(idn) == null) {
-          val n = node.asInstanceOf[MDDNode[A]]
-
-          val newTrie = n.trie.map { case (k, v) => k -> step2(v) }
-
-          common(idn) =
-            if (newTrie.forall { case (k, v) => n.trie.get(k).exists(_ eq v) })
-              n
-            else
-              new MDDNode(newTrie, true)
+        val idn = cache.get(idc) match {
+          case Some(m) => id(m)
+          case None    => i += 1; i
         }
-        common(idn)
 
-      }
+        cache.update(idc, n)
 
-      step2(this)
+        id(n) = idn
+
+        idn
+      case _ => 0
 
     }
+
+    step1(this)
+
+    val common = new Array[MDD[A]](i + 1)
+    common(0) = MDD.leaf
+
+    def step2(node: MDD[A]): MDD[A] = {
+
+      val idn = id(node)
+      if (common(idn) == null) {
+        val n = node.asInstanceOf[MDDNode[A]]
+
+        val newTrie = n.trie.map { case (k, v) => k -> step2(v) }
+
+        common(idn) =
+          if (newTrie.forall { case (k, v) => n.trie.get(k).exists(_ eq v) })
+            n
+          else
+            new MDDNode(newTrie)
+      }
+      common(idn)
+
+    }
+
+    step2(this)
 
   }
   //  /*
@@ -213,8 +225,6 @@ sealed trait MDD[A] extends Relation[A] {
   //    case a: AnyRef => this eq a
   //    case _         => false
   //  }
-
-  def isReduced: Boolean
 }
 
 case object MDDLeaf extends MDD[Any] {
@@ -243,7 +253,7 @@ case object MDDLeaf extends MDD[Any] {
   def insertDim(pos: Int, domain: Iterable[Any], mdds: IdMap[MDD[Any], MDD[Any]]): MDD[Any] = {
     require(pos == 0)
     mdds.getOrElseUpdate(this, {
-      new MDDNode(domain.map(i => i -> this).toMap, isReduced)
+      new MDDNode(domain.map(i => i -> this).toMap)
     })
 
   }
@@ -253,23 +263,19 @@ case object MDDLeaf extends MDD[Any] {
 
   override val hashCode = 0
 
-  def isReduced = true
 }
 
-final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) extends MDD[A] with LazyLogging {
+final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLogging {
   override def isEmpty = trie.isEmpty
   assert(trie.forall(e => e._2.nonEmpty))
-  assert(!isReduced || trie.forall(_._2.isReduced))
 
   def arity = 1 + trie.head._2.arity
 
-  def +(t: List[A]) = {
-    if (t.isEmpty) { MDD.leaf }
-    else {
-      val v = t.head
-      val newTrie = trie.updated(v, trie.getOrElse(v, MDD.empty) + t.tail)
-      new MDDNode(newTrie, false)
-    }
+  def +(t: List[A]) = t match {
+    case Nil => MDD.leaf
+    case head :: tail =>
+      val newTrie = trie.updated(head, trie.getOrElse(head, MDD.empty) + tail)
+      new MDDNode(newTrie)
 
   }
   def mddIterator = {
@@ -292,7 +298,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
     //trie.values.map(m => ls.getOrElseUpdate(m, m.lambda(ls))).sum
   }
 
-  override val hashCode: Int = trie.hashCode
+  override lazy val hashCode: Int = trie.hashCode
 
   def equals(o: MDD[A], mdds: mutable.Map[MDD[A], Boolean]): Boolean =
     mdds.getOrElseUpdate(o, o match {
@@ -331,7 +337,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
     } else if (same(trie, newTrie)) {
       this
     } else {
-      new MDDNode(newTrie, false)
+      new MDDNode(newTrie)
     }
   })
 
@@ -344,10 +350,10 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
     mdds.getOrElseUpdate((this, m), m match {
       case l if l eq MDDLeaf =>
         logger.warn("Union with shorter MDD"); l
-      case MDDNode(t2, _) =>
+      case MDDNode(t2) =>
         new MDDNode(trie ++ t2 map {
           case (k, m) => k -> trie.get(k).map(_ union m).getOrElse(m)
-        }, false)
+        })
 
     })
 
@@ -355,7 +361,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
     mdds.getOrElseUpdate((this, m), m match {
       case l if l eq MDDLeaf =>
         logger.warn("Intersection with longer MDD"); this
-      case MDDNode(t2, _) =>
+      case MDDNode(t2) =>
 
         new MDDNode(
           for {
@@ -365,8 +371,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
             if its.nonEmpty
           } yield {
             i -> its
-          },
-          false)
+          })
 
     })
 
@@ -374,7 +379,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
     mdds.getOrElseUpdate((this, m), m match {
       case l if l eq MDDLeaf =>
         logger.warn("Intersection with longer MDD"); this
-      case MDDNode(t2, _) =>
+      case MDDNode(t2) =>
         if (mdds.size >= bound) throw new IndexOutOfBoundsException
 
         new MDDNode(
@@ -385,15 +390,14 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
             if its.nonEmpty
           } yield {
             i -> its
-          },
-          false)
+          })
 
     })
 
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[A], MDD[A]]): MDD[A] =
     mdds.getOrElseUpdate(this, {
       if (c(k)) {
-        new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)), false)
+        new MDDNode(trie.map(e => e._1 -> e._2.project(c, k + 1, mdds)))
       } else {
         val t = trie.values.map(_.project(c, k + 1, mdds))
         if (t.isEmpty) {
@@ -407,9 +411,9 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]], val isReduced: Boolean) ex
   def insertDim(pos: Int, domain: Iterable[A], mdds: IdMap[MDD[A], MDD[A]]): MDD[A] =
     mdds.getOrElseUpdate(this, {
       if (pos == 0) {
-        new MDDNode(domain.map(i => i -> this).toMap, isReduced)
+        new MDDNode(domain.map(i => i -> this).toMap)
       } else {
-        new MDDNode(trie.map(e => e._1 -> e._2.insertDim(pos - 1, domain, mdds)), isReduced)
+        new MDDNode(trie.map(e => e._1 -> e._2.insertDim(pos - 1, domain, mdds)))
       }
     })
 
