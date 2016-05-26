@@ -469,7 +469,7 @@ object CSPOM extends LazyLogging {
   def load(url: URL): Try[CSPOM] =
     autoParser(url)
       .map(p => load(url, p))
-      .getOrElse(Failure(new IllegalArgumentException("Unknown file format")))
+      .getOrElse(Failure(new IllegalArgumentException(s"${url.getFile}: unknown file format")))
 
   def load(file: String): Try[CSPOM] = load(file2url(file))
 
