@@ -75,19 +75,28 @@ final object ConstraintParser extends JavaTokenParsers {
 
   def parseTable(text: String, arity: Int, size: Int): Relation[Int] = {
 
+    val traverse = new Traversable[String] {
+      val st = new StringTokenizer(text, "|")
+      def foreach[U](f: String => U): Unit = {
+        while (st.hasMoreTokens()) {
+          f(st.nextToken())
+        }
+      }
+    }
+
     MDD[Int] {
-      text.split("\\|")
-        .iterator
+
+      traverse
+        .view
         .map { nt =>
           val t = nt.trim.split(" +").toList.filter(_.nonEmpty)
-          require(t.isEmpty || t.length == arity, s"${t.toSeq} should have length $arity, has length ${t.length}, empty = ${t.isEmpty}")
+          assert(t.isEmpty || t.length == arity, s"${t.toSeq} should have length $arity, has length ${t.length}, empty = ${t.isEmpty}")
           t.map(_.toInt)
         }
         .filter(_.nonEmpty)
 
     }
-    //    .reduce
-    //
+
     //    val st = new StringTokenizer(text, "|")
     //
     //    var table = MDD.empty[Int]
