@@ -76,4 +76,22 @@ object Math {
       if (increment) div + signum else div;
     }
   }
+
+  def sqrt(i: BigInt): BigInt = {
+    if (i == 0) 0
+    else if (i > 0) {
+      var root = BigInt(1) << (i.bitLength / 2)
+      while (!isSqrt(i, root)) {
+        root += i / root
+        root /= 2
+      }
+      root
+    } else {
+      throw new IllegalArgumentException("NaN")
+    }
+  }
+
+  def isSqrt(n: BigInt, r: BigInt) = {
+    n >= r * r && n < (r + 1) * (r + 1)
+  }
 }

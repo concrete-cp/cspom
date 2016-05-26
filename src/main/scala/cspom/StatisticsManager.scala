@@ -98,6 +98,10 @@ object StatisticsManager {
     m
   }
 
+  def averageBigInt(s: Seq[BigInt]): BigInt = {
+    s.sum / s.size
+  }
+
   def geom[A](s: Seq[A])(implicit n: Numeric[A]): Double = {
     import Numeric._
     val p = s.iterator.map(i => math.log(n.toDouble(i))).sum
@@ -122,6 +126,14 @@ object StatisticsManager {
   def stDev[A: Numeric](s: Iterator[A]): Double = math.sqrt(variance(s))
 
   def stDev[A: Numeric](s: Seq[A]): Double = stDev(s.iterator)
+
+  def stDevBigInt(s: Seq[BigInt]): BigInt = {
+    val avg = averageBigInt(s)
+    val variance = s.map(i => (i - avg).pow(2)).sum / s.size
+    util.Math.sqrt(variance)
+  }
+  
+  
 
   def min[A: Ordering](s: Seq[A]): A = s.min
 
