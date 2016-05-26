@@ -9,7 +9,7 @@ final object BitVector {
   val WORD_SIZE: Int = 1 << ADDRESS_BITS_PER_WORD
   val MASK: Long = 0xFFFFFFFFFFFFFFFFL
 
-  val empty: BitVector = EmptyBitVector
+  def empty: BitVector = EmptyBitVector
 
   def filled(size: Int): BitVector = empty.set(0, size)
 
@@ -41,6 +41,10 @@ trait BitVector extends Any {
       current = nextSetBit(current + 1)
       c
     }
+  }
+
+  def traversable: Traversable[Int] = new Traversable[Int] {
+    def foreach[U](f: Int => U): Unit = BitVector.this.foreach(f)
   }
 
   def foreach[U](f: Int => U): Unit = {
