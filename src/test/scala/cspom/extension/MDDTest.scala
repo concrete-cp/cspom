@@ -5,14 +5,15 @@ import org.scalatest.FlatSpec
 import org.scalatest.time.Seconds
 import org.scalatest.concurrent.Timeouts
 import org.scalatest.time.Span
+import org.scalatest.enablers.Aggregating
 
 final class MDDTest extends FlatSpec with Matchers with Timeouts {
 
   val relation: MDD[Int] = MDD.empty + List(2, 5, 5) + List(3, 5, 5)
 
   "Given MDD" should "conform to Set semantics" in {
-    relation.asInstanceOf[Set[Seq[Int]]] should contain(List(2, 5, 5))
-    relation.asInstanceOf[Set[Seq[Int]]] should not contain (List(1, 2, 3))
+    relation.asInstanceOf[Iterable[_]] should contain(List(2, 5, 5))
+    relation.asInstanceOf[Iterable[_]] should not contain (List(1, 2, 3))
   }
 
   it should "have correct String representation" in {
@@ -43,16 +44,16 @@ final class MDDTest extends FlatSpec with Matchers with Timeouts {
     val r2 = MDD(Iterable(
       List(1, 2, 3), List(2, 5, 6), List(3, 5, 5)))
 
-    r2.toSet ++ relation should ===(relation union r2)
+    r2.toSet ++ relation should contain theSameElementsAs (relation union r2)
   }
 
   it should "be filtered" in {
     relation.filter((depth, value) => depth != 1 || value != 5) shouldBe empty
-    relation.filter((depth, value) => depth != 0 || value != 3) shouldBe Set(List(2, 5, 5))
+    relation.filter((depth, value) => depth != 0 || value != 3).asInstanceOf[Iterable[_]] should contain only (List(2, 5, 5))
   }
 
   it should "be projected" in {
-    relation.project(List(1, 2)) should ===(Set(List(5, 5)))
+    relation.project(List(1, 2)).asInstanceOf[Iterable[_]] should contain only (List(5, 5))
   }
 
   it should "be reduced" in {
