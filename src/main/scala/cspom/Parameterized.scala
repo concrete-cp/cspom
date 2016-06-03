@@ -10,8 +10,8 @@ trait Parameterized {
 
   def getSeqParam[A: TypeTag](name: String): Seq[A] = {
     params.get(name).toSeq.flatMap {
-      case s: Seq[_] => s.map(_.asInstanceOf[A])
-      case _         => throw new IllegalArgumentException
+      case s: Iterable[_] => s.map(_.asInstanceOf[A])
+      case o              => throw new IllegalArgumentException(s"$o is not a sequence")
     }
   }
 
@@ -38,4 +38,8 @@ object Annotations {
 
 class Annotations(val params: Map[String, Any]) extends Parameterized {
   def +(entry: (String, Any)) = new Annotations(params + entry)
+}
+
+case class WithParam[+T](obj: T, params: Map[String, Any]) extends Parameterized {
+  def withParam(p: (String, Any)*): WithParam[T] = copy(params = params ++ p)
 }

@@ -84,7 +84,7 @@ object IntVariable {
 
   def apply(values: RangeSet[Infinitable]): IntVariable = new IntVariable(values)
 
-  def apply(values: IntInterval): IntVariable = apply(RangeSet(values))
+  def apply(values: Interval[Infinitable]): IntVariable = apply(RangeSet(values))
 
   def free(): IntVariable =
     new IntVariable(RangeSet.allInt)

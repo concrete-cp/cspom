@@ -18,6 +18,13 @@ import cspom.util.IntInterval
 import cspom.util.RangeSet
 import cspom.variable.IntExpression
 import cspom.variable.SimpleExpression
+import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Document
+import scala.xml.parsing.NoBindingFactoryAdapter
+import com.sun.org.apache.xalan.internal.xsltc.trax.DOM2SAX
+import scala.xml.Node
+import org.w3c.dom.NodeList
+import cspom.WithParam
 
 /**
  * This class implements an XCSP 2.0 parser.
@@ -52,6 +59,14 @@ final object XCSPParser extends CSPOM.Parser {
     case _           => throw new NumberFormatException("Interval format must be a..b");
   }
 
+  sealed trait XCSP
+  case class XCSP2(document: Node)
+  case class XCSP3(document: Document)
+
+  implicit class IterableNodeList(nl: NodeList) extends Iterable[org.w3c.dom.Node] {
+    def iterator = Iterator.range(0, nl.getLength).map(nl.item(_))
+  }
+
   /**
    * Append the XCSP data provided by the InputStream to the given CSPOM
    * problem.
@@ -63,12 +78,31 @@ final object XCSPParser extends CSPOM.Parser {
    * @throws IOException
    *             Thrown if the data could not be read
    */
-  def apply(is: InputStream): Try[CSPOM] = {
-    Try(XML.load(is))
-      .flatMap(XCSPParser(_))
-  }
+  def apply(is: InputStream): Try[CSPOM] = Try {
+    val dom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is)
 
-  def apply(document: Elem): Try[CSPOM] = Try {
+    if (dom.getElementsByTagName("presentation")
+      .flatMap(n => Option(n.getAttributes.getNamedItem("format")))
+      .map(_.getTextContent)
+      .exists(v => v == "XCSP 2.0" || v == "XCSP 2.1")) {
+      val dom2sax = new DOM2SAX(dom)
+      val adapter = new NoBindingFactoryAdapter
+      dom2sax.setContentHandler(adapter)
+      dom2sax.parse()
+      XCSP2(adapter.rootElem)
+    } else if ("XCSP3" == dom.getDocumentElement.getAttribute("format")) {
+      XCSP3(dom)
+    } else {
+      throw new IllegalArgumentException("Unrecognized XCSP format")
+    }
+
+  }
+    .flatMap {
+      case XCSP2(doc) => XCSPParser(doc)
+      case XCSP3(doc) => XCSP3Parser(doc)
+    }
+
+  def apply(document: Node): Try[CSPOM] = Try {
     val declaredVariables = parseVariables(document);
 
     CSPOM { implicit cspom: CSPOM =>
@@ -79,7 +113,7 @@ final object XCSPParser extends CSPOM.Parser {
       parseConstraints(document, declaredVariables.toMap, cspom)
 
       CSPOM.goal {
-        CSPOMGoal.Satisfy(Map("variables" -> declaredVariables.map(_._1)))
+        WithParam(CSPOMGoal.Satisfy, Map("variables" -> declaredVariables.map(_._1)))
       }
     }
 
@@ -90,7 +124,7 @@ final object XCSPParser extends CSPOM.Parser {
    * @param doc
    *            XCSP document
    */
-  private def parseVariables(doc: NodeSeq): Seq[(String, SimpleExpression[Int])] = {
+  private def parseVariables(doc: Node): Seq[(String, SimpleExpression[Int])] = {
     val domains = (doc \ "domains" \ "domain")
       .map { node => (node \ "@name").text -> parseDomain(node.text) }
       .toMap

@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.7"
+version := "2.8-SNAPSHOT"
 
 scalaVersion := "2.11.8"
 
@@ -19,7 +19,6 @@ libraryDependencies ++= Seq(
 	"org.scalatest" %% "scalatest" % "2.2.6" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
 	"com.storm-enroute" %% "scalameter" % "0.7" % "test",
-	"xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT",
 	"org.tukaani" % "xz" % "1.5"
 	)
 

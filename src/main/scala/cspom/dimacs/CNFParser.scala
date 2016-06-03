@@ -51,7 +51,7 @@ final object CNFParser extends CSPOM.Parser {
         }
       }
 
-      CSPOM.goal(CSPOMGoal.Satisfy())
+      CSPOM.goal(CSPOMGoal.Satisfy)
     }
 
     require(countClauses == nbClauses.toInt)

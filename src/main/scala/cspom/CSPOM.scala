@@ -95,7 +95,7 @@ class CSPOM extends LazyLogging {
 
   private var postponed: List[CSPOMConstraint[_]] = Nil
 
-  var goal: Option[CSPOMGoal] = None
+  private var _goal: Option[WithParam[CSPOMGoal[_]]] = None
 
   /**
    * @param variableName
@@ -109,7 +109,14 @@ class CSPOM extends LazyLogging {
 
   }
 
-  def goal_=(g: CSPOMGoal): Unit = this.goal = Some(g)
+  def setGoal(g: WithParam[CSPOMGoal[_]]): Unit = {
+    resolvePostponed(g.obj.expr)
+    this._goal = Some(g)
+  }
+
+  def goal: Option[WithParam[CSPOMGoal[_]]] = _goal
+
+  def setGoal(g: CSPOMGoal[_], params: Map[String, Any] = Map()): Unit = setGoal(WithParam(g, params))
 
   def getContainers(e: CSPOMExpression[_]): collection.Set[(CSPOMSeq[_], Int)] = containers(e)
 
@@ -301,10 +308,10 @@ class CSPOM extends LazyLogging {
     }
 
     goal.foreach {
-      case CSPOMGoal.Minimize(`which`, p) =>
-        goal = CSPOMGoal.Minimize(by.asInstanceOf[CSPOMExpression[Int]], p)
-      case CSPOMGoal.Maximize(`which`, p) =>
-        goal = CSPOMGoal.Maximize(by.asInstanceOf[CSPOMExpression[Int]], p)
+      case WithParam(CSPOMGoal.Minimize(`which`), p) =>
+        setGoal(CSPOMGoal.Minimize(by.asInstanceOf[CSPOMExpression[Int]]), p)
+      case WithParam(CSPOMGoal.Maximize(`which`), p) =>
+        setGoal(CSPOMGoal.Maximize(by.asInstanceOf[CSPOMExpression[Int]]), p)
       case _ =>
     }
 
@@ -359,7 +366,11 @@ class CSPOM extends LazyLogging {
   }
 
   private def resolvePostponed(c: CSPOMConstraint[_]): Unit = {
-    postponed = resolvePostponed(c.flattenedScope, postponed)
+    resolvePostponed(c.flattenedScope)
+  }
+
+  private def resolvePostponed(e: Iterable[CSPOMExpression[_]]): Unit = {
+    postponed = resolvePostponed(e.toSet, postponed)
   }
 
   @annotation.tailrec
@@ -506,12 +517,16 @@ object CSPOM extends LazyLogging {
     CSPOMSeq(c.toIndexedSeq, 0 until c.size)
   }
 
-  implicit def constantSeq[A <: AnyVal: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant), 0 until c.size)
+  implicit def constantSeq[A <: AnyVal: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
   //implicit def matrix(sc: StringContext) = Table.MatrixContext(sc)
 
-  def goal(g: CSPOMGoal)(implicit problem: CSPOM): Unit = {
-    problem.goal = g
+  def goal(g: WithParam[CSPOMGoal[_]])(implicit problem: CSPOM): Unit = {
+    problem.setGoal(g)
+  }
+
+  def goal(g: CSPOMGoal[_])(implicit problem: CSPOM): Unit = {
+    problem.setGoal(g)
   }
 
 }

@@ -157,7 +157,7 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   def isEmpty = false
 
   def isConstant = true
-  
+
   def flattenVariables = Seq()
 }
 
@@ -184,6 +184,9 @@ object CSPOMSeq {
 
   def apply[T: TypeTag](seq: IndexedSeq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] =
     if (seq.isEmpty) empty else new CSPOMSeq(seq, indices)
+
+  def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] =
+    apply(seq.toIndexedSeq, seq.indices)
 
   def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
     Some(s.values)
@@ -259,7 +262,7 @@ final class CSPOMSeq[+T: TypeTag](
   def zipWithIndex = values.iterator.zip(definedIndices.iterator)
 
   lazy val isConstant = values.forall(_.isConstant)
-  
+
   lazy val flattenVariables = values.flatMap(_.flattenVariables)
 
   override def equals(o: Any) = o match {

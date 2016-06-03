@@ -17,6 +17,7 @@ import cspom.compiler.ConstraintCompiler
 import cspom.variable.SimpleExpression
 import scala.reflect.runtime.universe._
 import cspom.CSPOMGoal
+import cspom.WithParam
 
 sealed trait FZDecl
 case class FZParamDecl(name: String, expression: CSPOMExpression[_]) extends FZDecl
@@ -107,23 +108,17 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
         CSPOM.goal {
           val FZSolve(mode, ann) = goal
           val params = Map("fzSolve" -> ann)
-          mode match {
-            case Satisfy => CSPOMGoal.Satisfy(params)
+          (mode match {
+            case Satisfy => WithParam(CSPOMGoal.Satisfy, params)
             case Minimize(e: FZExpr[Int]) =>
               val ce = e.toCSPOM(declared)
-              CSPOMGoal.Minimize(ce, params)
+              WithParam(CSPOMGoal.Minimize(ce), params)
             case Maximize(e: FZExpr[Int]) =>
-              CSPOMGoal.Maximize(e.toCSPOM(declared), params)
-          }
+              WithParam(CSPOMGoal.Maximize(e.toCSPOM(declared)), params)
+          })
         }
       }
       p
-  }
-
-  import scala.reflect.runtime.universe._
-
-  private def FZ2CSPOMSolve[A <% Ordered[A]](m: Minimize[A], declared: Map[String, CSPOMExpression[Any]], params: Map[String, Any]) = {
-    CSPOMGoal.Minimize(m.e.toCSPOM(declared), params)
   }
 
   def pred_decl: Parser[Any] = "predicate" ~> pred_ann_id ~ "(" ~ repsep(pred_param, ",") ~ ")" <~ ";"
