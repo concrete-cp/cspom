@@ -21,7 +21,7 @@ class MergeSameTest extends FlatSpec with Matchers with Timeouts with TryValues 
   }
 
   it should "not alter the problem" in {
-    val url = XCSPParser.getClass.getResource("queens-8.xml")
+    val url = Option(XCSPParser.getClass.getResource("queens-8.xml.xz")).get
     CSPOM.load(url).map {
       case cspom => CSPOMCompiler.compile(cspom, Seq(MergeSame, MergeEq, RemoveUselessEq))
     } should be a 'success
