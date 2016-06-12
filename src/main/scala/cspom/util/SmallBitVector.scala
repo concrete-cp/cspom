@@ -68,12 +68,12 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
   }
 
   def intersects(bv: BitVector): Int = {
-    if (intersects(bv, 0)) 0 else -1;
+    if ((word & bv.getWord(0)) != 0) 0 else -1;
   }
 
   def nbWords: Int = 1
 
-  def getWords: Array[Long] = Array(word)
+  def words: Array[Long] = Array(word)
 
   def ^(bv: BitVector): BitVector = {
     bv.setWordExpand(0, bv.getWord(0) ^ this.word)
@@ -171,8 +171,8 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
     }
   }
 
-//  override def equals(o: Any) = o match {
-//    case bv: SmallBitVector => bv.word == word
-//    case _                  => false
-//  }
+  //  override def equals(o: Any) = o match {
+  //    case bv: SmallBitVector => bv.word == word
+  //    case _                  => false
+  //  }
 }

@@ -33,8 +33,8 @@ object LargeBitVector {
 }
 
 class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVector {
-//  assert(words.length > 1)
-//  assert(words(words.length - 1) != 0)
+  //  assert(words.length > 1)
+  //  assert(words(words.length - 1) != 0)
   def -(position: Int): BitVector = {
     val wordPos: Int = word(position)
     val oldWord = getWord(wordPos)
@@ -147,9 +147,9 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   def |(bv: BitVector): BitVector = {
     val newWords =
       if (nbWords > bv.nbWords) {
-        union(words, bv.getWords)
+        union(words, bv.words)
       } else {
-        union(bv.getWords, words)
+        union(bv.words, words)
       }
     LargeBitVector.noShrink(newWords)
   }
@@ -251,9 +251,10 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def intersects(bv: BitVector): Int = {
-    var i = words.length - 1
+    val bvw = bv.words
+    var i = math.min(bvw.length, words.length) - 1
     while (i >= 0) {
-      if (intersects(bv, i)) {
+      if ((words(i) & bvw(i)) != 0) {
         return i;
       }
       i -= 1
@@ -356,8 +357,6 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
       LargeBitVector(words)
     }
   }
-
-  def getWords: Array[Long] = words
 
   def lastSetBit: Int = {
     val length = words.length

@@ -67,7 +67,7 @@ trait BitVector extends Any {
       val lastWordIndex = word(until - 1)
       val maskTo = MASK >>> -until
 
-      val newWords = Arrays.copyOf(getWords, math.max(nbWords, lastWordIndex + 1)) //getWords.padTo(lastWordIndex + 1, 0L)
+      val newWords = Arrays.copyOf(this.words, math.max(nbWords, lastWordIndex + 1)) //getWords.padTo(lastWordIndex + 1, 0L)
       val sw = newWords(startWordIndex)
 
       var changed = false
@@ -103,7 +103,7 @@ trait BitVector extends Any {
     }
   }
 
-  def getWords: Array[Long]
+  def words: Array[Long]
 
   def -(position: Int): BitVector
 
@@ -120,7 +120,7 @@ trait BitVector extends Any {
   }
 
   def ++(p: Traversable[Int]): BitVector = {
-    var words = getWords
+    var words = this.words
     var change = false
 
     for (i <- p) {
@@ -137,7 +137,7 @@ trait BitVector extends Any {
     }
 
     if (change) {
-      words.size match {
+      words.length match {
         case 0 => EmptyBitVector
         case 1 => new SmallBitVector(words(0))
         case _ => LargeBitVector.noShrink(words)
@@ -207,7 +207,7 @@ trait BitVector extends Any {
       val wordShift = n / WORD_SIZE
 
       val words = new Array[Long](BitVector.word(lastSetBit + n) + 1)
-      System.arraycopy(getWords, 0, words, wordShift, getWords.length)
+      System.arraycopy(this.words, 0, words, wordShift, nbWords)
 
       if (n % WORD_SIZE != 0) {
         // Do the shift
@@ -229,8 +229,8 @@ trait BitVector extends Any {
 
       val wordShift = nn / WORD_SIZE
 
-      val words = new Array[Long](getWords.length - wordShift)
-      System.arraycopy(getWords, wordShift, words, 0, getWords.length - wordShift)
+      val words = new Array[Long](nbWords - wordShift)
+      System.arraycopy(this.words, wordShift, words, 0, nbWords - wordShift)
 
       if (n % WORD_SIZE != 0) {
         // Do the shift
@@ -262,7 +262,7 @@ object EmptyBitVector extends BitVector {
   def filter(f: Int => Boolean): BitVector = this
   def filterBounds(f: Int => Boolean): BitVector = this
   def getWord(i: Int): Long = 0L
-  def getWords: Array[Long] = Array()
+  def words: Array[Long] = Array()
   def intersects(bV: BitVector): Int = -1
   def intersects(bV: BitVector, position: Int): Boolean = false
   def isEmpty: Boolean = true
