@@ -1,4 +1,0 @@
-var bool: X = true;
-array [1..1] of var bool: a :: output_array([1..1]) = [X];
-
-solve satisfy;

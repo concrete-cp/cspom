@@ -10,27 +10,27 @@ import org.scalatest.Matchers
 
 final class CompileTest extends FlatSpec with Matchers with TryValues {
   "CSPOMCompiler" should "compile zebra" in {
-    compileTest("zebra.xml");
+    compileTest("zebra.xml.xz");
   }
 
   it should "compile queens-12" in {
-    compileTest("queens-12.xml");
+    compileTest("queens-12.xml.xz");
   }
 
   it should "compile scen11-f12" in {
-    compileTest("scen11-f12.xml.bz2");
+    compileTest("scen11-f12.xml.xz");
   }
 
   it should "compile crosswordm2" in {
-    compileTest("crossword-m2-debug-05-01.xml");
+    compileTest("crossword-m2-debug-05-01.xml.xz");
   }
 
   it should "compile lexHerald" in {
-    compileTest("normalized-crossword-m1-lex-15-04.xml.bz2");
+    compileTest("normalized-crossword-m1-lex-15-04.xml.xz");
   }
 
   it should "compile crosswordm1" in {
-    compileTest("crossword-m1-debug-05-01.xml")
+    compileTest("crossword-m1-debug-05-01.xml.xz")
   }
 
   def compileTest(fn: String) {

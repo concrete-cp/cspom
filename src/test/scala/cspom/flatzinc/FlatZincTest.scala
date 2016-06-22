@@ -32,7 +32,7 @@ class FlatZincTest extends FlatSpec with Matchers {
 
   it should "correctly affect values" in {
     val cspom = CSPOM.load(
-      classOf[FlatZincTest].getResource("affectations.fzn"), FlatZincParser).get
+      classOf[FlatZincTest].getResource("affectations.fzn.xz"), FlatZincParser).get
     CSPOMCompiler.compile(cspom, StandardCompilers())
     withClue(cspom) {
       cspom.expression("X") shouldBe Some(CSPOMConstant(true))
