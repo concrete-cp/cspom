@@ -51,9 +51,9 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
     bitVector.iterator.toSeq should contain theSameElementsAs Seq(16)
     bitVector - 16 shouldBe BitVector.empty
 
-    LargeBitVector(Array(10L, 10L)) shouldBe a[LargeBitVector]
-    LargeBitVector(Array(987L, 0L)) shouldBe a[SmallBitVector]
-    LargeBitVector(Array(0L, 0L)) shouldBe EmptyBitVector
+    BitVector(Array(10L, 10L)) shouldBe a[LargeBitVector]
+    BitVector(Array(987L, 0L)) shouldBe a[SmallBitVector]
+    BitVector(Array(0L, 0L)) shouldBe EmptyBitVector
 
   }
 
@@ -132,6 +132,10 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
   }
 
   it should "correctly clear parts from bit" in {
+
+    BitVector(Set(27860, 65929, 41689, 94054, 57759, 35436, 56080, 80650, 70344, 24299, 28787)).clearFrom(41728).traversable should
+      contain theSameElementsAs Set(27860, 41689, 35436, 24299, 28787)
+
     val bitVector = BitVector.empty + 46 + 49 + 100
     bitVector.clearFrom(101) shouldBe bitVector
     bitVector.clearFrom(128) shouldBe bitVector
@@ -267,8 +271,8 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
     val gen: Gen[Set[Int]] = Gen.buildableOf[Set[Int], Int](Gen.choose(0, 100000))
 
     forAll(gen, Gen.choose(0, 100000)) { (ps, c) =>
-      BitVector(ps).iterator.toStream should contain theSameElementsAs ps
-      BitVector(ps).clearFrom(c).iterator.toStream should contain theSameElementsAs ps.filter(_ < c)
+      BitVector(ps).traversable should contain theSameElementsAs ps
+      BitVector(ps).clearFrom(c).traversable should contain theSameElementsAs ps.filter(_ < c)
     }
   }
 

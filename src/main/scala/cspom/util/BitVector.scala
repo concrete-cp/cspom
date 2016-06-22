@@ -15,9 +15,7 @@ final object BitVector {
 
   def word(bit: Int): Int = bit >> ADDRESS_BITS_PER_WORD
 
-  def apply(v: Traversable[Int]): BitVector = {
-    empty ++ v
-  }
+  def apply(v: Traversable[Int]): BitVector = empty ++ v
 
   def fromIntervals(v: Traversable[(Int, Int)]): BitVector = {
     v.foldLeft(empty) {
@@ -26,8 +24,24 @@ final object BitVector {
     }
   }
 
-  def apply(words: Array[Long]): BitVector = {
-    if (words.length == 1) new SmallBitVector(words(0)) else LargeBitVector(words)
+  def apply(words: Array[Long]): BitVector = apply(words, words.length)
+
+  def apply(words: Array[Long], until: Int): BitVector = {
+    assert(until >= 1)
+    var trimTo = until
+
+    while (trimTo > 0 && words(trimTo - 1) == 0L) {
+      trimTo -= 1
+    }
+
+    trimTo match {
+      case 0 => EmptyBitVector
+      case 1  => new SmallBitVector(words(0))
+      case _ =>
+        val nw = if (trimTo == words.length) words else Arrays.copyOf(words, trimTo)
+        LargeBitVector(nw)
+    }
+
   }
 }
 
@@ -95,7 +109,7 @@ trait BitVector extends Any {
         if (newWords.length == 1) {
           new SmallBitVector(newWords.head)
         } else {
-          LargeBitVector.noShrink(newWords)
+          LargeBitVector(newWords)
         }
       } else {
         this
@@ -140,7 +154,7 @@ trait BitVector extends Any {
       words.length match {
         case 0 => EmptyBitVector
         case 1 => new SmallBitVector(words(0))
-        case _ => LargeBitVector.noShrink(words)
+        case _ => LargeBitVector(words)
       }
     } else {
       this
@@ -225,26 +239,29 @@ trait BitVector extends Any {
 
       val nn = -n
 
-      assert(nn <= nextSetBit(0))
-
       val wordShift = nn / WORD_SIZE
 
-      val words = new Array[Long](nbWords - wordShift)
-      System.arraycopy(this.words, wordShift, words, 0, nbWords - wordShift)
+      if (nbWords - wordShift <= 0) {
+        EmptyBitVector
+      } else {
 
-      if (n % WORD_SIZE != 0) {
-        // Do the shift
-        var i = 0
-        while (i < words.length - 1) {
-          words(i) >>>= nn; // Shift current word
-          words(i) |= words(i + 1) << (WORD_SIZE - nn); // Do the carry
-          i += 1
+        val words = new Array[Long](nbWords - wordShift)
+        System.arraycopy(this.words, wordShift, words, 0, nbWords - wordShift)
+
+        if (n % WORD_SIZE != 0) {
+          // Do the shift
+          var i = 0
+          while (i < words.length - 1) {
+            words(i) >>>= nn; // Shift current word
+            words(i) |= words(i + 1) << (WORD_SIZE - nn); // Do the carry
+            i += 1
+          }
+          words(i) >>>= nn;
         }
-        words(i) >>>= nn;
+
+        BitVector(words)
+
       }
-
-      BitVector(words)
-
     }
 
   }
@@ -276,7 +293,7 @@ object EmptyBitVector extends BitVector {
     } else {
       val array = new Array[Long](pos + 1)
       array(pos) = word
-      LargeBitVector.noShrink(array)
+      LargeBitVector(array)
     }
   }
   def setWordShrink(pos: Int, word: Long): BitVector = ???

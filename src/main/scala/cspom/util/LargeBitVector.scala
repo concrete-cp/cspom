@@ -4,35 +4,16 @@ import java.util.Arrays;
 import BitVector._
 
 object LargeBitVector {
+
   def apply(words: Array[Long]) = {
-    if (words(words.length - 1) == 0L) {
-      var trimTo = words.length - 2
-      while (trimTo >= 0 && words(trimTo) == 0L) {
-        trimTo -= 1
-      }
-
-      trimTo match {
-        case -1 => EmptyBitVector
-        case 0  => new SmallBitVector(words.head)
-        case _ =>
-          assert(words.length > 1)
-          new LargeBitVector(Arrays.copyOf(words, trimTo + 1))
-      }
-
-    } else {
-      assert(words.length > 1)
-      new LargeBitVector(words)
-    }
-
-  }
-
-  def noShrink(words: Array[Long]) = {
-    assert(words.length > 1 && words.last != 0L, s"${Arrays.toString(words)} should be shrinked")
+    assert(words.length > 1, s"${Arrays.toString(words)} should use SmallBitVector")
+    assert(words.last != 0L, s"${Arrays.toString(words)} should be shrinked")
     new LargeBitVector(words)
   }
 }
 
-class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVector {
+class LargeBitVector private[util] (val words: Array[Long]) extends AnyVal with BitVector {
+
   //  assert(words.length > 1)
   //  assert(words(words.length - 1) != 0)
   def -(position: Int): BitVector = {
@@ -120,7 +101,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
       words(i) = getWord(i) ^ bv.getWord(i);
       i -= 1
     }
-    LargeBitVector(words)
+    BitVector(words)
   }
 
   def &(bv: BitVector): BitVector = {
@@ -131,7 +112,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
       newWords(i) = bv.getWord(i) & words(i);
       i -= 1
     }
-    LargeBitVector(newWords)
+    BitVector(newWords)
   }
 
   private def union(long: Array[Long], short: Array[Long]): Array[Long] = {
@@ -151,7 +132,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
       } else {
         union(bv.words, words)
       }
-    LargeBitVector.noShrink(newWords)
+    LargeBitVector(newWords)
   }
 
   def clearFrom(from: Int): BitVector = {
@@ -169,18 +150,17 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
         val lastWord = words(startWordIndex) & ~(MASK << from)
 
         if (lastWord == 0L) {
-          BitVector(Arrays.copyOf(words, startWordIndex))
-        } else {
+          // Just shrink array (avoid copying it twice)
+          BitVector(words, startWordIndex)
+        } else if (startWordIndex + 1 < nbWords || lastWord != words(startWordIndex)) {
 
           val newWords = Arrays.copyOf(words, startWordIndex + 1)
-
           newWords(startWordIndex) = lastWord
+          LargeBitVector(newWords)
 
-          if (newWords.length < nbWords || lastWord != words(startWordIndex)) {
-            LargeBitVector(newWords)
-          } else {
-            this
-          }
+        } else {
+          // No change
+          this
         }
       }
     }
@@ -217,7 +197,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
           }
 
           if (removed) {
-            LargeBitVector.noShrink(newWords)
+            LargeBitVector(newWords)
           } else {
             this
           }
@@ -299,7 +279,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   def setWordExpand(pos: Int, word: Long): BitVector = {
     val newWords = Arrays.copyOf(words, math.max(words.length, pos + 1)) //, x$2)words.padTo(pos + 1, 0L)
     newWords(pos) = word;
-    LargeBitVector.noShrink(newWords)
+    LargeBitVector(newWords)
   }
 
   def setWordShrink(pos: Int, word: Long): BitVector = {
@@ -312,12 +292,12 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
       newWords.length match {
         case 0 => EmptyBitVector
         case 1 => new SmallBitVector(newWords.head)
-        case _ => LargeBitVector.noShrink(newWords)
+        case _ => LargeBitVector(newWords)
       }
     } else {
       val newWords = Arrays.copyOf(words, words.length) //, x$2)words.padTo(pos + 1, 0L)
       newWords(pos) = word;
-      LargeBitVector.noShrink(newWords)
+      LargeBitVector(newWords)
     }
   }
 
@@ -336,7 +316,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
     if (words == null) {
       this
     } else {
-      LargeBitVector(words)
+      BitVector(words)
     }
   }
 
@@ -357,7 +337,7 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
     if (Arrays.equals(words, this.words)) {
       this
     } else {
-      LargeBitVector(words)
+      BitVector(words)
     }
   }
 

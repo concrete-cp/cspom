@@ -123,7 +123,7 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
       val array = new Array[Long](pos + 1)
       array(0) = this.word
       array(pos) = word
-      LargeBitVector.noShrink(array)
+      LargeBitVector(array)
     }
   }
 
