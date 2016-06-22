@@ -204,6 +204,9 @@ sealed trait MDD[A] extends Relation[A] {
   final def intersect(m: MDD[A]): MDD[A] = intersect(m, new IdMap()) //.reduce
   def intersect(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
 
+  final def minus(m: MDD[A]): MDD[A] = minus(m, new IdMap())
+  def minus(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A]
+
   final def boundIntersect(m: MDD[A], bound: Int): Try[MDD[A]] = Try {
     boundIntersect(m, bound, new IdMap()).reduce
   }
@@ -245,6 +248,7 @@ case object MDDLeaf extends MDD[Any] {
   def filter(f: (Int, Any) => Boolean, k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def project(c: Set[Int], k: Int, mdds: IdMap[MDD[Any], MDD[Any]]) = this
   def union(m: MDD[Any], mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = this
+  def minus(m: MDD[Any], mdds: IdMap[(MDD[Any], MDD[Any]), MDD[Any]]) = throw new UnsupportedOperationException
 
   def equals(m: MDD[Any], mdds: mutable.Map[MDD[Any], Boolean]) = {
     m eq this
@@ -374,6 +378,8 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
           })
 
     })
+
+  def minus(m: MDD[A], mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]) = ???
 
   def boundIntersect(m: MDD[A], bound: Int, mdds: IdMap[(MDD[A], MDD[A]), MDD[A]]): MDD[A] =
     mdds.getOrElseUpdate((this, m), m match {

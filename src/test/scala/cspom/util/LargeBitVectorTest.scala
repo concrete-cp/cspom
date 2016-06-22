@@ -284,15 +284,9 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
 
     val gen: Gen[Set[Int]] = Gen.buildableOf[Set[Int], Int](Gen.choose(0, 100000))
     forAll(gen, Gen.choose(-1000, 1000)) { (ps, c) =>
-      if (ps.nonEmpty && ps.min + c < 0) {
-        
-        an[IllegalArgumentException] should be thrownBy BitVector(ps).shift(c)
-      } else {
-        val bv = BitVector(ps)
-        val sh = bv.shift(c)
-        //println(s"$bv.shift($c) = $sh")
-        sh.iterator.toSeq should contain theSameElementsAs ps.map(_ + c)
-      }
+      val bv = BitVector(ps)
+      val sh = bv.shift(c)
+      sh.iterator.toSeq should contain theSameElementsAs ps.map(_ + c).filter(_ >= 0)
     }
   }
 
@@ -300,5 +294,9 @@ final class LargeBitVectorTest extends FlatSpec with Matchers with PropertyCheck
     val bv = BitVector(Seq(146, 160, 174))
     bv.shift(-146).iterator.toStream should contain theSameElementsAs Seq(0, 14, 28)
 
+  }
+
+  it should "shift and clear" in {
+    BitVector(Seq(1, 10, 30, 60, 100)).shift(-20).traversable.toStream should contain theSameElementsAs Seq(10, 40, 80)
   }
 }

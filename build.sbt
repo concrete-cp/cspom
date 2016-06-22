@@ -6,9 +6,6 @@ version := "2.8-SNAPSHOT"
 
 scalaVersion := "2.11.8"
 
-resolvers += "INGI Snapshots" at "http://artifactory.info.ucl.ac.be/artifactory/libs-snapshot-local/"
-
-
 libraryDependencies ++= Seq(
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.4.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
@@ -27,8 +24,7 @@ scalacOptions ++= Seq(
   , "-Xdisable-assertions"
   , "-deprecation" 
 //	"-unchecked" 
-  , "-optimise" 
-  , "-Xlint" 
+    , "-Xlint" 
 //	
 //	"-feature"
 //	"-Yinline-warnings"

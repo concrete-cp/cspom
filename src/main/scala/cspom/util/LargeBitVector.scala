@@ -57,16 +57,16 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
     if (position >= nbWords) {
       -1
     } else {
-      var word = words(position) & (MASK << start)
+      var ctz = java.lang.Long.numberOfTrailingZeros(words(position) & (MASK << start))
 
-      while (word == 0) {
+      while (ctz >= WORD_SIZE) {
         position += 1
-        if (position == nbWords) {
+        if (position >= nbWords) {
           return -1
         }
-        word = words(position)
+        ctz = java.lang.Long.numberOfTrailingZeros(words(position))
       }
-      position * WORD_SIZE + java.lang.Long.numberOfTrailingZeros(word)
+      position * WORD_SIZE + ctz
     }
   }
 
@@ -322,15 +322,18 @@ class LargeBitVector private (val words: Array[Long]) extends AnyVal with BitVec
   }
 
   def filter(f: Int => Boolean): BitVector = {
-    val words = new Array[Long](nbWords)
+    var words: Array[Long] = null //new Array[Long](nbWords)
     var i = nextSetBit(0)
     while (i >= 0) {
-      if (f(i)) {
-        words(word(i)) |= (1L << i)
+      if (!f(i)) {
+        if (words == null) {
+          words = this.words.clone()
+        }
+        words(word(i)) &= ~(1L << i)
       }
       i = nextSetBit(i + 1)
     }
-    if (Arrays.equals(words, this.words)) {
+    if (words == null) {
       this
     } else {
       LargeBitVector(words)

@@ -28,10 +28,11 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
       -1
     } else {
       val next = word & (MASK << start);
-      if (next == 0) {
+      val ctz = java.lang.Long.numberOfTrailingZeros(next)
+      if (ctz >= WORD_SIZE) {
         -1
       } else {
-        java.lang.Long.numberOfTrailingZeros(next)
+        ctz
       }
     }
   }

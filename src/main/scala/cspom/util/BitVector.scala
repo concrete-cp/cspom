@@ -225,7 +225,7 @@ trait BitVector extends Any {
 
       val nn = -n
 
-      require(nn <= nextSetBit(0))
+      assert(nn <= nextSetBit(0))
 
       val wordShift = nn / WORD_SIZE
 

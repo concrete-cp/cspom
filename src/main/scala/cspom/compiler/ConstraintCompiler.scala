@@ -142,7 +142,7 @@ trait ConstraintCompiler extends LazyLogging {
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta =
     ConstraintCompiler.addCtr(c, in)
 
-  def selfPropagation: Boolean
+  //def selfPropagation: Boolean
 
   def reduceDomain(v: SimpleExpression[Int], d: Interval[Infinitable]): SimpleExpression[Int] = reduceDomain(v, RangeSet(d))
 
