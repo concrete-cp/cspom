@@ -511,13 +511,13 @@ object CSPOM extends LazyLogging {
 
   //implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
 
-  implicit def constant[A <: AnyVal: TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
+  implicit def constant[A: TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
   implicit def seq2CSPOMSeq[A: TypeTag](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = {
     CSPOMSeq(c.toIndexedSeq, 0 until c.size)
   }
 
-  implicit def constantSeq[A <: AnyVal: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
+  implicit def constantSeq[A: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
   //implicit def matrix(sc: StringContext) = Table.MatrixContext(sc)
 

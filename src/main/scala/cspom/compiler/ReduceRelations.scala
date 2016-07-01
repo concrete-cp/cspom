@@ -27,7 +27,7 @@ import cspom.util.IntInterval
  */
 class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  private val cache = new HashMap[(IdEq[Relation[_]], IndexedSeq[RangeSet[Infinitable]]), (Seq[Int], Relation[Int])]
+  //private val cache = new HashMap[(IdEq[Relation[_]], Seq[SimpleExpression[_]]), (Seq[Int], Relation[Int])]
 
   override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
     //println(c)
@@ -36,50 +36,48 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
 
-    val Some(relation: Relation[Int] @unchecked) = c.params.get("relation")
-    val cargs = c.arguments.toIndexedSeq
-    val args: IndexedSeq[RangeSet[Infinitable]] = cargs.map {
-      case IntExpression(e)  => IntExpression.implicits.ranges(e)
-      case BoolExpression(e) => RangeSet(BoolExpression.span(e))
-      case _: FreeVariable   => RangeSet.allInt
-      case _                 => throw new IllegalArgumentException()
+    val Some(relation: Relation[_]) = c.params.get("relation")
+
+    //    val args: IndexedSeq[RangeSet[Infinitable]] = cargs.map {
+    //      case IntExpression(e)  => IntExpression.implicits.ranges(e)
+    //      case BoolExpression(e) => RangeSet(BoolExpression.span(e))
+    //      case _: FreeVariable   => RangeSet.allInt
+    //      case _                 => throw new IllegalArgumentException()
+    //    }
+
+    val args = c.arguments match {
+      case SimpleExpression.simpleSeq(args) => args.toIndexedSeq
     }
 
     logger.info(s"will reduce $relation for $args")
 
-    val (vars, cached) = cache.getOrElseUpdate((IdEq(relation), args), {
-      logger.info("reducing !")
-      val vars = c.arguments.zipWithIndex.collect {
-        case (c: CSPOMVariable[_], i) => i
-      }
+    val filtered = relation.filter((k, i) => args(k).contains(i))
 
-      val filtered = relation.filter((k, i) => args(k).intersects(IntInterval.singleton(i)))
+    logger.info(s"filtered: ${filtered ne relation}")
 
-      logger.info(s"filtered: ${filtered ne relation}")
+    val vars = c.arguments.zipWithIndex.collect {
+      case (c: CSPOMVariable[_], i) => i
+    }
+    val projected = if (vars.size < c.arguments.size) {
+      filtered.project(vars)
+    } else {
+      filtered
+    }
 
-      val projected = if (vars.size < c.arguments.size) {
-        filtered.project(vars)
-      } else {
-        filtered
-      }
+    logger.info(s"projected: ${projected ne filtered}")
 
-      logger.info(s"projected: ${projected ne filtered}")
+    val reduced = projected match {
+      case p: MDD[_] => p.reduce
+      case p => p
+    }
 
-      val reduced = projected match {
-        case p: MDD[_] => p.reduce
-        case p         => p
-      }
+    logger.info(s"reduced: ${reduced ne projected}")
 
-      logger.info(s"reduced: ${reduced ne projected}")
+    if (relation ne reduced) {
 
-      (vars, reduced)
-    })
-
-    if (relation ne cached) {
-
-      logger.info(s"$relation -> $cached")
+      logger.info(s"$relation -> $reduced")
       replaceCtr(c,
-        CSPOMConstraint('extension)(vars.map(cargs): _*) withParams (c.withParam("relation" -> cached).params),
+        CSPOMConstraint('extension)(vars.map(args): _*) withParams (c.params + ("relation" -> reduced)),
         problem)
 
     } else {

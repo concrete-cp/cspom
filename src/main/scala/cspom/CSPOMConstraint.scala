@@ -11,6 +11,7 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
 import cspom.variable.EmptyVariable
+import scala.collection.mutable.WrappedArray
 
 final case class CSPOMConstraint[+T](
     val result: CSPOMExpression[T],
@@ -18,20 +19,8 @@ final case class CSPOMConstraint[+T](
     val arguments: Seq[CSPOMExpression[Any]],
     val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
 
-  // require(arguments.nonEmpty, "Must have at least one argument")
-
-  //  require(function != 'eq || (arguments(0).flatten.length == arguments(1).flatten.length))
-  //  require(function != 'alldifferent || arguments.forall(_.isInstanceOf[SimpleExpression[_]]))
-  // require(function != 'add)
-
-  //  require(
-  //    {
-  //      val variables = fullScope.collect { case v: CSPOMVariable[_] => v }
-  //      variables.distinct == variables
-  //    }, this)
-
   def withParam(addParams: (String, Any)*) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
-  def withParams(addParams: Map[String, Any]) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
+  def withParams(addParams: Map[String, Any]) = withParam(addParams.toSeq: _*)
 
   if (flattenedScope.contains(EmptyVariable)) logger.warn(s"Empty variable in scope of $this")
 
@@ -39,7 +28,7 @@ final case class CSPOMConstraint[+T](
 
   def fullScope: Seq[CSPOMExpression[_]] = result +: arguments
 
-  lazy val flattenedScope: Set[CSPOMExpression[_]] = 
+  lazy val flattenedScope: Set[CSPOMExpression[_]] =
     fullScope.iterator.flatMap(_.flatten).toSet
 
   val id: Int = CSPOMConstraint.id
@@ -50,7 +39,7 @@ final case class CSPOMConstraint[+T](
   override final def hashCode: Int = id
   override final def equals(o: Any): Boolean = o match {
     case o: AnyRef => o eq this
-    case _         => false
+    case _ => false
   }
 
   private def replaceVarShallow[R, S <: R](candidate: CSPOMExpression[R], which: CSPOMExpression[R], by: CSPOMExpression[S]): CSPOMExpression[R] = {
@@ -62,8 +51,8 @@ final case class CSPOMConstraint[+T](
   }
 
   def replacedVar[R >: T, S >: T <: R](which: CSPOMExpression[R], by: CSPOMExpression[S]): CSPOMConstraint[R] = {
-    val newResult = replaceVarShallow(result, which, by) //result.replaceVar(which, by)
-    val newArgs = arguments.map(replaceVarShallow(_, which, by)) //_.replaceVar(which, by))
+    val newResult = replaceVarShallow(result, which, by)
+    val newArgs = arguments.map(replaceVarShallow(_, which, by))
 
     new CSPOMConstraint(newResult,
       function,
@@ -83,7 +72,7 @@ final case class CSPOMConstraint[+T](
   private def toString(result: Option[String], arguments: Seq[String]): String = {
     val content = s"$id. $function(${arguments.mkString(", ")})$displayParams"
     result match {
-      case None    => s"constraint $content"
+      case None => s"constraint $content"
       case Some(r) => s"constraint $r == $content"
     }
   }

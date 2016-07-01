@@ -95,16 +95,23 @@ object SimpleExpression {
 
   }
 
-  object simpleSeq {
+  object simpleCSPOMSeq {
     def unapply[A: TypeTag](e: CSPOMExpression[A]): Option[Seq[SimpleExpression[A]]] =
       PartialFunction.condOpt(e) {
         case s: CSPOMSeq[A] => s
       }
         .flatMap { cspomSeq =>
           CSPOMSeq.collectAll(cspomSeq) {
-            case c: SimpleExpression[_] if (c.tpe <:< typeOf[A]) => c.asInstanceOf[SimpleExpression[A]]
+            case c: SimpleExpression[A] if (c.tpe <:< typeOf[A]) => c.asInstanceOf[SimpleExpression[A]]
           }
         }
+  }
+
+  object simpleSeq {
+    def unapply[A: TypeTag](e: IndexedSeq[CSPOMExpression[A]]): Option[IndexedSeq[SimpleExpression[A]]] =
+      CSPOMSeq.collectAll(e) {
+        case c: SimpleExpression[A] => c
+      }
   }
 
 }

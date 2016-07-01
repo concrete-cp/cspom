@@ -29,9 +29,10 @@ final class IntVariable(val domain: RangeSet[Infinitable])
 
   def contains[S >: Int](that: S): Boolean = that match {
     case t: Int => domain.intersects(IntInterval.singleton(t))
-    case _      => false
+    case t: Long if t.isValidInt => contains(t.toInt)
+    case _ => false
   }
-  
+
   def isEmpty = false
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
@@ -51,7 +52,7 @@ final class IntVariable(val domain: RangeSet[Infinitable])
         } else {
           new ContiguousIntRangeSet(d).singletonMatch match {
             case Some(s) => CSPOMConstant(s) //, Map("intersection" -> ((this, v))))
-            case None    => new IntVariable(d) //, Map("intersection" -> ((this, v))))
+            case None => new IntVariable(d) //, Map("intersection" -> ((this, v))))
           }
         }
       }
@@ -65,8 +66,8 @@ final class IntVariable(val domain: RangeSet[Infinitable])
   def searchSpace = domain.ranges.iterator.foldLeft(0.0) {
     case (acc, itv) => acc + (itv.itvSize match {
       case Finite(f) => f.toDouble
-      case PlusInf   => Double.PositiveInfinity
-      case MinInf    => throw new AssertionError()
+      case PlusInf => Double.PositiveInfinity
+      case MinInf => throw new AssertionError()
     })
   }
 }
