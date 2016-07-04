@@ -10,6 +10,8 @@ import scala.collection.mutable.HashMap
 import scala.reflect.runtime.universe._
 import cspom.CSPOMConstraint
 import com.typesafe.scalalogging.LazyLogging
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ArrayBuilder
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions
@@ -82,9 +84,9 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
 object SimpleExpression {
   def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
-    case v: IntVariable      => new ContiguousIntRangeSet(v.domain)
-    case b: BoolVariable     => Iterable(false, true)
-    case CSPOMConstant(c)    => Iterable[A](c)
+    case v: IntVariable => new ContiguousIntRangeSet(v.domain)
+    case b: BoolVariable => Iterable(false, true)
+    case CSPOMConstant(c) => Iterable[A](c)
     case _: CSPOMVariable[A] => throw new IllegalArgumentException(s"Cannot iterate over $e")
   }
 
@@ -108,10 +110,11 @@ object SimpleExpression {
   }
 
   object simpleSeq {
-    def unapply[A: TypeTag](e: IndexedSeq[CSPOMExpression[A]]): Option[IndexedSeq[SimpleExpression[A]]] =
+    def unapply[A: TypeTag](e: Seq[CSPOMExpression[A]]): Option[IndexedSeq[SimpleExpression[A]]] =
       CSPOMSeq.collectAll(e) {
         case c: SimpleExpression[A] => c
       }
+        .map(_.toIndexedSeq)
   }
 
 }
@@ -189,22 +192,26 @@ object CSPOMSeq {
   lazy val empty: CSPOMSeq[Nothing] = new CSPOMSeq(IndexedSeq.empty, IndexedSeq.empty.indices)
   // @annotation.varargs def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
 
-  def apply[T: TypeTag](seq: IndexedSeq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] =
-    if (seq.isEmpty) empty else new CSPOMSeq(seq, indices)
+  def apply[T: TypeTag](seq: Seq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] =
+    if (seq.isEmpty) empty else new CSPOMSeq(seq.toIndexedSeq, indices)
 
   def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] =
-    apply(seq.toIndexedSeq, seq.indices)
+    apply(seq, seq.indices)
 
   def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
     Some(s.values)
 
-  @annotation.tailrec
-  def collectAll[A, B](s: IndexedSeq[A], r: IndexedSeq[B] = IndexedSeq())(f: PartialFunction[A, B]): Option[IndexedSeq[B]] = s match {
-    case Seq() => Some(r.reverse)
-    case h +: t => f.lift(h) match {
-      case None    => None
-      case Some(a) => collectAll(t, a +: r)(f)
+  def collectAll[A, B](s: Seq[A])(f: PartialFunction[A, B]): Option[Seq[B]] = {
+ 
+    val r = new ArrayBuffer[B](s.length)
+    for (h <- s) {
+      if (f.isDefinedAt(h)) {
+        r += f(h)
+      } else {
+        return None
+      }
     }
+    Some(r.toSeq)
   }
 
   def searchSpace(s: Seq[CSPOMExpression[_]]): Double = {
@@ -274,7 +281,7 @@ final class CSPOMSeq[+T: TypeTag](
 
   override def equals(o: Any) = o match {
     case a: CSPOMSeq[_] => a.values == values && a.definedIndices == definedIndices
-    case _              => false
+    case _ => false
   }
 
   override lazy val hashCode = super.hashCode

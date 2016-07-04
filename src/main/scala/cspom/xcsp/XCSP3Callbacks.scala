@@ -323,7 +323,6 @@ class XCSP3Callbacks extends XCallbacks2 {
     require(rank == TypeRank.ANY)
 
     buildCtrElement(cspom(value), cspom(index), new CSPOMSeq(list.map(cspom), startIndex until startIndex + list.length))
-
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int) {
