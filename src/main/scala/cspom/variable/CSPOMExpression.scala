@@ -202,7 +202,6 @@ object CSPOMSeq {
     Some(s.values)
 
   def collectAll[A, B](s: Seq[A])(f: PartialFunction[A, B]): Option[Seq[B]] = {
- 
     val r = new ArrayBuffer[B](s.length)
     for (h <- s) {
       if (f.isDefinedAt(h)) {

@@ -37,6 +37,13 @@ import org.xcsp.parser.XVariables.XVar
 import org.xcsp.parser.XVariables.TypeVar
 import org.xcsp.parser.XEnums.TypeRank
 import org.xcsp.parser.XParser.ConditionVar
+import cspom.WithParam
+import org.xcsp.parser.XEnums.TypeOperator
+import org.xcsp.parser.XNodeExpr.XNodeParent
+import org.xcsp.parser.XNodeExpr.XNodeLeaf
+import org.xcsp.parser.XNodeExpr
+import cspom.variable.CSPOMExpression
+import org.xcsp.parser.XEnums.TypeExpr
 
 //import scala.language.implicitConversions
 
@@ -45,8 +52,6 @@ class XCSP3Callbacks extends XCallbacks2 {
   val cspom: CSPOM = new CSPOM()
 
   private val declaredVariables = new LinkedHashMap[XVarInteger, CSPOMVariable[Int]]()
-
-  var goal: CSPOMGoal[Int] = CSPOMGoal.Satisfy
 
   private def cspom(x: XVarInteger): CSPOMVariable[Int] = declaredVariables(x)
 
@@ -70,7 +75,24 @@ class XCSP3Callbacks extends XCallbacks2 {
   }
 
   def endObjectives(): Unit = {
-    cspom.setGoal(goal, Map("variables" -> declaredVariables.map(_._1.id)))
+    val goal = cspom.goal
+      .getOrElse(WithParam(CSPOMGoal.Satisfy))
+      .withParam("variables" -> declaredVariables.map(_._1.id))
+    cspom.setGoal(goal)
+  }
+
+  /**
+   * Default case
+   */
+  override def unimplementedCase(objects: Object*): Object = {
+    throw new UnsupportedOperationException(objects.toString)
+  }
+
+  /* Build Variables */
+
+  private def buildVar(x: XVarInteger, v: CSPOMVariable[Int]): Unit = {
+    declaredVariables(x) = v
+    cspom.nameExpression(v, x.id)
   }
 
   def buildVarInteger(x: XVarInteger, lb: Int, ub: Int): Unit = {
@@ -91,16 +113,81 @@ class XCSP3Callbacks extends XCallbacks2 {
     buildVar(x, IntVariable.ofSeq(values))
   }
 
-  private def buildVar(x: XVarInteger, v: CSPOMVariable[Int]): Unit = {
-    declaredVariables(x) = v
-    cspom.nameExpression(v, x.id)
+  /* Build constraints: intension */
+
+  override def buildCtrPrimitive(id: String, x: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
+    buildCtrPrimitiveCSPOM(cspom(x), op, k)
   }
+
+  private def buildCtrPrimitiveCSPOM(x: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
+    import TypeConditionOperatorRel._
+    op match {
+      case LT => cspom.ctr(CSPOMConstraint('lt)(x, k))
+      case LE => cspom.ctr(CSPOMConstraint('le)(x, k))
+      case EQ => cspom.ctr(CSPOMConstraint('eq)(x, k))
+      case NE => cspom.ctr(CSPOMConstraint('ne)(x, k))
+      case GT => cspom.ctr(CSPOMConstraint('gt)(x, k))
+      case GE => cspom.ctr(CSPOMConstraint('ge)(x, k))
+    }
+  }
+
+  def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
+    y: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
+    buildCtrPrimitiveCSPOM(cspom(x), opa, cspom(y), op, k)
+  }
+
+  def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
+    y: XVarInteger, op: TypeConditionOperatorRel, k: XVarInteger): Unit = {
+    buildCtrPrimitiveCSPOM(cspom(x), opa, cspom(y), op, cspom(k))
+  }
+
+  private def buildCtrPrimitiveCSPOM(x: SimpleExpression[Int], opa: TypeArithmeticOperator,
+    y: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
+    import TypeArithmeticOperator._
+    val aux = cspom.defineInt { r =>
+      opa match {
+        case ADD => CSPOMConstraint(r)('add)(x, y)
+        case SUB => CSPOMConstraint(r)('sub)(x, y)
+        case MUL => CSPOMConstraint(r)('mul)(x, y)
+        case DIV => CSPOMConstraint(r)('div)(x, y)
+        case MOD => CSPOMConstraint(r)('mod)(x, y)
+        case DIST => CSPOMConstraint(r)('absdiff)(x, y)
+      }
+    }
+
+    buildCtrPrimitiveCSPOM(aux, op, k)
+  }
+
+  def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent) {
+
+    def extract(node: XNodeExpr): SimpleExpression[_] = {
+      node match {
+        case l: XNodeLeaf =>
+          l.value match {
+            case l: java.lang.Long if l.toLong.isValidInt => CSPOMConstant(l.toInt)
+            case v: XVarInteger => cspom(v)
+          }
+        case p: XNodeParent =>
+          cspom.defineFree { x => constraint(x, p) }
+      }
+    }
+
+    def typeSymbol(t: TypeExpr): Symbol = {
+      Symbol(t.toString.toLowerCase)
+    }
+
+    def constraint(result: CSPOMExpression[_], p: XNodeParent): CSPOMConstraint[_] = {
+      CSPOMConstraint(result)(typeSymbol(p.getType))(p.sons.toSeq.map(extract): _*)
+    }
+
+    cspom.ctr(constraint(CSPOMConstant(true), syntaxTreeRoot))
+  }
+
+  /* Build constraints : extension */
 
   def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean,
     flags: java.util.Set[TypeFlag]): Unit = {
-    if (flags.contains(TypeFlag.STARRED_TUPLES)) {
-      throw new UnsupportedOperationException("Starred tuples are not supported")
-    }
+    require(!flags.contains(TypeFlag.STARRED_TUPLES), "Starred tuples are not supported")
 
     val relation = tuples.view.map(_.toList)
     val scope = list.toSeq.map(declaredVariables)
@@ -129,101 +216,9 @@ class XCSP3Callbacks extends XCallbacks2 {
     }
   }
 
-  override def buildCtrPrimitive(id: String, x: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
-    buildCtrPrimitiveCSPOM(id, cspom(x), op, k)
-  }
-
-  private def buildCtrPrimitiveCSPOM(id: String, x: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
-    import TypeConditionOperatorRel._
-    op match {
-      case LT => cspom.ctr(CSPOMConstraint('lt)(x, k))
-      case LE => cspom.ctr(CSPOMConstraint('le)(x, k))
-      case EQ => cspom.ctr(CSPOMConstraint('eq)(x, k))
-      case NE => cspom.ctr(CSPOMConstraint('ne)(x, k))
-      case GT => cspom.ctr(CSPOMConstraint('gt)(x, k))
-      case GE => cspom.ctr(CSPOMConstraint('ge)(x, k))
-    }
-  }
-
-  def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
-    y: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
-    buildCtrPrimitiveCSPOM(id, cspom(x), opa, cspom(y), op, k)
-  }
-
-  def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
-    y: XVarInteger, op: TypeConditionOperatorRel, k: XVarInteger): Unit = {
-    buildCtrPrimitiveCSPOM(id, cspom(x), opa, cspom(y), op, cspom(k))
-  }
-
-  private def buildCtrPrimitiveCSPOM(id: String, x: SimpleExpression[Int], opa: TypeArithmeticOperator,
-    y: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
-    import TypeArithmeticOperator._
-    val aux = cspom.defineInt { r =>
-      opa match {
-        case ADD => CSPOMConstraint(r)('add)(x, y)
-        case SUB => CSPOMConstraint(r)('sub)(x, y)
-        case MUL => CSPOMConstraint(r)('mul)(x, y)
-        case DIV => CSPOMConstraint(r)('div)(x, y)
-        case MOD => CSPOMConstraint(r)('mod)(x, y)
-        case DIST => CSPOMConstraint(r)('absdiff)(x, y)
-      }
-    }
-
-    buildCtrPrimitiveCSPOM(id + "_aux_ctr", aux, op, k)
-  }
-
-  override def buildCtrAllDifferent(id: String, x: Array[XVarInteger]): Unit = {
-    cspom.ctr(CSPOMConstraint('alldifferent)(cspom(x): _*))
-  }
-
-  override def buildObjToMinimize(id: String, x: XVarInteger): Unit = {
-    goal = CSPOMGoal.Minimize(cspom(x))
-  }
-
-  override def buildObjToMaximize(id: String, x: XVarInteger): Unit = {
-    goal = CSPOMGoal.Maximize(cspom(x))
-  }
-
-  private def span(vars: Seq[SimpleExpression[Int]], coefs: Array[Int]) = {
-    vars.zip(coefs).map { case (v, k) => IntExpression.span(v) * Finite(k) }.reduce(_ + _)
-  }
-
-  private def buildObjSum(list: Array[XVarInteger], coefs: Array[Int], mode: String) = {
-    val vars = cspom(list)
-
-    val obj = cspom.nameExpression(IntVariable(span(vars, coefs)), "cspom-objective")
-
-    cspom.ctr {
-      CSPOMConstraint('sum)(-1 +: coefs.toSeq, obj +: vars, 0) withParam ("mode" -> mode)
-    }
-
-    declaredVariables(XVar.build("cspom-objective", TypeVar.integer, null).asInstanceOf[XVarInteger]) = obj
-
-    obj
-  }
-
-  override def buildObjToMinimize(id: String, typ: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): Unit = {
-    import TypeObjective._
-    typ match {
-      case SUM =>
-        goal = CSPOMGoal.Minimize(buildObjSum(list, coefs, "le"))
-      case _ => ???
-
-    }
-  }
-
-  override def buildObjToMaximize(id: String, typ: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): Unit = {
-    import TypeObjective._
-    typ match {
-      case SUM =>
-        goal = CSPOMGoal.Maximize(buildObjSum(list, coefs, "ge"))
-      case _ => ???
-
-    }
-  }
+  /* Language constraints */
 
   override def buildCtrRegular(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]], startState: String, finalStates: Array[String]): Unit = {
-
     val states = transitions.flatMap { case Array(i: String, _, o: String) => Seq(i, o) }.distinct.zipWithIndex.toMap
     val dfa = transitions
       .view
@@ -235,17 +230,10 @@ class XCSP3Callbacks extends XCallbacks2 {
 
     cspom.ctr(
       CSPOMConstraint('regular)(cspom(list), states(startState), finalStates.toSeq.map(states)) withParam ("dfa" -> dfa))
-    //unimplementedCase(id);
   }
 
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
-    //    val nodeNames = new HashMap[String, Map[Int, String]]().withDefaultValue(Map())
-    //
-    //    for (Array(source: String, value: Integer, child: String) <- transitions) {
-    //      nodeNames(source) += (value.toInt -> child)
-    //    }
-
-    val nodeNames = transitions.groupBy { x => x(0) }
+    val nodeNames = transitions.groupBy(x => x(0))
 
     val nodes = new HashMap[AnyRef, MDD[Any]]()
     nodes("nodeT") = MDD.leaf
@@ -263,6 +251,28 @@ class XCSP3Callbacks extends XCallbacks2 {
     cspom.ctr(
       cspom(list).asInstanceOf[Seq[CSPOMVariable[Any]]] in buildMDD("root"))
 
+  }
+
+  /* Comparison constraints */
+
+  override def buildCtrAllDifferent(id: String, x: Array[XVarInteger]): Unit = {
+    cspom.ctr('alldifferent)(cspom(x): _*)
+  }
+
+  override def buildCtrAllEqual(id: String, list: Array[XVarInteger]): Unit = {
+    cspom.ctr('eq)(cspom(list): _*)
+  }
+
+  override def buildCtrOrdered(id: String, list: Array[XVarInteger], operator: TypeOperator): Unit = {
+    cspom.ctr(CSPOMConstraint('ordered)(cspom(list): _*) withParam "mode" -> operator.name)
+  }
+
+  override def buildCtrLex(id: String, list: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
+    cspom.ctr(CSPOMConstraint('lex)(list.toSeq.map(cspom): _*) withParam "mode" -> operator.name)
+  }
+
+  override def buildCtrLexMatrix(id: String, list: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
+    cspom.ctr(CSPOMConstraint('lexmatrix)(CSPOMSeq(list.map(s => CSPOMSeq(cspom(s): _*)): _*)) withParam "mode" -> operator.name)
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
@@ -284,6 +294,7 @@ class XCSP3Callbacks extends XCallbacks2 {
       case GT => (ks1.map(-_), -k, "lt")
       case NE => (ks1, k, "ne")
       case EQ => (ks1, k, "eq")
+      case o => throw new AssertionError(s"Sum condition $o is not supported")
     }
 
     cspom.ctr {
@@ -331,7 +342,49 @@ class XCSP3Callbacks extends XCallbacks2 {
     buildCtrElement(value, cspom(index), new CSPOMSeq(list.map(cspom), startIndex until startIndex + list.length))
   }
 
-  override def unimplementedCase(objects: Object*): Object = {
-    throw new UnsupportedOperationException(objects.toString)
+  /* Objectives */
+
+  override def buildObjToMinimize(id: String, x: XVarInteger): Unit = {
+    cspom.setGoal(CSPOMGoal.Minimize(cspom(x)))
   }
+
+  override def buildObjToMaximize(id: String, x: XVarInteger): Unit = {
+    cspom.setGoal(CSPOMGoal.Maximize(cspom(x)))
+  }
+
+  private def span(vars: Seq[SimpleExpression[Int]], coefs: Array[Int]) = {
+    vars.zip(coefs).map { case (v, k) => IntExpression.span(v) * Finite(k) }.reduce(_ + _)
+  }
+
+  private def buildObjSum(list: Array[XVarInteger], coefs: Array[Int], mode: String) = {
+    val vars = cspom(list)
+
+    val obj = cspom.nameExpression(IntVariable(span(vars, coefs)), "cspom-objective")
+
+    cspom.ctr {
+      CSPOMConstraint('sum)(-1 +: coefs.toSeq, obj +: vars, 0) withParam ("mode" -> mode)
+    }
+
+    declaredVariables(XVar.build("cspom-objective", TypeVar.integer, null).asInstanceOf[XVarInteger]) = obj
+
+    obj
+  }
+
+  override def buildObjToMinimize(id: String, typ: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): Unit = {
+    import TypeObjective._
+    typ match {
+      case SUM => cspom.setGoal(CSPOMGoal.Minimize(buildObjSum(list, coefs, "le")))
+      case _ => ???
+    }
+  }
+
+  override def buildObjToMaximize(id: String, typ: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): Unit = {
+    import TypeObjective._
+    typ match {
+      case SUM => cspom.setGoal(CSPOMGoal.Maximize(buildObjSum(list, coefs, "ge")))
+      case _ => ???
+
+    }
+  }
+
 }

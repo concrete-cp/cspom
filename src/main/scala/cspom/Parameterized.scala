@@ -11,7 +11,7 @@ trait Parameterized {
   def getSeqParam[A: TypeTag](name: String): Seq[A] = {
     params.get(name).toSeq.flatMap {
       case s: Iterable[_] => s.map(_.asInstanceOf[A])
-      case o              => throw new IllegalArgumentException(s"$o is not a sequence")
+      case o => throw new IllegalArgumentException(s"$o is not a sequence")
     }
   }
 
@@ -23,7 +23,7 @@ trait Parameterized {
     params
       .map {
         case (k, Unit) => k
-        case (k, v)    => s"$k: $v"
+        case (k, v) => s"$k: $v"
       }
       .map(s => s" :: $s")
       .mkString
@@ -40,6 +40,6 @@ class Annotations(val params: Map[String, Any]) extends Parameterized {
   def +(entry: (String, Any)) = new Annotations(params + entry)
 }
 
-case class WithParam[+T](obj: T, params: Map[String, Any]) extends Parameterized {
+case class WithParam[+T](obj: T, params: Map[String, Any] = Map()) extends Parameterized {
   def withParam(p: (String, Any)*): WithParam[T] = copy(params = params ++ p)
 }

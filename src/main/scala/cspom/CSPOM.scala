@@ -4,18 +4,27 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 import java.net.URL
-import java.util.zip.GZIPInputStream
+
 import scala.annotation.migration
-import scala.collection.JavaConversions
+import scala.collection.JavaConverters._
 import scala.collection.SortedSet
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.LinkedHashSet
 import scala.language.implicitConversions
 import scala.reflect.macros.blackbox.Context
+import scala.reflect.runtime.universe._
+import scala.util.Failure
 import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
+
+import org.apache.commons.compress.compressors.CompressorException
+import org.apache.commons.compress.compressors.CompressorStreamFactory
+
 import com.typesafe.scalalogging.LazyLogging
+
 import cspom.dimacs.CNFParser
+import cspom.extension.MDD
 import cspom.extension.Relation
 import cspom.flatzinc.FlatZincParser
 import cspom.variable.BoolVariable
@@ -27,14 +36,6 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
-import scala.reflect.runtime.universe._
-import scala.collection.JavaConverters._
-import scala.util.Failure
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.ArrayBuffer
-import org.apache.commons.compress.compressors.CompressorStreamFactory
-import org.apache.commons.compress.compressors.CompressorException
-import cspom.extension.MDD
 
 object NameParser extends JavaTokenParsers {
 
@@ -344,6 +345,12 @@ class CSPOM extends LazyLogging {
     ctr(CSPOMConstraint('eq)(v, CSPOMConstant(true)))
   }
 
+  def ctr(function: scala.Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
+    ctr(CSPOMConstraint(function)(arguments: _*))
+
+  def ctr[A](result: CSPOMExpression[A])(function: scala.Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[A] =
+    ctr(CSPOMConstraint(result)(function)(arguments: _*))
+
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f
     postpone(g(r))
@@ -488,7 +495,7 @@ object CSPOM extends LazyLogging {
     case name if name.contains(".xml") => Some(XCSPParser)
     case name if name.contains(".cnf") => Some(CNFParser)
     case name if name.contains(".fzn") => Some(FlatZincParser)
-    case _                             => None
+    case _ => None
   }
 
   def apply(f: CSPOM => Any): CSPOM = {
