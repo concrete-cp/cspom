@@ -18,6 +18,8 @@ final case class CSPOMConstraint[+T](
     val function: Symbol,
     val arguments: Seq[CSPOMExpression[Any]],
     val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
+  
+  require(arguments.nonEmpty)
 
   def withParam(addParams: (String, Any)*) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
   def withParams(addParams: Map[String, Any]) = withParam(addParams.toSeq: _*)

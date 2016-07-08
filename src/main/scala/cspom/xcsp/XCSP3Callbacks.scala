@@ -44,6 +44,8 @@ import org.xcsp.parser.XNodeExpr.XNodeLeaf
 import org.xcsp.parser.XNodeExpr
 import cspom.variable.CSPOMExpression
 import org.xcsp.parser.XEnums.TypeExpr
+import cspom.variable.BoolVariable
+import cspom.UNSATException
 
 //import scala.language.implicitConversions
 
@@ -122,12 +124,12 @@ class XCSP3Callbacks extends XCallbacks2 {
   private def buildCtrPrimitiveCSPOM(x: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
     import TypeConditionOperatorRel._
     op match {
-      case LT => cspom.ctr(CSPOMConstraint('lt)(x, k))
-      case LE => cspom.ctr(CSPOMConstraint('le)(x, k))
-      case EQ => cspom.ctr(CSPOMConstraint('eq)(x, k))
-      case NE => cspom.ctr(CSPOMConstraint('ne)(x, k))
-      case GT => cspom.ctr(CSPOMConstraint('gt)(x, k))
-      case GE => cspom.ctr(CSPOMConstraint('ge)(x, k))
+      case LT => cspom.ctr('lt)(x, k)
+      case LE => cspom.ctr('le)(x, k)
+      case EQ => cspom.ctr('eq)(x, k)
+      case NE => cspom.ctr('ne)(x, k)
+      case GT => cspom.ctr('gt)(x, k)
+      case GE => cspom.ctr('ge)(x, k)
     }
   }
 
@@ -275,6 +277,8 @@ class XCSP3Callbacks extends XCallbacks2 {
     cspom.ctr(CSPOMConstraint('lexmatrix)(CSPOMSeq(list.map(s => CSPOMSeq(cspom(s): _*)): _*)) withParam "mode" -> operator.name)
   }
 
+  /* Counting and summing constraints */
+
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
     buildCtrSum(id, list, Array.fill(list.length)(1), condition)
   }
@@ -316,6 +320,38 @@ class XCSP3Callbacks extends XCallbacks2 {
     buildCtrExactly(list, value, cspom(k))
   }
 
+  /* Connection constraints */
+
+  private def implementCondition(r: CSPOMExpression[_], condition: Condition): Unit = {
+    val v = condition match {
+      case cv: ConditionVar => cspom(cv.x.asInstanceOf[XVarInteger])
+      case cc: ConditionVal => CSPOMConstant(cc.value)
+    }
+
+    import TypeConditionOperator._
+
+    condition.operator match {
+      case LT => cspom.ctr('lt)(r, v)
+      case LE => cspom.ctr('le)(r, v)
+      case GE => cspom.ctr('ge)(r, v)
+      case GT => cspom.ctr('gt)(r, v)
+      case NE => cspom.ctr('ne)(r, v)
+      case EQ => cspom.ctr('eq)(r, v)
+      case IN => ???
+      case NOTIN => ???
+    }
+  }
+
+  def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition) {
+    val r = cspom.defineFree { v => CSPOMConstraint(v)('max)(cspom(list): _*) }
+    implementCondition(r, condition)
+  }
+
+  def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition) {
+    val r = cspom.defineFree { v => CSPOMConstraint(v)('min)(cspom(list): _*) }
+    implementCondition(r, condition)
+  }
+
   private def buildCtrElement(value: SimpleExpression[Int], index: SimpleExpression[Int], list: CSPOMSeq[Int]): Unit = {
     cspom.ctr {
       CSPOMConstraint(value)('element)(list, index)
@@ -340,6 +376,32 @@ class XCSP3Callbacks extends XCallbacks2 {
     require(rank == TypeRank.ANY)
 
     buildCtrElement(value, cspom(index), new CSPOMSeq(list.map(cspom), startIndex until startIndex + list.length))
+  }
+
+  /* Packing and scheduling */
+
+  /* Elementary constraints */
+
+  def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
+//    def bool01(e: SimpleExpression[_]) = {
+//      val bool: SimpleExpression[Boolean] =
+//        if (e.contains(0)) {
+//          if (e.contains(1)) {
+//            BoolVariable()
+//          } else {
+//            CSPOMConstant(false)
+//          }
+//        } else if (e.contains(1)) {
+//          CSPOMConstant(true)
+//        } else {
+//          throw new UNSATException()
+//        }
+//      cspom.replaceExpression(e, bool)
+//    }
+    val p = cspom(pos)//.map(bool01)
+    val n = cspom(neg)//.map(bool01)
+
+    cspom.ctr('clause)(p, n)
   }
 
   /* Objectives */

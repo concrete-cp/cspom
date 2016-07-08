@@ -156,9 +156,9 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   //
   //  override def hashCode = 31 * value.hashCode + params.hashCode
 
-  def isTrue = value == true
+  def isTrue = value == true || value == 1
 
-  def isFalse = value == false
+  def isFalse = value == false || value == 0
 
   def fullyDefined = true
 
