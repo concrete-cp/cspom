@@ -439,8 +439,8 @@ object CSPOM extends LazyLogging {
     try {
       new CompressorStreamFactory().createCompressorInputStream(is)
     } catch {
-      case e: CompressorException =>
-        logger.warn(e.getMessage)
+      case e: CompressorException if (e.getMessage == "No Compressor found for the stream signature.") =>
+        logger.info(e.getMessage)
         is
     }
   }

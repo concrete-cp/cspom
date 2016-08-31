@@ -58,7 +58,7 @@ class XCSP3Callbacks extends XCallbacks2 {
   private def cspom(x: XVarInteger): CSPOMVariable[Int] = declaredVariables(x)
 
   private def cspom(x: Array[XVarInteger]): Seq[CSPOMVariable[Int]] = {
-    x.map { v: XVarInteger => declaredVariables(v) }
+    x.map(declaredVariables)
   }
 
   def loadInstance(parser: XParser): Unit = {
@@ -306,6 +306,18 @@ class XCSP3Callbacks extends XCallbacks2 {
     }
   }
 
+  override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
+    cspom.ctr {
+      CSPOMConstraint('atLeast)(k, value, cspom(list))
+    }
+  }
+
+  override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
+    cspom.ctr {
+      CSPOMConstraint('atMost)(k, value, cspom(list))
+    }
+  }
+
   private def buildCtrExactly(list: Array[XVarInteger], value: Int, k: SimpleExpression[Int]): Unit = {
     cspom.ctr {
       CSPOMConstraint(k)('count)(value, cspom(list))
@@ -383,25 +395,7 @@ class XCSP3Callbacks extends XCallbacks2 {
   /* Elementary constraints */
 
   def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
-//    def bool01(e: SimpleExpression[_]) = {
-//      val bool: SimpleExpression[Boolean] =
-//        if (e.contains(0)) {
-//          if (e.contains(1)) {
-//            BoolVariable()
-//          } else {
-//            CSPOMConstant(false)
-//          }
-//        } else if (e.contains(1)) {
-//          CSPOMConstant(true)
-//        } else {
-//          throw new UNSATException()
-//        }
-//      cspom.replaceExpression(e, bool)
-//    }
-    val p = cspom(pos)//.map(bool01)
-    val n = cspom(neg)//.map(bool01)
-
-    cspom.ctr('clause)(p, n)
+    cspom.ctr('clause)(cspom(pos), cspom(neg))
   }
 
   /* Objectives */
