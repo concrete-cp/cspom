@@ -13,8 +13,8 @@ libraryDependencies ++= Seq(
 	"org.apache.commons" % "commons-compress" % "1.12",
 	"ch.qos.logback" % "logback-classic" % "1.1.7",
 	"com.storm-enroute" %% "scalameter-core" % "0.7",
-	"org.scalatest" %% "scalatest" % "2.2.6" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
+	"org.scalatest" %% "scalatest" % "3.0.0" % "test",
+	"org.scalacheck" %% "scalacheck" % "1.13.2" % "test",
 	"com.storm-enroute" %% "scalameter" % "0.7" % "test",
 	"org.tukaani" % "xz" % "1.5"
 	)
