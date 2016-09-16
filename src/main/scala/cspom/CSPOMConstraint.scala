@@ -63,7 +63,7 @@ final case class CSPOMConstraint[+T](
   }
 
   override def toString: String = {
-    val args = arguments.map(_.toString)
+    val args = arguments.map(_.toString())
     if (result.isTrue) {
       toString(None, args)
     } else {
@@ -79,12 +79,12 @@ final case class CSPOMConstraint[+T](
     }
   }
 
-  def toString(vn: VariableNames): String = {
-    val args = arguments.map(a => vn.names(a))
+  def toString(vn: CSPOMExpression[_] => String): String = {
+    val args = arguments.map(a => a.toString(vn))
     if (result.isTrue) {
       toString(None, args)
     } else {
-      toString(Some(vn.names(result)), args)
+      toString(Some(vn(result)), args)
     }
 
   }

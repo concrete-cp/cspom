@@ -9,10 +9,9 @@ object GML {
 
   private def vars(problem: CSPOM): (Map[CSPOMVariable[_], String], Seq[String]) = {
 
-    val vn = new VariableNames(problem)
     val v = problem.referencedExpressions
       .collect {
-        case e: CSPOMVariable[_] => e -> vn.names(e)
+        case e: CSPOMVariable[_] => e -> problem.displayName(e)
       }
       .toMap
 

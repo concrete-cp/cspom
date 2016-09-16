@@ -8,7 +8,6 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
 import cspom.StatisticsManager
-import cspom.VariableNames
 import cspom.util.BitVector
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
@@ -25,7 +24,6 @@ final class CSPOMCompiler(
     private val problem: CSPOM,
     private val constraintCompilers: IndexedSeq[ConstraintCompiler]) extends LazyLogging {
 
-  private lazy val vn = new VariableNames(problem)
 
   private def compile(): CSPOM = {
 
@@ -64,15 +62,14 @@ final class CSPOMCompiler(
 
   private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
     require(problem.constraintSet(constraint), {
-      val vn = new VariableNames(problem)
-      s"${constraint.toString(vn)} not in $problem"
+      s"${constraint.toString(problem.displayName)} not in $problem"
     })
     CSPOMCompiler.matches += 1
 
     compiler.mtch(constraint, problem) match {
       case Some(data) =>
         CSPOMCompiler.compiles += 1
-        logger.debug(s"$compiler : ${constraint.toString(vn)}")
+        logger.debug(s"$compiler : ${constraint.toString(problem.displayName)}")
         compiler.compile(constraint, problem, data)
       case None => Delta()
     }
@@ -88,7 +85,7 @@ object CSPOMCompiler {
     val (r, t) = StatisticsManager.measure(pbc.compile())
 
     compileTime = t
-
+    
     r
   }
 

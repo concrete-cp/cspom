@@ -17,7 +17,6 @@ import cspom.util.Infinitable
 import cspom.variable.IntExpression
 import cspom.util.Interval
 import scala.reflect.runtime.universe._
-import cspom.VariableNames
 
 object ConstraintCompiler extends LazyLogging {
   def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
@@ -26,7 +25,7 @@ object ConstraintCompiler extends LazyLogging {
     if (wh == by) {
       Delta()
     } else {
-      require(!wh.isInstanceOf[CSPOMConstant[_]])
+      require(!wh.isInstanceOf[CSPOMConstant[_]], s"Cannot replace $wh with $by: $wh is a constant")
       /*
        * Constants may not be equal when replacing boolean with 0/1 variable
        */
@@ -39,11 +38,11 @@ object ConstraintCompiler extends LazyLogging {
 
       var delta = Delta.empty
       for ((w, b) <- in.replaceExpression(wh, by)) {
-        logger.debug(s"replaced $w (${in.namesOf(w)}) with $b (${in.namesOf(b)})")
+        //logger.debug(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
         for (c <- in.constraints(w)) {
 
           val c2 = c.replacedVar(w, b)
-          logger.debug(s"rewriting $c to $c2")
+          logger.debug(s"rewriting ${c.toString(in.displayName)} to ${c2.toString(in.displayName)}")
           delta ++= replaceCtr(c, c2, in)
         }
         assert(!in.isReferenced(w),
@@ -84,7 +83,7 @@ object ConstraintCompiler extends LazyLogging {
   }
 
   def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    logger.debug(s"Removing $c")
+    logger.debug(c.map(_.toString(in.displayName)).mkString("Removing ", ", ", ""))
     c.foreach(in.removeConstraint)
     Delta.empty.removed(c)
   }
@@ -94,7 +93,7 @@ object ConstraintCompiler extends LazyLogging {
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     c.foreach(in.addConstraint(_))
-    logger.debug(s"Adding $c")
+    logger.debug(c.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
     Delta.empty.added(c)
   }
 }
@@ -173,7 +172,7 @@ trait ConstraintCompiler extends LazyLogging {
         c
     }
   }
-  
+
   override def toString = getClass.getSimpleName
 }
 
@@ -216,7 +215,7 @@ case class Delta private (
   def nonEmpty = removed.nonEmpty || added.nonEmpty
 
   override def toString = s"[ -- ${removed.mkString(", ")} ++ ${added.mkString(", ")} ]"
-  def toString(vn: VariableNames) = s"[ -- ${removed.map(e => e.toString(vn)).mkString(", ")} ++ ${added.map(_.toString(vn)).mkString(", ")} ]"
+  def toString(cspom: CSPOM) = s"[ -- ${removed.map(e => e.toString(cspom.displayName)).mkString(", ")} ++ ${added.map(_.toString(cspom.displayName)).mkString(", ")} ]"
 }
 
 object Delta {

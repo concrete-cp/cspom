@@ -55,6 +55,8 @@ sealed trait CSPOMExpression[+T] {
   def searchSpace: Double
 
   def isConstant: Boolean
+
+  def toString(names: CSPOMExpression[_] => String): String
 }
 
 object CSPOMExpression {
@@ -80,6 +82,7 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   def flatten: Seq[SimpleExpression[T]] = Seq(this)
 
   def isEmpty: Boolean
+
 }
 
 object SimpleExpression {
@@ -147,7 +150,7 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
     }
   }
 
-  override def toString = s"[$value]"
+  override def toString = value.toString
 
   //  override def equals(o: Any) = o match {
   //    case i: CSPOMConstant[_] => i.value == value && i.params == params
@@ -169,6 +172,8 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   def isConstant = true
 
   def flattenVariables = Seq()
+
+  def toString(names: CSPOMExpression[_] => String) = toString
 }
 
 //object CSPOMConstant {
@@ -186,6 +191,8 @@ abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
   def isTrue = false
   def isFalse = false
   def isConstant = false
+
+  def toString(names: CSPOMExpression[_] => String) = s"${names(this)}: ${toString()}"
 }
 
 object CSPOMSeq {
@@ -284,6 +291,13 @@ final class CSPOMSeq[+T: TypeTag](
   }
 
   override lazy val hashCode = super.hashCode
+
+  def toString(names: CSPOMExpression[_] => String) = {
+    if (isEmpty)
+      s"${names(this)}: CSPOMSeq()"
+    else
+      s"${names(this)}: CSPOMSeq[${indices.head}..${indices.last}](${values.map(_.toString(names)).mkString(", ")})"
+  }
   //
   //  override def equals(o: Any) = o match {
   //    case a: AnyRef => a eq this

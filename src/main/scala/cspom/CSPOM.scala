@@ -98,6 +98,9 @@ class CSPOM extends LazyLogging {
 
   private var _goal: Option[WithParam[CSPOMGoal[_]]] = None
 
+  private var generatedId = 0
+  private val generatedNames = collection.mutable.Map[CSPOMExpression[_], String]()
+
   /**
    * @param variableName
    *            A variable name.
@@ -137,6 +140,14 @@ class CSPOM extends LazyLogging {
         .flatten
   }
 
+  def nextGeneratedName(e: CSPOMExpression[_]): String = e match {
+    case CSPOMConstant(v) => v.toString
+    //case CSPOMSeq(v) => v.map(displayName).mkString("CSPOMSeq(", ", ", ")")
+    case _ =>
+      generatedId += 1
+      "_" + generatedId
+  }
+
   def namesOf(e: CSPOMExpression[_]): Iterable[String] = {
     val direct = expressionNames(e)
     val inContainers = for {
@@ -148,6 +159,15 @@ class CSPOM extends LazyLogging {
     }
 
     direct ++ inContainers
+  }
+
+  def displayName(e: CSPOMExpression[_]): String = e match {
+    case CSPOMConstant(c) => c.toString
+    case expression =>
+      namesOf(expression).toSeq match {
+        case Seq() => generatedNames.getOrElseUpdate(expression, nextGeneratedName(expression))
+        case cspomNames => cspomNames.sorted.mkString("||")
+      }
   }
 
   def variable(name: String): Option[CSPOMVariable[_]] = {
@@ -287,7 +307,7 @@ class CSPOM extends LazyLogging {
   }
 
   def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[R], CSPOMExpression[R])] = {
-    logger.debug(s"replacing $which (${namesOf(which)}) with $by (${namesOf(by)})") // from ${Thread.currentThread().getStackTrace.toSeq}")
+    lazy val namesOfWhich = which.toString(displayName) // { x => ??? }
     require(which != by, s"Replacing $which with $by")
     //require((namesOf(which).toSet & namesOf(by).toSet).isEmpty)
     var replaced = List[(CSPOMExpression[R], CSPOMExpression[R])]()
@@ -315,6 +335,8 @@ class CSPOM extends LazyLogging {
         setGoal(CSPOMGoal.Maximize(by.asInstanceOf[CSPOMExpression[Int]]), p)
       case _ =>
     }
+
+    logger.debug(s"replacing $namesOfWhich with ${by.toString(displayName)}") // from ${Thread.currentThread().getStackTrace.toSeq}")
 
     (which, by) :: replaced
 
@@ -404,13 +426,12 @@ class CSPOM extends LazyLogging {
 
   def getPostponed: Seq[CSPOMConstraint[_]] = postponed
 
-  override def toString: String = {
-    val vn = new VariableNames(this)
-    val vars = referencedExpressions.map(e => (vn.names(e), e)).sortBy(_._1).map {
+  override def toString(): String = {
+    val vars = referencedExpressions.map(e => (displayName(e), e)).sortBy(_._1).map {
       case (name, variable) => s"$name: $variable"
     }.mkString("\n")
 
-    val cons = constraints.map(_.toString(vn)).mkString("\n")
+    val cons = constraints.map(_.toString(displayName)).mkString("\n")
 
     s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
@@ -526,7 +547,7 @@ object CSPOM extends LazyLogging {
 
   implicit def constantSeq[A: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
-  //implicit def matrix(sc: StringContext) = Table.MatrixContext(sc)
+  implicit def matrix(sc: StringContext) = Relation.MatrixContext(sc)
 
   def goal(g: WithParam[CSPOMGoal[_]])(implicit problem: CSPOM): Unit = {
     problem.setGoal(g)
