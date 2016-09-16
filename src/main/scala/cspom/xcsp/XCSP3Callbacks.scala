@@ -57,8 +57,16 @@ class XCSP3Callbacks extends XCallbacks2 {
 
   private def cspom(x: XVarInteger): CSPOMVariable[Int] = declaredVariables(x)
 
-  private def cspom(x: Array[XVarInteger]): Seq[CSPOMVariable[Int]] = {
+  private def cspom(x: Array[XVarInteger]): IndexedSeq[CSPOMVariable[Int]] = {
     x.map(declaredVariables)
+  }
+
+  private def cspomSeq(x: Array[XVarInteger]): CSPOMSeq[Int] = {
+    CSPOM.seq2CSPOMSeq(cspom(x))
+  }
+
+  private def cspomSeq(x: Array[XVarInteger], indices: Range): CSPOMSeq[Int] = {
+    new CSPOMSeq(cspom(x), indices)
   }
 
   def loadInstance(parser: XParser): Unit = {
@@ -274,7 +282,7 @@ class XCSP3Callbacks extends XCallbacks2 {
   }
 
   override def buildCtrLexMatrix(id: String, list: Array[Array[XVarInteger]], operator: TypeOperator): Unit = {
-    cspom.ctr(CSPOMConstraint('lexmatrix)(CSPOMSeq(list.map(s => CSPOMSeq(cspom(s): _*)): _*)) withParam "mode" -> operator.name)
+    cspom.ctr(CSPOMConstraint('lexmatrix)(CSPOMSeq(list.map(cspomSeq): _*)) withParam "mode" -> operator.name)
   }
 
   /* Counting and summing constraints */
@@ -371,28 +379,70 @@ class XCSP3Callbacks extends XCallbacks2 {
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], value: XVarInteger): Unit = {
-    buildCtrElement(cspom(value), IntVariable.free(), cspom(list))
+    buildCtrElement(cspom(value), IntVariable.free(), cspomSeq(list))
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], value: Int) {
-    buildCtrElement(value, IntVariable.free(), cspom(list))
+    buildCtrElement(value, IntVariable.free(), cspomSeq(list))
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = {
     require(rank == TypeRank.ANY)
 
-    buildCtrElement(cspom(value), cspom(index), new CSPOMSeq(list.map(cspom), startIndex until startIndex + list.length))
+    buildCtrElement(cspom(value), cspom(index), cspomSeq(list, startIndex until startIndex + list.length))
   }
 
   override def buildCtrElement(id: String, list: Array[XVarInteger], startIndex: Int, index: XVarInteger, rank: TypeRank, value: Int) {
     require(rank == TypeRank.ANY)
 
-    buildCtrElement(value, cspom(index), new CSPOMSeq(list.map(cspom), startIndex until startIndex + list.length))
+    buildCtrElement(value, cspom(index), cspomSeq(list, startIndex until startIndex + list.length))
   }
 
   /* Packing and scheduling */
 
+  private def buildCtrNoOverlap(origins: CSPOMSeq[Int], lengths: CSPOMSeq[Int], zeroIgnored: Boolean): Unit = {
+    cspom.ctr {
+      CSPOMConstraint('noOverlap)(origins, lengths) withParam "zeroIgnored" -> zeroIgnored
+    }
+  }
+
+  def buildCtrNoOverlap(id: String,
+    origins: Array[XVarInteger],
+    lengths: Array[Int],
+    zeroIgnored: Boolean) {
+    buildCtrNoOverlap(cspom(origins), CSPOM.constantSeq(lengths), zeroIgnored)
+  }
+
+  def buildCtrNoOverlap(id: String,
+    origins: Array[XVarInteger],
+    lengths: Array[XVarInteger],
+    zeroIgnored: Boolean) {
+    buildCtrNoOverlap(cspom(origins), cspom(lengths), zeroIgnored)
+  }
+
+  def buildCtrNoOverlap(id: String,
+    origins: Array[Array[XVarInteger]],
+    lengths: Array[Array[Int]],
+    zeroIgnored: Boolean) {
+    unimplementedCase(id)
+  }
+
+  def buildCtrNoOverlap(id: String,
+    origins: Array[Array[XVarInteger]],
+    lengths: Array[Array[XVarInteger]],
+    zeroIgnored: Boolean) {
+    unimplementedCase(id)
+  }
+
   /* Elementary constraints */
+
+  def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]) {
+    implicit def problem = cspom
+    for ((variable, value) <- (list, values).zipped) {
+      cspom.ctr(cspom(variable) === constant(value))
+    }
+
+  }
 
   def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
     cspom.ctr('clause)(cspom(pos), cspom(neg))
@@ -412,17 +462,43 @@ class XCSP3Callbacks extends XCallbacks2 {
     vars.zip(coefs).map { case (v, k) => IntExpression.span(v) * Finite(k) }.reduce(_ + _)
   }
 
+  private def declare(e: CSPOMVariable[Int], name: String): CSPOMVariable[Int] = {
+    val obj = cspom.nameExpression(e, "cspom-objective")
+    declaredVariables(XVar.build("cspom-objective", TypeVar.integer, null).asInstanceOf[XVarInteger]) = obj
+    obj
+  }
+
   private def buildObjSum(list: Array[XVarInteger], coefs: Array[Int], mode: String) = {
     val vars = cspom(list)
 
-    val obj = cspom.nameExpression(IntVariable(span(vars, coefs)), "cspom-objective")
+    val obj = declare(IntVariable(span(vars, coefs)), "cspom-objective")
 
     cspom.ctr {
       CSPOMConstraint('sum)(-1 +: coefs.toSeq, obj +: vars, 0) withParam ("mode" -> mode)
     }
 
-    declaredVariables(XVar.build("cspom-objective", TypeVar.integer, null).asInstanceOf[XVarInteger]) = obj
+    obj
+  }
 
+  private def union(vars: Seq[SimpleExpression[Int]]) = {
+    vars.map { v => IntExpression.span(v) }.reduce(_ span _)
+  }
+
+  private def buildObjMax(list: Array[XVarInteger]) = {
+    val vars = cspom(list)
+    val obj = declare(IntVariable(union(vars)), "cspom-objective")
+    cspom.ctr {
+      CSPOMConstraint(obj)('max)(vars: _*)
+    }
+    obj
+  }
+
+  private def buildObjMin(list: Array[XVarInteger]) = {
+    val vars = cspom(list)
+    val obj = declare(IntVariable(union(vars)), "cspom-objective")
+    cspom.ctr {
+      CSPOMConstraint(obj)('min)(vars: _*)
+    }
     obj
   }
 
@@ -430,17 +506,37 @@ class XCSP3Callbacks extends XCallbacks2 {
     import TypeObjective._
     typ match {
       case SUM => cspom.setGoal(CSPOMGoal.Minimize(buildObjSum(list, coefs, "le")))
-      case _ => ???
+      case o => throw new UnsupportedOperationException(s"Objective type $o is not implemented")
     }
+  }
+
+  override def buildObjToMinimize(id: String, typ: TypeObjective, list: Array[XVarInteger]): Unit = {
+    import TypeObjective._
+    typ match {
+      case MAXIMUM => cspom.setGoal(CSPOMGoal.Minimize(buildObjMax(list)))
+      case MINIMUM => cspom.setGoal(CSPOMGoal.Minimize(buildObjMin(list)))
+      case o => buildObjToMinimize(id, typ, list, Array.fill(list.length)(1))
+    }
+
   }
 
   override def buildObjToMaximize(id: String, typ: TypeObjective, list: Array[XVarInteger], coefs: Array[Int]): Unit = {
     import TypeObjective._
     typ match {
       case SUM => cspom.setGoal(CSPOMGoal.Maximize(buildObjSum(list, coefs, "ge")))
-      case _ => ???
+      case o => throw new UnsupportedOperationException(s"Objective type $o is not implemented")
 
     }
+  }
+
+  override def buildObjToMaximize(id: String, typ: TypeObjective, list: Array[XVarInteger]): Unit = {
+    import TypeObjective._
+    typ match {
+      case MAXIMUM => cspom.setGoal(CSPOMGoal.Maximize(buildObjMax(list)))
+      case MINIMUM => cspom.setGoal(CSPOMGoal.Maximize(buildObjMin(list)))
+      case o => buildObjToMaximize(id, o, list, Array.fill(list.length)(1))
+    }
+
   }
 
 }
