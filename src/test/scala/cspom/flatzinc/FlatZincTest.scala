@@ -2,7 +2,7 @@ package cspom.flatzinc
 
 import org.scalatest.FlatSpec
 import org.scalatest.TryValues
-import cspom.VariableNames
+
 import org.scalatest.Matchers
 import cspom.variable.CSPOMConstant
 import cspom.compiler.StandardCompilers
@@ -18,13 +18,13 @@ class FlatZincTest extends FlatSpec with Matchers {
 
     // CSPOMCompiler.compile(cspom, FZPatterns()).get
 
-    val Seq(fz) = FZPatterns()
-    val vn = new VariableNames(cspom)
+    //val Seq(fz) = FZPatterns()
+
     val constraint = cspom.constraints.next
-    val delta = for (data <- fz.mtch(constraint, cspom)) yield {
-      val delta = fz.compile(constraint, cspom, data)
-      //println(delta.toString(vn))
-    }
+    //    val delta = for (data <- fz.mtch(constraint, cspom)) yield {
+    //      val delta = fz.compile(constraint, cspom, data)
+    //      //println(delta.toString(vn))
+    //    }
 
     //println(cspom)
 

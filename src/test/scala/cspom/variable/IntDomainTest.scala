@@ -14,8 +14,9 @@ import cspom.util.Intervals
 import cspom.xcsp.XCSPParser
 import cspom.util.Finite
 import cspom.util.Infinitable
+import org.scalatest.concurrent.TimeLimits
 
-class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
+class IntDomainTest extends FlatSpec with Matchers with PropertyChecks with TimeLimits {
 
   def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
     new ContiguousIntRangeSet(r)

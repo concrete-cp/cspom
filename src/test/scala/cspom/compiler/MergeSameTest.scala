@@ -3,13 +3,13 @@ package cspom.compiler
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.time.Seconds
-import org.scalatest.concurrent.Timeouts
 import org.scalatest.time.Span
 import cspom.xcsp.XCSPParser
 import cspom.CSPOM
 import org.scalatest.TryValues
+import org.scalatest.concurrent.TimeLimits
 
-class MergeSameTest extends FlatSpec with Matchers with Timeouts with TryValues {
+class MergeSameTest extends FlatSpec with Matchers with TimeLimits with TryValues {
 
   "MergeSame" should "not take too long to compile" in {
     val url = XCSPParser.getClass.getResource("tsp-20-1_ext.xml.bz2")

@@ -1,13 +1,16 @@
 package cspom.extension;
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.time.Seconds
-import org.scalatest.concurrent.Timeouts
-import org.scalatest.time.Span
-import org.scalatest.enablers.Aggregating
+import scala.Iterable
+import scala.math.BigInt.int2bigInt
 
-final class MDDTest extends FlatSpec with Matchers with Timeouts {
+import org.scalatest.Finders
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.concurrent.TimeLimits
+import org.scalatest.time.Seconds
+import org.scalatest.time.Span
+
+final class MDDTest extends FlatSpec with Matchers with TimeLimits {
 
   val relation: MDD[Int] = MDD.empty + List(2, 5, 5) + List(3, 5, 5)
 

@@ -11,8 +11,9 @@ import RangeSet.apply
 import IntervalsArithmetic.Arithmetics
 import IntervalsArithmetic.RangeArithmetics
 import org.scalatest.time.Milliseconds
+import org.scalatest.concurrent.TimeLimits
 
-class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks with Timeouts {
+class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks with TimeLimits {
   "Intervals" should "provide correct shrinking integer division" in {
     assert((IntInterval(1, 19) / 20).isEmpty)
     IntInterval(0, 19) / 20 shouldBe IntInterval(0, 0)
