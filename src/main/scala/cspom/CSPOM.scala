@@ -353,13 +353,17 @@ class CSPOM extends LazyLogging {
   }
 
   def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
+    ctrNetwork(c)
+    c
+  }
+
+  def ctrNetwork(c: CSPOMConstraint[_]): Seq[CSPOMConstraint[_]] = {
     if (_constraints(c)) {
       logger.warn(s"$c already belongs to the problem")
-      c
+      Nil
     } else {
       postpone(c)
       resolvePostponed(c)
-      c
     }
   }
 
@@ -394,22 +398,24 @@ class CSPOM extends LazyLogging {
     c
   }
 
-  private def resolvePostponed(c: CSPOMConstraint[_]): Unit = {
+  private def resolvePostponed(c: CSPOMConstraint[_]): Seq[CSPOMConstraint[_]] = {
     resolvePostponed(c.flattenedScope)
   }
 
-  private def resolvePostponed(e: Iterable[CSPOMExpression[_]]): Unit = {
-    postponed = resolvePostponed(e.toSet, postponed)
+  private def resolvePostponed(e: Iterable[CSPOMExpression[_]]): Seq[CSPOMConstraint[_]] = {
+    val (posted, remaining) = resolvePostponed(e.toSet, postponed, Nil)
+    postponed = remaining
+    posted
   }
 
   @annotation.tailrec
-  private def resolvePostponed(nodes: Set[CSPOMExpression[_]], postponed: List[CSPOMConstraint[_]]): List[CSPOMConstraint[_]] = {
+  private def resolvePostponed(nodes: Set[CSPOMExpression[_]], postponed: List[CSPOMConstraint[_]], posted: List[CSPOMConstraint[_]]): (List[CSPOMConstraint[_]], List[CSPOMConstraint[_]]) = {
     val (post, remaining) = postponed.partition { c => c.flattenedScope.exists(nodes) }
     if (post.isEmpty) {
-      remaining
+      (posted, remaining)
     } else {
       post.foreach(addConstraint(_))
-      resolvePostponed(post.map(_.flattenedScope).reduce(_ ++ _), remaining)
+      resolvePostponed(post.map(_.flattenedScope).reduce(_ ++ _), remaining, post ::: posted)
     }
   }
 

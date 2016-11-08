@@ -17,6 +17,8 @@ import cspom.util.Infinitable
 import cspom.variable.IntExpression
 import cspom.util.Interval
 import scala.reflect.runtime.universe._
+import cspom.variable.BoolExpression
+import cspom.variable.BoolVariable
 
 object ConstraintCompiler extends LazyLogging {
   def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
@@ -92,14 +94,29 @@ object ConstraintCompiler extends LazyLogging {
 
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    c.foreach(in.addConstraint(_))
-    logger.debug(c.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
-    Delta.empty.added(c)
+    val posted = c.flatMap(in.ctrNetwork(_))
+    logger.debug(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
+    Delta.empty.added(posted)
   }
 }
 
 trait ConstraintCompiler extends LazyLogging {
   type A
+
+  def intOrBoolToBool(exprs: Seq[SimpleExpression[_]]) = {
+
+    val booleans = exprs.map {
+      case IntExpression(a) => a -> new BoolVariable()
+      case BoolExpression(a) => a -> a
+    }
+
+    val bool2int = booleans.flatMap {
+      case (IntExpression(a), b) => Seq(CSPOMConstraint('bool2int)(b, a))
+      case _ => Seq()
+    }
+
+    (booleans.map(_._2), bool2int)
+  }
 
   def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
 
