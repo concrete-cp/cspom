@@ -21,6 +21,7 @@ import cspom.util.Infinitable
 import cspom.util.Finite
 import cspom.variable.FreeVariable
 import cspom.util.IntInterval
+import cspom.UNSATException
 
 /**
  * Detects and removes constants from extensional constraints
@@ -55,35 +56,44 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
     logger.info(s"filtered: ${filtered ne relation}")
 
+    if (filtered.isEmpty) throw new UNSATException(s"Relation is empty for ${c.toString(problem.displayName)}")
+
     val vars = c.arguments.zipWithIndex.collect {
       case (c: CSPOMVariable[_], i) => i
     }
-    val projected = if (vars.size < c.arguments.size) {
-      filtered.project(vars)
+
+    if (vars.isEmpty) {
+      logger.info("No variables left")
+      removeCtr(c, problem)
     } else {
-      filtered
+
+      val projected = if (vars.size < c.arguments.size) {
+        filtered.project(vars)
+      } else {
+        filtered
+      }
+
+      logger.info(s"projected: ${projected ne filtered}")
+
+      val reduced = projected match {
+        case p: MDD[_] => p.reduce
+        case p => p
+      }
+
+      logger.info(s"reduced: ${reduced ne projected}")
+
+      if (relation ne reduced) {
+
+        logger.info(s"$relation -> $reduced")
+        replaceCtr(c,
+          CSPOMConstraint('extension)(vars.map(args): _*) withParams (c.params + ("relation" -> reduced)),
+          problem)
+
+      } else {
+        Delta.empty
+      }
+
     }
-
-    logger.info(s"projected: ${projected ne filtered}")
-
-    val reduced = projected match {
-      case p: MDD[_] => p.reduce
-      case p => p
-    }
-
-    logger.info(s"reduced: ${reduced ne projected}")
-
-    if (relation ne reduced) {
-
-      logger.info(s"$relation -> $reduced")
-      replaceCtr(c,
-        CSPOMConstraint('extension)(vars.map(args): _*) withParams (c.params + ("relation" -> reduced)),
-        problem)
-
-    } else {
-      Delta.empty
-    }
-
   }
 
   def selfPropagation = false
