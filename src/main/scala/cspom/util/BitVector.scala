@@ -36,7 +36,7 @@ final object BitVector {
 
     trimTo match {
       case 0 => EmptyBitVector
-      case 1  => new SmallBitVector(words(0))
+      case 1 => new SmallBitVector(words(0))
       case _ =>
         val nw = if (trimTo == words.length) words else Arrays.copyOf(words, trimTo)
         LargeBitVector(nw)
@@ -221,6 +221,9 @@ trait BitVector extends Any {
       val wordShift = n / WORD_SIZE
 
       val words = new Array[Long](BitVector.word(lastSetBit + n) + 1)
+
+      require(nbWords + wordShift <= words.length, s"$n $toString $wordShift ${words.toSeq}")
+
       System.arraycopy(this.words, 0, words, wordShift, nbWords)
 
       if (n % WORD_SIZE != 0) {

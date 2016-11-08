@@ -144,7 +144,12 @@ class LargeBitVector private[util] (val words: Array[Long]) extends AnyVal with 
       if (startWordIndex >= nbWords) {
         this
       } else if (startWordIndex == 0) {
-        new SmallBitVector(words(0) & ~(MASK << from))
+        val newWord = words(0) & ~(MASK << from)
+        if (newWord == 0L) {
+          EmptyBitVector
+        } else {
+          new SmallBitVector(newWord)
+        }
       } else {
 
         val lastWord = words(startWordIndex) & ~(MASK << from)

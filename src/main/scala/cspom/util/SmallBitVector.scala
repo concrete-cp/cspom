@@ -43,7 +43,12 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
     } else if (from <= 0) {
       BitVector.empty
     } else {
-      new SmallBitVector(word & ~(MASK << from))
+      val newWord = word & ~(MASK << from)
+      if (newWord == 0L) {
+        EmptyBitVector
+      } else {
+        new SmallBitVector(newWord)
+      }
     }
   }
 
@@ -53,7 +58,12 @@ final class SmallBitVector(val word: Long) extends AnyVal with BitVector {
     } else if (until < 0) {
       this
     } else {
-      new SmallBitVector(word & (MASK << until))
+      val newWord = word & (MASK << until)
+      if (newWord == 0L) {
+        EmptyBitVector
+      } else {
+        new SmallBitVector(newWord)
+      }
     }
   }
 
