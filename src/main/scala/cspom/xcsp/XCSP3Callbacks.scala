@@ -155,14 +155,7 @@ class XCSP3Callbacks extends XCallbacks2 {
     y: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
     import TypeArithmeticOperator._
     val aux = cspom.defineInt { r =>
-      opa match {
-        case ADD => CSPOMConstraint(r)('add)(x, y)
-        case SUB => CSPOMConstraint(r)('sub)(x, y)
-        case MUL => CSPOMConstraint(r)('mul)(x, y)
-        case DIV => CSPOMConstraint(r)('div)(x, y)
-        case MOD => CSPOMConstraint(r)('mod)(x, y)
-        case DIST => CSPOMConstraint(r)('absdiff)(x, y)
-      }
+      CSPOMConstraint(r)(Symbol(opa.toString.toLowerCase))(x, y)
     }
 
     buildCtrPrimitiveCSPOM(aux, op, k)

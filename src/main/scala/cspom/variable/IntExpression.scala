@@ -42,7 +42,7 @@ object IntExpression extends SimpleExpression.Typed[Int] {
     case _                     => throw new IllegalArgumentException(s"Cannot span $e")
   }
 
-  def is01(e: SimpleExpression[Int]) = implicits.iterable(e).forall(i => i == 0 || i == 1)
+  def is01(e: SimpleExpression[Int]) = e.fullyDefined && implicits.iterable(e).forall(i => i == 0 || i == 1)
 
   object IntExpression01 {
     def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[Int]] =

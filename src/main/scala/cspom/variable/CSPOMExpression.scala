@@ -247,7 +247,11 @@ final class CSPOMSeq[+T: TypeTag](
 
   def withIndex = values zip definedIndices
 
-  def apply(idx: Int): CSPOMExpression[T] = values(definedIndices.indexOf(idx))
+  def apply(idx: Int): CSPOMExpression[T] = {
+    val index = definedIndices.indexOf(idx)
+    require(index >= 0, s"$idx out of range $definedIndices")
+    values(index)
+  }
 
   def length: Int = values.length
 

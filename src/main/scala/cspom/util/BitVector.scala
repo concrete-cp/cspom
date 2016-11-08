@@ -222,7 +222,7 @@ trait BitVector extends Any {
 
       val words = new Array[Long](BitVector.word(lastSetBit + n) + 1)
 
-      require(nbWords + wordShift <= words.length, s"$n $toString $wordShift ${words.toSeq}")
+      assert(nbWords + wordShift <= words.length, s"$n $toString $wordShift ${words.toSeq}")
 
       System.arraycopy(this.words, 0, words, wordShift, nbWords)
 
