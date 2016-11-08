@@ -7,15 +7,15 @@ version := "2.9-SNAPSHOT"
 scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
-	"com.typesafe.scala-logging" %% "scala-logging" % "3.4.0",
+	"com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
 	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
-	"org.scala-lang.modules" %% "scala-xml" % "1.0.5",
+	"org.scala-lang.modules" %% "scala-xml" % "1.0.6",
 	"org.apache.commons" % "commons-compress" % "1.12",
 	"ch.qos.logback" % "logback-classic" % "1.1.7",
-	"com.storm-enroute" %% "scalameter-core" % "0.7",
+	"com.storm-enroute" %% "scalameter-core" % "0.8.1",
 	"org.scalatest" %% "scalatest" % "3.0.0" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.13.2" % "test",
-	"com.storm-enroute" %% "scalameter" % "0.7" % "test",
+	"org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
+	"com.storm-enroute" %% "scalameter" % "0.8.1" % "test",
 	"org.tukaani" % "xz" % "1.5"
 	)
 
