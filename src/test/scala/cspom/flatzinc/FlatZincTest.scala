@@ -14,7 +14,7 @@ class FlatZincTest extends FlatSpec with Matchers {
   val url = classOf[FlatZincTest].getResource("1d_rubiks_cube.fzn.xz")
 
   "FlatZinc parser" should s"parse $url" in {
-    val cspom = CSPOM.load(url, FlatZincParser).get
+    val cspom = CSPOM.load(url, FlatZincFastParser).get
 
     // CSPOMCompiler.compile(cspom, FZPatterns()).get
 
@@ -32,7 +32,7 @@ class FlatZincTest extends FlatSpec with Matchers {
 
   it should "correctly affect values" in {
     val cspom = CSPOM.load(
-      classOf[FlatZincTest].getResource("affectations.fzn.xz"), FlatZincParser).get
+      classOf[FlatZincTest].getResource("affectations.fzn.xz"), FlatZincFastParser).get
     CSPOMCompiler.compile(cspom, StandardCompilers())
     withClue(cspom) {
       cspom.expression("X") shouldBe Some(CSPOMConstant(true))

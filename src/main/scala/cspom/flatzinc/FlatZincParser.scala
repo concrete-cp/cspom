@@ -181,11 +181,11 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
       "var set of int" |
       "array" ~ "[" ~ index_set ~ "] of var set of int"
 
-  def index_set: Parser[Seq[IndexSet]] = rep1sep(index_set1, ",")
+  def index_set: Parser[Seq[Option[Range]]] = rep1sep(index_set1, ",")
 
-  def index_set1: Parser[IndexSet] =
-    "1.." ~> int_const ^^ { i => FZRange(1 to i.value) } |
-      "int" ^^^ SomeIndexSet
+  def index_set1: Parser[Option[Range]] =
+    "1.." ~> int_const ^^ { i => Some(1 to i.value) } |
+      "int" ^^^ None
 
   def expr: Parser[FZExpr[Any]] = {
     bool_const |
@@ -236,7 +236,7 @@ object FlatZincParser extends RegexParsers with CSPOM.Parser {
   def param_decl: Parser[FZParamDecl] = (par_type <~ ":") ~ (var_par_id <~ "=") ~ expr <~ ";" ^^ {
     case t ~ id ~ expr =>
       val e: CSPOMExpression[_] = (t, expr) match {
-        case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.range)
+        case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.get)
         case (_, c: FZConstant[_]) => c.asConstant
         case _ => throw new IllegalArgumentException("Constant expected")
       }

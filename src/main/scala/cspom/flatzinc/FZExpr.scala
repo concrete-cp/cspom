@@ -75,9 +75,9 @@ case class FZArrayExpr[+A: TypeTag](value: Seq[FZExpr[A]]) extends FZExpr[A] {
   def asConstant(indices: Range): CSPOMSeq[_] =
     new CSPOMSeq(value
       .map {
-        case c: FZConstant[_]  => c.asConstant
+        case c: FZConstant[_] => c.asConstant
         case a: FZArrayExpr[_] => a.asConstant(indices)
-        case _                 => throw new IllegalArgumentException
+        case _ => throw new IllegalArgumentException
       }
       .toIndexedSeq, indices)
 }
@@ -94,3 +94,5 @@ case class FZAnnotation(predAnnId: String, expr: Seq[FZExpr[_]] = Seq()) extends
   def tpe = typeOf[String]
 
 }
+
+case class FZConstraint(predAnnId: String, expr: Seq[FZExpr[Any]], annotations: Seq[FZAnnotation])

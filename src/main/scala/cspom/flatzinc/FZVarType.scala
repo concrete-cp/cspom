@@ -41,19 +41,11 @@ case object FZIntSet extends FZVarType[Int] {
   def genVariable() = ???
 }
 
-final case class FZArray[T: TypeTag](indices: Seq[IndexSet], typ: FZVarType[T]) extends FZVarType[T] {
+final case class FZArray[T: TypeTag](indices: Seq[Option[Range]], typ: FZVarType[T]) extends FZVarType[T] {
   def genVariable() = indices match {
-    case Seq()        => typ.genVariable()
-    case head +: tail => new CSPOMSeq(IndexedSeq.fill(head.range.size)(FZArray(tail, typ).genVariable()), head.range)
+    case Seq() => typ.genVariable()
+    case head +: tail => new CSPOMSeq(IndexedSeq.fill(head.get.size)(FZArray(tail, typ).genVariable()), head.get)
   }
 }
 
-sealed trait IndexSet {
-  def range: Range
-}
-
-case class FZRange(range: Range) extends IndexSet
-
-case object SomeIndexSet extends IndexSet {
-  def range = throw new UnsupportedOperationException
-}
+case class FZPredicate(annId: String, params: Seq[Any])
