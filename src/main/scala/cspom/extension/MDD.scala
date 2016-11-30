@@ -5,7 +5,7 @@ import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import com.typesafe.scalalogging.LazyLogging
 import java.util.IdentityHashMap
-import scala.collection.JavaConversions
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 object MDD {
@@ -52,7 +52,7 @@ final class IdMap[A, B] extends mutable.Map[A, B] {
 
   def get(key: A) = Option(idMap.get(key))
 
-  def iterator = JavaConversions.mapAsScalaMap(idMap).iterator
+  def iterator = idMap.asScala.iterator
 
   override def size = idMap.size
 
@@ -84,7 +84,7 @@ final case class IdEq[A <: AnyRef](val m: A) {
 
 final class IdSet[A] extends mutable.Set[A] {
   val idMap = new IdentityHashMap[A, Unit]
-  def iterator: Iterator[A] = JavaConversions.asScalaSet(idMap.keySet).iterator
+  def iterator: Iterator[A] = idMap.keySet.asScala.iterator
 
   def -=(elem: A) = {
     idMap.remove(elem)
