@@ -20,8 +20,6 @@ import fastparse.noApi._
 import java.io.BufferedReader
 import scala.io.Source
 import fastparse.WhitespaceApi
-import org.apache.commons.io.input.ReaderInputStream
-import java.io.StringReader
 
 object FlatZincFastParser extends CSPOM.Parser {
 
@@ -45,41 +43,18 @@ object FlatZincFastParser extends CSPOM.Parser {
   def apply(is: InputStream): Try[CSPOM] = {
     Try {
 
-//      val input = Source.fromInputStream(is).grouped(1024).map(_.mkString)
-//      flatzincModel.parseIterator(input)
-//      
+      //      val input = Source.fromInputStream(is).grouped(1024).map(_.mkString)
+      //      flatzincModel.parseIterator(input)
+
       val input = Source.fromInputStream(is).mkString
       flatzincModel.parse(input)
-      
-      
+
     }
       .flatMap {
-        case Parsed.Success(cspom, _) =>
-          util.Success(cspom)
-        case Parsed.Failure(expected, index, extra) => util.Failure(new CSPParseException(s"expected: $expected, extra: $extra", null, index))
+        case Parsed.Success(cspom, _) => util.Success(cspom)
+        case Parsed.Failure(expected, index, extra) =>
+          util.Failure(new CSPParseException(s"expected: $expected, extra: $extra", null, index))
       }
-  }
-
-  private def mapVariables(params: Map[String, CSPOMExpression[_]],
-    variables: Seq[FZVarDecl]) = {
-
-    val decl = variables
-      .foldLeft[Map[String, CSPOMExpression[Any]]](Map()) {
-        case (vars, FZVarDecl(name, expression, _)) => vars + (name -> expression.fold(_.genVariable, _.toCSPOM(vars)))
-      }
-    //.toMap
-
-    //    // /!\ do not use Map to avoid non-determinism between runs
-    //    val affectations: Seq[(CSPOMExpression[_], CSPOMExpression[_])] = variables.collect {
-    //      case FZVarDecl(_, expr, Some(aff), _) => expr -> aff.toCSPOM(decl)
-    //    }
-
-    val annotations: Map[String, Seq[FZAnnotation]] = variables.map {
-      case FZVarDecl(name, _, ann) => name -> ann
-    }
-      .toMap
-
-    (params ++ decl, annotations)
   }
 
   /*
@@ -91,11 +66,21 @@ object FlatZincFastParser extends CSPOM.Parser {
       val params: Map[String, CSPOMExpression[_]] = paramOrVar.collect {
         case FZParamDecl(name, expr) => name -> expr
       }.toMap
+
       val variables = paramOrVar.collect {
         case v: FZVarDecl => v
       }
+
       assert(params.size + variables.size == paramOrVar.size)
-      val (declared, annotations) = mapVariables(params, variables)
+
+      val declared = variables.foldLeft(params) {
+        case (vars, FZVarDecl(name, expression, _)) => vars + (name -> expression.fold(_.genVariable, _.toCSPOM(vars)))
+      }
+
+      val annotations: Map[String, Seq[FZAnnotation]] = variables.map {
+        case FZVarDecl(name, _, ann) => name -> ann
+      }
+        .toMap
 
       CSPOM { implicit problem =>
 
@@ -115,12 +100,6 @@ object FlatZincFastParser extends CSPOM.Parser {
             CSPOMConstraint(Symbol(predAnnId))(expr.map(_.toCSPOM(declared)): _*) withParam
               (fzAnnotations(annotations): _*))
         }
-
-        //        for ((e: CSPOMExpression[Any], a: CSPOMExpression[Any]) <- affectations) {
-        //          //ConstraintCompiler.deepReplace(e, a, problem)
-        //
-        //          CSPOM.ctr(CSPOMConstraint('eq)(e, a))
-        //        }
 
         CSPOM.goal {
           val FZSolve(mode, ann) = goal
@@ -306,8 +285,3 @@ object FlatZincFastParser extends CSPOM.Parser {
 
 }
 
-object Text extends App {
-  val string = """predicate all_different_int(array [int] of var int: x);
-array [1..2] of int: X_INTRODUCED_26 = [1,-1]; solve satisfy;"""
-  println(FlatZincFastParser(new ReaderInputStream(new StringReader(string))).get)
-}

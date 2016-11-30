@@ -36,6 +36,7 @@ import cspom.variable.FreeVariable
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
 import cspom.xcsp.XCSPParser
+import cspom.flatzinc.FlatZincFastParser
 
 object NameParser extends JavaTokenParsers {
 
@@ -482,7 +483,7 @@ object CSPOM extends LazyLogging {
    */
   def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
 
-  def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincParser)
+  def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
 
   def loadCNF(file: String): Try[CSPOM] = load(file2url(file), CNFParser)
 
