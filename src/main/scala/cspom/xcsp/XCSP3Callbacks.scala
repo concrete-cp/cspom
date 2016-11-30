@@ -84,7 +84,7 @@ class XCSP3Callbacks extends XCallbacks2 {
     endInstance();
   }
 
-  def endObjectives(): Unit = {
+  override def endObjectives(): Unit = {
     val goal = cspom.goal
       .getOrElse(WithParam(CSPOMGoal.Satisfy))
       .withParam("variables" -> declaredVariables.map(_._1.id))
@@ -105,7 +105,7 @@ class XCSP3Callbacks extends XCallbacks2 {
     cspom.nameExpression(v, x.id)
   }
 
-  def buildVarInteger(x: XVarInteger, lb: Int, ub: Int): Unit = {
+  override def buildVarInteger(x: XVarInteger, lb: Int, ub: Int): Unit = {
     val ilb = lb match {
       case XConstants.VAL_MINUS_INFINITY_INT => MinInf
       case l => Finite(lb)
@@ -119,7 +119,7 @@ class XCSP3Callbacks extends XCallbacks2 {
     buildVar(x, IntVariable(IntInterval(ilb, iub)))
   }
 
-  def buildVarInteger(x: XVarInteger, values: Array[Int]): Unit = {
+  override def buildVarInteger(x: XVarInteger, values: Array[Int]): Unit = {
     buildVar(x, IntVariable.ofSeq(values))
   }
 
@@ -141,12 +141,12 @@ class XCSP3Callbacks extends XCallbacks2 {
     }
   }
 
-  def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
+  override def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
     y: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
     buildCtrPrimitiveCSPOM(cspom(x), opa, cspom(y), op, k)
   }
 
-  def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
+  override def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
     y: XVarInteger, op: TypeConditionOperatorRel, k: XVarInteger): Unit = {
     buildCtrPrimitiveCSPOM(cspom(x), opa, cspom(y), op, cspom(k))
   }
@@ -161,7 +161,7 @@ class XCSP3Callbacks extends XCallbacks2 {
     buildCtrPrimitiveCSPOM(aux, op, k)
   }
 
-  def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent) {
+  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent) {
 
     def extract(node: XNodeExpr): SimpleExpression[_] = {
       node match {
@@ -188,7 +188,7 @@ class XCSP3Callbacks extends XCallbacks2 {
 
   /* Build constraints : extension */
 
-  def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean,
+  override def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean,
     flags: java.util.Set[TypeFlag]): Unit = {
     require(!flags.contains(TypeFlag.STARRED_TUPLES), "Starred tuples are not supported")
 
@@ -205,7 +205,7 @@ class XCSP3Callbacks extends XCallbacks2 {
 
   }
 
-  def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean,
+  override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean,
     flags: java.util.Set[TypeFlag]): Unit = {
     val relation = values.map(List(_))
     val scope = Seq(cspom(x))
@@ -355,12 +355,12 @@ class XCSP3Callbacks extends XCallbacks2 {
     }
   }
 
-  def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition) {
+  override def buildCtrMaximum(id: String, list: Array[XVarInteger], condition: Condition) {
     val r = cspom.defineFree { v => CSPOMConstraint(v)('max)(cspom(list): _*) }
     implementCondition(r, condition)
   }
 
-  def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition) {
+  override def buildCtrMinimum(id: String, list: Array[XVarInteger], condition: Condition) {
     val r = cspom.defineFree { v => CSPOMConstraint(v)('min)(cspom(list): _*) }
     implementCondition(r, condition)
   }
@@ -399,28 +399,28 @@ class XCSP3Callbacks extends XCallbacks2 {
     }
   }
 
-  def buildCtrNoOverlap(id: String,
+  override def buildCtrNoOverlap(id: String,
     origins: Array[XVarInteger],
     lengths: Array[Int],
     zeroIgnored: Boolean) {
     buildCtrNoOverlap(cspom(origins), CSPOM.constantSeq(lengths), zeroIgnored)
   }
 
-  def buildCtrNoOverlap(id: String,
+  override def buildCtrNoOverlap(id: String,
     origins: Array[XVarInteger],
     lengths: Array[XVarInteger],
     zeroIgnored: Boolean) {
     buildCtrNoOverlap(cspom(origins), cspom(lengths), zeroIgnored)
   }
 
-  def buildCtrNoOverlap(id: String,
+  override def buildCtrNoOverlap(id: String,
     origins: Array[Array[XVarInteger]],
     lengths: Array[Array[Int]],
     zeroIgnored: Boolean) {
     unimplementedCase(id)
   }
 
-  def buildCtrNoOverlap(id: String,
+  override def buildCtrNoOverlap(id: String,
     origins: Array[Array[XVarInteger]],
     lengths: Array[Array[XVarInteger]],
     zeroIgnored: Boolean) {
@@ -429,7 +429,7 @@ class XCSP3Callbacks extends XCallbacks2 {
 
   /* Elementary constraints */
 
-  def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]) {
+  override def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]) {
     implicit def problem = cspom
     for ((variable, value) <- (list, values).zipped) {
       cspom.ctr(cspom(variable) === constant(value))
@@ -437,7 +437,7 @@ class XCSP3Callbacks extends XCallbacks2 {
 
   }
 
-  def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
+  override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
     cspom.ctr('clause)(cspom(pos), cspom(neg))
   }
 
