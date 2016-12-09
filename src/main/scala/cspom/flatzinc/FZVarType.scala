@@ -8,8 +8,8 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.IntVariable
 import scala.reflect.runtime.universe._
 import cspom.variable.IntExpression
-sealed trait FZVarType[T] {
-  implicit def tpe: TypeTag[T] = typeTag[T]
+sealed trait FZVarType[+T] {
+  implicit def tpe[B >: T]: TypeTag[B] = typeTag[B]
   def genVariable(): CSPOMExpression[T]
 }
 
