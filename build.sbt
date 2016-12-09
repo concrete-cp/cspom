@@ -2,15 +2,14 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.10"
+version := "2.11-SNAPSHOT"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.1"
 
-crossScalaVersions := Seq("2.11.8", "2.12.0")
+crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 libraryDependencies ++= Seq(
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.6",
 	"org.apache.commons" % "commons-compress" % "1.12",
 	"ch.qos.logback" % "logback-classic" % "1.1.7",
@@ -19,7 +18,7 @@ libraryDependencies ++= Seq(
 	"org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
 	"com.storm-enroute" %% "scalameter" % "0.8.2" % "test",
 	"org.tukaani" % "xz" % "1.5",
-	"com.lihaoyi" % "fastparse_2.11" % "0.4.1"
+	"com.lihaoyi" %% "fastparse" % "0.4.2"
 	)
 
 scalacOptions ++= Seq(

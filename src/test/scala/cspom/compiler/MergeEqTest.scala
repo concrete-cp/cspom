@@ -54,7 +54,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
   }
 
-  "MergeEq" should "simplify Variable = Constant" in {
+  it should "simplify Variable = Constant" in {
 
     val problem = CSPOM { implicit problem =>
       val v1 = IntVariable(0 to 10) as "V1"
