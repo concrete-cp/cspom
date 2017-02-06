@@ -86,7 +86,7 @@ class CSPOM extends LazyLogging {
   private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
 
   private def getContainers[R](e: CSPOMExpression[R]): Option[collection.Set[(CSPOMSeq[R], Int)]] =
-    Option(containers.get(e)).map(_.asInstanceOf[collection.Set[(CSPOMSeq[R], Int)]])
+    Option(containers.get(e)).map(_.asInstanceOf[collection.Set[(CSPOMSeq[R], Int)]].to[collection.immutable.Set])
 
   /**
    * Collection of all constraints of the problem.
@@ -325,6 +325,9 @@ class CSPOM extends LazyLogging {
       expressionNames(by) += n
     }
     expressionNames.remove(which)
+    
+    logger.debug(s"Replacing $which with $by: contained in ${getContainers(which)}")
+    
     for {
       get <- getContainers(which)
       (container, index) <- get

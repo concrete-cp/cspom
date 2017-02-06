@@ -40,7 +40,7 @@ object ConstraintCompiler extends LazyLogging {
 
       var delta = Delta.empty
       for ((w, b) <- in.replaceExpression(wh, by)) {
-        //logger.debug(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
+        logger.debug(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
         for (c <- in.constraints(w)) {
 
           val c2 = c.replacedVar(w, b)
