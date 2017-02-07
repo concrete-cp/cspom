@@ -56,7 +56,7 @@ final object XCSPParser extends CSPOM.Parser {
 
   def parseRange(interval: String): IntInterval = interval.trim().split("\\.\\.") match {
     case Array(a, b) => IntInterval(a.toInt, b.toInt)
-    case _           => throw new NumberFormatException("Interval format must be a..b");
+    case _ => throw new NumberFormatException("Interval format must be a..b");
   }
 
   sealed trait XCSP
@@ -196,8 +196,8 @@ final object XCSPParser extends CSPOM.Parser {
    *            Map of relations
    */
   private def genConstraint(name: String, varNames: String,
-                            parameters: String, reference: String, relations: Map[String, AnyRef],
-                            declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
+    parameters: String, reference: String, relations: Map[String, AnyRef],
+    declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
 
     val scope = varNames.split(" +").iterator
       .map { s =>
@@ -222,9 +222,11 @@ final object XCSPParser extends CSPOM.Parser {
     } else {
       relations.get(reference) match {
 
-        case Some(extension: Extension) => cspom.ctr(
-          CSPOMConstraint('extension)(scope.map(_._2): _*) withParam (
-            "init" -> extension.init, "relation" -> extension.relation))
+        case Some(extension: Extension) =>
+          val extensionConstraint = CSPOMConstraint('extension)(scope.map(_._2): _*)
+            .withParam("init" -> extension.init, "relation" -> extension.relation)
+
+          cspom.ctr(extensionConstraint)
 
         case Some(predicate: XCSPPredicate) =>
           try {

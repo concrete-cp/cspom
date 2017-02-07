@@ -38,6 +38,11 @@ abstract class Interval[T <% Ordered[T]] {
     41 * lb.hashCode + ub.hashCode
   }
 
+  override def equals(o: Any) = o match {
+    case i: Interval[_] => i.lb == lb && i.ub == ub
+    case _ => false
+  }
+
 }
 
 class IntervalOrdering[@specialized T] extends Ordering[Interval[T]] {

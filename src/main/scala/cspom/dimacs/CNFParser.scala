@@ -64,7 +64,7 @@ final object CNFParser extends CSPOM.Parser {
 
     val (positive, negative) = currentClause.partition(_ > 0)
 
-    /**
+    /*
      * Variable indices starts at 1 in Dimacs format, 0 in IndexedSeq
      */
 

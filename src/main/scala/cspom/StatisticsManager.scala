@@ -68,7 +68,7 @@ class StatisticsManager extends LazyLogging {
         f.setAccessible(true)
         val map = f.get(o) match {
           case sm: StatisticsManager => sm.digest
-          case v                     => Map(f.getName -> v)
+          case v => Map(f.getName -> v)
         }
         map.map { case (k, v) => s"$s.$k" -> v }
       }
@@ -132,8 +132,6 @@ object StatisticsManager {
     val variance = s.map(i => (i - avg).pow(2)).sum / s.size
     util.Math.sqrt(variance)
   }
-  
-  
 
   def min[A: Ordering](s: Seq[A]): A = s.min
 
@@ -143,20 +141,21 @@ object StatisticsManager {
   def findKMedian[A](arr: Seq[A], k: Int)(implicit o: Ordering[A]): A = {
     val pivot = arr(scala.util.Random.nextInt(arr.size))
     val (s, b) = arr partition (o.gt(pivot, _))
-    if (s.size == k) {
-      pivot
-    } // The following test is used to avoid infinite repetition
-    else if (s.isEmpty) {
-      val (s, b) = arr.partition(pivot == _)
-      if (s.size > k) {
-        pivot
-      } else {
-        findKMedian(b, k - s.size)
-      }
-    } else if (s.size < k) {
-      findKMedian(b, k - s.size)
-    } else {
-      findKMedian(s, k)
+    s.size match {
+      case `k` => pivot
+
+      case 0 => // Used to avoid infinite repetition
+        val (s, b) = arr.partition(pivot == _)
+        if (s.size > k) {
+          pivot
+        } else {
+          findKMedian(b, k - s.size)
+        }
+
+      case i if i < k => findKMedian(b, k - s.size)
+      
+      case _ => findKMedian(s, k)
+
     }
   }
 
