@@ -85,8 +85,8 @@ class CSPOM extends LazyLogging {
 
   private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
 
-  private def getContainers[R](e: CSPOMExpression[R]): Option[collection.Set[(CSPOMSeq[R], Int)]] =
-    Option(containers.get(e)).map(_.asInstanceOf[collection.Set[(CSPOMSeq[R], Int)]].to[collection.immutable.Set])
+  private def getContainers[R](e: CSPOMExpression[R]): Option[Seq[(CSPOMSeq[R], Int)]] =
+    Option(containers.get(e)).map(_.asInstanceOf[collection.Set[(CSPOMSeq[R], Int)]].toSeq)
 
   /**
    * Collection of all constraints of the problem.
