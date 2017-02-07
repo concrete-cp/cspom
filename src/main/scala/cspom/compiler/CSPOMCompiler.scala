@@ -8,7 +8,7 @@ import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
 import cspom.StatisticsManager
-import cspom.util.BitVector
+import bitvectors.BitVector
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMVariable
 import org.scalameter.Quantity

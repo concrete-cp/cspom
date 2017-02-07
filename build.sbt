@@ -9,6 +9,7 @@ scalaVersion := "2.12.1"
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 libraryDependencies ++= Seq(
+	"fr.univ-valenciennes" %% "bitvectors" % "1.0.0",
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.6",
 	"org.apache.commons" % "commons-compress" % "1.13",

@@ -1,7 +1,7 @@
 package cspom.compiler
 
 import scala.collection.immutable.BitSet
-import cspom.util.BitVector
+import bitvectors.BitVector
 
 object QueueSet {
   val empty: QueueSet = QueueSet(BitVector.empty, -1)
