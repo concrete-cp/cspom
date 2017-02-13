@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.6",
 	"org.apache.commons" % "commons-compress" % "1.13",
-	"ch.qos.logback" % "logback-classic" % "1.1.10",
+	"ch.qos.logback" % "logback-classic" % "1.2.1",
 	"com.storm-enroute" %% "scalameter-core" % "0.8.2",
 	"org.scalatest" %% "scalatest" % "3.0.1" % "test",
 	"org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
