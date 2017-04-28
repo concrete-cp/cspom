@@ -1,24 +1,23 @@
 package cspom.compiler
 
-import cspom.CSPOMConstraint
-import cspom.variable.CSPOMConstant
-import cspom.CSPOM
-import cspom.variable.CSPOMVariable
-import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMSeq
-import cspom.flatzinc.FZAnnotation
-import cspom.flatzinc.FZVarParId
-import com.typesafe.scalalogging.LazyLogging
-import cspom.util.ContiguousIntRangeSet
-import cspom.variable.SimpleExpression
-import cspom.variable.IntVariable
-import cspom.util.RangeSet
-import cspom.util.Infinitable
-import cspom.variable.IntExpression
-import cspom.util.Interval
 import scala.reflect.runtime.universe._
+
+import com.typesafe.scalalogging.LazyLogging
+
+import cspom.CSPOM
+import cspom.CSPOMConstraint
+import cspom.util.Infinitable
+import cspom.util.Interval
+import cspom.util.RangeSet
 import cspom.variable.BoolExpression
 import cspom.variable.BoolVariable
+import cspom.variable.CSPOMConstant
+import cspom.variable.CSPOMExpression
+import cspom.variable.CSPOMSeq
+import cspom.variable.CSPOMVariable
+import cspom.variable.IntExpression
+import cspom.variable.SimpleExpression
+import scala.collection.JavaConverters._
 
 object ConstraintCompiler extends LazyLogging {
   def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
@@ -61,7 +60,7 @@ object ConstraintCompiler extends LazyLogging {
       //assert(in.deepConstraints(by).nonEmpty, s"$by (${in.namesOf(by)}) is not involved by constraints")
       assert(in.namesOf(wh).isEmpty, s"$wh (${in.namesOf(by)}) still have names: ${in.namesOf(wh)}")
       assert(in.constraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.constraints(wh).mkString("\n")}")
-      assert(Option(in.containers.get(wh)).toSeq.flatten.isEmpty, s"$wh (${in.namesOf(by)}) is still contained in: ${in.containers.get(wh)}")
+      assert(Option(in.containers.get(wh).asScala).toSeq.flatten.isEmpty, s"$wh (${in.namesOf(by)}) is still contained in: ${in.containers.get(wh)}")
       delta //deltas.fold(Delta.empty)(_ ++ _)
     }
   }
