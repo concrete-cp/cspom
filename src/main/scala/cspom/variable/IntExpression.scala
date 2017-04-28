@@ -7,7 +7,6 @@ import cspom.util.IntInterval
 import cspom.util.Interval
 import cspom.util.RangeSet
 import cspom.util.IntervalsArithmetic.RangeArithmetics
-import scala.reflect.runtime.universe._
 
 object IntExpression extends SimpleExpression.Typed[Int] {
   object implicits {

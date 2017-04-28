@@ -1,16 +1,10 @@
 package cspom.util
 
-import org.scalacheck.Gen
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.concurrent.Timeouts
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.time.Millisecond
-import org.scalatest.time.Span
-import RangeSet.apply
 import IntervalsArithmetic.Arithmetics
 import IntervalsArithmetic.RangeArithmetics
-import org.scalatest.time.Milliseconds
 import org.scalatest.concurrent.TimeLimits
 
 class IntervalsArithmeticTest extends FlatSpec with Matchers with PropertyChecks with TimeLimits {

@@ -3,8 +3,6 @@ package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMVariable
-import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
 
 object RemoveUselessEq extends ConstraintCompiler {

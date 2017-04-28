@@ -1,8 +1,5 @@
 package cspom;
 
-import scala.collection.mutable.MultiMap
-import scala.collection.mutable.HashMap
-import java.lang.reflect.Modifier
 import java.lang.reflect.Field
 import scala.annotation.tailrec
 import com.typesafe.scalalogging.LazyLogging
@@ -75,10 +72,6 @@ class StatisticsManager extends LazyLogging {
   }
 
   override def toString = digest.map(t => t._1 + " = " + t._2).toSeq.sorted.mkString("\n")
-
-  private def isIntType(input: Class[_]) = input == classOf[Int] || input == classOf[Long]
-
-  private def isFloatType(input: Class[_]) = input == classOf[Float] || input == classOf[Double]
 
   def reset() {
     objects = Map.empty

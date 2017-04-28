@@ -1,7 +1,6 @@
 package cspom;
 
 import scala.util.Failure
-import scala.util.Success
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.TryValues

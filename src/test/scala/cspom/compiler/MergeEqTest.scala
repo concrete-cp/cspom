@@ -32,13 +32,13 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
     }
 
-    //println("Before merging")
+    println("Before merging")
 
-    //println(cspom)
+    println(cspom)
 
     CSPOMCompiler.compile(cspom, Seq(MergeEq))
-    //println("After merging")
-    //println(cspom)
+    println("After merging")
+    println(cspom)
 
     cspom.referencedExpressions should have size 6
 
@@ -47,7 +47,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
     for (i <- 0 until 4) {
       val b = cspom.expression(s"b$i").value
       cspom.expression(s"array[$i]").value shouldBe theSameInstanceAs(b)
-      cspom.getContainers(b) should contain((array, i))
+      cspom.getContainers(b).value should contain((array, i))
       array(i) shouldBe theSameInstanceAs(b)
       cspom.namesOf(b) should contain theSameElementsAs Seq(s"b$i", s"array[$i]")
     }

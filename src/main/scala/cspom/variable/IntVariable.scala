@@ -4,7 +4,6 @@ import com.typesafe.scalalogging.LazyLogging
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
 import cspom.util.RangeSet
-import cspom.util.IntervalsArithmetic
 import cspom.util.Infinitable
 import cspom.util.Finite
 import cspom.util.Interval

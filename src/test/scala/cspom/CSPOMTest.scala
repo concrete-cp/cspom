@@ -3,7 +3,6 @@ package cspom
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
 import CSPOM._
-import cspom.variable.BoolVariable
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.OptionValues
@@ -15,7 +14,7 @@ import cspom.variable.BoolExpression
 import cspom.variable.IntExpression
 import cspom.variable.CSPOMExpression
 import cspom.compiler.MergeSame
-import cspom.variable.CSPOMConstant
+
 
 class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
@@ -184,7 +183,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
       val r = problem.defineInt(r => CSPOMConstraint('sum)(Seq(v0, v1, r), 0))
 
-      val r2 = problem.defineInt(result => CSPOMConstraint(result)('abs)(r)) as "r2"
+      problem.defineInt(result => CSPOMConstraint(result)('abs)(r)) as "r2"
 
     }
 

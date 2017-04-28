@@ -1,27 +1,11 @@
-package cspom.compiler
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import cspom.variable.CSPOMConstant
+package cspom
+package compiler
+
 import cspom.extension.Relation
-import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
-import scala.collection.mutable.HashMap
 import cspom.extension.MDD
-import scala.collection.mutable.WeakHashMap
-import cspom.variable.IntVariable
-import cspom.extension.IdEq
-import cspom.variable.BoolVariable
-import cspom.variable.CSPOMExpression
-import cspom.variable.IntExpression
-import cspom.variable.BoolExpression
-import cspom.util.RangeSet
-import cspom.util.Infinitable
-import cspom.util.Finite
-import cspom.variable.FreeVariable
-import cspom.util.IntInterval
-import cspom.UNSATException
 
 /**
  * Detects and removes constants from extensional constraints

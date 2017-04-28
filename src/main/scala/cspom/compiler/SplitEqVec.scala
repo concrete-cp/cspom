@@ -2,7 +2,6 @@ package cspom.compiler
 
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.variable.BoolVariable
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression

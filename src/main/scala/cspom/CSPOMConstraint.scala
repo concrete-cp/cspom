@@ -1,17 +1,10 @@
 package cspom
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMConstant
-import javax.script.ScriptException
-import cspom.variable.CSPOMVariable
 import scala.collection.JavaConverters._
-import scala.collection.mutable.HashMap
-import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMSeq
-import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
 import cspom.variable.EmptyVariable
-import scala.collection.mutable.WrappedArray
+
 
 final case class CSPOMConstraint[+T](
     val result: CSPOMExpression[T],

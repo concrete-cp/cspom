@@ -3,9 +3,6 @@ package cspom.variable
 import cspom.util.IntInterval
 import cspom.util.Interval
 import cspom.util.Infinitable
-import cspom.util.RangeSet
-import scala.reflect.runtime.universe._
-import IntExpression.implicits._
 
 object BoolExpression extends SimpleExpression.Typed[Boolean] {
   def coerce(e: CSPOMExpression[_]): SimpleExpression[Boolean] = e match {

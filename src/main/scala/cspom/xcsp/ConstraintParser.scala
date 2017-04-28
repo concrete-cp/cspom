@@ -1,23 +1,15 @@
 package cspom.xcsp
 
-import scala.annotation.elidable.ASSERTION
 import scala.util.parsing.combinator.JavaTokenParsers
-import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader
 import cspom.CSPOM
-import cspom.variable.CSPOMVariable
-import cspom.variable.CSPOMExpression
 import cspom.CSPOMConstraint
-import cspom.variable.IntVariable
 import cspom.variable.CSPOMConstant
-import cspom.variable.FreeVariable
 import java.util.StringTokenizer
-import scala.collection.mutable.ArrayBuffer
 import scala.util.parsing.input.Reader
 import cspom.extension.MDD
 import cspom.extension.Relation
 import cspom.variable.SimpleExpression
-import java.util.regex.Pattern
 
 sealed trait PredicateNode
 
@@ -66,7 +58,7 @@ final object ConstraintParser extends JavaTokenParsers {
   }
 
   @annotation.tailrec
-  private def readerToString(r: Reader[Char], stb: StringBuilder = new StringBuilder): String =
+  private def readerToString(r: Reader[Char], stb: StringBuilder): String =
     if (r.atEnd) {
       stb.toString
     } else {

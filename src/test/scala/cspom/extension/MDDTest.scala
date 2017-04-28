@@ -1,9 +1,8 @@
 package cspom.extension;
 
-import scala.Iterable
+
 import scala.math.BigInt.int2bigInt
 
-import org.scalatest.Finders
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimits
@@ -23,7 +22,7 @@ final class MDDTest extends FlatSpec with Matchers with TimeLimits {
     relation.tupleString should (be("2 5 5|3 5 5") or be("3 5 5|2 5 5"))
   }
 
-  it should "detect egality" in {
+  it should "detect equality" in {
     val r2: MDD[Int] = MDD.empty + List(3, 5, 5) + List(2, 5, 5)
 
     val r3: MDD[Int] = MDD.empty + List(2, 5, 5) + List(3, 5, 5)

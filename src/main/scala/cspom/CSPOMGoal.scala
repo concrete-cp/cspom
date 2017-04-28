@@ -1,7 +1,6 @@
 package cspom
 
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMVariable
 
 sealed trait CSPOMGoal[+T] {
   def expr: Option[CSPOMExpression[T]]

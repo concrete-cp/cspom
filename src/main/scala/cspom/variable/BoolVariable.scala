@@ -1,7 +1,5 @@
 package cspom.variable
 
-import cspom.CSPOM
-
 final class BoolVariable() extends CSPOMVariable[Boolean]() {
 
   override def toString = s"bool var"

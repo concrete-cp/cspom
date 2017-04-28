@@ -3,7 +3,6 @@ package cspom.variable
 import scala.collection.SortedSet
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.concurrent.Timeouts
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.time.Second
 import org.scalatest.time.Span

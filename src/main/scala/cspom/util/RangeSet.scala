@@ -53,8 +53,6 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
   }
 
   def --(i: Interval[T]): RangeSet[T] = {
-    val itvOrdering = contents.ordering
-
     val colliding = contents.from(i).takeWhile(i.isConnected)
 
     var cleanTree = contents -- colliding

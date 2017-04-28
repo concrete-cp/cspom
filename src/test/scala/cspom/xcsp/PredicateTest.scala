@@ -3,8 +3,6 @@ package cspom.xcsp;
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import cspom.variable.CSPOMVariable
-
 final class PredicateTest extends FlatSpec with Matchers {
 
   "XCSPPredicate" should "parse standard predicate" in {
