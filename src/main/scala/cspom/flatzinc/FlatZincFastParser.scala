@@ -1,23 +1,13 @@
-package cspom.flatzinc
+package cspom
+package flatzinc
 
 import java.io.InputStream
-import java.io.InputStreamReader
 
 import scala.util.Try
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import cspom.CSPParseException
 import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMVariable
-import cspom.compiler.ConstraintCompiler
-import cspom.variable.SimpleExpression
-import scala.reflect.runtime.universe._
-import cspom.CSPOMGoal
-import cspom.WithParam
+
 
 import fastparse.noApi._
-import java.io.BufferedReader
 import scala.io.Source
 import fastparse.WhitespaceApi
 
@@ -42,18 +32,12 @@ object FlatZincFastParser extends CSPOM.Parser {
 
   def apply(is: InputStream): Try[CSPOM] = {
     Try {
-
-//      val input = Source.fromInputStream(is).grouped(1024).map(_.mkString)
-//      flatzincModel.parseIterator(input)
-
-            val input = Source.fromInputStream(is).mkString
-            flatzincModel.parse(input)
-
+      flatzincModel.parse(Source.fromInputStream(is).mkString)
     }
       .flatMap {
-        case Parsed.Success(cspom, _) => util.Success(cspom)
+        case Parsed.Success(cspom, _) => scala.util.Success(cspom)
         case Parsed.Failure(expected, index, extra) =>
-          util.Failure(new CSPParseException(s"expected: $expected, extra: $extra", null, index))
+          scala.util.Failure(new CSPParseException(s"expected: $expected, extra: $extra", null, index))
       }
   }
 
@@ -129,8 +113,8 @@ object FlatZincFastParser extends CSPOM.Parser {
   val float_const: Parser[FZFloatConst] = P(
     CharIn("+-").? ~~ CharIn('0' to '9').repX(min = 1) ~~ "." ~~ CharIn('0' to '9').repX(min = 1) ~~ (
       CharIn("eE") ~~ CharIn("+-").? ~~ CharIn('0' to '9').repX(1)).?).!.map {
-      f => println(f); FZFloatConst(f.toDouble)
-    }
+    f => println(f); FZFloatConst(f.toDouble)
+  }
 
   val int_const: Parser[FZIntConst] = P(CharIn("+-").? ~~ CharIn('0' to '9').repX(min = 1)).!.map { i => FZIntConst(i.toInt) }
 
@@ -183,10 +167,16 @@ object FlatZincFastParser extends CSPOM.Parser {
       P("float").map(_ => FZFloat) |
       P("int").map(_ => FZInt) |
       P("set of int").map(_ => FZIntSet) |
-      P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "bool").map { FZArray[Boolean](_, FZBoolean) } |
+      P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "bool").map {
+        FZArray[Boolean](_, FZBoolean)
+      } |
       P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "float").map { s => FZArray[Double](s, FZFloat) } |
-      P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "int").map { FZArray[Int](_, FZInt) } |
-      P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "set" ~ "of" ~ "int").map { FZArray[Int](_, FZIntSet) }
+      P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "int").map {
+        FZArray[Int](_, FZInt)
+      } |
+      P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "set" ~ "of" ~ "int").map {
+        FZArray[Int](_, FZIntSet)
+      }
 
   val par_pred_param_type: Parser[Any] =
     par_type |

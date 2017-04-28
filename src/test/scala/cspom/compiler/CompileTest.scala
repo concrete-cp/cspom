@@ -1,10 +1,7 @@
 package cspom.compiler;
 
-import cspom.xcsp.{ ParserTest, XCSPParser }
 import cspom.CSPOM
 import org.scalatest.FlatSpec
-import scala.util.Failure
-import scala.util.Success
 import org.scalatest.TryValues
 import org.scalatest.Matchers
 

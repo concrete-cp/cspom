@@ -2,7 +2,6 @@ package cspom.flatzinc
 
 import cspom.util.IntInterval
 import cspom.variable.BoolVariable
-import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.IntVariable

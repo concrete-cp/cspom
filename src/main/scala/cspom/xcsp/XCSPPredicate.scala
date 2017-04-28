@@ -1,9 +1,5 @@
-package cspom.xcsp;
+package cspom.xcsp
 
-import cspom.variable.CSPOMVariable
-import scala.util.matching.Regex
-import scala.MatchError
-import sun.misc.Regexp
 import scala.util.parsing.input.CharSequenceReader
 import scala.util.parsing.combinator.RegexParsers
 

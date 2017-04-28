@@ -1,15 +1,11 @@
 package cspom.dimacs;
 
-import java.io.BufferedReader
 import java.io.InputStream
-import java.io.InputStreamReader
-import java.util.Iterator
 import scala.io.Source
 import scala.util.matching.Regex
 import cspom.CSPOM
 import cspom.CSPParseException
 import cspom.CSPOMConstraint
-import cspom.variable.CSPOMVariable
 import CSPOM._
 import cspom.variable.BoolVariable
 import cspom.variable.CSPOMExpression
@@ -22,8 +18,6 @@ final object CNFParser extends CSPOM.Parser {
   private val VAR = new Regex("""(-?\d+)""");
 
   def apply(is: InputStream): Try[CSPOM] = Try {
-    val reader = new BufferedReader(new InputStreamReader(is));
-
     val lines = Source.fromInputStream(is).getLines.filter(
       s => !(s startsWith "c") && !(s.trim.isEmpty))
 

@@ -2,7 +2,6 @@ package cspom.compiler
 
 import cspom.CSPOM
 import cspom.CSPOMConstraint
-import cspom.variable.FreeVariable
 import cspom.variable.CSPOMExpression
 
 trait Types extends ConstraintCompiler {

@@ -1,6 +1,5 @@
 package cspom.flatzinc
 
-import cspom.variable.CSPOMVariable
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMConstant

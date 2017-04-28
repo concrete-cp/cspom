@@ -1,6 +1,5 @@
 package cspom.compiler
 
-import scala.collection.immutable.BitSet
 import bitvectors.BitVector
 
 object QueueSet {

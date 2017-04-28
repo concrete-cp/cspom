@@ -8,8 +8,6 @@ import org.scalatest.prop.PropertyChecks
 
 import Intervals.smallIntervals
 import Intervals.validIntervals
-import RangeSet._
-import IntInterval.singleton
 
 class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 

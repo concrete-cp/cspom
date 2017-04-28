@@ -1,17 +1,10 @@
-package cspom.variable
+package cspom
+package variable
 
-import scala.collection.SetLike
-import scala.collection.mutable.WeakHashMap
-import cspom.CSPOM
-import cspom.Parameterized
 import cspom.util.ContiguousIntRangeSet
-import cspom.UNSATException
-import scala.collection.mutable.HashMap
 import scala.reflect.runtime.universe._
-import cspom.CSPOMConstraint
 import com.typesafe.scalalogging.LazyLogging
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ArrayBuilder
 
 /*
  * An expression can be either simple (a variable or a constant) or a sequence of expressions

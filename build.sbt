@@ -4,19 +4,19 @@ organization := "fr.univ-valenciennes"
 
 version := "2.13-SNAPSHOT"
 
-scalaVersion := "2.12.1"
+scalaVersion := "2.12.2"
 
-crossScalaVersions := Seq("2.11.8", "2.12.1")
+crossScalaVersions := Seq("2.11.8", "2.12.2")
 
 libraryDependencies ++= Seq(
 	"fr.univ-valenciennes" %% "bitvectors" % "1.0.0",
 	"com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
 	"org.scala-lang.modules" %% "scala-xml" % "1.0.6",
 	"org.apache.commons" % "commons-compress" % "1.13",
-	"ch.qos.logback" % "logback-classic" % "1.2.1",
+	"ch.qos.logback" % "logback-classic" % "1.2.3",
 	"com.storm-enroute" %% "scalameter-core" % "0.8.2",
-	"org.scalatest" %% "scalatest" % "3.0.1" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.13.4" % "test",
+	"org.scalatest" %% "scalatest" % "3.0.3" % "test",
+	"org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
 	"org.tukaani" % "xz" % "1.6",
 	"com.lihaoyi" %% "fastparse" % "0.4.2"
 	)

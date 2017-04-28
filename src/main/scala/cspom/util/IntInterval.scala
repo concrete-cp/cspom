@@ -1,7 +1,5 @@
 package cspom.util
 
-import scala.collection.AbstractIterator
-
 import com.typesafe.scalalogging.LazyLogging
 
 import Infinitable.InfinitableOrdering

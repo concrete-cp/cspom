@@ -1,7 +1,6 @@
 package cspom.extension
 
 import scala.collection.mutable
-import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import com.typesafe.scalalogging.LazyLogging
 import java.util.IdentityHashMap
@@ -37,7 +36,7 @@ object MDD {
   def node[A](t: Iterable[(A, MDD[A])]): MDD[A] = new MDDNode(t.filter(_._2.nonEmpty).toMap)
 }
 
-final class IdMap[A, B] extends mutable.Map[A, B] {
+final class IdMap[A, B] extends scala.collection.mutable.Map[A, B] {
   val idMap = new IdentityHashMap[A, B]
 
   def +=(kv: (A, B)) = {
@@ -82,7 +81,7 @@ final case class IdEq[A <: AnyRef](val m: A) {
   }
 }
 
-final class IdSet[A] extends mutable.Set[A] {
+final class IdSet[A] extends scala.collection.mutable.Set[A] {
   val idMap = new IdentityHashMap[A, Unit]
   def iterator: Iterator[A] = idMap.keySet.asScala.iterator
 
@@ -102,7 +101,7 @@ sealed trait MDD[A] extends Relation[A] {
 
   def +(t: List[A]): MDD[A]
 
-  def -(t: Seq[A]) = ???
+  def -(t: Seq[A]): MDD[A] = ???
 
   final def iterator: Iterator[List[A]] = {
     val l = lambda
@@ -275,7 +274,7 @@ final case class MDDNode[A](val trie: Map[A, MDD[A]]) extends MDD[A] with LazyLo
 
   def arity = 1 + trie.head._2.arity
 
-  def +(t: List[A]) = t match {
+  def +(t: List[A]): MDD[A] = t match {
     case Nil => MDD.leaf
     case head :: tail =>
       val newTrie = trie.updated(head, trie.getOrElse(head, MDD.empty) + tail)

@@ -1,9 +1,5 @@
 package cspom.variable;
 
-import cspom.CSPOMConstraint
-import cspom.CSPOM
-import scala.collection.mutable.HashMap
-
 class FreeVariable extends CSPOMVariable[Any] {
   override def toString = s"free var"
   def intersected(other: SimpleExpression[_ >: Any]) = other

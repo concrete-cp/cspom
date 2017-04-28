@@ -6,7 +6,6 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import CSPOM._
 import org.scalatest.prop.PropertyChecks
-import cspom.util.IntervalTest
 import cspom.util.Intervals
 import cspom.util.IntInterval
 import cspom.util.RangeSet

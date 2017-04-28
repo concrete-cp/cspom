@@ -428,7 +428,7 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  private def crawl(c: CSPOMConstraint[_], visited: Set[CSPOMConstraint[_]] = Set.empty): Set[CSPOMConstraint[_]] = {
+  private def crawl(c: CSPOMConstraint[_], visited: Set[CSPOMConstraint[_]]): Set[CSPOMConstraint[_]] = {
     if (visited(c)) {
       visited
     } else {
@@ -469,7 +469,6 @@ object CSPOM extends LazyLogging {
    */
   @throws(classOf[IOException])
   def problemInputStream(url: URL): Try[InputStream] = Try {
-    val path = url.getPath
     val is = url.openStream
 
     try {

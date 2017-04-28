@@ -3,10 +3,7 @@ package cspom.xcsp;
 import java.io.InputStream
 
 import scala.util.Try
-import scala.util.parsing.input.CharSequenceReader
-import scala.xml.Elem
 import scala.xml.NodeSeq
-import scala.xml.XML
 
 import cspom.CSPOM
 import cspom.CSPOMConstraint
@@ -151,7 +148,7 @@ final object XCSPParser extends CSPOM.Parser {
    * @param doc
    *            XCSP document.
    */
-  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM) = {
+  private def parseConstraints(doc: NodeSeq, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): Unit = {
     val relations = ((doc \ "relations" \ "relation") map { node =>
       (node \ "@name").text -> {
         val text = node.text //new StringReader(node.text)
@@ -164,9 +161,9 @@ final object XCSPParser extends CSPOM.Parser {
     }).toMap ++ ((doc \ "predicates" \ "predicate") map { node =>
       (node \ "@name").text -> new XCSPPredicate((node \ "parameters").text,
         (node \ "expression" \ "functional").text)
-    }).toMap;
+    }).toMap
 
-    val gen = for (
+    for (
       node <- doc \ "constraints" \ "constraint"
     ) {
       genConstraint(

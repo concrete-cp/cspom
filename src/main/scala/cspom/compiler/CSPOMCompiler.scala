@@ -1,16 +1,11 @@
 package cspom.compiler;
 
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.LinkedHashSet
 import scala.util.Try
 import com.typesafe.scalalogging.LazyLogging
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.Statistic
 import cspom.StatisticsManager
-import bitvectors.BitVector
-import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMVariable
 import org.scalameter.Quantity
 import cspom.util.VecMap
 

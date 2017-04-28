@@ -5,11 +5,8 @@ import java.io.InputStream
 import scala.util.Try
 
 import cspom.CSPOM
-import cspom.extension.Relation
 import org.xcsp.parser.XParser
-import org.xcsp.parser.XCallbacks2
 import org.w3c.dom.Document
-import cspom.CSPOMGoal
 
 /**
  * This class implements an XCSP 3.0 parser.

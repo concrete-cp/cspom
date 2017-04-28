@@ -3,10 +3,6 @@ package cspom.xcsp;
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import cspom.CSPOM
-import cspom.compiler.CSPOMCompiler
-import scala.util.Failure
-import scala.util.Success
-import org.scalatest.exceptions.TestFailedException
 
 final class ParserTest extends FlatSpec with Matchers {
   val FILENAME = "crossword-m1-debug-05-01.xml.lzma";

@@ -1,9 +1,5 @@
 package cspom.util
-import scala.reflect.runtime.universe._
-import scala.reflect.ClassTag
 import scala.collection.mutable.AbstractMap
-import scala.collection.mutable.ResizableArray
-import java.util.Arrays
 
 class VecMap[T](buckets: Int = 16)
     extends AbstractMap[Int, T] with collection.mutable.Map[Int, T] with collection.mutable.MapLike[Int, T, VecMap[T]] {

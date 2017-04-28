@@ -1,10 +1,8 @@
 package cspom.dimacs;
 
-import cspom.CSPOM
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
-import scala.util.Failure
-import scala.util.Success
 
 final class ParserTest extends FlatSpec with Matchers {
 

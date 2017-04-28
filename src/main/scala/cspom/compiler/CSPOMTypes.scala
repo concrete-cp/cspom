@@ -6,7 +6,6 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.FreeVariable
 import cspom.variable.CSPOMExpression
 import cspom.variable.IntExpression
-import cspom.variable.IntVariable
 import cspom.util.IntInterval
 
 /**

@@ -3,9 +3,6 @@ package cspom.compiler
 import cspom.CSPOM
 import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMVariable
 import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
 import cspom.variable.BoolExpression
