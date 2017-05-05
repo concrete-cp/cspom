@@ -43,7 +43,7 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
       Thread.sleep(1000)
     }
 
-    t.value shouldBe 1000.0 +- 10
+    t.value shouldBe 1000.0 +- 100
     r should be a 'success
   }
 
@@ -53,14 +53,14 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
       throw new Exception
     }
 
-    t.value shouldBe 1000.0 +- 10
+    t.value shouldBe 1000.0 +- 100
     r should be a 'failure
   }
 
   it should "measure time in success case" in {
     val (r, t) = StatisticsManager.measureTry(Try(Thread.sleep(1000)))
 
-    t.value shouldBe 1000.0 +- 10
+    t.value shouldBe 1000.0 +- 100
     r should be a 'success
   }
 
@@ -70,7 +70,7 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
       Failure(new Exception)
     }
 
-    t.value shouldBe 1000.0 +- 10
+    t.value shouldBe 1000.0 +- 100
     r should be a 'failure
   }
 
