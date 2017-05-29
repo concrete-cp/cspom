@@ -6,40 +6,39 @@ version := "2.13-SNAPSHOT"
 
 scalaVersion := "2.12.2"
 
-crossScalaVersions := Seq("2.11.8", "2.12.2")
-
 libraryDependencies ++= Seq(
-	"fr.univ-valenciennes" %% "bitvectors" % "1.0.0",
-	"com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-	"org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-	"org.apache.commons" % "commons-compress" % "1.13",
-	"ch.qos.logback" % "logback-classic" % "1.2.3",
-	"com.storm-enroute" %% "scalameter-core" % "0.8.2",
-	"org.scalatest" %% "scalatest" % "3.0.3" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
-	"org.tukaani" % "xz" % "1.6",
-	"com.lihaoyi" %% "fastparse" % "0.4.2"
-	)
+  "fr.univ-valenciennes" %% "bitvectors" % "1.0.0",
+  "fr.univ-valenciennes" %% "mdd" % "1.1.0",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+  "org.apache.commons" % "commons-compress" % "1.14",
+  "ch.qos.logback" % "logback-classic" % "1.2.3",
+  "com.storm-enroute" %% "scalameter-core" % "0.8.2",
+  "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+  "org.tukaani" % "xz" % "1.6",
+  "com.lihaoyi" %% "fastparse" % "0.4.3"
+)
 
 scalacOptions ++= Seq(
-   "-Xdisable-assertions"
-  , "-deprecation" 
-//	"-unchecked" 
-    , "-Xlint" 
-//	
-//	"-feature"
-//	"-Yinline-warnings"
+  "-Xdisable-assertions"
+  , "-deprecation"
+  //	"-unchecked"
+  , "-Xlint"
+  //
+  //	"-feature"
+  //	"-Yinline-warnings"
 )
 
 //wartremoverWarnings ++= Warts.all
 
 
-publishTo :=  {
+publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
     Some("snapshots" at nexus + "content/repositories/snapshots")
   else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
 publishArtifact in Test := false
@@ -51,8 +50,8 @@ testOptions in Test <+= (target in Test) map {
 // EclipseKeys.withBundledScalaContainers := false
 
 val scalaMeterFramework = new TestFramework("org.scalameter.ScalaMeterFramework")
- 
-testFrameworks += scalaMeterFramework 
+
+testFrameworks += scalaMeterFramework
 
 parallelExecution in Test := false
 
@@ -70,11 +69,11 @@ pomExtra in Global := {
     <url>github.com/concrete-cp/cspom.git</url>
   </scm>
 
-  <developers>
-    <developer>
-      <id>scand1sk</id>
-      <name>Julien Vion</name>
-      <url>http://vion.free.fr/perso</url>
-    </developer>
-  </developers>
+    <developers>
+      <developer>
+        <id>scand1sk</id>
+        <name>Julien Vion</name>
+        <url>http://vion.free.fr/perso</url>
+      </developer>
+    </developers>
 }

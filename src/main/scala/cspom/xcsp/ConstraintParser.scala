@@ -7,7 +7,7 @@ import cspom.CSPOMConstraint
 import cspom.variable.CSPOMConstant
 import java.util.StringTokenizer
 import scala.util.parsing.input.Reader
-import cspom.extension.MDD
+import cspom.extension.MDDRelation
 import cspom.extension.Relation
 import cspom.variable.SimpleExpression
 
@@ -76,7 +76,7 @@ final object ConstraintParser extends JavaTokenParsers {
       }
     }
 
-    MDD[Int] {
+    MDDRelation {
 
       traverse
         .view

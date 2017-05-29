@@ -7,6 +7,7 @@ import cspom.util.IntInterval
 import cspom.util.Interval
 import cspom.util.RangeSet
 import cspom.util.IntervalsArithmetic.RangeArithmetics
+import mdd.MiniSet
 
 object IntExpression extends SimpleExpression.Typed[Int] {
   object implicits {
@@ -89,4 +90,11 @@ object IntExpression extends SimpleExpression.Typed[Int] {
     def unapply(c: CSPOMExpression[_]): Option[Seq[Int]] =
       seq.unapply(c).flatMap(CSPOMConstant.seq.unapply)
   }
+
+  def miniset(e: SimpleExpression[Int]) = new MiniSet {
+    def present(i: Int) = e.contains(i)
+    def head = implicits.iterable(e).head
+    def size = implicits.iterable(e).size
+  }
+
 }

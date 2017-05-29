@@ -1,15 +1,13 @@
 package cspom
 package compiler
 
-import cspom.extension.Relation
-import cspom.variable.CSPOMVariable
-import cspom.variable.SimpleExpression
 import com.typesafe.scalalogging.LazyLogging
-import cspom.extension.MDD
+import cspom.extension.{MDDRelation, Relation}
+import cspom.variable.{CSPOMVariable, IntExpression}
 
 /**
- * Detects and removes constants from extensional constraints
- */
+  * Detects and removes constants from extensional constraints
+  */
 class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
   //private val cache = new HashMap[(IdEq[Relation[_]], Seq[SimpleExpression[_]]), (Seq[Int], Relation[Int])]
@@ -30,20 +28,21 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
     //      case _                 => throw new IllegalArgumentException()
     //    }
 
-    val args = c.arguments match {
-      case SimpleExpression.simpleSeq(args) => args.toIndexedSeq
+    val args = c.arguments.map {
+      case IntExpression(a) => a
     }
+      .toIndexedSeq
 
     logger.info(s"will reduce $relation for $args")
 
-    val filtered = relation.filter((k, i) => args(k).contains(i))
+    val filtered = relation.filter(args.map(IntExpression.miniset))
 
     logger.info(s"filtered: ${filtered ne relation}")
 
     if (filtered.isEmpty) logger.warn(s"Relation is empty for ${c.toString(problem.displayName)}")
 
     val vars = c.arguments.zipWithIndex.collect {
-      case (c: CSPOMVariable[_], i) => i
+      case (_: CSPOMVariable[_], i) => i
     }
 
     if (vars.isEmpty) {
@@ -60,7 +59,7 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
       logger.info(s"projected: ${projected ne filtered}")
 
       val reduced = projected match {
-        case p: MDD[_] => p.reduce
+        case p: MDDRelation => p.reduce
         case p => p
       }
 

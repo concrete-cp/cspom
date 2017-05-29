@@ -32,13 +32,13 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
     }
 
-    println("Before merging")
-
-    println(cspom)
+//    println("Before merging")
+//
+//    println(cspom)
 
     CSPOMCompiler.compile(cspom, Seq(MergeEq))
-    println("After merging")
-    println(cspom)
+//    println("After merging")
+//    println(cspom)
 
     cspom.referencedExpressions should have size 6
 

@@ -8,20 +8,20 @@ import scala.util.Try
 
 object StatisticsManagerTest {
   @Statistic
-  val testInt = 8;
+  val testInt = 8
   @Statistic
-  val testLong = 9l;
+  val testLong = 9l
   @Statistic
-  val testFloat = 10.0f;
+  val testFloat = 10.0f
   @Statistic
-  val testDouble = 11.0;
+  val testDouble = 11.0
 }
 
 final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues {
 
   "StatisticsManager" should "register objects" in {
     val stats = new StatisticsManager
-    stats.register("test", StatisticsManagerTest);
+    stats.register("test", StatisticsManagerTest)
     stats("test.testInt") shouldBe 8
     stats("test.testLong") shouldBe 9l
     stats("test.testFloat") shouldBe 10.0f

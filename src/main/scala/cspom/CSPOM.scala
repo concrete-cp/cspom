@@ -1,40 +1,25 @@
 package cspom
 
-import java.io.IOException
-import java.io.InputStream
-import java.net.URI
-import java.net.URL
-import java.util.IdentityHashMap
-import java.util.LinkedHashSet
+import java.io.{IOException, InputStream}
+import java.net.{URI, URL}
+import java.util.{IdentityHashMap, LinkedHashSet}
+
+import com.typesafe.scalalogging.LazyLogging
+import cspom.dimacs.CNFParser
+import cspom.extension.{MDDRelation, Relation}
+import cspom.flatzinc.FlatZincFastParser
+import cspom.variable._
+import cspom.xcsp.XCSPParser
+import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.SortedSet
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe.TypeTag
-import scala.util.Failure
-import scala.util.Try
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
-
-import org.apache.commons.compress.compressors.CompressorException
-import org.apache.commons.compress.compressors.CompressorStreamFactory
-
-import com.typesafe.scalalogging.LazyLogging
-
-import cspom.dimacs.CNFParser
-import cspom.extension.MDD
-import cspom.extension.Relation
-import cspom.flatzinc.FlatZincFastParser
-import cspom.variable.BoolVariable
-import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMExpression
-import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMVariable
-import cspom.variable.FreeVariable
-import cspom.variable.IntVariable
-import cspom.variable.SimpleExpression
-import cspom.xcsp.XCSPParser
+import scala.util.{Failure, Try}
 
 object NameParser extends JavaTokenParsers {
 
@@ -44,71 +29,63 @@ object NameParser extends JavaTokenParsers {
 }
 
 /**
- *
- * CSPOM is the central class of the Constraint Satisfaction Problem Object
- * Model. You can create a problem from scratch by instantiating this class and
- * then using the ctr and var methods. The CSPOM.load() method can be used in
- * order to create a CSPOM object from an XCSP file.
- * <p>
- * The CSPOM class adheres to the following definition :
- *
- * A CSP is defined as a pair (X, C), X being a finite set of variables, and C a
- * finite set of constraints.
- *
- * A domain is associated to each variable x in X. Each constraint involves a
- * finite set of variables (its scope) and defines a set of allowed and
- * forbidden instantiations of these variables.
- *
- * @author Julien Vion
- * @see CSPOMConstraint
- * @see CSPOMVariable
- *
- */
+  *
+  * CSPOM is the central class of the Constraint Satisfaction Problem Object
+  * Model. You can create a problem from scratch by instantiating this class and
+  * then using the ctr and var methods. The CSPOM.load() method can be used in
+  * order to create a CSPOM object from an XCSP file.
+  * <p>
+  * The CSPOM class adheres to the following definition :
+  *
+  * A CSP is defined as a pair (X, C), X being a finite set of variables, and C a
+  * finite set of constraints.
+  *
+  * A domain is associated to each variable x in X. Each constraint involves a
+  * finite set of variables (its scope) and defines a set of allowed and
+  * forbidden instantiations of these variables.
+  *
+  * @author Julien Vion
+  * @see CSPOMConstraint
+  * @see CSPOMVariable
+  *
+  */
 class CSPOM extends LazyLogging {
 
   private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
-
   /**
-   * Map used to easily retrieve a variable according to its name.
-   */
+    * Map used to easily retrieve a variable according to its name.
+    */
   private val namedExpressions = collection.mutable.HashMap[String, CSPOMExpression[_]]()
-
   private val expressionNames = collection.mutable.HashMap[CSPOMExpression[_], SortedSet[String]]().withDefaultValue(SortedSet.empty)
-
   private[cspom] val containers = new IdentityHashMap[CSPOMExpression[_], LinkedHashSet[(CSPOMSeq[_], Int)]]()
-
   private val ctrV =
     collection.mutable.LinkedHashMap[CSPOMExpression[_], SortedSet[CSPOMConstraint[_]]]()
       .withDefaultValue(SortedSet.empty(ConstraintOrdering))
 
+  //  private def getContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[_], Int)]] =
+  //    Option(containers.get(e)).map(_.asScala.toSeq)
   private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
-
-//  private def getContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[_], Int)]] =
-//    Option(containers.get(e)).map(_.asScala.toSeq)
-
   /**
-   * Collection of all constraints of the problem.
-   */
+    * Collection of all constraints of the problem.
+    */
   private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
+  private val generatedNames = collection.mutable.Map[CSPOMExpression[_], String]()
+  private var postponed: List[CSPOMConstraint[_]] = Nil
+  private var _goal: Option[WithParam[CSPOMGoal[_]]] = None
+  private var generatedId = 0
 
   def getExpressions: java.util.Map[String, CSPOMExpression[_]] = namedExpressions.asJava
 
-  private var postponed: List[CSPOMConstraint[_]] = Nil
-
-  private var _goal: Option[WithParam[CSPOMGoal[_]]] = None
-
-  private var generatedId = 0
-  private val generatedNames = collection.mutable.Map[CSPOMExpression[_], String]()
-
   /**
-   * @param variableName
-   *            A variable name.
-   * @return The variable with the corresponding name.
-   */
+    * @param name
+    * A variable name.
+    * @return The variable with the corresponding name.
+    */
   def expression(name: String): Option[CSPOMExpression[_]] = {
     NameParser.parse(new CharSequenceReader(name)).map(Some(_)).getOrElse(None).flatMap {
       case (n, s) => getInSeq(namedExpressions.get(n), s)
     }
+      .orElse(namedExpressions.get(name))
 
   }
 
@@ -128,16 +105,6 @@ class CSPOM extends LazyLogging {
   }
 
   def getAnnotations(expressionName: String): Annotations = annotations(expressionName)
-
-  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = s match {
-    case Seq() => e
-    case head +: tail =>
-      e
-        .collect {
-          case v: CSPOMSeq[_] => getInSeq(Some(v(head)), tail)
-        }
-        .flatten
-  }
 
   def nextGeneratedName(e: CSPOMExpression[_]): String = e match {
     case CSPOMConstant(v) => v.toString
@@ -179,8 +146,6 @@ class CSPOM extends LazyLogging {
 
   def constraintSet: collection.Set[CSPOMConstraint[_]] = _constraints //.toSet
 
-  val getConstraints: java.util.Iterator[CSPOMConstraint[_]] = constraints.asJava
-
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
     namedExpressions += n -> e
@@ -200,47 +165,6 @@ class CSPOM extends LazyLogging {
 
     resolve(e)
 
-  }
-
-  private def registerContainer(e: CSPOMExpression[_]): Unit = {
-
-    for {
-      s <- PartialFunction.condOpt(e) { case s: CSPOMSeq[_] => s }
-      (c, i) <- s.withIndex
-    } {
-      logger.trace(s"Registering $s")
-      val set = Option(containers.get(c)).getOrElse {
-        val set = new LinkedHashSet[(CSPOMSeq[_], Int)]()
-        containers.put(c, set)
-        set
-      }
-      set.add((s, i))
-      registerContainer(c)
-    }
-
-  }
-
-  /**
-   * Adds a constraint to the problem.
-   *
-   * @param constraint
-   *            The constraint to add.
-   */
-  private[cspom] def addConstraint[A](constraint: CSPOMConstraint[A]): CSPOMConstraint[A] = {
-
-    require(!_constraints(constraint),
-      "The constraint " + constraint + " already belongs to the problem");
-
-    _constraints += constraint
-
-    for (
-      v <- constraint.fullScope
-    ) {
-      ctrV(v) += constraint
-      registerContainer(v)
-    }
-
-    constraint
   }
 
   def removeConstraint(c: CSPOMConstraint[_]): Unit = {
@@ -300,17 +224,6 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  private def deepConstraints(v: CSPOMExpression[_], c: ArrayBuffer[CSPOMConstraint[_]]): ArrayBuffer[CSPOMConstraint[_]] = {
-    c ++= ctrV(v)
-    for (
-      cont <- Option(containers.get(v));
-      (container, _) <- cont.iterator.asScala
-    ) {
-      deepConstraints(container, c)
-    }
-    c
-  }
-
   def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[_], CSPOMExpression[_])] = {
     lazy val namesOfWhich = which.toString(displayName) // { x => ??? }
     require(which != by, s"Replacing $which with $by")
@@ -325,7 +238,7 @@ class CSPOM extends LazyLogging {
 
     logger.debug(s"Replacing $which with $by: contained in ${getContainers(which)}")
 
-    
+
     for {
       get <- getContainers(which)
       (container, index) <- get.asScala.toList // toList is required to obtain a copy and prevent ConcurrentModificationException
@@ -386,14 +299,19 @@ class CSPOM extends LazyLogging {
   def ctr[A](result: CSPOMExpression[A])(function: scala.Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[A] =
     ctr(CSPOMConstraint(result)(function)(arguments: _*))
 
+  def defineInt(f: SimpleExpression[Int] => CSPOMConstraint[_]): SimpleExpression[Int] = {
+    define(IntVariable.free())(f)
+  }
+
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f
     postpone(g(r))
     r
   }
 
-  def defineInt(f: SimpleExpression[Int] => CSPOMConstraint[_]): SimpleExpression[Int] = {
-    define(IntVariable.free())(f)
+  def postpone[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
+    postponed ::= c
+    c
   }
 
   def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
@@ -402,8 +320,77 @@ class CSPOM extends LazyLogging {
   def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
     define(new BoolVariable())(f)
 
-  def postpone[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
-    postponed ::= c
+  def getPostponed: Seq[CSPOMConstraint[_]] = postponed
+
+  override def toString(): String = {
+    val vars = referencedExpressions.map(e => (displayName(e), e)).sortBy(_._1).map {
+      case (name, variable) => s"$name: $variable"
+    }.mkString("\n")
+
+    val cons = constraints.map(_.toString(displayName)).mkString("\n")
+
+    s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
+  }
+
+  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = s match {
+    case Seq() => e
+    case head +: tail =>
+      e
+        .collect {
+          case v: CSPOMSeq[_] => getInSeq(Some(v(head)), tail)
+        }
+        .flatten
+  }
+
+  private def registerContainer(e: CSPOMExpression[_]): Unit = {
+
+    for {
+      s <- PartialFunction.condOpt(e) { case s: CSPOMSeq[_] => s }
+      (c, i) <- s.withIndex
+    } {
+      logger.trace(s"Registering $s")
+      val set = Option(containers.get(c)).getOrElse {
+        val set = new LinkedHashSet[(CSPOMSeq[_], Int)]()
+        containers.put(c, set)
+        set
+      }
+      set.add((s, i))
+      registerContainer(c)
+    }
+
+  }
+
+  /**
+    * Adds a constraint to the problem.
+    *
+    * @param constraint
+    * The constraint to add.
+    */
+  private[cspom] def addConstraint[A](constraint: CSPOMConstraint[A]): CSPOMConstraint[A] = {
+
+    require(!_constraints(constraint),
+      "The constraint " + constraint + " already belongs to the problem");
+
+    _constraints += constraint
+
+    for (
+      v <- constraint.fullScope
+    ) {
+      ctrV(v) += constraint
+      registerContainer(v)
+    }
+
+    constraint
+  }
+
+  private def deepConstraints(v: CSPOMExpression[_], c: ArrayBuffer[CSPOMConstraint[_]]): ArrayBuffer[CSPOMConstraint[_]] = {
+    c ++= ctrV(v)
+    for (
+      cont <- Option(containers.get(v));
+      (container, _) <- cont.iterator.asScala
+    ) {
+      deepConstraints(container, c)
+    }
     c
   }
 
@@ -439,18 +426,6 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def getPostponed: Seq[CSPOMConstraint[_]] = postponed
-
-  override def toString(): String = {
-    val vars = referencedExpressions.map(e => (displayName(e), e)).sortBy(_._1).map {
-      case (name, variable) => s"$name: $variable"
-    }.mkString("\n")
-
-    val cons = constraints.map(_.toString(displayName)).mkString("\n")
-
-    s"$vars\n$cons\n${namedExpressions.size} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
-  }
-
 }
 
 object CSPOM extends LazyLogging {
@@ -458,15 +433,50 @@ object CSPOM extends LazyLogging {
   type Parser = InputStream => Try[CSPOM]
 
   /**
-   * Opens an InputStream according to the given URL. If URL ends with ".gz"
-   * or ".bz2", the stream is inflated accordingly.
-   *
-   * @param url
-   *            URL to open
-   * @return An InputStream corresponding to the given URL
-   * @throws IOException
-   *             If the InputStream could not be opened
-   */
+    * Loads a CSPOM from a given XCSP file.
+    *
+    * @param file
+    * Either a filename or an URI. Filenames ending with .gz or .bz2
+    * will be inflated accordingly.
+    * @return The loaded CSPOM
+    */
+  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
+
+  def file2url(file: String): URL = {
+    val uri = new URI(file)
+    if (uri.isAbsolute && Option(uri.getScheme).isDefined) {
+      uri.toURL
+    } else {
+      new URL("file:" + uri)
+    }
+  }
+
+  /**
+    * Loads a CSPOM from a given XCSP file.
+    *
+    * @param url
+    * An URL locating the XCSP file. Filenames ending with .gz or
+    * .bz2 will be inflated accordingly.
+    * @return The loaded CSPOM and the list of original variable names
+    */
+  def load(url: URL, format: Parser): Try[CSPOM] = {
+    problemInputStream(url).flatMap { pis =>
+      val cspom = format(pis)
+      pis.close()
+      cspom
+    }
+  }
+
+  /**
+    * Opens an InputStream according to the given URL. If URL ends with ".gz"
+    * or ".bz2", the stream is inflated accordingly.
+    *
+    * @param url
+    * URL to open
+    * @return An InputStream corresponding to the given URL
+    * @throws IOException
+    * If the InputStream could not be opened
+    */
   @throws(classOf[IOException])
   def problemInputStream(url: URL): Try[InputStream] = Try {
     val is = url.openStream
@@ -480,51 +490,16 @@ object CSPOM extends LazyLogging {
     }
   }
 
-  /**
-   * Loads a CSPOM from a given XCSP file.
-   *
-   * @param xcspFile
-   *            Either a filename or an URI. Filenames ending with .gz or .bz2
-   *            will be inflated accordingly.
-   * @return The loaded CSPOM
-   */
-  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
-
   def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
 
   def loadCNF(file: String): Try[CSPOM] = load(file2url(file), CNFParser)
 
-  def file2url(file: String): URL = {
-    val uri = new URI(file)
-    if (uri.isAbsolute && Option(uri.getScheme).isDefined) {
-      uri.toURL
-    } else {
-      new URL("file:" + uri)
-    }
-  }
-
-  /**
-   * Loads a CSPOM from a given XCSP file.
-   *
-   * @param url
-   *            An URL locating the XCSP file. Filenames ending with .gz or
-   *            .bz2 will be inflated accordingly.
-   * @return The loaded CSPOM and the list of original variable names
-   */
-  def load(url: URL, format: Parser): Try[CSPOM] = {
-    problemInputStream(url).flatMap { pis =>
-      val cspom = format(pis)
-      pis.close()
-      cspom
-    }
-  }
+  def load(file: String): Try[CSPOM] = load(file2url(file))
 
   def load(url: URL): Try[CSPOM] =
     autoParser(url)
       .map(p => load(url, p))
       .getOrElse(Failure(new IllegalArgumentException(s"${url.getFile}: unknown file format")))
-
-  def load(file: String): Try[CSPOM] = load(file2url(file))
 
   def autoParser(url: URL): Option[Parser] = url.getFile match {
     case name if name.contains(".xml") => Some(XCSPParser)
@@ -544,11 +519,15 @@ object CSPOM extends LazyLogging {
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
   implicit class SeqOperations[A](vars: Seq[SimpleExpression[A]]) {
-    def in(rel: Seq[List[A]]): CSPOMConstraint[Boolean] = in(MDD(rel))
-    def notIn(rel: Seq[List[A]]): CSPOMConstraint[Boolean] = notIn(MDD(rel))
+    def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam("init" -> false, "relation" -> rel)
 
-    def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam ("init" -> false, "relation" -> rel)
-    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam ("init" -> true, "relation" -> rel)
+    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam("init" -> true, "relation" -> rel)
+  }
+
+  implicit class IntSeqOperations(vars: Seq[SimpleExpression[Int]]) {
+    def in(rel: MDDRelation): CSPOMConstraint[Boolean] = SeqOperations(vars).in(rel)
+
+    def notIn(rel: MDDRelation): CSPOMConstraint[Boolean] = SeqOperations(vars).notIn(rel)
   }
 
   //implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)

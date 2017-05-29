@@ -1,6 +1,6 @@
 package cspom
 
-import cspom.extension.MDD
+import cspom.extension.MDDRelation
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.IntVariable
@@ -13,11 +13,11 @@ object JCSPOM {
   //    case FreeInt => throw new UnsupportedOperationException
   //  }
 
-  def emptyMDD(): MDD[Nothing] = MDD.empty
+  def emptyMDD(): MDDRelation = MDDRelation.empty
 
-  def mddAdd[A](mdd: MDD[A], t: Array[A]) = mdd + t.toList
+  def mddAdd(mdd: MDDRelation, t: Array[Int]) = mdd + t
 
-  def mdd[A](t: Array[Array[A]]) = MDD[A](t.map(_.toList))
+  def mdd[A](t: Array[Array[Int]]) = MDDRelation(t.map(_.toSeq))
 
   // Required to avoid incompatibility between Int and Integer
   def constant(a: Int) = CSPOMConstant(a)

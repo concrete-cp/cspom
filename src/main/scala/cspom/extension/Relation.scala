@@ -1,22 +1,62 @@
 package cspom.extension
-import language.experimental.macros
 
+import mdd.{MDD, MDD0, MiniSet}
+
+import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
 import scala.util.Try
 
 trait Relation[A] extends Iterable[Seq[A]] {
 
-  def tupleString = map { _.mkString(" ") } mkString "|"
+  def tupleString = map {
+    _.mkString(" ")
+  } mkString "|"
 
   def contains(t: Seq[A]): Boolean
 
-  def filter(f: (Int, A) => Boolean): Relation[A]
+  def filter(f: IndexedSeq[MiniSet]): Relation[A]
 
   def project(c: Seq[Int]): Relation[A]
 
   def arity: Int
 
 }
+
+object MDDRelation {
+  val empty = new MDDRelation(MDD0)
+
+  def apply(t: Traversable[Seq[Int]]) = new MDDRelation(MDD(t))
+
+}
+
+class MDDRelation(val mdd: MDD) extends Relation[Int] {
+  private lazy val modified = List.tabulate(arity)(identity)
+
+  def iterator = mdd.iterator
+
+  def contains(t: Seq[Int]) = mdd.contains(t.toArray)
+
+  def arity = mdd.depth().getOrElse(-1)
+
+  def filter(f: IndexedSeq[MiniSet]) = updated(mdd.filterTrie(f.toArray, modified))
+
+  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet))
+
+  def +(t: Seq[Int]) =  updated(mdd + t)
+
+  def reduce() = updated(mdd.reduce())
+
+  private def updated(mdd:MDD) = {
+    if (mdd eq this.mdd) {
+      this
+    } else {
+      new MDDRelation(mdd)
+    }
+  }
+
+  override def toString = mdd.toString
+}
+
 
 object Relation {
 
@@ -25,7 +65,7 @@ object Relation {
   }
 
   def matrixImpl(c: Context)(): c.Expr[Array[List[Int]]] = {
-    import c.universe.{ Try => _, _ }
+    import c.universe.{Try => _, _}
 
     val matrix = Try {
       c.prefix.tree match {
