@@ -1,28 +1,25 @@
 package cspom.compiler
 
 import scala.reflect.runtime.universe._
-
 import com.typesafe.scalalogging.LazyLogging
-
-import cspom.CSPOM
-import cspom.CSPOMConstraint
+import cspom.{CSPOM, CSPOMConstraint, UNSATException}
 import cspom.util.Infinitable
 import cspom.util.Interval
 import cspom.util.RangeSet
-import cspom.variable.BoolExpression
-import cspom.variable.BoolVariable
 import cspom.variable.CSPOMConstant
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
-import cspom.variable.CSPOMVariable
 import cspom.variable.IntExpression
 import cspom.variable.SimpleExpression
+
 import scala.collection.JavaConverters._
 
 object ConstraintCompiler extends LazyLogging {
   def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $wh with $by")
-
+    if (by.searchSpace == 0) {
+      throw new UNSATException(s"Replaced $wh with $by")
+    }
     if (wh == by) {
       Delta()
     } else {
@@ -39,7 +36,7 @@ object ConstraintCompiler extends LazyLogging {
 
       var delta = Delta.empty
       for ((w, b) <- in.replaceExpression(wh, by)) {
-        logger.debug(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
+        logger.info(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
         for (c <- in.constraints(w)) {
 
           val c2 = c.replacedVar(w, b)
@@ -84,7 +81,7 @@ object ConstraintCompiler extends LazyLogging {
   }
 
   def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    logger.debug(c.map(_.toString(in.displayName)).mkString("Removing ", ", ", ""))
+    logger.info(c.map(_.toString(in.displayName)).mkString("Removing ", ", ", ""))
     c.foreach(in.removeConstraint)
     Delta.empty.removed(c)
   }
@@ -94,7 +91,7 @@ object ConstraintCompiler extends LazyLogging {
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     val posted = c.flatMap(in.ctrNetwork(_))
-    logger.debug(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
+    logger.info(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
     Delta.empty.added(posted)
   }
 }
@@ -102,20 +99,20 @@ object ConstraintCompiler extends LazyLogging {
 trait ConstraintCompiler extends LazyLogging {
   type A
 
-  def intOrBoolToBool(exprs: Seq[SimpleExpression[_]]) = {
-
-    val booleans = exprs.map {
-      case IntExpression(a) => a -> new BoolVariable()
-      case BoolExpression(a) => a -> a
-    }
-
-    val bool2int = booleans.flatMap {
-      case (IntExpression(a), b) => Seq(CSPOMConstraint('bool2int)(b, a))
-      case _ => Seq()
-    }
-
-    (booleans.map(_._2), bool2int)
-  }
+//  def intOrBoolToBool(exprs: Seq[SimpleExpression[_]]) = {
+//
+//    val booleans = exprs.map {
+//      case IntExpression(a) => a -> new BoolVariable()
+//      case BoolExpression(a) => a -> a
+//    }
+//
+//    val bool2int = booleans.flatMap {
+//      case (IntExpression(a), b) => Seq(CSPOMConstraint('bool2int)(b, a))
+//      case _ => Seq()
+//    }
+//
+//    (booleans.map(_._2), bool2int)
+//  }
 
   def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
 
@@ -159,16 +156,17 @@ trait ConstraintCompiler extends LazyLogging {
 
   //def selfPropagation: Boolean
 
-  def reduceDomain(v: SimpleExpression[Int], d: Interval[Infinitable]): SimpleExpression[Int] = reduceDomain(v, RangeSet(d))
+  def reduceDomain[A](v: SimpleExpression[A], d: Interval[Infinitable]): SimpleExpression[A] = reduceDomain(v, RangeSet(d))
 
-  def reduceDomain(v: SimpleExpression[Int], d: RangeSet[Infinitable]): SimpleExpression[Int] = {
-    val old = IntExpression.implicits.ranges(v)
-    val reduced = old & d
-    if (old == reduced) {
-      v
-    } else {
-      IntExpression(reduced)
-    }
+  def reduceDomain[A](v: SimpleExpression[A], d: RangeSet[Infinitable]): SimpleExpression[A] = {
+    v.intersected(IntExpression(d))
+//    val old = IntExpression.implicits.ranges(v)
+//    val reduced = old & d
+//    if (old == reduced) {
+//      v
+//    } else {
+//      IntExpression(reduced)
+//    }
   }
 
   def applyDomain(v: SimpleExpression[Int], reduced: RangeSet[Infinitable]): SimpleExpression[Int] = {
@@ -180,13 +178,14 @@ trait ConstraintCompiler extends LazyLogging {
     }
   }
 
-  def reduceDomain(v: SimpleExpression[Boolean], d: Boolean): SimpleExpression[Boolean] = {
-    v match {
-      case b: CSPOMVariable[_] => CSPOMConstant(d)
-      case c @ CSPOMConstant(b) =>
-        require(b == d, s"Reduced $v to $d: empty domain")
-        c
-    }
+  def reduceDomain[A](v: SimpleExpression[A], d: Boolean): SimpleExpression[A] = {
+    v.intersected(CSPOMConstant(d))
+//    v match {
+//      case b: CSPOMVariable[_] => CSPOMConstant(d)
+//      case c @ CSPOMConstant(b) =>
+//        require(b == d, s"Reduced $v to $d: empty domain")
+//        c
+//    }
   }
 
   override def toString = getClass.getSimpleName

@@ -28,7 +28,7 @@ object MergeEq extends ConstraintCompilerNoData with LazyLogging {
     if (merged.isEmpty) {
       removeCtr(constraint, problem) ++
         replace(constraint.result, result intersected CSPOMConstant(false), problem)
-    } else if (se.forall(_ == merged)) {
+    } else if (se.forall(_.searchSpace == 1)) {
       removeCtr(constraint, problem) ++
         replace(constraint.result, result intersected CSPOMConstant(true), problem)
     } else if (result.isTrue) {

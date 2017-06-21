@@ -3,7 +3,10 @@ package variable
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.util.ContiguousIntRangeSet
+import cspom.variable.IntExpression.implicits
+import mdd.MiniSet
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.runtime.universe._
 
@@ -30,7 +33,7 @@ sealed trait CSPOMExpression[+T] {
     this !== other
 
   def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] = {
-    problem.defineBool(result => CSPOMConstraint(result)('not)(this === other))
+    problem.defineBool(result => CSPOMConstraint(result)('ne)(this, other))
   }
 
   def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
@@ -77,6 +80,14 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
   def isEmpty: Boolean
 
+
+  def miniset = new MiniSet {
+    def present(i: Int) = contains(i)
+
+    def head = implicits.iterable(SimpleExpression.this).head
+
+    def size = implicits.iterable(SimpleExpression.this).size
+  }
 }
 
 object SimpleExpression {
@@ -118,6 +129,16 @@ object SimpleExpression {
 
 object CSPOMConstant {
 
+
+  val cache = new mutable.WeakHashMap[AnyVal, CSPOMConstant[AnyVal]]
+
+  def apply[T <: AnyVal : TypeTag](value: T): CSPOMConstant[T] = {
+    cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[T]]
+  }
+
+  def unapply[A <: AnyVal](c: CSPOMConstant[A]): Option[A] = Some(c.value)
+
+
   object seq {
     def unapply[T: TypeTag](e: CSPOMExpression[T]): Option[Seq[T]] = e match {
       case s: CSPOMSeq[T] => CSPOMSeq.collectAll(s) {
@@ -131,12 +152,12 @@ object CSPOMConstant {
   //  def ofSeq[T: TypeTag](s: Seq[T]): CSPOMSeq[T] = CSPOMSeq(s.map(CSPOMConstant(_)), 0 until s.size)
 }
 
-case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
+class CSPOMConstant[+T <: AnyVal : TypeTag](val value: T) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
 
   def tpe = typeOf[T]
 
-  def contains[S >: T](that: S) = value == that
+  def contains[S >: T](that: S) = bool2int(value) == bool2int(that)
 
   def intersected(that: SimpleExpression[_ >: T]) = {
     if (that.contains(value)) {
@@ -148,12 +169,19 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
 
   def isTrue = value == true || value == 1
 
-  //  override def equals(o: Any) = o match {
-  //    case i: CSPOMConstant[_] => i.value == value && i.params == params
-  //    case i: Any              => i == value && params.isEmpty
-  //  }
-  //
-  //  override def hashCode = 31 * value.hashCode + params.hashCode
+  override def equals(o: Any) = o match {
+    case i: CSPOMConstant[_] => bool2int(i.value) == bool2int(value)
+    case _ => false
+  }
+
+  private def bool2int(b: Any): Any = b match {
+    case true => 1
+    case false => 0
+    case e => e
+
+  }
+
+  override def hashCode = 31 * bool2int(value).hashCode
 
   def isFalse = value == false || value == 0
 
@@ -170,16 +198,12 @@ case class CSPOMConstant[+T: TypeTag](value: T) extends SimpleExpression[T] {
   def toString(names: CSPOMExpression[_] => String) = toString
 
   override def toString = value.toString
-}
 
-//object CSPOMConstant {
-//  val cache = new HashMap[Any, CSPOMConstant[Any]]
-//
-//  def apply[A](value: A): CSPOMConstant[A] =
-//    cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[A]]
-//
-//  def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
-//}
+  def intValue: Int = bool2int(value) match {
+    case i: Int => i
+    case _ => throw new ClassCastException(s"Cannot convert $this to int")
+  }
+}
 
 abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
   def tpe = typeOf[T]

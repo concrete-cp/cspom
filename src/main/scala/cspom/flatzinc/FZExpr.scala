@@ -1,8 +1,10 @@
 package cspom.flatzinc
 
+import cspom.CSPOM
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMConstant
+
 import scala.reflect.runtime.universe._
 
 sealed trait FZExpr[+A] {
@@ -22,7 +24,7 @@ case class FZBoolConst(value: Boolean) extends FZConstant[Boolean] {
 }
 
 case class FZSetConst(value: Seq[Int]) extends FZConstant[Seq[Int]] {
-  def asConstant = CSPOMConstant(value) //??? //new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
+  def asConstant = ??? // CSPOM.constantSeq(value) //??? //new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
   def tpe = typeOf[Seq[Int]]
 }
 

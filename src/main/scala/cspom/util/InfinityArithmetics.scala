@@ -35,6 +35,10 @@ sealed trait Infinitable extends Any {
   def <(i: Int): Boolean
   def >=(i: Int): Boolean
   def >(i: Int): Boolean
+
+  def abs: Infinitable
+  def max(v: Infinitable): Infinitable = Infinitable.InfinitableOrdering.max(this, v)
+  def min(v: Infinitable): Infinitable = Infinitable.InfinitableOrdering.min(this, v)
 }
 case object MinInf extends Infinitable {
   def +(v: Infinitable) = MinInf
@@ -63,6 +67,7 @@ case object MinInf extends Infinitable {
   def >=(i: Int) = false
   def >(i: Int) = false
   override def toString = "-∞"
+  def abs = PlusInf
 }
 case object PlusInf extends Infinitable {
   def +(v: Infinitable) = PlusInf
@@ -82,7 +87,9 @@ case object PlusInf extends Infinitable {
   def >=(i: Int) = false
   def >(i: Int) = false
   override def toString = "+∞"
+  def abs = PlusInf
 }
+
 case class Finite(i: Int) extends AnyVal with Infinitable {
   def +(v: Infinitable) = v match {
     case Finite(j) => Finite(Math.checkedAdd(i, j))
@@ -112,4 +119,5 @@ case class Finite(i: Int) extends AnyVal with Infinitable {
   def >(j: Int) = i > j
 
   override def toString = i.toString
+  def abs = Finite(math.abs(i))
 }

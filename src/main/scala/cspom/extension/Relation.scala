@@ -20,6 +20,8 @@ trait Relation[A] extends Iterable[Seq[A]] {
 
   def arity: Int
 
+  def space: Int
+
 }
 
 object MDDRelation {
@@ -27,9 +29,11 @@ object MDDRelation {
 
   def apply(t: Traversable[Seq[Int]]) = new MDDRelation(MDD(t))
 
+  def fromStarred(t: Traversable[Seq[Seq[Int]]]) = new MDDRelation(MDD.fromStarred(t))
+
 }
 
-class MDDRelation(val mdd: MDD) extends Relation[Int] {
+class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[Int] {
   private lazy val modified = List.tabulate(arity)(identity)
 
   def iterator = mdd.iterator
@@ -38,23 +42,32 @@ class MDDRelation(val mdd: MDD) extends Relation[Int] {
 
   def arity = mdd.depth().getOrElse(-1)
 
-  def filter(f: IndexedSeq[MiniSet]) = updated(mdd.filterTrie(f.toArray, modified))
+  def filter(f: IndexedSeq[MiniSet]) = updated(mdd.filterTrie(f.toArray, modified), false)
 
-  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet))
+  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), false)
 
-  def +(t: Seq[Int]) =  updated(mdd + t)
+  def +(t: Seq[Int]) =  updated(mdd + t, false)
 
-  def reduce() = updated(mdd.reduce())
+  def reduce() = if (reduced) this else updated(mdd.reduce(), true)
 
-  private def updated(mdd:MDD) = {
+  private def updated(mdd:MDD, reduced: Boolean) = {
     if (mdd eq this.mdd) {
-      this
+      val r = reduced || this.reduced
+      if (r == this.reduced) {
+        this
+      } else {
+        new MDDRelation(mdd, r)
+      }
     } else {
-      new MDDRelation(mdd)
+      new MDDRelation(mdd, reduced)
     }
   }
 
+  def merge(l: List[Int]) = updated(mdd.merge(l), false)
+
   override def toString = mdd.toString
+
+  def space = mdd.edges()
 }
 
 

@@ -8,10 +8,12 @@ object BoolExpression extends SimpleExpression.Typed[Boolean] {
   def coerce(e: CSPOMExpression[_]): SimpleExpression[Boolean] = e match {
     case f: FreeVariable => new BoolVariable()
     case BoolExpression(e) => e
+    case e if is01(e) => e.asInstanceOf[SimpleExpression[Boolean]]
     case e => throw new IllegalArgumentException(s"Cannot convert $e to boolean expression")
   }
 
   def is01(e: CSPOMExpression[_]): Boolean = e match {
+    case BoolExpression(e) => true
     case IntExpression(e) => IntExpression.is01(e)
     case _ => false
   }
@@ -43,7 +45,6 @@ object BoolExpression extends SimpleExpression.Typed[Boolean] {
   object bool01 {
     def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[_]] = {
       c match {
-        case BoolExpression(c) => Some(c)
         case c: SimpleExpression[_] if is01(c) => Some(c)
         case _ => None
       }

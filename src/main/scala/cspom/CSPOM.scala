@@ -13,8 +13,8 @@ import cspom.xcsp.XCSPParser
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
 import scala.collection.JavaConverters._
-import scala.collection.SortedSet
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.{SortedSet, mutable}
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe.TypeTag
 import scala.util.parsing.combinator.JavaTokenParsers
@@ -98,7 +98,17 @@ class CSPOM extends LazyLogging {
 
   def setGoal(g: CSPOMGoal[_], params: Map[String, Any] = Map()): Unit = setGoal(WithParam(g, params))
 
-  def getContainers(e: CSPOMExpression[_]): Option[LinkedHashSet[(CSPOMSeq[_], Int)]] = Option(containers.get(e))
+  def getContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[Any], Seq[Int])]] =
+    Option(containers.get(e)).map { l =>
+      val m = new mutable.LinkedHashMap[CSPOMSeq[Any], ArrayBuffer[Int]]()
+      for (elem <- l.asScala) {
+        val key = elem._1
+        val bldr = m.getOrElseUpdate(key, new ArrayBuffer[Int]())
+        bldr += elem._2
+      }
+
+      m.toSeq
+    }
 
   def addAnnotation(expressionName: String, annotationName: String, annotation: Any): Unit = {
     annotations(expressionName) += (annotationName -> annotation)
@@ -241,9 +251,9 @@ class CSPOM extends LazyLogging {
 
     for {
       get <- getContainers(which)
-      (container, index) <- get.asScala.toList // toList is required to obtain a copy and prevent ConcurrentModificationException
+      (container, indices) <- get // toList is required to obtain a copy and prevent ConcurrentModificationException
     } {
-      val nc = container.replaceIndex(index, by)
+      val nc = indices.foldLeft(container)((acc, index) => acc.replaceIndex(index, by))
       replaced ++:= replaceExpression(container, nc)
 
       removeContainer(container)
@@ -303,6 +313,12 @@ class CSPOM extends LazyLogging {
     define(IntVariable.free())(f)
   }
 
+  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
+    define(new FreeVariable())(f)
+
+  def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
+    define(new BoolVariable())(f)
+
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f
     postpone(g(r))
@@ -313,12 +329,6 @@ class CSPOM extends LazyLogging {
     postponed ::= c
     c
   }
-
-  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
-    define(new FreeVariable())(f)
-
-  def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
-    define(new BoolVariable())(f)
 
   def getPostponed: Seq[CSPOMConstraint[_]] = postponed
 
@@ -442,6 +452,10 @@ object CSPOM extends LazyLogging {
     */
   def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
 
+  def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
+
+  def loadCNF(file: String): Try[CSPOM] = load(file2url(file), CNFParser)
+
   def file2url(file: String): URL = {
     val uri = new URI(file)
     if (uri.isAbsolute && Option(uri.getScheme).isDefined) {
@@ -490,10 +504,6 @@ object CSPOM extends LazyLogging {
     }
   }
 
-  def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
-
-  def loadCNF(file: String): Try[CSPOM] = load(file2url(file), CNFParser)
-
   def load(file: String): Try[CSPOM] = load(file2url(file))
 
   def load(url: URL): Try[CSPOM] =
@@ -532,13 +542,13 @@ object CSPOM extends LazyLogging {
 
   //implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
 
-  implicit def constant[A: TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
+  implicit def constant[A <: AnyVal : TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
   implicit def seq2CSPOMSeq[A: TypeTag](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = {
     CSPOMSeq(c.toIndexedSeq, 0 until c.size)
   }
 
-  implicit def constantSeq[A: TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
+  implicit def constantSeq[A <: AnyVal : TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
   implicit def matrix(sc: StringContext) = Relation.MatrixContext(sc)
 

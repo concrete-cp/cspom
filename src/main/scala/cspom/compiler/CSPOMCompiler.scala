@@ -64,7 +64,7 @@ final class CSPOMCompiler(
     compiler.mtch(constraint, problem) match {
       case Some(data) =>
         CSPOMCompiler.compiles += 1
-        logger.debug(s"$compiler : ${constraint.toString(problem.displayName)}")
+        logger.info(s"$compiler : ${constraint.toString(problem.displayName)}")
         compiler.compile(constraint, problem, data)
       case None => Delta()
     }

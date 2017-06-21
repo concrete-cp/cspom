@@ -1,14 +1,10 @@
 package cspom.variable
 
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import CSPOM._
+import cspom.CSPOM._
+import cspom.util.{IntInterval, Intervals, RangeSet}
+import cspom.{CSPOM, CSPOMConstraint}
 import org.scalatest.prop.PropertyChecks
-import cspom.util.Intervals
-import cspom.util.IntInterval
-import cspom.util.RangeSet
+import org.scalatest.{FlatSpec, Matchers}
 
 class VariableTest extends FlatSpec with Matchers with PropertyChecks {
 
@@ -27,11 +23,11 @@ class VariableTest extends FlatSpec with Matchers with PropertyChecks {
   "Boolean variables" should "work as sets" in {
     val vb = new BoolVariable()
 
-    forAll { i: Boolean => vb.contains(i) shouldBe true }
+    forAll { i: Boolean => assert(vb.contains(i)) }
 
-    forAll { i: Int => vb.contains(i) shouldBe false }
+    forAll { i: Int => vb.contains(i) shouldBe (i == 0 || i == 1) }
 
-    forAll { i: Double => vb.contains(i) shouldBe false }
+    forAll { i: Double => assert(!vb.contains(i)) }
   }
 
   "Int variables" should "work as sets" in {
@@ -47,9 +43,15 @@ class VariableTest extends FlatSpec with Matchers with PropertyChecks {
         vi.contains(i) shouldBe itv.contains(i)
       }
 
-      forAll { i: Boolean => vi.contains(i) shouldBe false }
+      forAll { i: Boolean =>
+        if (i) {
+          vi.contains(i) shouldBe itv.contains(1)
+        } else {
+          vi.contains(i) shouldBe itv.contains(0)
+        }
+      }
 
-      forAll { i: Double => vi.contains(i) shouldBe false }
+      forAll { i: Double => assert(!vi.contains(i)) }
     }
 
   }
@@ -57,10 +59,10 @@ class VariableTest extends FlatSpec with Matchers with PropertyChecks {
   "Integer free variables" should "work as sets" in {
     val vf = IntVariable.free()
 
-    forAll { i: Boolean => vf.contains(i) shouldBe false }
+    forAll { i: Boolean => assert(vf.contains(i)) }
 
-    forAll { i: Int => vf.contains(i) shouldBe true }
+    forAll { i: Int => assert(vf.contains(i)) }
 
-    forAll { i: Double => vf.contains(i) shouldBe false }
+    forAll { i: Double => assert(!vf.contains(i)) }
   }
 }

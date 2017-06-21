@@ -1,18 +1,11 @@
 package cspom.variable
 
 import com.typesafe.scalalogging.LazyLogging
-import cspom.util.ContiguousIntRangeSet
-import cspom.util.IntInterval
-import cspom.util.RangeSet
-import cspom.util.Infinitable
-import cspom.util.Finite
-import cspom.util.Interval
-import cspom.util.PlusInf
-import cspom.util.MinInf
 import cspom.UNSATException
+import cspom.util._
 
 final class IntVariable(val domain: RangeSet[Infinitable])
-    extends CSPOMVariable[Int] with LazyLogging {
+  extends CSPOMVariable[Int] with LazyLogging {
 
   val asSortedSet = new ContiguousIntRangeSet(domain)
 
@@ -27,6 +20,8 @@ final class IntVariable(val domain: RangeSet[Infinitable])
   override def toString = domain.toString
 
   def contains[S >: Int](that: S): Boolean = that match {
+    case true => contains(1)
+    case false => contains(0)
     case t: Int => domain.intersects(IntInterval.singleton(t))
     case t: Long if t.isValidInt => contains(t.toInt)
     case _ => false
@@ -36,7 +31,7 @@ final class IntVariable(val domain: RangeSet[Infinitable])
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
-      case const @ CSPOMConstant(c: Int) => const.asInstanceOf[CSPOMConstant[Int]].intersected(this)
+      case const: CSPOMConstant[_] => const.intersected(this).asInstanceOf[CSPOMConstant[Int]]
       //      if domain.contains(Finite(c)) =>
       //        const.asInstanceOf[CSPOMConstant[Int]]
       //      //CSPOMConstant(c, Map("intersection" -> ((this, c))))
@@ -56,6 +51,9 @@ final class IntVariable(val domain: RangeSet[Infinitable])
         }
       }
       case v: FreeVariable => this //new IntVariable(domain, Map("intersection" -> ((this, v))))
+      case b: BoolVariable => {
+        IntVariable(0, 1) intersected this
+      }
       case t =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
@@ -75,16 +73,16 @@ object IntVariable {
   def apply(values: Range): IntVariable = apply(
     IntInterval(values.head, values.last))
 
+  def apply(values: Interval[Infinitable]): IntVariable = apply(RangeSet(values))
+
+  def apply(values: RangeSet[Infinitable]): IntVariable = new IntVariable(values)
+
+  def apply(values: Int*): IntVariable = ofSeq(values)
+
   def ofSeq(values: Seq[Int]): IntVariable = {
     new IntVariable(RangeSet(values.map(
       v => IntInterval.singleton(v))))
   }
-
-  def apply(values: Int*): IntVariable = ofSeq(values)
-
-  def apply(values: RangeSet[Infinitable]): IntVariable = new IntVariable(values)
-
-  def apply(values: Interval[Infinitable]): IntVariable = apply(RangeSet(values))
 
   def free(): IntVariable =
     new IntVariable(RangeSet.allInt)
