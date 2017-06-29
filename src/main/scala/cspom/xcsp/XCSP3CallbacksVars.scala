@@ -61,6 +61,8 @@ trait XCSP3CallbacksVars extends XCallbacks2 {
     new CSPOMSeq(toCspom(x), indices)
   }
 
+  def cspomSeq(x: Array[Int]): CSPOMSeq[Int] = CSPOM.constantSeq(x)
+
   /**
     * Default case
     */

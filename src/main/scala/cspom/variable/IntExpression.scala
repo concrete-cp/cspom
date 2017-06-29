@@ -2,7 +2,6 @@ package cspom.variable
 
 import cspom.util.IntervalsArithmetic.RangeArithmetics
 import cspom.util._
-import mdd.MiniSet
 
 import scala.language.implicitConversions
 

@@ -1,35 +1,26 @@
 package cspom.compiler
 
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import cspom.variable.CSPOMExpression
-import cspom.UNSATException
-import cspom.variable.CSPOMConstant
+import cspom.variable.{CSPOMConstant, CSPOMExpression}
+import cspom.{CSPOM, CSPOMConstraint, UNSATException}
 
-abstract class VariableCompiler(
-    val function: Symbol) extends ConstraintCompiler {
-
-  def compiler(c: CSPOMConstraint[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])]
-
-  def compilerWEntail(c: CSPOMConstraint[_]): (Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean) = {
-    (compiler(c), false)
-  }
+abstract class VariableCompiler(val function: Symbol) extends ConstraintCompiler {
 
   // Do not use Maps to avoid hash undeterminism
   type A = (Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean)
 
+  def compiler(c: CSPOMConstraint[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])]
+
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {
-    if (c.function == function) {
+    if (c.function == function && c.fullScope.exists(v => !v.fullyDefined)) {
       val (reductions, entail) = try {
         compilerWEntail(c)
-
       } catch {
         case e: UNSATException =>
-          for (
-            v <- c.flattenedScope;
-            if (!v.isInstanceOf[CSPOMConstant[_]]);
+          for {
+            v <- c.flattenedScope
+            if !v.isInstanceOf[CSPOMConstant[_]]
             n <- problem.deepConstraints(v)
-          ) {
+          } {
             logger.debug(n.toString)
           }
 
@@ -38,7 +29,7 @@ abstract class VariableCompiler(
 
       val m = reductions.filter { case (k, v) => k != v }
 
-      require(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
+      assert(m.forall(e => c.flattenedScope.contains(e._1)), s"$c must involve all $m")
 
       if (m.nonEmpty || entail) {
         logger.debug(s"$c: $m")
@@ -47,9 +38,14 @@ abstract class VariableCompiler(
       } else {
         None
       }
-    } else {
+    }
+    else {
       None
     }
+  }
+
+  def compilerWEntail(c: CSPOMConstraint[_]): (Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean) = {
+    (compiler(c), false)
   }
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {

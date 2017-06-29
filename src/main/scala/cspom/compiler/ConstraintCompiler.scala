@@ -156,9 +156,9 @@ trait ConstraintCompiler extends LazyLogging {
 
   //def selfPropagation: Boolean
 
-  def reduceDomain[A](v: SimpleExpression[A], d: Interval[Infinitable]): SimpleExpression[A] = reduceDomain(v, RangeSet(d))
+  def reduceDomain[B](v: SimpleExpression[B], d: Interval[Infinitable]): SimpleExpression[B] = reduceDomain(v, RangeSet(d))
 
-  def reduceDomain[A](v: SimpleExpression[A], d: RangeSet[Infinitable]): SimpleExpression[A] = {
+  def reduceDomain[B](v: SimpleExpression[B], d: RangeSet[Infinitable]): SimpleExpression[B] = {
     v.intersected(IntExpression(d))
 //    val old = IntExpression.implicits.ranges(v)
 //    val reduced = old & d
@@ -178,7 +178,7 @@ trait ConstraintCompiler extends LazyLogging {
     }
   }
 
-  def reduceDomain[A](v: SimpleExpression[A], d: Boolean): SimpleExpression[A] = {
+  def reduceDomain[B](v: SimpleExpression[B], d: Boolean): SimpleExpression[B] = {
     v.intersected(CSPOMConstant(d))
 //    v match {
 //      case b: CSPOMVariable[_] => CSPOMConstant(d)

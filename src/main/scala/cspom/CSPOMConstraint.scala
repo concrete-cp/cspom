@@ -3,8 +3,6 @@ import cspom.variable.CSPOMExpression
 import scala.collection.JavaConverters._
 import cspom.variable.CSPOMConstant
 import com.typesafe.scalalogging.LazyLogging
-import cspom.variable.EmptyVariable
-
 
 final case class CSPOMConstraint[+T](
     val result: CSPOMExpression[T],
@@ -12,21 +10,19 @@ final case class CSPOMConstraint[+T](
     val arguments: Seq[CSPOMExpression[Any]],
     val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
 
-  require(arguments.nonEmpty)
-  require(!params.get("mode").contains("ge") && !params.get("mode").contains("gt"))
-  require(function != 'count)
+  assert(arguments.nonEmpty)
 
   def withParam(addParams: (String, Any)*) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
   def withParams(addParams: Map[String, Any]) = withParam(addParams.toSeq: _*)
-
-  if (flattenedScope.contains(EmptyVariable)) logger.warn(s"Empty variable in scope of $this")
 
   def nonReified: Boolean = result.isTrue
 
   def fullScope: Seq[CSPOMExpression[_]] = result +: arguments
 
   lazy val flattenedScope: Set[CSPOMExpression[_]] =
-    fullScope.iterator.flatMap(_.flatten).toSet
+    flattenedScopeDuplicates.toSet
+
+  def flattenedScopeDuplicates = fullScope.iterator.flatMap(_.flatten)
 
   val id: Int = CSPOMConstraint.id
   CSPOMConstraint.id += 1

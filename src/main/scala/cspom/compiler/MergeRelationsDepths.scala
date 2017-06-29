@@ -35,7 +35,7 @@ object MergeRelationsDepths extends ConstraintCompilerNoData with LazyLogging {
       val arg = args.head
       val indices = args.indices.filter(i => args(i) == arg)
       if (indices.size > 1) {
-        logger.debug(s"Merging $indices in ${args.map(problem.namesOf)}")
+        logger.debug("Merging {} in {}", indices, args.map(problem.namesOf))
         relation = relation.merge(indices.toList.map(_ + newArgs.size))
       }
       args = args.zipWithIndex.filterNot(e => indices.contains(e._2))

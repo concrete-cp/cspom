@@ -3,7 +3,7 @@ package compiler
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.extension.{MDDRelation, Relation}
-import cspom.variable.{CSPOMVariable, IntExpression, SimpleExpression}
+import cspom.variable.{CSPOMVariable, SimpleExpression}
 
 /**
   * Detects and removes constants from extensional constraints
@@ -37,7 +37,7 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
     val filtered = relation.filter(args.map(_.miniset))
 
-    logger.info(s"filtered: ${filtered ne relation}, ${relation.space} -> ${filtered.space}")
+    logger.info(s"filtered: {}, {} -> {}", Boolean.box(filtered ne relation), Int.box(relation.space), Int.box(filtered.space))
 
     if (filtered.isEmpty) logger.warn(s"Relation is empty for ${c.toString(problem.displayName)}")
 

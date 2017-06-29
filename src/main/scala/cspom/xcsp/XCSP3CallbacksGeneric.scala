@@ -3,7 +3,7 @@ package cspom.xcsp
 import cspom.extension.MDDRelation
 import cspom.variable.{CSPOMConstant, CSPOMExpression, SimpleExpression}
 import cspom.{CSPOM, CSPOMConstraint}
-import mdd.IdMap
+import mdd.{IdMap, Star, Starrable, ValueStar}
 import org.xcsp.common.Constants
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
@@ -50,7 +50,12 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
 
   override def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
                                  y: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
-    buildCtrPrimitiveCSPOM(toCspom(x), opa, toCspom(y), op, CSPOMConstant(k))
+    if (opa == TypeArithmeticOperator.SUB && k == 0) {
+      // Optimizes the optimizer…
+      buildCtrPrimitiveCSPOM(toCspom(x), op, toCspom(y))
+    } else {
+      buildCtrPrimitiveCSPOM(toCspom(x), opa, toCspom(y), op, CSPOMConstant(k))
+    }
   }
 
   override def buildCtrPrimitive(id: String, x: XVarInteger, op: TypeConditionOperatorSet, min: Int, max: Int): Unit = {
@@ -116,19 +121,19 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
           IntegerEntity.toIntArray(dom, Integer.MAX_VALUE).toSeq
         }
 
-        val starredTuples: Traversable[Seq[Seq[Int]]] = tuples.map { t =>
-          Seq.tabulate(list.length) { i =>
+        val starredTuples: Traversable[IndexedSeq[Starrable]] = tuples.map { t =>
+          IndexedSeq.tabulate(list.length) { i =>
             t(i) match {
-              case Constants.STAR_INT => doms(i)
-              case v => Seq(v)
+              case Constants.STAR_INT => Star
+              case v => ValueStar(v)
             }
           }
         }
 
-        MDDRelation.fromStarred(starredTuples).reduce()
+        MDDRelation.fromStarred(starredTuples, doms).reduce()
 
       } else {
-        MDDRelation(tuples.view.map(_.toSeq))
+        MDDRelation(tuples.view.map(_.toIndexedSeq))
       }
     })
 
@@ -146,7 +151,7 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
 
   override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean,
                                  flags: java.util.Set[TypeFlag]): Unit = {
-    val relation = MDDRelation(values.map(Seq(_)))
+    val relation = MDDRelation(values.map(IndexedSeq(_)))
     val scope = CSPOM.IntSeqOperations(Seq(toCspom(x)))
 
     cspom.ctr {

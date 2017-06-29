@@ -9,7 +9,7 @@ import cspom.dimacs.CNFParser
 import cspom.extension.{MDDRelation, Relation}
 import cspom.flatzinc.FlatZincFastParser
 import cspom.variable._
-import cspom.xcsp.XCSPParser
+import cspom.xcsp.XCSP3Parser
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
 import scala.collection.JavaConverters._
@@ -450,7 +450,7 @@ object CSPOM extends LazyLogging {
     * will be inflated accordingly.
     * @return The loaded CSPOM
     */
-  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
+  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSP3Parser)
 
   def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
 
@@ -512,7 +512,7 @@ object CSPOM extends LazyLogging {
       .getOrElse(Failure(new IllegalArgumentException(s"${url.getFile}: unknown file format")))
 
   def autoParser(url: URL): Option[Parser] = url.getFile match {
-    case name if name.contains(".xml") => Some(XCSPParser)
+    case name if name.contains(".xml") => Some(XCSP3Parser)
     case name if name.contains(".cnf") => Some(CNFParser)
     case name if name.contains(".fzn") => Some(FlatZincFastParser)
     case _ => None

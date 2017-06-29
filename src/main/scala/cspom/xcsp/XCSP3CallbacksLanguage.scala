@@ -38,7 +38,7 @@ trait XCSP3CallbacksLanguage extends XCSP3CallbacksVars {
 
     def buildMDD(node: String): MDD = {
       nodes.getOrElseUpdate(node, {
-        val newVal = MDD(
+        val newVal = MDD.fromTrie(
           nodeNames(node).view
             .map {
               case Array(_, value: java.lang.Long, target: String) =>

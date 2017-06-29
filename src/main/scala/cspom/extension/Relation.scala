@@ -1,6 +1,6 @@
 package cspom.extension
 
-import mdd.{MDD, MDD0, MiniSet}
+import mdd.{MDD, MDD0, MiniSet, Starrable}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
@@ -27,9 +27,10 @@ trait Relation[A] extends Iterable[Seq[A]] {
 object MDDRelation {
   val empty = new MDDRelation(MDD0)
 
-  def apply(t: Traversable[Seq[Int]]) = new MDDRelation(MDD(t))
+  def apply(t: Traversable[IndexedSeq[Int]]) = new MDDRelation(MDD.fromTraversable(t))
 
-  def fromStarred(t: Traversable[Seq[Seq[Int]]]) = new MDDRelation(MDD.fromStarred(t))
+  def fromStarred(t: Traversable[IndexedSeq[Starrable]], doms: IndexedSeq[Seq[Int]]) =
+    new MDDRelation(MDD.fromStarred(t, doms))
 
 }
 
@@ -46,7 +47,7 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
 
   def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), false)
 
-  def +(t: Seq[Int]) =  updated(mdd + t, false)
+  // def +(t: Seq[Int]) =  updated(mdd + t, false)
 
   def reduce() = if (reduced) this else updated(mdd.reduce(), true)
 
