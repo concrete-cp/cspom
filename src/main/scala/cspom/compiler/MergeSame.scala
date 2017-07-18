@@ -12,12 +12,12 @@ object MergeSame extends ConstraintCompiler {
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[A] = {
     val s = for {
       arg <- c.arguments
-      if (!arg.isConstant)
+      if !arg.isConstant
       argCons <- problem.constraints(arg)
-      if ((argCons ne c) &&
+      if (argCons ne c) && c.result != argCons.result &&
         c.function == argCons.function &&
         isSame(c.arguments, argCons.arguments) &&
-        c.params == argCons.params)
+        c.params == argCons.params
     } yield argCons
 
     if (s.nonEmpty) {

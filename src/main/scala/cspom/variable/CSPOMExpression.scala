@@ -130,13 +130,13 @@ object SimpleExpression {
 object CSPOMConstant {
 
 
-  val cache = new mutable.WeakHashMap[AnyVal, CSPOMConstant[AnyVal]]
+  val cache = new mutable.WeakHashMap[Any, CSPOMConstant[Any]]
 
-  def apply[T <: AnyVal : TypeTag](value: T): CSPOMConstant[T] = {
+  def apply[T : TypeTag](value: T): CSPOMConstant[T] = {
     cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[T]]
   }
 
-  def unapply[A <: AnyVal](c: CSPOMConstant[A]): Option[A] = Some(c.value)
+  def unapply[A](c: CSPOMConstant[A]): Option[A] = Some(c.value)
 
 
   object seq {
@@ -152,7 +152,7 @@ object CSPOMConstant {
   //  def ofSeq[T: TypeTag](s: Seq[T]): CSPOMSeq[T] = CSPOMSeq(s.map(CSPOMConstant(_)), 0 until s.size)
 }
 
-class CSPOMConstant[+T <: AnyVal : TypeTag](val value: T) extends SimpleExpression[T] {
+class CSPOMConstant[+T : TypeTag](val value: T) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
 
   def tpe = typeOf[T]

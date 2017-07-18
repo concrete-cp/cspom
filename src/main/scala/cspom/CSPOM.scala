@@ -9,7 +9,7 @@ import cspom.dimacs.CNFParser
 import cspom.extension.{MDDRelation, Relation}
 import cspom.flatzinc.FlatZincFastParser
 import cspom.variable._
-import cspom.xcsp.XCSP3Parser
+import cspom.xcsp.{XCSP3Parser, XCSPParser}
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
 import scala.collection.JavaConverters._
@@ -443,14 +443,14 @@ object CSPOM extends LazyLogging {
   type Parser = InputStream => Try[CSPOM]
 
   /**
-    * Loads a CSPOM from a given XCSP file.
+    * Loads a CSPOM from a given XCSP2 or 3 file.
     *
     * @param file
     * Either a filename or an URI. Filenames ending with .gz or .bz2
     * will be inflated accordingly.
     * @return The loaded CSPOM
     */
-  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSP3Parser)
+  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
 
   def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
 
@@ -542,7 +542,7 @@ object CSPOM extends LazyLogging {
 
   //implicit def seq2Rel(s: Seq[Seq[Int]]): Relation[Int] = new Table(s)
 
-  implicit def constant[A <: AnyVal : TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
+  implicit def constant[A : TypeTag](c: A): CSPOMConstant[A] = CSPOMConstant(c)
 
   implicit def seq2CSPOMSeq[A: TypeTag](c: Seq[CSPOMExpression[A]]): CSPOMSeq[A] = {
     CSPOMSeq(c.toIndexedSeq, 0 until c.size)

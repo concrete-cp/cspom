@@ -121,7 +121,7 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
           IntegerEntity.toIntArray(dom, Integer.MAX_VALUE).toSeq
         }
 
-        val starredTuples: Traversable[IndexedSeq[Starrable]] = tuples.map { t =>
+        val starredTuples: Seq[IndexedSeq[Starrable]] = tuples.map { t =>
           IndexedSeq.tabulate(list.length) { i =>
             t(i) match {
               case Constants.STAR_INT => Star

@@ -1,5 +1,6 @@
 package cspom.flatzinc
 
+import cspom.CSPOM
 import cspom.variable.CSPOMSeq
 import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMConstant
@@ -23,7 +24,7 @@ case class FZBoolConst(value: Boolean) extends FZConstant[Boolean] {
 }
 
 case class FZSetConst(value: Seq[Int]) extends FZConstant[Seq[Int]] {
-  def asConstant = ??? // CSPOM.constantSeq(value) //??? //new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
+  def asConstant = CSPOM.constant(value) //??? //new CSPOMSeq[Int](value.map(CSPOMConstant(_)))
   def tpe = typeOf[Seq[Int]]
 }
 

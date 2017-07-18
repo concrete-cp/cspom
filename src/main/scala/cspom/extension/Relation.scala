@@ -27,9 +27,9 @@ trait Relation[A] extends Iterable[Seq[A]] {
 object MDDRelation {
   val empty = new MDDRelation(MDD0)
 
-  def apply(t: Traversable[IndexedSeq[Int]]) = new MDDRelation(MDD.fromTraversable(t))
+  def apply(t: Seq[IndexedSeq[Int]]) = new MDDRelation(MDD.fromSeq(t))
 
-  def fromStarred(t: Traversable[IndexedSeq[Starrable]], doms: IndexedSeq[Seq[Int]]) =
+  def fromStarred(t: Seq[IndexedSeq[Starrable]], doms: IndexedSeq[Seq[Int]]) =
     new MDDRelation(MDD.fromStarred(t, doms))
 
 }

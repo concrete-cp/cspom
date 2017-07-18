@@ -2,14 +2,14 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.15"
+version := "2.17"
 
 scalaVersion := "2.12.2"
 
 libraryDependencies ++= Seq(
   "fr.univ-valenciennes" %% "bitvectors" % "1.0.0",
-  "fr.univ-valenciennes" %% "mdd" % "1.4.0",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.6.0",
+  "fr.univ-valenciennes" %% "mdd" % "1.5.0",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
   "org.apache.commons" % "commons-compress" % "1.14",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.storm-enroute" %% "scalameter-core" % "0.8.2",

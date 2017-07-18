@@ -88,14 +88,15 @@ object FlatZincFastParser extends CSPOM.Parser {
         CSPOM.goal {
           val FZSolve(mode, ann) = goal
           val params = Map("fzSolve" -> ann)
-          (mode match {
+          mode match {
             case Satisfy => WithParam(CSPOMGoal.Satisfy, params)
             case Minimize(e: FZExpr[Int]) =>
-              val ce = e.toCSPOM(declared)
+              val ce = e.toCSPOM(declared).asInstanceOf[CSPOMExpression[Int]]
               WithParam(CSPOMGoal.Minimize(ce), params)
             case Maximize(e: FZExpr[Int]) =>
-              WithParam(CSPOMGoal.Maximize(e.toCSPOM(declared)), params)
-          })
+              val ce = e.toCSPOM(declared).asInstanceOf[CSPOMExpression[Int]]
+              WithParam(CSPOMGoal.Maximize(ce), params)
+          }
         }
       }
   }
@@ -244,7 +245,7 @@ object FlatZincFastParser extends CSPOM.Parser {
   val param_decl: Parser[FZParamDecl[Any]] = P(par_type ~ ":" ~ var_par_id ~ "=" ~ expr ~ ";").map {
     case (t, id, expr) =>
       val e: CSPOMExpression[_] = (t, expr) match {
-        case (FZArray(Seq(indices), typ), a: FZArrayExpr[_]) => a.asConstant(indices.get)
+        case (FZArray(Seq(indices), _), a: FZArrayExpr[_]) => a.asConstant(indices.get)
         case (_, c: FZConstant[_]) => c.asConstant
         case _ => throw new IllegalArgumentException("Constant expected")
       }
