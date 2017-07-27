@@ -17,7 +17,7 @@ object JCSPOM {
 
   // def mddAdd(mdd: MDDRelation, t: Array[Int]) = mdd + t
 
-  def mdd[A](t: Array[Array[Int]]) = MDDRelation(t.map(_.toIndexedSeq))
+  def mdd[A](t: Array[Array[Int]]) = MDDRelation(t)
 
   // Required to avoid incompatibility between Int and Integer
   def constant(a: Int) = CSPOMConstant(a)

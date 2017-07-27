@@ -1,28 +1,26 @@
 package cspom.xcsp
 
+import java.util.StringTokenizer
+
+import cspom.extension.{MDDRelation, Relation}
+import cspom.variable.{CSPOMConstant, SimpleExpression}
+import cspom.{CSPOM, CSPOMConstraint}
+
+import scala.collection.mutable
 import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.parsing.input.CharSequenceReader
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import cspom.variable.CSPOMConstant
-import java.util.StringTokenizer
-import scala.util.parsing.input.Reader
-import cspom.extension.MDDRelation
-import cspom.extension.Relation
-import cspom.variable.SimpleExpression
 
 sealed trait PredicateNode
 
 final case class PredicateConstraint(val operator: String, val arguments: Seq[PredicateNode]) extends PredicateNode {
   require(arguments.nonEmpty)
 }
+
 final case class PredicateConstant(val constant: Int) extends PredicateNode
 
 final case class PredicateVariable(val variableId: String) extends PredicateNode
 
 final object ConstraintParser extends JavaTokenParsers {
-
-  private def integer = wholeNumber ^^ (_.toInt)
 
   def func: Parser[PredicateNode] =
     ident ~ ("(" ~> repsep(func, ",") <~ ")") ^^ {
@@ -48,19 +46,11 @@ final object ConstraintParser extends JavaTokenParsers {
 
   }
 
-  private def toVariable(node: PredicateNode, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): SimpleExpression[_] = {
-    node match {
-      case PredicateConstant(value)      => CSPOMConstant(value)
-      case PredicateVariable(variableId) => declaredVariables(variableId)
-      case PredicateConstraint(operator, arguments) => cspom.defineFree(result =>
-        CSPOMConstraint(result)(Symbol(operator))(arguments.map(toVariable(_, declaredVariables, cspom)): _*))
-    }
-  }
-
   def parseTable(text: String, arity: Int, size: Int): Relation[Int] = {
 
     val traverse = new Traversable[String] {
       val st = new StringTokenizer(text, "|")
+
       def foreach[U](f: String => U): Unit = {
         while (st.hasMoreTokens()) {
           f(st.nextToken())
@@ -68,20 +58,23 @@ final object ConstraintParser extends JavaTokenParsers {
       }
     }
 
-    MDDRelation {
+    val relation: mutable.Buffer[Array[Int]] = traverse
+      .view
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map { nt =>
+        val t: Array[Int] = nt.trim.split("\\s+").map(_.toInt)
+        // println(t.mkString("[", " ", "]"))
+        assert(t.isEmpty || t.length == arity, s"$t should have length $arity, has length ${t.length}, empty = ${t.isEmpty}")
+        t
+      }
+      .toBuffer
 
-      traverse
-        .view
-        .map { nt =>
-          val t = nt.trim.split(" +").toIndexedSeq.filter(_.nonEmpty)
-          assert(t.isEmpty || t.length == arity, s"$t should have length $arity, has length ${t.length}, empty = ${t.isEmpty}")
-          t.map(_.toInt)
-        }
-        .filter(_.nonEmpty)
-        .toSeq
+    //println(relation)
 
-    }
-      .reduce()
+    val array:Array[Array[Int]] = relation.toArray
+
+    MDDRelation(array).reduce()
 
     //    val st = new StringTokenizer(text, "|")
     //
@@ -96,6 +89,17 @@ final object ConstraintParser extends JavaTokenParsers {
     //    }
     //
     //    table.reduce
+  }
+
+  private def integer = wholeNumber ^^ (_.toInt)
+
+  private def toVariable(node: PredicateNode, declaredVariables: Map[String, SimpleExpression[Int]], cspom: CSPOM): SimpleExpression[_] = {
+    node match {
+      case PredicateConstant(value) => CSPOMConstant(value)
+      case PredicateVariable(variableId) => declaredVariables(variableId)
+      case PredicateConstraint(operator, arguments) => cspom.defineFree(result =>
+        CSPOMConstraint(result)(Symbol(operator))(arguments.map(toVariable(_, declaredVariables, cspom)): _*))
+    }
   }
 
 }

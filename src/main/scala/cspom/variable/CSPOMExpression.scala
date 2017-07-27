@@ -132,7 +132,7 @@ object CSPOMConstant {
 
   val cache = new mutable.WeakHashMap[Any, CSPOMConstant[Any]]
 
-  def apply[T : TypeTag](value: T): CSPOMConstant[T] = {
+  def apply[T: TypeTag](value: T): CSPOMConstant[T] = {
     cache.getOrElseUpdate(value, new CSPOMConstant(value)).asInstanceOf[CSPOMConstant[T]]
   }
 
@@ -152,14 +152,21 @@ object CSPOMConstant {
   //  def ofSeq[T: TypeTag](s: Seq[T]): CSPOMSeq[T] = CSPOMSeq(s.map(CSPOMConstant(_)), 0 until s.size)
 }
 
-class CSPOMConstant[+T : TypeTag](val value: T) extends SimpleExpression[T] {
+class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
 
   def tpe = typeOf[T]
 
   def contains[S >: T](that: S) = bool2int(value) == bool2int(that)
 
-  def intersected(that: SimpleExpression[_ >: T]) = {
+  private def bool2int(b: Any): Any = b match {
+    case true => 1
+    case false => 0
+    case e => e
+
+  }
+
+  def intersected(that: SimpleExpression[_>:T]): SimpleExpression[T] = {
     if (that.contains(value)) {
       this
     } else {
@@ -172,13 +179,6 @@ class CSPOMConstant[+T : TypeTag](val value: T) extends SimpleExpression[T] {
   override def equals(o: Any) = o match {
     case i: CSPOMConstant[_] => bool2int(i.value) == bool2int(value)
     case _ => false
-  }
-
-  private def bool2int(b: Any): Any = b match {
-    case true => 1
-    case false => 0
-    case e => e
-
   }
 
   override def hashCode = 31 * bool2int(value).hashCode

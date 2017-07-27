@@ -31,7 +31,8 @@ final class IntVariable(val domain: RangeSet[Infinitable])
 
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
-      case const: CSPOMConstant[_] => const.intersected(this).asInstanceOf[CSPOMConstant[Int]]
+      case k@CSPOMConstant(v: Int) if contains(v) => k.asInstanceOf[CSPOMConstant[Int]]
+      case _: CSPOMConstant[_] => EmptyVariable
       //      if domain.contains(Finite(c)) =>
       //        const.asInstanceOf[CSPOMConstant[Int]]
       //      //CSPOMConstant(c, Map("intersection" -> ((this, c))))
@@ -54,6 +55,7 @@ final class IntVariable(val domain: RangeSet[Infinitable])
       case b: BoolVariable => {
         IntVariable(0, 1) intersected this
       }
+      case EmptyVariable => EmptyVariable
       case t =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }

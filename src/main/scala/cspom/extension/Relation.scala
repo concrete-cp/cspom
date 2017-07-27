@@ -22,14 +22,16 @@ trait Relation[A] extends Iterable[Seq[A]] {
 
   def space: Int
 
+  def lambda: BigInt
+
 }
 
 object MDDRelation {
   val empty = new MDDRelation(MDD0)
 
-  def apply(t: Seq[IndexedSeq[Int]]) = new MDDRelation(MDD.fromSeq(t))
+  def apply(t: Seq[Array[Int]]) = new MDDRelation(MDD.fromSeq(t))
 
-  def fromStarred(t: Seq[IndexedSeq[Starrable]], doms: IndexedSeq[Seq[Int]]) =
+  def fromStarred(t: Seq[Array[Starrable]], doms: IndexedSeq[Seq[Int]]) =
     new MDDRelation(MDD.fromStarred(t, doms))
 
 }
@@ -45,13 +47,7 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
 
   def filter(f: IndexedSeq[MiniSet]) = updated(mdd.filterTrie(f.toArray, modified), false)
 
-  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), false)
-
-  // def +(t: Seq[Int]) =  updated(mdd + t, false)
-
-  def reduce() = if (reduced) this else updated(mdd.reduce(), true)
-
-  private def updated(mdd:MDD, reduced: Boolean) = {
+  private def updated(mdd: MDD, reduced: Boolean) = {
     if (mdd eq this.mdd) {
       val r = reduced || this.reduced
       if (r == this.reduced) {
@@ -64,11 +60,19 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
     }
   }
 
+  // def +(t: Seq[Int]) =  updated(mdd + t, false)
+
+  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), false)
+
+  def reduce() = if (reduced) this else updated(mdd.reduce(), true)
+
   def merge(l: List[Int]) = updated(mdd.merge(l), false)
 
   override def toString = mdd.toString
 
   def space = mdd.edges()
+
+  def lambda: BigInt = mdd.lambda()
 }
 
 

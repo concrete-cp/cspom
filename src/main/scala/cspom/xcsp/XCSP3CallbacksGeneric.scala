@@ -17,6 +17,7 @@ import org.xcsp.parser.entries.XVariables.XVarInteger
 trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
 
   val cache = new IdMap[Array[Array[Int]], MDDRelation]()
+  val extCache = new IdMap[Array[Array[Int]], MDDRelation]()
 
   override def buildCtrPrimitive(id: String, x: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
     buildCtrPrimitiveCSPOM(toCspom(x), op, CSPOMConstant(k))
@@ -25,6 +26,16 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
   override def buildCtrPrimitive(id: String, x: XVarInteger, aop: TypeArithmeticOperator,
                                  p: Int, op: TypeConditionOperatorRel, y: XVarInteger): Unit = {
     buildCtrPrimitiveCSPOM(toCspom(x), aop, CSPOMConstant(p), op, toCspom(y))
+  }
+
+  override def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
+                                 y: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
+    if (opa == TypeArithmeticOperator.SUB && k == 0) {
+      // Optimizes the optimizer…
+      buildCtrPrimitiveCSPOM(toCspom(x), op, toCspom(y))
+    } else {
+      buildCtrPrimitiveCSPOM(toCspom(x), opa, toCspom(y), op, CSPOMConstant(k))
+    }
   }
 
   private def buildCtrPrimitiveCSPOM(x: SimpleExpression[Int], opa: TypeArithmeticOperator,
@@ -48,16 +59,6 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
     }
   }
 
-  override def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
-                                 y: XVarInteger, op: TypeConditionOperatorRel, k: Int): Unit = {
-    if (opa == TypeArithmeticOperator.SUB && k == 0) {
-      // Optimizes the optimizer…
-      buildCtrPrimitiveCSPOM(toCspom(x), op, toCspom(y))
-    } else {
-      buildCtrPrimitiveCSPOM(toCspom(x), opa, toCspom(y), op, CSPOMConstant(k))
-    }
-  }
-
   override def buildCtrPrimitive(id: String, x: XVarInteger, op: TypeConditionOperatorSet, min: Int, max: Int): Unit = {
     buildCtrPrimitive(id, x, op, Array.range(min, max + 1))
   }
@@ -73,12 +74,12 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
     }
   }
 
+  /* Build constraints: intension */
+
   override def buildCtrPrimitive(id: String, x: XVarInteger, opa: TypeArithmeticOperator,
                                  y: XVarInteger, op: TypeConditionOperatorRel, k: XVarInteger): Unit = {
     buildCtrPrimitiveCSPOM(toCspom(x), opa, toCspom(y), op, toCspom(k))
   }
-
-  /* Build constraints: intension */
 
   override def buildCtrPrimitive(id: String, x: XVarInteger, aop: TypeArithmeticOperator, p: Int, op: TypeConditionOperatorRel, k: Int): Unit = {
     buildCtrPrimitiveCSPOM(toCspom(x), aop, CSPOMConstant(p), op, CSPOMConstant(k))
@@ -118,22 +119,20 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
 
         val doms = list.map { l =>
           val dom = l.dom.asInstanceOf[XDomBasic].values.asInstanceOf[Array[IntegerEntity]]
-          IntegerEntity.toIntArray(dom, Integer.MAX_VALUE).toSeq
+          IntegerEntity.toIntArray(dom, Int.MaxValue).toSeq
         }
 
-        val starredTuples: Seq[IndexedSeq[Starrable]] = tuples.map { t =>
-          IndexedSeq.tabulate(list.length) { i =>
-            t(i) match {
-              case Constants.STAR_INT => Star
-              case v => ValueStar(v)
-            }
+        val starredTuples = tuples.map { t =>
+          t.map {
+            case Constants.STAR_INT => Star: Starrable
+            case v => ValueStar(v)
           }
         }
 
         MDDRelation.fromStarred(starredTuples, doms).reduce()
 
       } else {
-        MDDRelation(tuples.view.map(_.toIndexedSeq))
+        extCache.getOrElseUpdate(tuples, MDDRelation(tuples).reduce())
       }
     })
 
@@ -151,7 +150,7 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
 
   override def buildCtrExtension(id: String, x: XVarInteger, values: Array[Int], positive: Boolean,
                                  flags: java.util.Set[TypeFlag]): Unit = {
-    val relation = MDDRelation(values.map(IndexedSeq(_)))
+    val relation = MDDRelation(values.map(Array(_)))
     val scope = CSPOM.IntSeqOperations(Seq(toCspom(x)))
 
     cspom.ctr {
