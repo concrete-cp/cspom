@@ -18,7 +18,7 @@ class StatisticsManager extends LazyLogging {
       logger.warn(name + ": an object with the same name is already registered");
     }
 
-    if (fields(o.getClass()).isEmpty) {
+    if (fields(o.getClass).isEmpty) {
       logger.info(s"$o does not contain any statistic field")
     }
 
@@ -28,7 +28,7 @@ class StatisticsManager extends LazyLogging {
   private def annoted(f: Field) = f.getAnnotation(classOf[cspom.Statistic]) != null
 
   def tagged[T: TypeTag](name: String): T = get(name).map {
-    case t => t.asInstanceOf[T]
+    case t: T => t
   }
     .getOrElse {
       throw new NoSuchElementException(name + " not in " + objects.keys.toString)
@@ -71,7 +71,7 @@ class StatisticsManager extends LazyLogging {
       }
   }
 
-  override def toString = digest.map(t => t._1 + " = " + t._2).toSeq.sorted.mkString("\n")
+  override def toString: String = digest.map(t => t._1 + " = " + t._2).toSeq.sorted.mkString("\n")
 
   def reset() {
     objects = Map.empty

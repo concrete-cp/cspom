@@ -3,37 +3,47 @@ package cspom.util
 import java.math.RoundingMode
 
 object Math {
-  def checkedAdd(i: Int, j: Int) = {
-    val l = i.toLong + j.toLong
+  def checkedAdd(i: Int, j: Int): Int = {
+    val l: Long = i.toLong + j
     if (l > Int.MaxValue || l < Int.MinValue) {
       throw new ArithmeticException(s"$i + $j: overflow")
     }
     l.toInt
   }
 
-  def checkedSubtract(i: Int, j: Int) = {
-    val l = i.toLong - j.toLong
+  def checkedSubtract(i: Int, j: Int): Int = {
+    val l: Long = i.toLong - j
     if (l > Int.MaxValue || l < Int.MinValue) {
       throw new ArithmeticException(s"$i - $j: overflow")
     }
     l.toInt
   }
 
-  def checkedMultiply(i: Int, j: Int) = {
-    val l = i.toLong * j.toLong
+  def checkedMultiply(i: Int, j: Int): Int = {
+    val l: Long = i.toLong * j
     if (l > Int.MaxValue || l < Int.MinValue) {
       throw new ArithmeticException(s"$i * $j: overflow")
     }
     l.toInt
   }
 
+
+  def checkedPow(a: Int, b: Int): Int = {
+    val r = BigInt(a).pow(b)
+    if (r.isValidInt) {
+      r.intValue
+    } else {
+      throw new ArithmeticException(s"pow($a, $b): overflow")
+    }
+  }
+
   /**
-   * Returns the result of dividing {@code p} by {@code q}, rounding using the specified
-   * {@code RoundingMode}.
-   *
-   * @throws ArithmeticException if {@code q == 0}, or if {@code mode == UNNECESSARY} and {@code a}
-   *         is not an integer multiple of {@code b}
-   */
+    * Returns the result of dividing {@code p} by {@code q}, rounding using the specified
+    * {@code RoundingMode}.
+    *
+    * @throws ArithmeticException if { @code q == 0}, or if { @code mode == UNNECESSARY} and { @code a}
+    *                                        is not an integer multiple of { @code b}
+    */
   def divide(p: Int, q: Int, mode: RoundingMode): Int = {
     import RoundingMode._
 
@@ -57,9 +67,9 @@ object Math {
           throw new ArithmeticException("mode was UNNECESSARY, but rounding was necessary");
 
         case UNNECESSARY | DOWN => false
-        case UP                 => true
-        case CEILING            => signum > 0;
-        case FLOOR              => signum < 0;
+        case UP => true
+        case CEILING => signum > 0;
+        case FLOOR => signum < 0;
 
         case HALF_EVEN | HALF_DOWN | HALF_UP =>
           val absRem = math.abs(rem);

@@ -25,12 +25,11 @@ final class CSPOMCompiler(
     val constraints = new VecMap[CSPOMConstraint[_]]() ++=
       problem.constraints.map(c => c.id -> c)
 
-    var queue = QueueSet(constraints.keys)
+    val queue = new QueueSet(constraints.keys)
 
     while (queue.nonEmpty) {
 
-      val (next, nextQueue) = queue.dequeue
-      queue = nextQueue
+      val next = queue.dequeue()
 
       for {
         compiler <- constraintCompilers
@@ -43,10 +42,10 @@ final class CSPOMCompiler(
 
         //println(delta)
 
-        constraints ++= delta.added.map(c => c.id -> c)
+        constraints ++= delta.added.view.map(c => c.id -> c)
         constraints --= delta.removed.map(c => c.id)
 
-        queue = queue.enqueueAll(delta.added.map(_.id))
+        queue.enqueueAll(delta.added.view.map(_.id))
 
       }
 

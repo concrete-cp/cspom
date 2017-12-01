@@ -81,26 +81,26 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
   def isEmpty: Boolean
 
 
-  def miniset = new MiniSet {
-    def present(i: Int) = contains(i)
+  def miniset: MiniSet = new MiniSet {
+    def present(i: Int): Boolean = contains(i)
 
-    def head = implicits.iterable(SimpleExpression.this).head
+    def head: Int = implicits.iterable(SimpleExpression.this).head
 
-    def size = implicits.iterable(SimpleExpression.this).size
+    def size: Int = implicits.iterable(SimpleExpression.this).size
   }
 }
 
 object SimpleExpression {
   def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
     case v: IntVariable => new ContiguousIntRangeSet(v.domain)
-    case b: BoolVariable => Iterable(false, true)
+    case _: BoolVariable => Iterable(false, true)
     case CSPOMConstant(c) => Iterable[A](c)
     case _: CSPOMVariable[A] => throw new IllegalArgumentException(s"Cannot iterate over $e")
   }
 
   class Typed[T: TypeTag] {
     def unapply(c: CSPOMExpression[_]): Option[SimpleExpression[T]] = PartialFunction.condOpt(c) {
-      case c: SimpleExpression[_] if (c.tpe <:< typeOf[T]) => c.asInstanceOf[SimpleExpression[T]]
+      case c: SimpleExpression[_] if c.tpe <:< typeOf[T] => c.asInstanceOf[SimpleExpression[T]]
     }
 
   }
@@ -112,7 +112,7 @@ object SimpleExpression {
       }
         .flatMap { cspomSeq =>
           CSPOMSeq.collectAll(cspomSeq) {
-            case c: SimpleExpression[A] if (c.tpe <:< typeOf[A]) => c.asInstanceOf[SimpleExpression[A]]
+            case c: SimpleExpression[A] if c.tpe <:< typeOf[A] => c.asInstanceOf[SimpleExpression[A]]
           }
         }
   }
@@ -155,9 +155,9 @@ object CSPOMConstant {
 class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
   require(!value.isInstanceOf[CSPOMExpression[_]])
 
-  def tpe = typeOf[T]
+  def tpe: Type = typeOf[T]
 
-  def contains[S >: T](that: S) = bool2int(value) == bool2int(that)
+  def contains[S >: T](that: S): Boolean = bool2int(value) == bool2int(that)
 
   private def bool2int(b: Any): Any = b match {
     case true => 1
@@ -174,16 +174,16 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
     }
   }
 
-  def isTrue = value == true || value == 1
+  def isTrue: Boolean = value == true || value == 1
 
-  override def equals(o: Any) = o match {
+  override def equals(o: Any): Boolean = o match {
     case i: CSPOMConstant[_] => bool2int(i.value) == bool2int(value)
     case _ => false
   }
 
-  override def hashCode = 31 * bool2int(value).hashCode
+  override def hashCode: Int = 31 * bool2int(value).hashCode
 
-  def isFalse = value == false || value == 0
+  def isFalse: Boolean = value == false || value == 0
 
   def fullyDefined = true
 
@@ -195,9 +195,9 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
 
   def flattenVariables = Seq()
 
-  def toString(names: CSPOMExpression[_] => String) = toString
+  def toString(names: CSPOMExpression[_] => String): String = toString
 
-  override def toString = value.toString
+  override def toString: String = value.toString
 
   def intValue: Int = bool2int(value) match {
     case i: Int => i
@@ -206,7 +206,7 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
 }
 
 abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
-  def tpe = typeOf[T]
+  def tpe: Type = typeOf[T]
 
   def flattenVariables = Seq(this)
 

@@ -47,7 +47,7 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
     for (i <- 0 until 4) {
       val b = cspom.expression(s"b$i").value
       cspom.expression(s"array[$i]").value shouldBe theSameInstanceAs(b)
-      cspom.getContainers(b).value should contain((array, Seq(i)))
+      cspom.expressionMap.getContainers(b).value should contain((array, i))
       array(i) shouldBe theSameInstanceAs(b)
       cspom.namesOf(b) should contain theSameElementsAs Seq(s"b$i", s"array[$i]")
     }
@@ -67,9 +67,9 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
     //println(problem.namedExpressions("V1").params)
 
-    problem.expressionsWithNames match {
+    problem.expressionMap.expressionsWithNames.toSeq match {
       case Seq(("V1", CSPOMConstant(0))) =>
-      case _                             => fail()
+      case e                             => fail(e.toString)
     }
 
   }
@@ -91,8 +91,8 @@ class MergeEqTest extends FlatSpec with Matchers with OptionValues {
 
     withClue(cspom) {
 
-      cspom.expressionsWithNames should have size 1
-      nv0.value should be theSameInstanceAs cspom.expressionsWithNames.head._2
+      cspom.expressionMap.count shouldBe 1
+      nv0.value should be theSameInstanceAs cspom.expressionMap.expressionsWithNames.next()._2
       cspom.constraints should have size 1
       nv0.value.asInstanceOf[IntVariable].asSortedSet should contain theSameElementsAs Set(2, 3)
 

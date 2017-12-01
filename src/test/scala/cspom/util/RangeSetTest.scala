@@ -81,14 +81,14 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
 
     val s = Set(0, -2147483648, 2, -2).map(IntInterval.singleton)
 
-    (RangeSet.empty ++ s).ranges should contain theSameElementsAs s
+    (RangeSet.empty ++ s).contents should contain theSameElementsAs s
 
   }
 
   it should "merge joint ranges" in {
     val itv1 = RangeSet(IntInterval(0, 6))
 
-    (itv1 ++ IntInterval(-10, -8) ++ IntInterval(8, 10) ++ IntInterval(-8, -4)).ranges should contain theSameElementsAs Seq(
+    (itv1 ++ IntInterval(-10, -8) ++ IntInterval(8, 10) ++ IntInterval(-8, -4)).contents should contain theSameElementsAs Seq(
       IntInterval(-10, -4), IntInterval(0, 6), IntInterval(8, 10))
 
     itv1 ++ IntInterval(6, 10) shouldBe RangeSet(IntInterval(0, 10))
@@ -121,12 +121,12 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     forAll(smallIntervals, validIntervals) { (i1, i2) =>
       //println(s"$i1 -- $i2")
       asSet(RangeSet(i1) -- i2) should contain theSameElementsInOrderAs
-        i1.filterNot(i2.contains)
+        i1.filterNot(i2.contains(_))
     }
 
     forAll { (s1: Seq[Int], s2: Seq[Int]) =>
-      val i1 = RangeSet(s1.map(IntInterval.singleton(_)))
-      val i2 = RangeSet(s2.map(IntInterval.singleton(_)))
+      val i1 = RangeSet(s1.map(IntInterval.singleton))
+      val i2 = RangeSet(s2.map(IntInterval.singleton))
 
       asSet(i1 -- i2) should contain theSameElementsAs (s1.toSet -- s2.toSet)
     }

@@ -1,14 +1,15 @@
 package cspom.variable
 
-import cspom.util.IntInterval
-import cspom.util.Interval
-import cspom.util.Infinitable
+import cspom.util.{Infinitable, IntInterval, Interval, RangeSet}
 
 object BoolExpression extends SimpleExpression.Typed[Boolean] {
   def coerce(e: CSPOMExpression[_]): SimpleExpression[Boolean] = e match {
-    case f: FreeVariable => new BoolVariable()
+    case _: FreeVariable => new BoolVariable()
     case BoolExpression(e) => e
-    case e if is01(e) => e.asInstanceOf[SimpleExpression[Boolean]]
+    case IntExpression(e) => e
+      .intersected(IntExpression(RangeSet(IntInterval(0, 1))))
+      .asInstanceOf[SimpleExpression[Boolean]]
+
     case e => throw new IllegalArgumentException(s"Cannot convert $e to boolean expression")
   }
 

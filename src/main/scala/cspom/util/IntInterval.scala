@@ -1,8 +1,7 @@
 package cspom.util
 
 import com.typesafe.scalalogging.LazyLogging
-
-import Infinitable.InfinitableOrdering
+import cspom.util.Infinitable.InfinitableOrdering
 
 object IntInterval {
   val all: IntInterval = IntInterval(MinInf, PlusInf)
@@ -17,11 +16,11 @@ object IntInterval {
   def apply(lower: Infinitable, upper: Infinitable): IntInterval =
     new IntInterval(lower, upper)
 
-  def singleton(v: Infinitable): IntInterval = IntInterval(v, v)
-
   def singleton(v: Int): IntInterval = {
     singleton(Finite(v))
   }
+
+  def singleton(v: Infinitable): IntInterval = IntInterval(v, v)
 
 }
 
@@ -32,15 +31,15 @@ object FiniteIntInterval {
 }
 
 final class IntInterval(
-  val lb: Infinitable, val ub: Infinitable)
-    extends Interval[Infinitable] with Iterable[Int]
+                         val lb: Infinitable, val ub: Infinitable)
+  extends Interval[Infinitable] with Iterable[Int]
     with LazyLogging {
 
-  def iterator: Iterator[Int] = {
-    val from = finiteLb
-    //val to = Math.checkedAdd(finiteUb, 1)
-    //Iterator.from(from).takeWhile(_ <= finiteUb) // => ??? }range(from, to) //.map(Math.checkedAdd(finiteLb, _))
-    (from to finiteUb).iterator
+  def iterator: Iterator[Int] = asRange.iterator
+
+  def asRange: Range = (lb, ub) match {
+    case (Finite(l), Finite(u)) => l to u
+    case _ => throw new ArithmeticException(s"Cannot create infinite range $this")
   }
 
   def itvSize = {
@@ -48,7 +47,7 @@ final class IntInterval(
     if (s <= 0) Finite(0) else s
   }
 
-  def contains(c: Int) = lb <= c && !(ub < c)
+  def contains(c: BigInt) = lb <= c && !(ub < c)
 
   def &(si: Interval[Infinitable]) = {
 
@@ -110,6 +109,14 @@ final class IntInterval(
     }
   }
 
+  override def isEmpty = {
+    lb == PlusInf ||
+      ub == MinInf ||
+      InfinitableOrdering.compare(lb, ub) > 0
+  }
+
+  override def size: Int = Math.checkedAdd(Math.checkedSubtract(finiteUb, finiteLb), 1)
+
   def finiteLb = lb match {
     case Finite(l) => l
     case _ => throw new AssertionError("lb is not finite")
@@ -119,14 +126,6 @@ final class IntInterval(
     case Finite(u) => u
     case _ => throw new AssertionError("ub is not finite")
   }
-
-  override def isEmpty = {
-    lb == PlusInf ||
-      ub == MinInf ||
-      InfinitableOrdering.compare(lb, ub) > 0
-  }
-
-  override def size: Int = Math.checkedAdd(Math.checkedSubtract(finiteUb, finiteLb), 1)
 
   def isBefore(h: Interval[Infinitable]): Boolean = {
     h.lb match {
@@ -163,14 +162,14 @@ final class IntInterval(
       })
   }
 
-//  override def equals(o: Any) = {
-//    o match {
-//      case Interval(l, u) => lb == l && ub == u
-//      case _ => super.equals(o)
-//    }
-//  }
-//
-//  override def hashCode = (lb, ub).hashCode
+  //  override def equals(o: Any) = {
+  //    o match {
+  //      case Interval(l, u) => lb == l && ub == u
+  //      case _ => super.equals(o)
+  //    }
+  //  }
+  //
+  //  override def hashCode = (lb, ub).hashCode
 
   override def toString = {
     val l = lb match {

@@ -12,8 +12,6 @@ import cspom.variable.CSPOMSeq
 import cspom.variable.IntExpression
 import cspom.variable.SimpleExpression
 
-import scala.collection.JavaConverters._
-
 object ConstraintCompiler extends LazyLogging {
   def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta = {
     //println(s"Replacing $wh with $by")
@@ -44,7 +42,7 @@ object ConstraintCompiler extends LazyLogging {
           delta ++= replaceCtr(c, c2, in)
         }
         assert(!in.isReferenced(w),
-          s"${w} (${in.namesOf(w)}) is still referenced: constraints = ${in.constraints(w)}, containers = ${in.getContainers(w)}")
+          s"$w (${in.namesOf(w)}) is still referenced: constraints = ${in.constraints(w)}, containers = ${in.expressionMap.getContainers(w)}")
       }
 
       //lazy val newConstraints = problem.deepConstraints(merged).map(_.toString).toSeq.sorted
@@ -57,7 +55,7 @@ object ConstraintCompiler extends LazyLogging {
       //assert(in.deepConstraints(by).nonEmpty, s"$by (${in.namesOf(by)}) is not involved by constraints")
       assert(in.namesOf(wh).isEmpty, s"$wh (${in.namesOf(by)}) still have names: ${in.namesOf(wh)}")
       assert(in.constraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.constraints(wh).mkString("\n")}")
-      assert(Option(in.containers.get(wh).asScala).toSeq.flatten.isEmpty, s"$wh (${in.namesOf(by)}) is still contained in: ${in.containers.get(wh)}")
+      assert(in.expressionMap.getContainers(wh).forall(_.isEmpty), s"$wh (${in.namesOf(by)}) is still contained in: ${in.expressionMap.getContainers(wh)}")
       delta //deltas.fold(Delta.empty)(_ ++ _)
     }
   }
@@ -195,12 +193,13 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
   type A = Unit
   def matchBool(constraint: CSPOMConstraint[_], problem: CSPOM): Boolean
 
-  override def mtch(constraint: CSPOMConstraint[_], problem: CSPOM) =
+  override def mtch(constraint: CSPOMConstraint[_], problem: CSPOM): Option[Unit] =
     if (matchBool(constraint, problem)) Some(())
     else None
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM): Delta
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: Unit) = compile(constraint, problem: CSPOM)
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: Unit): Delta =
+    compile(constraint, problem: CSPOM)
 }
 
 case class Delta private (
@@ -227,7 +226,7 @@ case class Delta private (
 
   def ++(d: Delta): Delta = removed(d.removed).added(d.added) //Delta(removed ++ d.removed, added ++ d.added)
 
-  def nonEmpty = removed.nonEmpty || added.nonEmpty
+  def nonEmpty: Boolean = removed.nonEmpty || added.nonEmpty
 
   override def toString = s"[ -- ${removed.mkString(", ")} ++ ${added.mkString(", ")} ]"
   def toString(cspom: CSPOM) = s"[ -- ${removed.map(e => e.toString(cspom.displayName)).mkString(", ")} ++ ${added.map(_.toString(cspom.displayName)).mkString(", ")} ]"
@@ -247,7 +246,7 @@ abstract class GlobalCompiler(
     extends ConstraintCompiler {
   type A = CSPOMConstraint[_]
 
-  def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A) = {
+  def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A): Delta = {
     replaceCtr(c, data, problem)
   }
 }

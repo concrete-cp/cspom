@@ -10,7 +10,7 @@ final class ParserTest extends FlatSpec with Matchers with Inspectors {
     it should s"parse XCSP3 $file" in {
       val cspom = CSPOM.load(classOf[ParserTest].getResource(file)).get
 
-      cspom.expressionsWithNames.size should be >= 1
+      cspom.expressionMap.expressionsWithNames.size should be >= 1
       cspom.constraints.size should be >= 1
     }
   }
@@ -18,7 +18,7 @@ final class ParserTest extends FlatSpec with Matchers with Inspectors {
   "XCSP parser" should "correctly parse XCSP3 MDD" in {
     val cspom = CSPOM.load(classOf[ParserTest].getResource("MagicSquare-3-mdd.xml.xz")).get
 
-    cspom.expressionsWithNames.size should be >= 1
+    cspom.expressionMap.expressionsWithNames.size should be >= 1
     cspom.constraints should have size 9
 
 

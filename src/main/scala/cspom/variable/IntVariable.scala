@@ -51,8 +51,8 @@ final class IntVariable(val domain: RangeSet[Infinitable])
           }
         }
       }
-      case v: FreeVariable => this //new IntVariable(domain, Map("intersection" -> ((this, v))))
-      case b: BoolVariable => {
+      case _: FreeVariable => this //new IntVariable(domain, Map("intersection" -> ((this, v))))
+      case _: BoolVariable => {
         IntVariable(0, 1) intersected this
       }
       case EmptyVariable => EmptyVariable
@@ -60,9 +60,9 @@ final class IntVariable(val domain: RangeSet[Infinitable])
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)
     }
 
-  def fullyDefined = domain.fullyDefined
+  def fullyDefined: Boolean = domain.fullyDefined
 
-  def searchSpace = domain.ranges.iterator.foldLeft(0.0) {
+  def searchSpace: Double = domain.contents.iterator.foldLeft(0.0) {
     case (acc, itv) => acc + (itv.itvSize match {
       case Finite(f) => f.toDouble
       case PlusInf => Double.PositiveInfinity

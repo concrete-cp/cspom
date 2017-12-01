@@ -2,21 +2,21 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.18"
+version := "2.19-SNAPSHOT"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.4"
 
 libraryDependencies ++= Seq(
-  "fr.univ-valenciennes" %% "bitvectors" % "1.0.0",
-  "fr.univ-valenciennes" %% "mdd" % "1.5.1",
+  "fr.univ-valenciennes" %% "bitvectors" % "2.0",
+  "fr.univ-valenciennes" %% "mdd" % "1.5.2",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
-  "org.apache.commons" % "commons-compress" % "1.14",
+  "org.apache.commons" % "commons-compress" % "1.15",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.storm-enroute" %% "scalameter-core" % "0.8.2",
-  "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
   "org.tukaani" % "xz" % "1.6",
-  "com.lihaoyi" %% "fastparse" % "0.4.3"
+  "com.lihaoyi" %% "fastparse" % "1.0.0"
 )
 
 scalacOptions ++= Seq(
@@ -42,9 +42,7 @@ publishTo := {
 
 publishArtifact in Test := false
 
-testOptions in Test <+= (target in Test) map {
-  t => Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${t / "test-reports"}")
-}
+testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${(target in Test).value / "test-reports"}")
 
 // EclipseKeys.withBundledScalaContainers := false
 

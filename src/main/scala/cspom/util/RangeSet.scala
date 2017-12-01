@@ -1,15 +1,8 @@
 package cspom.util
 
-import scala.collection.immutable.SortedSet
 import scala.collection.immutable.TreeSet
 
 object RangeSet {
-  //  def apply(s: Iterable[A]): RangeSet = s match {
-  //    case r: Range if r.step == 1 => RangeSet(
-  //      Interval.closed(r.head.asInstanceOf[A], r.last.asInstanceOf[A]))
-  //    case i: RangeSet => i
-  //    case s => s.foldLeft(empty[A])(_ + Interval.of(_))
-  //  }
 
   def apply[T](s: Iterable[Interval[T]]): RangeSet[T] = {
     s.foldLeft(empty[T])(_ ++ _)
@@ -25,15 +18,16 @@ object RangeSet {
 
   def empty[T]: RangeSet[T] = new RangeSet(itvTreeSet())
 
-  def itvTreeSet[T](itv: Interval[T]*) = TreeSet[Interval[T]](itv: _*)(new IntervalOrdering)
+  def itvTreeSet[T](itv: Interval[T]*): TreeSet[Interval[T]] =
+    TreeSet[Interval[T]](itv: _*)(new IntervalOrdering)
 
 }
 
-final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]]) {
+final class RangeSet[@specialized T](val contents: TreeSet[Interval[T]]) {
   def lastInterval: Interval[T] = contents.last
   def headInterval: Interval[T] = contents.head
 
-  def span = headInterval span lastInterval
+  def span: Interval[T] = headInterval span lastInterval
 
   def ++(i: Interval[T]): RangeSet[T] = {
     if (i.isEmpty) {
@@ -72,13 +66,11 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
     new RangeSet(cleanTree)
   }
 
-  def ++(i: RangeSet[T]): RangeSet[T] = this ++ i.ranges
+  def ++(i: RangeSet[T]): RangeSet[T] = this ++ i.contents
 
   def ++(i: Iterable[Interval[T]]): RangeSet[T] = i.foldLeft(this)(_ ++ _)
 
-  def ranges: SortedSet[Interval[T]] = contents
-
-  def --(i: RangeSet[T]): RangeSet[T] = i.ranges.foldLeft(this)(_ -- _)
+  def --(i: RangeSet[T]): RangeSet[T] = i.contents.foldLeft(this)(_ -- _)
 
   def &(i: RangeSet[T]): RangeSet[T] = this -- (this -- i)
 
@@ -88,7 +80,7 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
 
   def lowerBound: T = headInterval.lb
 
-  def fullyDefined = {
+  def fullyDefined: Boolean = {
     lowerBound != MinInf && upperBound != PlusInf
   }
 
@@ -108,11 +100,11 @@ final class RangeSet[@specialized T](private val contents: TreeSet[Interval[T]])
   override def equals(o: Any): Boolean = {
     // println(this.ranges == o.asInstanceOf[RangeSet[_]].ranges)
     o match {
-      case i: RangeSet[_] => i.ranges.sameElements(ranges)
+      case i: RangeSet[_] => i.contents.sameElements(contents)
       case s              => false
     }
   }
 
-  override def toString = ranges.mkString("{", ", ", "}")
+  override def toString: String = contents.mkString("{", ", ", "}")
 
 }

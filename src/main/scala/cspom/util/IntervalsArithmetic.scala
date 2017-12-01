@@ -9,14 +9,14 @@ object IntervalsArithmetic {
     f: (Interval[Infinitable], Interval[Infinitable]) => Interval[Infinitable],
     ii: RangeSet[Infinitable], jj: RangeSet[Infinitable]): RangeSet[Infinitable] = {
     var result = RangeSet.empty[Infinitable]
-    for (i <- ii.ranges; j <- jj.ranges) {
+    for (i <- ii.contents; j <- jj.contents) {
       result ++= f(i, j)
     }
     result
   }
 
   def apply(f: Interval[Infinitable] => Interval[Infinitable], ii: RangeSet[Infinitable]): RangeSet[Infinitable] = {
-    ii.ranges.foldLeft(RangeSet.empty[Infinitable])(_ ++ f(_))
+    ii.contents.foldLeft(RangeSet.empty[Infinitable])(_ ++ f(_))
   }
 
   private def asRange(l: Infinitable, u: Infinitable) = {

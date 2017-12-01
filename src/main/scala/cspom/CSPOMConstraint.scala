@@ -1,19 +1,19 @@
 package cspom
-import cspom.variable.CSPOMExpression
+import cspom.variable.{CSPOMConstant, CSPOMExpression}
+
 import scala.collection.JavaConverters._
-import cspom.variable.CSPOMConstant
 import com.typesafe.scalalogging.LazyLogging
 
 final case class CSPOMConstraint[+T](
-    val result: CSPOMExpression[T],
-    val function: Symbol,
-    val arguments: Seq[CSPOMExpression[Any]],
-    val params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
+    result: CSPOMExpression[T],
+    function: Symbol,
+    arguments: Seq[CSPOMExpression[Any]],
+    params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
 
   assert(arguments.nonEmpty)
 
   def withParam(addParams: (String, Any)*) = new CSPOMConstraint(result, function, arguments, params ++ addParams)
-  def withParams(addParams: Map[String, Any]) = withParam(addParams.toSeq: _*)
+  def withParams(addParams: Map[String, Any]): CSPOMConstraint[T] = withParam(addParams.toSeq: _*)
 
   def nonReified: Boolean = result.isTrue
 
@@ -22,15 +22,15 @@ final case class CSPOMConstraint[+T](
   lazy val flattenedScope: Set[CSPOMExpression[_]] =
     flattenedScopeDuplicates.toSet
 
-  def flattenedScopeDuplicates = fullScope.iterator.flatMap(_.flatten)
+  def flattenedScopeDuplicates: Iterator[CSPOMExpression[_]] = fullScope.iterator.flatMap(_.flatten)
 
   val id: Int = CSPOMConstraint.id
   CSPOMConstraint.id += 1
 
   def getArgs: java.util.List[CSPOMExpression[_]] = arguments.asJava
 
-  override final def hashCode: Int = id
-  override final def equals(o: Any): Boolean = o match {
+  override def hashCode: Int = id
+  override def equals(o: Any): Boolean = o match {
     case o: AnyRef => o eq this
     case _ => false
   }

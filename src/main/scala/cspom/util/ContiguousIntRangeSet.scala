@@ -4,19 +4,19 @@ import scala.collection.immutable.SortedSet
 
 final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSet[Int] {
 
-  def ordering = Ordering.Int
+  def ordering: Ordering[Int] = Ordering.Int
 
   def allValues(i: Interval[Infinitable]): Iterable[Int] = i.asInstanceOf[IntInterval]
 
-  def iterator: Iterator[Int] = r.ranges.iterator.flatMap(allValues)
+  def iterator: Iterator[Int] = r.contents.iterator.flatMap(allValues)
 
   override def foreach[U](f: Int => U): Unit = {
-    for (rs <- r.ranges) {
+    for (rs <- r.contents) {
       rs.asInstanceOf[IntInterval].foreach(f)
     }
   }
 
-  override def isEmpty = r.isEmpty
+  override def isEmpty: Boolean = r.isEmpty
 
   def -(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r -- IntInterval.singleton(elem))
@@ -26,24 +26,24 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
 
   def contains(elem: Infinitable): Boolean = r.intersects(IntInterval.singleton(elem))
 
-  def contains(elem: Int) = contains(Finite(elem))
+  def contains(elem: Int): Boolean = contains(Finite(elem))
 
   def keysIteratorFrom(start: Int): Iterator[Int] =
-    (r & IntInterval.atLeast(start)).ranges.iterator.flatMap(allValues)
+    (r & IntInterval.atLeast(start)).contents.iterator.flatMap(allValues)
 
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = {
-    val i = from.map(IntInterval.atLeast(_)).getOrElse(IntInterval.all) &
-      until.map(IntInterval.atMost(_)).getOrElse(IntInterval.all)
+    val i = from.map(IntInterval.atLeast).getOrElse(IntInterval.all) &
+      until.map(IntInterval.atMost).getOrElse(IntInterval.all)
 
     new ContiguousIntRangeSet(r & i)
   }
 
-  override def last = r.upperBound match {
+  override def last: Int = r.upperBound match {
     case Finite(u) => u
     case _         => throw new IllegalStateException(s"$r is not finite")
   }
 
-  override def size = r.ranges.iterator.map(allValues(_).size).sum
+  override def size: Int = r.contents.iterator.map(allValues(_).size).sum
 
   def singletonMatch: Option[Int] = {
     if (r.isEmpty) {

@@ -25,7 +25,7 @@ object IntExpression extends SimpleExpression.Typed[Int] {
     case _ => throw new IllegalArgumentException(s"Cannot span $e")
   }
 
-  def is01(e: SimpleExpression[Int]) = e.fullyDefined && implicits.iterable(e).forall(i => i == 0 || i == 1)
+  def is01(e: SimpleExpression[Int]): Boolean = e.fullyDefined && implicits.iterable(e).forall(i => i == 0 || i == 1)
 
   def apply(values: Range): SimpleExpression[Int] = apply(
     IntInterval(values.head, values.last))

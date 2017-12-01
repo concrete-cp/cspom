@@ -30,7 +30,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
     }
 
-    vars should contain theSameElementsAs cspom.expressionsWithNames.map(_._2)
+    vars should contain theSameElementsAs cspom.expressionMap.expressionsWithNames.map(_._2).toSeq
 
     cspom.expression("test1").value shouldBe vars(0)
   }

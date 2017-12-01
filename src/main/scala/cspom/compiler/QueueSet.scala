@@ -1,45 +1,42 @@
 package cspom.compiler
 
-import bitvectors.BitVector
+import java.util
 
-object QueueSet {
-  val empty: QueueSet = QueueSet(BitVector.empty, -1)
-  def apply(init: Traversable[Int]): QueueSet =
-    QueueSet(BitVector(init), -1)
-}
+class QueueSet(present: util.BitSet) {
 
-case class QueueSet(present: BitVector, first: Int) {
+  private var first = -1
 
-  def enqueue(c: Int): QueueSet = {
-    new QueueSet(present + c, first)
+  def this() = this(new util.BitSet())
+
+  def this(init: Iterable[Int]) = {
+    this(new util.BitSet(init.max + 1))
+    enqueueAll(init)
   }
 
-  def dequeue(): (Int, QueueSet) = {
+  def enqueue(c: Int): Unit = {
+    present.set(c)
+  }
+
+  def dequeue(): Int = {
     require(nonEmpty)
-    val next = present.nextSetBit(first + 1) match {
-      case n if n < 0 => present.nextSetBit(0)
-      case n          => n
-    }
-
-    (next, new QueueSet(present - next, next))
+    first = present.nextSetBit(first + 1)
+    if (first < 0) first = present.nextSetBit(0)
+    present.clear(first)
+    first
   }
 
-  def contains(e: Int): Boolean = present(e)
+  def contains(e: Int): Boolean = present.get(e)
 
   def nonEmpty: Boolean = !present.isEmpty
 
-  def enqueueAll(init: BitVector): QueueSet = {
-    QueueSet(present | init, first)
+  def enqueueAll(init: Traversable[Int]): Unit = {
+    for (i <- init) present.set(i)
   }
 
-  def enqueueAll(init: Traversable[Int]): QueueSet = {
-    QueueSet(present ++ init, first)
-  }
+  def remove(e: Int*): Unit = removeAll(e)
 
-  def remove(e: Int*): QueueSet = removeAll(e)
-
-  def removeAll(e: Iterable[Int]): QueueSet = {
-    QueueSet(present -- e, first)
+  def removeAll(e: Iterable[Int]): Unit = {
+    for (i <- e) present.clear(i)
   }
 
 }
