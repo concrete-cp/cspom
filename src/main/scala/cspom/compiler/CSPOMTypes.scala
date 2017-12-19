@@ -22,7 +22,7 @@ object CSPOMTypes extends Types {
 
   private def coerce(e: CSPOMExpression[_]) = e match {
     case e: FreeVariable => BoolExpression.coerce(e)
-    case IntExpression(e) => reduceDomain(e, IntInterval(0, 1))
+    case IntExpression(e) => ConstraintCompiler.reduceDomain(e, IntInterval(0, 1))
     case e => e
   }
 }

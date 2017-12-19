@@ -86,51 +86,17 @@ object ConstraintCompiler extends LazyLogging {
 
   def removeCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = removeCtr(Seq(c), in)
 
+  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: CSPOMConstraint[_], in: CSPOM): Delta = {
+    removeCtr(which, in) ++ addCtr(by, in)
+  }
+
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     val posted = c.flatMap(in.ctrNetwork(_))
     logger.info(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
     Delta.empty.added(posted)
   }
-}
 
-trait ConstraintCompiler extends LazyLogging {
-  type A
-
-//  def intOrBoolToBool(exprs: Seq[SimpleExpression[_]]) = {
-//
-//    val booleans = exprs.map {
-//      case IntExpression(a) => a -> new BoolVariable()
-//      case BoolExpression(a) => a -> a
-//    }
-//
-//    val bool2int = booleans.flatMap {
-//      case (IntExpression(a), b) => Seq(CSPOMConstraint('bool2int)(b, a))
-//      case _ => Seq()
-//    }
-//
-//    (booleans.map(_._2), bool2int)
-//  }
-
-  def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
-
-  def matcher: PartialFunction[(CSPOMConstraint[_], CSPOM), A] = PartialFunction.empty
-
-  def matchConstraint(c: CSPOMConstraint[_]) = constraintMatcher.lift(c)
-
-  def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = PartialFunction.empty
-
-  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
-
-  def replace[T: TypeTag, S <: T](wh: CSPOMExpression[T], by: CSPOMExpression[S], in: CSPOM): Delta =
-    ConstraintCompiler.replace(wh, by, in)
-
-  def replaceCtr(which: CSPOMConstraint[_], by: CSPOMConstraint[_], in: CSPOM): Delta =
-    ConstraintCompiler.replaceCtr(which, by, in)
-
-  def replaceCtr(which: Seq[CSPOMConstraint[_]], by: CSPOMConstraint[_], in: CSPOM): Delta = {
-    removeCtr(which, in) ++ addCtr(by, in)
-  }
 
   def replaceCtr(which: CSPOMConstraint[_], by: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     replaceCtr(Seq(which), by, in)
@@ -140,31 +106,11 @@ trait ConstraintCompiler extends LazyLogging {
     removeCtr(which, in) ++ addCtr(by, in)
   }
 
-  def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta =
-    ConstraintCompiler.removeCtr(c, in)
-
-  def removeCtr(c: CSPOMConstraint[_], in: CSPOM): Delta =
-    ConstraintCompiler.removeCtr(c, in)
-
-  def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta =
-    ConstraintCompiler.addCtr(c, in)
-
-  def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta =
-    ConstraintCompiler.addCtr(c, in)
-
-  //def selfPropagation: Boolean
-
-  def reduceDomain[B](v: SimpleExpression[B], d: Interval[Infinitable]): SimpleExpression[B] = reduceDomain(v, RangeSet(d))
+  def reduceDomain[B](v: SimpleExpression[B], d: Interval[Infinitable]): SimpleExpression[B] =
+    reduceDomain(v, RangeSet(d))
 
   def reduceDomain[B](v: SimpleExpression[B], d: RangeSet[Infinitable]): SimpleExpression[B] = {
     v.intersected(IntExpression(d))
-//    val old = IntExpression.implicits.ranges(v)
-//    val reduced = old & d
-//    if (old == reduced) {
-//      v
-//    } else {
-//      IntExpression(reduced)
-//    }
   }
 
   def applyDomain(v: SimpleExpression[Int], reduced: RangeSet[Infinitable]): SimpleExpression[Int] = {
@@ -178,15 +124,29 @@ trait ConstraintCompiler extends LazyLogging {
 
   def reduceDomain[B](v: SimpleExpression[B], d: Boolean): SimpleExpression[B] = {
     v.intersected(CSPOMConstant(d))
-//    v match {
-//      case b: CSPOMVariable[_] => CSPOMConstant(d)
-//      case c @ CSPOMConstant(b) =>
-//        require(b == d, s"Reduced $v to $d: empty domain")
-//        c
-//    }
   }
+}
 
-  override def toString = getClass.getSimpleName
+trait Compiler {
+  override def toString: String = getClass.getSimpleName
+}
+
+trait ConstraintCompiler extends Compiler with LazyLogging {
+  type A
+
+  def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
+
+  def matcher: PartialFunction[(CSPOMConstraint[_], CSPOM), A] = PartialFunction.empty
+
+  def matchConstraint(c: CSPOMConstraint[_]) = constraintMatcher.lift(c)
+
+  def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = PartialFunction.empty
+
+  def compile(constraint: CSPOMConstraint[_], problem: CSPOM, matchData: A): Delta
+}
+
+trait ProblemCompiler extends Compiler {
+  def apply(cspom: CSPOM): Delta
 }
 
 trait ConstraintCompilerNoData extends ConstraintCompiler {
@@ -247,7 +207,7 @@ abstract class GlobalCompiler(
   type A = CSPOMConstraint[_]
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A): Delta = {
-    replaceCtr(c, data, problem)
+    ConstraintCompiler.replaceCtr(c, data, problem)
   }
 }
 

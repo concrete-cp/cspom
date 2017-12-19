@@ -43,7 +43,7 @@ case object FZIntSet extends FZVarType[Int] {
 final case class FZArray[T: TypeTag](indices: Seq[Option[Range]], typ: FZVarType[T]) extends FZVarType[T] {
   def genVariable() = indices match {
     case Seq() => typ.genVariable()
-    case head +: tail => new CSPOMSeq(IndexedSeq.fill(head.get.size)(FZArray(tail, typ).genVariable()), head.get)
+    case head +: tail => CSPOMSeq(IndexedSeq.fill(head.get.size)(FZArray(tail, typ).genVariable()), head.get)
   }
 }
 

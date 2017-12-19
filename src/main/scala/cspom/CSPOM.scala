@@ -324,7 +324,7 @@ object CSPOM extends LazyLogging {
   def load(file: String): Try[CSPOM] = load(file2url(file))
 
   def file2url(file: String): URL = {
-    val uri = new URI(file)
+    val uri = new URI(file.replace(" ", "%20"))
     if (uri.isAbsolute && Option(uri.getScheme).isDefined) {
       uri.toURL
     } else {

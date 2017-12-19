@@ -1,9 +1,8 @@
 package cspom.compiler
 
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import cspom.variable.CSPOMConstant
-import cspom.variable.CSPOMExpression
+import cspom.{CSPOM, CSPOMConstraint}
+import cspom.compiler.ConstraintCompiler._
+import cspom.variable.{CSPOMConstant, CSPOMExpression}
 
 object RemoveUselessEq extends ConstraintCompiler {
 

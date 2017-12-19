@@ -81,25 +81,25 @@ trait XCSP3CallbacksConnection extends XCSP3CallbacksVars {
   override def buildCtrElement(id: String, list: Array[Int], startIndex: Int, index: XVarInteger, rank: TypeRank, value: XVarInteger): Unit = {
     require(rank == TypeRank.ANY)
 
-    buildCtrElement(toCspom(value), toCspom(index), new CSPOMSeq(list.map(CSPOMConstant(_)), startIndex until startIndex + list.length))
+    buildCtrElement(toCspom(value), toCspom(index), CSPOMSeq(list.map(CSPOMConstant(_)), startIndex until startIndex + list.length))
 
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
     cspom.ctr('channel)(
-      new CSPOMSeq(toCspom(list), startIndex until startIndex + list.length))
+      CSPOMSeq(toCspom(list), startIndex until startIndex + list.length))
   }
 
   override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = {
     cspom.ctr('inverse)(
-      new CSPOMSeq(toCspom(list1), startIndex1 until startIndex1 + list1.length),
-      new CSPOMSeq(toCspom(list2), startIndex2 until startIndex2 + list2.length)
+      CSPOMSeq(toCspom(list1), startIndex1 until startIndex1 + list1.length),
+      CSPOMSeq(toCspom(list2), startIndex2 until startIndex2 + list2.length)
     )
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, value: XVarInteger): Unit = {
     cspom.ctr('channelBool)(
-      new CSPOMSeq(toCspom(list), startIndex until startIndex + list.length), toCspom(value))
+      CSPOMSeq(toCspom(list), startIndex until startIndex + list.length), toCspom(value))
   }
 
 

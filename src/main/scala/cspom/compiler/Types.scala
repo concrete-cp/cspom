@@ -18,6 +18,6 @@ trait Types extends ConstraintCompiler {
   def selfPropagation: Boolean = true
 
   def compile(c: CSPOMConstraint[_], p: CSPOM, d: A) = {
-    d.map { case (k, v) => replace(k, v, p) }.reduce(_ ++ _)
+    d.map { case (k, v) => ConstraintCompiler.replace(k, v, p) }.reduce(_ ++ _)
   }
 }

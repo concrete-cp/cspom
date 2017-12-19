@@ -216,10 +216,13 @@ abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
 
   def isConstant = false
 
-  def toString(names: CSPOMExpression[_] => String) = s"${names(this)}: ${toString()}"
+  def toString(names: CSPOMExpression[_] => String) = s"${names(this)}=${toString()}"
 }
 
 object CSPOMSeq {
+
+  private val cache = new mutable.WeakHashMap[CSPOMSeq[_], CSPOMSeq[_]]
+
   lazy val empty: CSPOMSeq[Nothing] = new CSPOMSeq(IndexedSeq.empty, IndexedSeq.empty.indices)
   // @annotation.varargs def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
 
@@ -227,7 +230,11 @@ object CSPOMSeq {
     apply(seq, seq.indices)
 
   def apply[T: TypeTag](seq: Seq[CSPOMExpression[T]], indices: Range): CSPOMSeq[T] =
-    if (seq.isEmpty) empty else new CSPOMSeq(seq.toIndexedSeq, indices)
+    if (seq.isEmpty) empty else {
+      val newSeq = new CSPOMSeq(seq.toIndexedSeq, indices)
+      cache.getOrElseUpdate(newSeq, newSeq).asInstanceOf[CSPOMSeq[T]]
+    }
+
 
   def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
     Some(s.values)
@@ -241,7 +248,7 @@ object CSPOMSeq {
         return None
       }
     }
-    Some(r.toSeq)
+    Some(r)
   }
 
   def searchSpace(s: Seq[CSPOMExpression[_]]): Double = {
@@ -250,7 +257,7 @@ object CSPOMSeq {
 
 }
 
-final class CSPOMSeq[+T: TypeTag](
+final class CSPOMSeq[+T: TypeTag] private (
                                    val values: IndexedSeq[CSPOMExpression[T]],
                                    val definedIndices: Range)
   extends CSPOMExpression[T] with IndexedSeq[CSPOMExpression[T]] with LazyLogging {
@@ -266,6 +273,8 @@ final class CSPOMSeq[+T: TypeTag](
   require(values.size == definedIndices.size)
   lazy val flattenVariables = values.flatMap(_.flattenVariables)
   override lazy val hashCode = super.hashCode
+
+
 
   def tpe = typeOf[T]
 
@@ -307,16 +316,16 @@ final class CSPOMSeq[+T: TypeTag](
 
   def isFalse = false
 
-  def searchSpace = CSPOMSeq.searchSpace(values)
+  def searchSpace: Double = CSPOMSeq.searchSpace(values)
 
-  def zipWithIndex = values.iterator.zip(definedIndices.iterator)
+  def zipWithIndex: Iterator[(CSPOMExpression[T], Int)] = values.iterator.zip(definedIndices.iterator)
 
-  override def equals(o: Any) = o match {
-    case a: CSPOMSeq[_] => a.values == values && a.definedIndices == definedIndices
+  override def equals(o: Any): Boolean = o match {
+    case a: CSPOMSeq[_] => (a.values, values).zipped.forall(_ eq _) && a.definedIndices == definedIndices
     case _ => false
   }
 
-  def toString(names: CSPOMExpression[_] => String) = {
+  def toString(names: CSPOMExpression[_] => String): String = {
     if (isEmpty)
       s"${names(this)}: CSPOMSeq()"
     else

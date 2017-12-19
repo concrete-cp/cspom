@@ -7,13 +7,13 @@ import org.xcsp.common.Constants
 import org.xcsp.parser.XCallbacks2
 import org.xcsp.parser.entries.XVariables.XVarInteger
 
-import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable
 
 /**
   * Created by vion on 30/05/17.
   */
 trait XCSP3CallbacksVars extends XCallbacks2 {
-  private val declaredVariables = new LinkedHashMap[XVarInteger, CSPOMVariable[Int]]()
+  private val declaredVariables = new mutable.LinkedHashMap[XVarInteger, CSPOMVariable[Int]]()
 
   def cspom: CSPOM
 
@@ -58,7 +58,7 @@ trait XCSP3CallbacksVars extends XCallbacks2 {
   }
 
   def cspomSeq(x: Array[XVarInteger], indices: Range): CSPOMSeq[Int] = {
-    new CSPOMSeq(toCspom(x), indices)
+    CSPOMSeq(toCspom(x), indices)
   }
 
   def cspomSeq(x: Array[Int]): CSPOMSeq[Int] = CSPOM.constantSeq(x)

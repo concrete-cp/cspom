@@ -19,7 +19,7 @@ object SplitEqVec extends ConstraintCompiler {
 
     val newConstraints = data.map { case (a, b) => CSPOMConstraint('eq)(a, b) }
 
-    replaceCtr(constraint, newConstraints, problem)
+    ConstraintCompiler.replaceCtr(constraint, newConstraints, problem)
 
   }
 

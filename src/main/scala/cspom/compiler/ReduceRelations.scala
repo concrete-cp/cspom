@@ -2,6 +2,7 @@ package cspom
 package compiler
 
 import com.typesafe.scalalogging.LazyLogging
+import cspom.compiler.ConstraintCompiler._
 import cspom.extension.{MDDRelation, Relation}
 import cspom.variable.{CSPOMVariable, SimpleExpression}
 
@@ -17,7 +18,7 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
     c.function == 'extension && c.nonReified
   }
 
-  def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
+  def compile(c: CSPOMConstraint[_], problem: CSPOM): Delta = {
 
     val Some(relation: Relation[_]) = c.params.get("relation")
 

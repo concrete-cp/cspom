@@ -46,7 +46,7 @@ object MergeRelationsDepths extends ConstraintCompilerNoData with LazyLogging {
 
     logger.info(s"obtained $relation for $newArgs")
 
-    replaceCtr(c,
+    ConstraintCompiler.replaceCtr(c,
       CSPOMConstraint('extension)(newArgs: _*) withParams (c.params + ("relation" -> relation)),
       problem)
 

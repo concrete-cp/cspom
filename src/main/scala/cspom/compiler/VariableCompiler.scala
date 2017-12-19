@@ -1,7 +1,9 @@
 package cspom.compiler
 
+import cspom.compiler.ConstraintCompiler._
 import cspom.variable.{CSPOMConstant, CSPOMExpression}
 import cspom.{CSPOM, CSPOMConstraint, UNSATException}
+
 
 abstract class VariableCompiler(val function: Symbol) extends ConstraintCompiler {
 
@@ -10,7 +12,7 @@ abstract class VariableCompiler(val function: Symbol) extends ConstraintCompiler
 
   def compiler(c: CSPOMConstraint[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])]
 
-  override def mtch(c: CSPOMConstraint[_], problem: CSPOM) = {
+  override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[(Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean)] = {
     if (c.function == function && c.fullScope.exists(v => !v.fullyDefined)) {
       val (reductions, entail) = try {
         compilerWEntail(c)

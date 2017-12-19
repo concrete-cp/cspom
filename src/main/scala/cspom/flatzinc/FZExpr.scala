@@ -69,12 +69,12 @@ case class FZVarParId[+A: TypeTag](ident: String) extends FZExpr[A] {
 case class FZArrayExpr[+A: TypeTag](value: Seq[FZExpr[A]]) extends FZExpr[A] {
   def tpe = typeOf[A]
   def toCSPOM(declared: Map[String, CSPOMExpression[Any]]) =
-    new CSPOMSeq(
+    CSPOMSeq(
       value.map(_.toCSPOM(declared)).toIndexedSeq,
       1 to value.size)
 
   def asConstant(indices: Range): CSPOMSeq[_] =
-    new CSPOMSeq(value
+    CSPOMSeq(value
       .map {
         case c: FZConstant[_] => c.asConstant
         case a: FZArrayExpr[_] => a.asConstant(indices)

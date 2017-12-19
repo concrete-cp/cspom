@@ -1,23 +1,24 @@
-package cspom.compiler;
+package cspom.compiler
+
+;
+
+import com.typesafe.scalalogging.LazyLogging
+import cspom.{CSPOM, CSPOMConstraint, Statistic, StatisticsManager}
+import cspom.util.VecMap
+import org.scalameter.Quantity
 
 import scala.util.Try
-import com.typesafe.scalalogging.LazyLogging
-import cspom.CSPOM
-import cspom.CSPOMConstraint
-import cspom.Statistic
-import cspom.StatisticsManager
-import org.scalameter.Quantity
-import cspom.util.VecMap
 
 /**
- * This class implements some known useful reformulation rules.
- *
- * @author vion
- *
- */
+  * This class implements some known useful reformulation rules.
+  *
+  * @author vion
+  *
+  */
 final class CSPOMCompiler(
-    private val problem: CSPOM,
-    private val constraintCompilers: IndexedSeq[ConstraintCompiler]) extends LazyLogging {
+                           private val problem: CSPOM,
+                           private val constraintCompilers: IndexedSeq[ConstraintCompiler],
+                           private val problemCompilers: Seq[ProblemCompiler]) extends LazyLogging {
 
 
   private def compile(): CSPOM = {
@@ -27,32 +28,33 @@ final class CSPOMCompiler(
 
     val queue = new QueueSet(constraints.keys)
 
+    def updateQueue(delta: Delta): Unit = {
+      constraints ++= delta.added.view.map(c => c.id -> c)
+      constraints --= delta.removed.map(c => c.id)
+      queue.enqueueAll(delta.added.view.map(_.id))
+    }
+
     while (queue.nonEmpty) {
+      while (queue.nonEmpty) {
+        val next = queue.dequeue()
 
-      val next = queue.dequeue()
-
-      for {
-        compiler <- constraintCompilers
-        constraint <- constraints.get(next)
-      } {
-        //println(s"$next, $compiler")
-        //println(s"Compiling ${constraint.toString(vn)} with $compiler")
-        //lazy val string = constraint.toString(vn)
-        val delta = compile(compiler, constraint)
-
-        //println(delta)
-
-        constraints ++= delta.added.view.map(c => c.id -> c)
-        constraints --= delta.removed.map(c => c.id)
-
-        queue.enqueueAll(delta.added.view.map(_.id))
-
+        for {
+          compiler <- constraintCompilers
+          constraint <- constraints.get(next)
+        } {
+          updateQueue(compile(compiler, constraint))
+        }
       }
 
+      for (c <- problemCompilers) {
+        updateQueue(c(problem))
+      }
     }
 
     problem
   }
+
+
 
   private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
     require(problem.constraintSet(constraint), {
@@ -73,24 +75,28 @@ final class CSPOMCompiler(
 }
 
 object CSPOMCompiler {
-  def compile(problem: CSPOM, compilers: Seq[ConstraintCompiler]): Try[CSPOM] = {
-    val pbc = new CSPOMCompiler(problem, compilers.toIndexedSeq)
+  @Statistic
+  var matches = 0
+  @Statistic
+  var compiles = 0
+  @Statistic
+  var compileTime: Quantity[Double] = Quantity(0, "")
+
+  def compile(problem: CSPOM, compilers: Seq[Compiler]): Try[CSPOM] = {
+    val pbc = new CSPOMCompiler(problem, compilers.collect {
+      case c: ConstraintCompiler => c
+    }
+      .toIndexedSeq,
+      compilers.collect {
+        case c: ProblemCompiler => c
+      })
 
     val (r, t) = StatisticsManager.measure(pbc.compile())
 
     compileTime = t
-    
+
     r
   }
-
-  @Statistic
-  var matches = 0
-
-  @Statistic
-  var compiles = 0
-
-  @Statistic
-  var compileTime: Quantity[Double] = Quantity(0, "")
 
 }
 
