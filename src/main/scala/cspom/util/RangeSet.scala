@@ -106,8 +106,7 @@ final class RangeSet[@specialized T](val contents: TreeSet[Interval[T]]) {
   }
 
   override def toString: String = {
-    if (contents.size == 1) contents.head.toString
-    else contents.mkString("{", ", ", "}")
+    if (isEmpty) "∅" else contents.mkString("∪")
   }
 
 }

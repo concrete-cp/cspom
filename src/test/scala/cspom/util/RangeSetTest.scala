@@ -23,12 +23,12 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     val rs5 = rs4 ++ IntInterval(0, -1); // empty range; {[1, 10], [12, 20]}
     val rs6 = rs5 -- IntInterval(6, 9); // splits [1, 10]; {[1, 5], [10, 10], [12, 20]}
 
-    rangeSet1.toString shouldBe "{}"
-    rs2.toString shouldBe "{[1‥10]}"
-    rs3.toString shouldBe "{[1‥10], [12‥15]}"
-    rs4.toString shouldBe "{[1‥10], [12‥20]}"
-    rs5.toString shouldBe "{[1‥10], [12‥20]}"
-    rs6.toString shouldBe "{[1‥5], [10‥10], [12‥20]}"
+    rangeSet1.toString shouldBe "∅"
+    rs2.toString shouldBe "[1‥10]"
+    rs3.toString shouldBe "[1‥10]∪[12‥15]"
+    rs4.toString shouldBe "[1‥10]∪[12‥20]"
+    rs5.toString shouldBe "[1‥10]∪[12‥20]"
+    rs6.toString shouldBe "[1‥5]∪[10‥10]∪[12‥20]"
   }
 
   it should "contain all values when open" in {
@@ -170,7 +170,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
   it should "allow infinite ranges" in {
     val all = RangeSet.allInt
 
-    all.toString shouldBe "{(-∞‥+∞)}"
+    all.toString shouldBe "(-∞‥+∞)"
 
   }
 
