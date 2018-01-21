@@ -1,7 +1,7 @@
 package cspom.xcsp
 
 import com.typesafe.scalalogging.LazyLogging
-import cspom.variable.{CSPOMConstant, CSPOMExpression, CSPOMSeq, SimpleExpression}
+import cspom.variable._
 import cspom.{CSPOM, CSPOMConstraint}
 import org.xcsp.common.Condition
 import org.xcsp.common.Condition.{ConditionVal, ConditionVar}
@@ -18,16 +18,16 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with LazyLogging {
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[Int], condition: Condition): Unit = {
-    val (vars, ks1, k, op) = manageCondition(list, CSPOM.constantSeq(coeffs), condition)
+    val (vars, ks1, k, op) = manageCondition(toCspom(list), CSPOM.constantSeq(coeffs), condition)
 
-    buildSum(toCspom(vars), ks1, op, k)
+    buildSum(vars, ks1, op, k)
   }
 
-  private def manageCondition(list: Array[XVarInteger], coeffs: Seq[CSPOMExpression[Int]], condition: Condition):
-  (Array[XVarInteger], Seq[CSPOMExpression[Int]], Int, TypeConditionOperatorRel) = {
+  private def manageCondition(list: Seq[CSPOMExpression[Int]], coeffs: Seq[CSPOMExpression[Int]], condition: Condition):
+  (Seq[CSPOMExpression[Int]], Seq[CSPOMExpression[Int]], Int, TypeConditionOperatorRel) = {
     condition match {
       case cond: ConditionVal => (list, coeffs, Math.toIntExact(cond.k), cond.operator)
-      case cond: ConditionVar => (cond.x.asInstanceOf[XVarInteger] +: list, CSPOMConstant(-1) +: coeffs, 0, cond.operator)
+      case cond: ConditionVar => (toCspom(cond.x.asInstanceOf[XVarInteger]) +: list, CSPOMConstant(-1) +: coeffs, 0, cond.operator)
       case o =>
         throw new UnsupportedOperationException(s"Sum condition $o is not supported")
     }
@@ -51,12 +51,12 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with LazyLogging {
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[XVarInteger], condition: Condition): Unit = {
-    val (vars, ks1, k, op) = manageCondition(list, toCspom(coeffs), condition)
+    val (vars, ks1, k, op) = manageCondition(toCspom(list), toCspom(coeffs), condition)
 
     val mode = op.name().toLowerCase()
 
     cspom.ctr {
-      CSPOMConstraint('sum)(CSPOMSeq(ks1: _*), cspomSeq(vars), CSPOMConstant(k)) withParam ("mode" -> mode)
+      CSPOMConstraint('sum)(CSPOMSeq(ks1: _*), CSPOMSeq(vars:_*), CSPOMConstant(k)) withParam ("mode" -> mode)
     }
   }
 
@@ -117,6 +117,18 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with LazyLogging {
 
   private def buildCardMinMax(list: Array[XVarInteger], closed: Boolean, values: CSPOMSeq[Int], occursMin: Seq[Int], occursMax: Seq[Int]): Unit = {
     cspom.ctr('gccMinMax)(cspomSeq(list), CSPOMConstant(closed), values, CSPOM.constantSeq(occursMin), CSPOM.constantSeq(occursMax))
+  }
+
+  override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
+    val count = values.map(i => cspom.defineInt( v => CSPOMConstraint(v)('occurrence)(CSPOMConstant(i), cspomSeq(list))))
+    val (vars, ks1, k, op) = manageCondition(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)
+    buildSum(vars, ks1, op, k)
+  }
+
+  override def buildCtrCount(s: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = {
+    val count = values.map(i => cspom.defineInt( v => CSPOMConstraint(v)('occurrence)(toCspom(i), cspomSeq(list))))
+    val (vars, ks1, k, op) = manageCondition(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)
+    buildSum(vars, ks1, op, k)
   }
 
 

@@ -2,6 +2,7 @@ package cspom.util
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.util.Infinitable.InfinitableOrdering
+import java.lang
 
 object IntInterval {
   val all: IntInterval = IntInterval(MinInf, PlusInf)
@@ -25,7 +26,7 @@ object IntInterval {
 }
 
 object FiniteIntInterval {
-  def unapply(itv: IntInterval) = Interval.unapply(itv).collect {
+  def unapply(itv: IntInterval): Option[(Int, Int)] = Interval.unapply(itv).collect {
     case (Finite(l), Finite(u)) => (l, u)
   }
 }
@@ -42,14 +43,14 @@ final class IntInterval(
     case _ => throw new ArithmeticException(s"Cannot create infinite range $this")
   }
 
-  def itvSize = {
+  def itvSize: Infinitable = {
     val s = Finite(1) + ub - lb
     if (s <= 0) Finite(0) else s
   }
 
-  def contains(c: BigInt) = lb <= c && !(ub < c)
+  def contains(c: BigInt): Boolean = lb <= c && !(ub < c)
 
-  def &(si: Interval[Infinitable]) = {
+  def &(si: Interval[Infinitable]): Interval[Infinitable] = {
 
     val lowerCmp = InfinitableOrdering.compare(lb, si.lb)
     val upperCmp = InfinitableOrdering.compare(ub, si.ub)
@@ -64,7 +65,7 @@ final class IntInterval(
     }
   }
 
-  def lessThan(siub: Infinitable) = {
+  def lessThan(siub: Infinitable): IntInterval = {
     if (siub <= Int.MinValue) {
       IntInterval(lb, MinInf)
     } else {
@@ -78,7 +79,7 @@ final class IntInterval(
     }
   }
 
-  def moreThan(silb: Infinitable) = {
+  def moreThan(silb: Infinitable): IntInterval = {
     if (Infinitable.compare(silb, Int.MaxValue) >= 0) {
       IntInterval(PlusInf, ub)
     } else {
@@ -92,12 +93,12 @@ final class IntInterval(
     }
   }
 
-  def span(si: Interval[Infinitable]) = {
+  def span(si: Interval[Infinitable]): Interval[Infinitable] = {
     val spanned = span(si.lb, si.ub)
     if (spanned == si) si else spanned
   }
 
-  def span(silb: Infinitable, siub: Infinitable) = {
+  def span(silb: Infinitable, siub: Infinitable): IntInterval = {
     val lowerCmp = InfinitableOrdering.compare(lb, silb)
     val upperCmp = InfinitableOrdering.compare(ub, siub)
     if (lowerCmp <= 0 && upperCmp >= 0) {
@@ -105,24 +106,24 @@ final class IntInterval(
     } else {
       val newLower = if (lowerCmp <= 0) lb else silb
       val newUpper = if (upperCmp >= 0) ub else siub
-      IntInterval(newLower, newUpper);
+      IntInterval(newLower, newUpper)
     }
   }
 
-  override def isEmpty = {
+  override def isEmpty: Boolean = {
     lb == PlusInf ||
       ub == MinInf ||
       InfinitableOrdering.compare(lb, ub) > 0
   }
 
-  override def size: Int = Math.checkedAdd(Math.checkedSubtract(finiteUb, finiteLb), 1)
+  override def size: Int = lang.Math.incrementExact(lang.Math.subtractExact(finiteUb, finiteLb))
 
-  def finiteLb = lb match {
+  def finiteLb: Int = lb match {
     case Finite(l) => l
     case _ => throw new AssertionError("lb is not finite")
   }
 
-  def finiteUb = ub match {
+  def finiteUb: Int = ub match {
     case Finite(u) => u
     case _ => throw new AssertionError("ub is not finite")
   }
@@ -171,19 +172,23 @@ final class IntInterval(
   //
   //  override def hashCode = (lb, ub).hashCode
 
-  override def toString = {
-    val l = lb match {
-      case MinInf => "(-\u221e"
-      case Finite(i) => s"[$i"
-      case PlusInf => "(+\u221e"
-    }
-    val u = ub match {
-      case Finite(i) => s"$i]"
-      case PlusInf => "+\u221e)"
-      case MinInf => "-\u221e)"
-    }
+  override def toString: String = {
+    if (lb == ub) {
+      s"{$lb}"
+    } else {
+      val l = lb match {
+        case MinInf => s"($MinInf"
+        case Finite(i) => s"[$i"
+        case PlusInf => s"($PlusInf"
+      }
+      val u = ub match {
+        case Finite(i) => s"$i]"
+        case PlusInf => s"$PlusInf)"
+        case MinInf => s"$MinInf)"
+      }
 
-    s"$l‥$u"
+      s"$l‥$u"
+    }
   }
 
 }

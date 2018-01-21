@@ -5,7 +5,7 @@ import cspom.{CSPOM, CSPOMConstraint}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 final class ParserTest extends FlatSpec with Matchers with Inspectors {
-  for (file <- Seq("testExtension1.xml.xz", "testExtension2.xml.xz", "testPrimitive.xml.xz")) {
+  for (file <- Seq("ModelFile.xml.xz", "testExtension1.xml.xz", "testExtension2.xml.xz", "testPrimitive.xml.xz")) {
 
     it should s"parse XCSP3 $file" in {
       val cspom = CSPOM.load(classOf[ParserTest].getResource(file)).get

@@ -13,12 +13,11 @@ import ConstraintCompiler._
  */
 object MergeEq extends ConstraintCompilerNoData with LazyLogging {
 
-  override def matchBool(c: CSPOMConstraint[_], p: CSPOM) =
+  override def matchBool(c: CSPOMConstraint[_], p: CSPOM): Boolean = {
     c.function == 'eq && c.arguments.forall(_.isInstanceOf[SimpleExpression[_]])
+  }
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM): Delta = {
-    require(!constraint.params.contains("neg") && !constraint.params.contains("offset"), "neg and offset parameters are deprecated for the eq constraint")
-
     val se = constraint.arguments.map(_.asInstanceOf[SimpleExpression[_]])
 
     val merged = se.reduceLeft(_ intersected _)

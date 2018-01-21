@@ -1,6 +1,7 @@
 package cspom.util
 
 import java.math.RoundingMode
+import java.lang
 
 object Infinitable {
 
@@ -56,7 +57,7 @@ sealed trait Infinitable extends Any {
 }
 
 case object MinInf extends Infinitable {
-  def pow(b: Infinitable) = {
+  def pow(b: Infinitable): Infinitable = {
     b match {
       case Finite(b) => if (b % 2 == 0) PlusInf else MinInf
       case _ => throw new ArithmeticException(s"pow($this, $b) is undefined")
@@ -144,17 +145,17 @@ case object PlusInf extends Infinitable {
 
 case class Finite(i: Int) extends AnyVal with Infinitable {
   def +(v: Infinitable) = v match {
-    case Finite(j) => Finite(Math.checkedAdd(i, j))
+    case Finite(j) => Finite(lang.Math.addExact(i, j))
     case u => u + this
   }
 
   def -(v: Infinitable) = v match {
-    case Finite(j) => Finite(Math.checkedSubtract(i, j))
+    case Finite(j) => Finite(lang.Math.subtractExact(i, j))
     case u => -u + this
   }
 
   def *(v: Infinitable) = v match {
-    case Finite(j) => Finite(Math.checkedMultiply(i, j))
+    case Finite(j) => Finite(lang.Math.multiplyExact(i, j))
     case u => u * this
   }
 

@@ -92,7 +92,7 @@ object ConstraintCompiler extends LazyLogging {
 
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    val posted = c.flatMap(in.ctrNetwork(_))
+    val posted = c.flatMap(in.ctrNetwork)
     logger.info(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
     Delta.empty.added(posted)
   }
@@ -175,12 +175,12 @@ case class Delta private (
   }
 
   def added(c: CSPOMConstraint[_]): Delta = {
-    require(!removed.contains(c))
+    assert(!removed.contains(c))
     Delta(removed, c +: added)
   }
 
   def added(c: Traversable[CSPOMConstraint[_]]): Delta = {
-    require(c.forall(!removed.contains(_)))
+    assert(c.forall(!removed.contains(_)))
     Delta(removed, c ++: added)
   }
 

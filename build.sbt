@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "com.storm-enroute" %% "scalameter-core" % "0.8.2",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
-  "org.tukaani" % "xz" % "1.6",
+  "org.tukaani" % "xz" % "1.8",
   "com.lihaoyi" %% "fastparse" % "1.0.0"
 )
 

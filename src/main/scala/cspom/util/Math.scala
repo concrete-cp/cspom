@@ -3,29 +3,6 @@ package cspom.util
 import java.math.RoundingMode
 
 object Math {
-  def checkedAdd(i: Int, j: Int): Int = {
-    val l: Long = i.toLong + j
-    if (l > Int.MaxValue || l < Int.MinValue) {
-      throw new ArithmeticException(s"$i + $j: overflow")
-    }
-    l.toInt
-  }
-
-  def checkedSubtract(i: Int, j: Int): Int = {
-    val l: Long = i.toLong - j
-    if (l > Int.MaxValue || l < Int.MinValue) {
-      throw new ArithmeticException(s"$i - $j: overflow")
-    }
-    l.toInt
-  }
-
-  def checkedMultiply(i: Int, j: Int): Int = {
-    val l: Long = i.toLong * j
-    if (l > Int.MaxValue || l < Int.MinValue) {
-      throw new ArithmeticException(s"$i * $j: overflow")
-    }
-    l.toInt
-  }
 
 
   def checkedPow(a: Int, b: Int): Int = {
@@ -63,7 +40,7 @@ object Math {
        */
       val signum = 1 | ((p ^ q) >> (Integer.SIZE - 1));
       val increment = mode match {
-        case UNNECESSARY if (rem == 0) =>
+        case UNNECESSARY if rem == 0 =>
           throw new ArithmeticException("mode was UNNECESSARY, but rounding was necessary");
 
         case UNNECESSARY | DOWN => false
@@ -72,18 +49,18 @@ object Math {
         case FLOOR => signum < 0;
 
         case HALF_EVEN | HALF_DOWN | HALF_UP =>
-          val absRem = math.abs(rem);
-          val cmpRemToHalfDivisor = absRem - (math.abs(q) - absRem);
+          val absRem = math.abs(rem)
+          val cmpRemToHalfDivisor = absRem - (math.abs(q) - absRem)
           // subtracting two nonnegative ints can't overflow
           // cmpRemToHalfDivisor has the same sign as compare(abs(rem), abs(q) / 2).
           if (cmpRemToHalfDivisor == 0) { // exactly on the half mark
-            mode == HALF_UP || (mode == HALF_EVEN & (div & 1) != 0);
+            mode == HALF_UP || (mode == HALF_EVEN & (div & 1) != 0)
           } else {
             cmpRemToHalfDivisor > 0; // closer to the UP value
           }
         case _ => throw new AssertionError();
       }
-      if (increment) div + signum else div;
+      if (increment) div + signum else div
     }
   }
 
@@ -101,7 +78,7 @@ object Math {
     }
   }
 
-  def isSqrt(n: BigInt, r: BigInt) = {
+  def isSqrt(n: BigInt, r: BigInt): Boolean = {
     n >= r * r && n < (r + 1) * (r + 1)
   }
 }

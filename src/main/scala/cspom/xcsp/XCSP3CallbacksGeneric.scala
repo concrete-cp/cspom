@@ -7,6 +7,7 @@ import mdd.{IdMap, Star, Starrable, ValueStar}
 import org.xcsp.common.Constants
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
+import org.xcsp.parser.entries.XConstraints
 import org.xcsp.parser.entries.XDomains.XDomBasic
 import org.xcsp.parser.entries.XValues.IntegerEntity
 import org.xcsp.parser.entries.XVariables.XVarInteger

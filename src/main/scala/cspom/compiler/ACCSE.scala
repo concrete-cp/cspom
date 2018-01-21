@@ -1,5 +1,7 @@
 package cspom.compiler
 
+import java.util
+
 import com.typesafe.scalalogging.LazyLogging
 import cspom.{CSPOM, CSPOMConstraint}
 import cspom.variable.CSPOMExpression
@@ -18,8 +20,8 @@ trait ACCSE[PairExp] extends ProblemCompiler with LazyLogging {
     val newConstraints = new mutable.HashSet[CSPOMConstraint[_]]
     val removed = new mutable.HashSet[CSPOMConstraint[_]]
 
-    val map = new mutable.HashMap[PairExp, ArrayBuffer[CSPOMConstraint[_]]]
-    populateMapAC(map, cspom.constraints.toSeq: _*)
+    val map = populateMapAC(new mutable.HashMap[PairExp, ArrayBuffer[CSPOMConstraint[_]]], cspom.constraints.toSeq: _*)
+      .filter(_._2.size > 1)
 
     while (map.nonEmpty) {
       val (pairexp, ls0) = map.head
@@ -67,12 +69,13 @@ trait ACCSE[PairExp] extends ProblemCompiler with LazyLogging {
 
 
   def populateMapAC(map: mutable.Map[PairExp, ArrayBuffer[CSPOMConstraint[_]]],
-                    constraints: CSPOMConstraint[_]*): Unit = {
+                    constraints: CSPOMConstraint[_]*): mutable.Map[PairExp, ArrayBuffer[CSPOMConstraint[_]]] = {
     for {
       c <- constraints
       pair <- populate(c)
     } {
       map.getOrElseUpdate(pair, new ArrayBuffer()) += c
     }
+    map
   }
 }

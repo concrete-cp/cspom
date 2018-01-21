@@ -19,9 +19,7 @@ class XCSP3Callbacks extends XCSP3CallbacksObj
 
   val implem = new Implem(this)
 
-  implem.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, Int.box(2))
-  implem.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, Boolean.box(true))
-  implem.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_FORMULA_SIZE_MIN, Int.box(8))
+  implem.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, Int.box(0))
 
   def loadInstance(parser: XParser): Unit = {
     beginInstance(parser.typeFramework)

@@ -28,7 +28,7 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
     rs3.toString shouldBe "[1‥10]∪[12‥15]"
     rs4.toString shouldBe "[1‥10]∪[12‥20]"
     rs5.toString shouldBe "[1‥10]∪[12‥20]"
-    rs6.toString shouldBe "[1‥5]∪[10‥10]∪[12‥20]"
+    rs6.toString shouldBe "[1‥5]∪{10}∪[12‥20]"
   }
 
   it should "contain all values when open" in {
@@ -144,22 +144,22 @@ class RangeSetTest extends FlatSpec with Matchers with PropertyChecks {
       RangeSet.empty
 
     forAll { (s1: Seq[Int], b: Int) =>
-      val s = RangeSet(s1.map(IntInterval.singleton(_)))
+      val s = RangeSet(s1.map(IntInterval.singleton))
       val d = s -- IntInterval.atMost(b)
 
-      asSet(d) should contain theSameElementsAs (s1.distinct.filter(_ > b))
+      asSet(d) should contain theSameElementsAs s1.distinct.filter(_ > b)
     }
   }
 
   it should "intersect" in {
 
-    asSet(RangeSet(List(1, 2, 3).map(IntInterval.singleton(_))) &
-      RangeSet(List(2, 3, 4).map(IntInterval.singleton(_)))) should contain theSameElementsAs
+    asSet(RangeSet(List(1, 2, 3).map(IntInterval.singleton)) &
+      RangeSet(List(2, 3, 4).map(IntInterval.singleton))) should contain theSameElementsAs
       Set(2, 3)
 
     forAll { (s1: Seq[Int], s2: Seq[Int]) =>
-      val i1 = RangeSet(s1.map(IntInterval.singleton(_)))
-      val i2 = RangeSet(s2.map(IntInterval.singleton(_)))
+      val i1 = RangeSet(s1.map(IntInterval.singleton))
+      val i2 = RangeSet(s2.map(IntInterval.singleton))
 
       asSet(i1 & i2) should contain theSameElementsAs (s1.toSet & s2.toSet)
 
