@@ -2,7 +2,7 @@ package cspom.xcsp
 
 import cspom.util.{Finite, Infinitable, Interval}
 import cspom.variable._
-import cspom.{CSPOM, CSPOMConstraint, CSPOMGoal}
+import cspom.{CSPOM, CSPOMConstraint, CSPOMGoal, WithParam}
 import org.xcsp.common.Types.{TypeConditionOperatorRel, TypeObjective}
 import org.xcsp.parser.XCallbacks2
 import org.xcsp.parser.entries.XVariables.XVarInteger
@@ -12,8 +12,6 @@ import cspom.util.IntervalsArithmetic._
   * Created by vion on 30/05/17.
   */
 trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3CallbacksCountSum {
-
-
   override def buildObjToMinimize(id: String, x: XVarInteger): Unit = {
     cspom.setGoal(CSPOMGoal.Minimize(toCspom(x)))
   }
@@ -102,6 +100,13 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
     cspom.nameExpression(e, "cspom-objective")
     // declaredVariables(XVar.build("cspom-objective", TypeVar.integer, null).asInstanceOf[XVarInteger]) = obj
     // obj
+  }
+
+  override def buildAnnotationDecision(list: Array[XVarInteger]): Unit = {
+    val g = cspom.goal.getOrElse(WithParam(CSPOMGoal.Satisfy))
+        .withParam(("annotationDecision", toCspom(list).flatMap(cspom.namesOf)))
+    // Use names because variables may be replaced during compilation
+    cspom.setGoal(g)
   }
 
 

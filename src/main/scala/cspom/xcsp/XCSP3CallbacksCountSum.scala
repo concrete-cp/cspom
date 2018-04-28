@@ -6,12 +6,13 @@ import cspom.{CSPOM, CSPOMConstraint}
 import org.xcsp.common.Condition
 import org.xcsp.common.Condition.{ConditionVal, ConditionVar}
 import org.xcsp.common.Types.TypeConditionOperatorRel
+import org.xcsp.common.predicates.XNodeParent
 import org.xcsp.parser.entries.XVariables.XVarInteger
 
 /**
   * Created by vion on 30/05/17.
   */
-trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with LazyLogging {
+trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGeneric with LazyLogging {
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
     buildCtrSum(id, list, Array.fill(list.length)(1), condition)
@@ -53,11 +54,15 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with LazyLogging {
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[XVarInteger], condition: Condition): Unit = {
     val (vars, ks1, k, op) = manageCondition(toCspom(list), toCspom(coeffs), condition)
 
-    val mode = op.name().toLowerCase()
+    buildSum(vars, ks1, op, k)
+  }
 
-    cspom.ctr {
-      CSPOMConstraint('sum)(CSPOMSeq(ks1: _*), CSPOMSeq(vars:_*), CSPOMConstant(k)) withParam ("mode" -> mode)
+  override def buildCtrSum(id: String, trees: Array[XNodeParent[XVarInteger]], coeffs: Array[Int], condition: Condition): Unit = {
+    val variables = trees.toSeq.map { node =>
+      cspom.defineInt(x => intensionConstraint(x, node))
     }
+    val (vars, ks1, k, op) = manageCondition(variables, CSPOM.constantSeq(coeffs), condition)
+    buildSum(vars, ks1, op, k)
   }
 
   override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {

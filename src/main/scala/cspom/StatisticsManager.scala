@@ -80,45 +80,45 @@ class StatisticsManager extends LazyLogging {
 
 object StatisticsManager {
 
-  def average[A: Numeric](s: Seq[A]): Double = average(s.iterator)
+  def average[A: Numeric](s: Iterable[A]): Double = average(s.iterator)
   def average[A](xs: Iterator[A])(implicit n: Numeric[A]): Double = {
-    var m = n.toDouble(xs.next)
-    var k = 1
-    for (x <- xs) {
-      k += 1
-      m += (n.toDouble(x) - m) / k
+    if (xs.hasNext) {
+      var m = n.toDouble(xs.next)
+      var k = 1
+      for (x <- xs) {
+        k += 1
+        m += (n.toDouble(x) - m) / k
+      }
+      m
+    } else {
+      Double.NaN
     }
-    m
   }
 
-  def averageBigInt(s: Seq[BigInt]): BigInt = {
+  def averageBigInt(s: Iterable[BigInt]): BigInt = {
     s.sum / s.size
   }
 
-  def geom[A](s: Seq[A])(implicit n: Numeric[A]): Double = {
-    import Numeric._
-    val p = s.iterator.map(i => math.log(n.toDouble(i))).sum
-    val d = p / s.length
-    math.exp(d)
-
-  }
-
   def variance[A](xs: Iterator[A])(implicit n: Numeric[A]): Double = {
-    var m = n.toDouble(xs.next)
-    var s = 0.0
-    var k = 1
-    for (x <- xs map n.toDouble) {
-      k += 1
-      val mk = m + (x - m) / k
-      s += (x - m) * (x - mk)
-      m = mk
+    if (xs.hasNext) {
+      var m = n.toDouble(xs.next)
+      var s = 0.0
+      var k = 1
+      for (x <- xs map n.toDouble) {
+        k += 1
+        val mk = m + (x - m) / k
+        s += (x - m) * (x - mk)
+        m = mk
+      }
+      s / (k - 1)
+    } else {
+      Double.NaN
     }
-    s / (k - 1)
   }
 
   def stDev[A: Numeric](s: Iterator[A]): Double = math.sqrt(variance(s))
 
-  def stDev[A: Numeric](s: Seq[A]): Double = stDev(s.iterator)
+  def stDev[A: Numeric](s: Iterable[A]): Double = stDev(s.iterator)
 
   def stDevBigInt(s: Seq[BigInt]): BigInt = {
     val avg = averageBigInt(s)
@@ -126,9 +126,9 @@ object StatisticsManager {
     util.Math.sqrt(variance)
   }
 
-  def min[A: Ordering](s: Seq[A]): A = s.min
+  def min[A: Ordering](s: Iterable[A]): A = s.min
 
-  def max[A: Ordering](s: Seq[A]): A = s.max
+  def max[A: Ordering](s: Iterable[A]): A = s.max
 
   @tailrec
   def findKMedian[A](arr: Seq[A], k: Int)(implicit o: Ordering[A]): A = {
@@ -139,7 +139,7 @@ object StatisticsManager {
 
       case 0 => // Used to avoid infinite repetition
         val (s, b) = arr.partition(pivot == _)
-        if (s.size > k) {
+        if (s.lengthCompare(k) > 0) {
           pivot
         } else {
           findKMedian(b, k - s.size)
@@ -177,12 +177,12 @@ object StatisticsManager {
   }
 
   def measureTry[A, T, U](f: => Try[A], measureBuilder: MeasureBuilder[T, U] = org.scalameter.`package`): (Try[A], Quantity[U]) = {
-    var r: Try[A] = Failure(new IllegalStateException("No execution"))
+    var r: Try[A] = null //
     val t = measureBuilder.measure {
       r = f
       r.isSuccess
     }
-    (r, t)
+    (Option(r).getOrElse(Failure(new IllegalStateException("No execution"))), t)
 
     //    var t = -System.nanoTime
     //    val r: Try[A] = f //.apply()

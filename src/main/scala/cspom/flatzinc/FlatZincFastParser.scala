@@ -91,10 +91,10 @@ object FlatZincFastParser extends CSPOM.Parser {
           mode match {
             case Satisfy => WithParam(CSPOMGoal.Satisfy, params)
             case Minimize(e: FZExpr[Int]) =>
-              val ce = e.toCSPOM(declared).asInstanceOf[CSPOMExpression[Int]]
+              val ce = e.toCSPOM(declared) //.asInstanceOf[CSPOMExpression[Int]]
               WithParam(CSPOMGoal.Minimize(ce), params)
             case Maximize(e: FZExpr[Int]) =>
-              val ce = e.toCSPOM(declared).asInstanceOf[CSPOMExpression[Int]]
+              val ce = e.toCSPOM(declared) //.asInstanceOf[CSPOMExpression[Int]]
               WithParam(CSPOMGoal.Maximize(ce), params)
           }
         }

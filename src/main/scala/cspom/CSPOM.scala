@@ -66,6 +66,7 @@ class CSPOM extends LazyLogging {
 
 
   def setGoal(g: WithParam[CSPOMGoal[_]]): Unit = {
+    // println(s"setGoal $g ${Thread.currentThread.getStackTrace.mkString(", ")}")
     resolvePostponed(g.obj.expr)
     this._goal = Some(g)
   }
@@ -210,7 +211,7 @@ class CSPOM extends LazyLogging {
 
   def getPostponed: Seq[CSPOMConstraint[_]] = postponed
 
-  override def toString(): String = {
+  override def toString: String = {
     val vars = referencedExpressions.map(e => (expressionMap.displayName(e), e)).sortBy(_._1).map {
       case (name, variable) => s"$name: $variable"
     }.mkString("\n")

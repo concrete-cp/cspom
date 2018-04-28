@@ -13,7 +13,7 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
   //private val cache = new HashMap[(IdEq[Relation[_]], Seq[SimpleExpression[_]]), (Seq[Int], Relation[Int])]
 
-  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
+  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM): Boolean = {
     //println(c)
     c.function == 'extension && c.nonReified
   }
@@ -36,9 +36,19 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
     logger.info(s"will reduce $relation for $args")
 
-    val filtered = relation.filter(args.map(_.miniset))
+    val filtered = relation.filter(args.map { expr: SimpleExpression[_] =>
+      new Set[Int] {
+        def contains(i: Int): Boolean = expr.contains(i)
 
-    logger.info(s"filtered: {}, {} -> {}", Boolean.box(filtered ne relation), Int.box(relation.space), Int.box(filtered.space))
+        override def +(elem: Int): Set[Int] = ???
+
+        override def -(elem: Int): Set[Int] = ???
+
+        override def iterator: Iterator[Int] = ???
+      }
+    })
+
+    logger.info(s"filtered: {}, {} -> {}", filtered != relation, relation.space, filtered.space)
 
     if (filtered.isEmpty) logger.warn(s"Relation is empty for ${c.toString(problem.displayName)}")
 
@@ -51,22 +61,22 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
       removeCtr(c, problem)
     } else {
 
-      val projected = if (vars.size < c.arguments.size) {
+      val projected = if (vars.lengthCompare(c.arguments.size) < 0) {
         filtered.project(vars)
       } else {
         filtered
       }
 
-      logger.info(s"projected: ${projected ne filtered}")
+      logger.info(s"projected: ${projected != filtered}")
 
       val reduced = projected match {
-        case p: MDDRelation => p.reduce
+        case p: MDDRelation => p.reduce()
         case p => p
       }
 
-      logger.info(s"reduced: ${reduced ne projected}")
+      logger.info(s"reduced: ${reduced != projected}")
 
-      if (relation ne reduced) {
+      if (relation != reduced) {
 
         logger.info(s"$relation -> $reduced")
         replaceCtr(c,

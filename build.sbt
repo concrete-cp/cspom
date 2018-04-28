@@ -2,24 +2,24 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.20-SNAPSHOT"
+version := "2.21"
 
 scalaVersion := "2.12.4"
 
 libraryDependencies ++= Seq(
-  "fr.univ-valenciennes" %% "bitvectors" % "2.0",
-  "fr.univ-valenciennes" %% "mdd" % "1.5.2",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
-  "org.apache.commons" % "commons-compress" % "1.15",
+  "fr.univ-valenciennes" %% "bitvectors" % "2.1",
+  "fr.univ-valenciennes" %% "mdd" % "1.6",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
+  "org.apache.commons" % "commons-compress" % "1.16.1",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "com.storm-enroute" %% "scalameter-core" % "0.8.2",
-  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+  "com.storm-enroute" %% "scalameter-core" % "0.9",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
   "org.tukaani" % "xz" % "1.8",
   "com.lihaoyi" %% "fastparse" % "1.0.0"
 )
 
-scalacOptions ++= Seq(
+scalacOptions ++= Seq(  
   "-Xdisable-assertions"
   , "-deprecation"
   //	"-unchecked"

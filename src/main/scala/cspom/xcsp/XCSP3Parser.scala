@@ -1,31 +1,29 @@
-package cspom.xcsp;
+package cspom.xcsp
+
 
 import java.io.InputStream
 
-import scala.util.Try
+import com.typesafe.scalalogging.LazyLogging
 
+import scala.util.Try
 import cspom.CSPOM
 import org.xcsp.parser.XParser
 import org.w3c.dom.Document
 
 /**
- * This class implements an XCSP 3.0 parser.
- *
- * @author vion
- */
-final object XCSP3Parser extends CSPOM.Parser {
+  * This class implements an XCSP 3.0 parser.
+  *
+  * @author vion
+  */
+object XCSP3Parser extends CSPOM.Parser with LazyLogging {
 
   /**
-   * Append the XCSP data provided by the InputStream to the given CSPOM
-   * problem.
-   *
-   * @param is
-   *            The source of the XCSP data
-   * @throws CSPParseException
-   *             Thrown if is contains invalid data
-   * @throws IOException
-   *             Thrown if the data could not be read
-   */
+    * Append the XCSP data provided by the InputStream to the given CSPOM
+    * problem.
+    *
+    * @param is
+    * The source of the XCSP data
+    */
   def apply(is: InputStream): Try[CSPOM] =
     Try {
       new XParser(is)
@@ -41,6 +39,7 @@ final object XCSP3Parser extends CSPOM.Parser {
   def apply(parser: XParser): Try[CSPOM] = Try {
     val callbacks = new XCSP3Callbacks()
     callbacks.loadInstance(parser)
+    logger.info(callbacks.cspom.toString)
     callbacks.cspom
   }
 

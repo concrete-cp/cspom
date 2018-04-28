@@ -1,5 +1,6 @@
 package cspom.xcsp
 
+import com.typesafe.scalalogging.LazyLogging
 import cspom.extension.MDDRelation
 import cspom.variable.{CSPOMConstant, CSPOMExpression, SimpleExpression}
 import cspom.{CSPOM, CSPOMConstraint}
@@ -7,7 +8,6 @@ import mdd.{IdMap, Star, Starrable, ValueStar}
 import org.xcsp.common.Constants
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
-import org.xcsp.parser.entries.XConstraints
 import org.xcsp.parser.entries.XDomains.XDomBasic
 import org.xcsp.parser.entries.XValues.IntegerEntity
 import org.xcsp.parser.entries.XVariables.XVarInteger
@@ -15,7 +15,7 @@ import org.xcsp.parser.entries.XVariables.XVarInteger
 /**
   * Created by vion on 30/05/17.
   */
-trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
+trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars with LazyLogging {
 
   val cache = new IdMap[Array[Array[Int]], MDDRelation]()
   val extCache = new IdMap[Array[Array[Int]], MDDRelation]()
@@ -86,29 +86,28 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
     buildCtrPrimitiveCSPOM(toCspom(x), aop, CSPOMConstant(p), op, CSPOMConstant(k))
   }
 
+  def extract(node: XNode[XVarInteger]): SimpleExpression[_] = {
+    node match {
+      case l: XNodeLeaf[XVarInteger] =>
+        l.value match {
+          case l: java.lang.Long if l.toLong.isValidInt => CSPOMConstant(l.toInt)
+          case v: XVarInteger => toCspom(v)
+        }
+      case p: XNodeParent[XVarInteger] =>
+        cspom.defineFree { x => intensionConstraint(x, p) }
+    }
+  }
+
+  def typeSymbol(t: TypeExpr): Symbol = {
+    Symbol(t.toString.toLowerCase)
+  }
+
+  def intensionConstraint(result: CSPOMExpression[_], p: XNodeParent[XVarInteger]): CSPOMConstraint[_] = {
+    CSPOMConstraint(result)(typeSymbol(p.getType))(p.sons.toSeq.map(extract): _*)
+  }
+
   override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVarInteger]) {
-
-    def extract(node: XNode[XVarInteger]): SimpleExpression[_] = {
-      node match {
-        case l: XNodeLeaf[XVarInteger] =>
-          l.value match {
-            case l: java.lang.Long if l.toLong.isValidInt => CSPOMConstant(l.toInt)
-            case v: XVarInteger => toCspom(v)
-          }
-        case p: XNodeParent[XVarInteger] =>
-          cspom.defineFree { x => constraint(x, p) }
-      }
-    }
-
-    def typeSymbol(t: TypeExpr): Symbol = {
-      Symbol(t.toString.toLowerCase)
-    }
-
-    def constraint(result: CSPOMExpression[_], p: XNodeParent[XVarInteger]): CSPOMConstraint[_] = {
-      CSPOMConstraint(result)(typeSymbol(p.getType))(p.sons.toSeq.map(extract): _*)
-    }
-
-    cspom.ctr(constraint(CSPOMConstant(true), syntaxTreeRoot))
+    cspom.ctr(intensionConstraint(CSPOMConstant(true), syntaxTreeRoot))
   }
 
   override def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean,
@@ -139,6 +138,8 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
 
     val scope = CSPOM.IntSeqOperations(list.toSeq.map(toCspom))
 
+    logger.info(s"Parsed ${if (positive) "positive" else "negative"} extension constraint on $list with $relation")
+
     cspom.ctr {
       if (positive) {
         scope in relation
@@ -153,6 +154,8 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars {
                                  flags: java.util.Set[TypeFlag]): Unit = {
     val relation = MDDRelation(values.map(Array(_)))
     val scope = CSPOM.IntSeqOperations(Seq(toCspom(x)))
+
+    logger.info(s"Parsed ${if (positive) "positive" else "negative"} extension constraint on $x with $relation")
 
     cspom.ctr {
       if (positive) {

@@ -163,10 +163,10 @@ trait ConstraintCompilerNoData extends ConstraintCompiler {
 }
 
 case class Delta private (
-    removed: Seq[CSPOMConstraint[_]],
-    added: Seq[CSPOMConstraint[_]]) {
+    removed: List[CSPOMConstraint[_]],
+    added: List[CSPOMConstraint[_]]) {
   def removed(c: CSPOMConstraint[_]): Delta = {
-    Delta(c +: removed, added.filter(_ ne c))
+    Delta(c :: removed, added.filter(_ ne c))
   }
 
   def removed(c: Traversable[CSPOMConstraint[_]]): Delta = {
@@ -176,7 +176,7 @@ case class Delta private (
 
   def added(c: CSPOMConstraint[_]): Delta = {
     assert(!removed.contains(c))
-    Delta(removed, c +: added)
+    Delta(removed, c :: added)
   }
 
   def added(c: Traversable[CSPOMConstraint[_]]): Delta = {
@@ -193,7 +193,7 @@ case class Delta private (
 }
 
 object Delta {
-  val empty = Delta(Seq(), Seq())
+  val empty = Delta(List(), List())
   def apply(): Delta = empty
 
 }

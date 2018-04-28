@@ -45,7 +45,7 @@ trait XCSP3CallbacksVars extends XCallbacks2 {
   override def endObjectives(): Unit = {
     val goal = cspom.goal
       .getOrElse(WithParam(CSPOMGoal.Satisfy))
-      .withParam("variables" -> declaredVariables.map(_._1.id()))
+      .withParam("variables" -> declaredVariables.toSeq.map { case (v, e) => v.id() -> e })
     cspom.setGoal(goal)
   }
 

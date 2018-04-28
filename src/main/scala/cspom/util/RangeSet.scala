@@ -11,7 +11,6 @@ object RangeSet {
   def apply[T](s: Interval[T]): RangeSet[T] = {
     if (s.isEmpty) empty else
       new RangeSet(itvTreeSet(s))
-
   }
 
   val allInt: RangeSet[Infinitable] = apply(IntInterval.all)

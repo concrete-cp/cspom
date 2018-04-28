@@ -28,7 +28,7 @@ import cspom.WithParam
  *
  * @author vion
  */
-final object XCSPParser extends CSPOM.Parser {
+object XCSPParser extends CSPOM.Parser {
 
   /**
    * Parse the given expression given as a String. Domains are usually sequence of
@@ -61,7 +61,7 @@ final object XCSPParser extends CSPOM.Parser {
   case class XCSP3(document: Document)
 
   implicit class IterableNodeList(nl: NodeList) extends Iterable[org.w3c.dom.Node] {
-    def iterator = Iterator.range(0, nl.getLength).map(nl.item(_))
+    def iterator: Iterator[org.w3c.dom.Node] = Iterator.range(0, nl.getLength).map(nl.item(_))
   }
 
   /**
@@ -100,7 +100,7 @@ final object XCSPParser extends CSPOM.Parser {
     }
 
   def apply(document: Node): Try[CSPOM] = Try {
-    val declaredVariables = parseVariables(document);
+    val declaredVariables = parseVariables(document)
 
     CSPOM { implicit cspom: CSPOM =>
       for ((name, variable) <- declaredVariables) {
@@ -136,7 +136,7 @@ final object XCSPParser extends CSPOM.Parser {
 
   }
 
-  case class Extension(val init: Boolean, val relation: Relation[Int])
+  case class Extension(init: Boolean, relation: Relation[Int])
 
   /**
    * Parse constraints, defined either by relations or predicates.

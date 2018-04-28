@@ -3,8 +3,6 @@ package variable
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.util.ContiguousIntRangeSet
-import cspom.variable.IntExpression.implicits
-import mdd.MiniSet
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -69,7 +67,7 @@ object CSPOMExpression {
  * Simple expressions are typed (int or boolean)
  */
 sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
-  final def replaceVar[R >: T : TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) =
+  final def replaceVar[R >: T : TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R] =
     if (which == this) by else this
 
   def intersected(that: SimpleExpression[_ >: T]): SimpleExpression[T]
@@ -80,14 +78,16 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
   def isEmpty: Boolean
 
-
-  def miniset: MiniSet = new MiniSet {
-    def present(i: Int): Boolean = contains(i)
-
-    def head: Int = implicits.iterable(SimpleExpression.this).head
-
-    def size: Int = implicits.iterable(SimpleExpression.this).size
-  }
+//
+//  def set: Set[T] = new Set[T] {
+//    def contains(i: T): Boolean = SimpleExpression.this.contains(i)
+//
+//    override def +(elem: T): Set[T] = ???
+//
+//    override def -(elem: T): Set[T] = ???
+//
+//    override def iterator: Iterator[T] = ???
+//  }
 }
 
 object SimpleExpression {

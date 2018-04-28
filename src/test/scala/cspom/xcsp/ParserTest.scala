@@ -5,15 +5,7 @@ import cspom.{CSPOM, CSPOMConstraint}
 import org.scalatest.{FlatSpec, Inspectors, Matchers}
 
 final class ParserTest extends FlatSpec with Matchers with Inspectors {
-  for (file <- Seq("ModelFile.xml.xz", "testExtension1.xml.xz", "testExtension2.xml.xz", "testPrimitive.xml.xz")) {
 
-    it should s"parse XCSP3 $file" in {
-      val cspom = CSPOM.load(classOf[ParserTest].getResource(file)).get
-
-      cspom.expressionMap.expressionsWithNames.size should be >= 1
-      cspom.constraints.size should be >= 1
-    }
-  }
 
   "XCSP parser" should "correctly parse XCSP3 MDD" in {
     val cspom = CSPOM.load(classOf[ParserTest].getResource("MagicSquare-3-mdd.xml.xz")).get
@@ -42,4 +34,13 @@ final class ParserTest extends FlatSpec with Matchers with Inspectors {
     mdd.lambda shouldBe 20
   }
 
+  for (file <- Seq("GolombRuler-a3-7annot.xml.xz", "ModelFile.xml.xz", "testExtension1.xml.xz", "testExtension2.xml.xz", "testPrimitive.xml.xz")) {
+
+    it should s"parse XCSP3 $file" in {
+      val cspom = CSPOM.load(classOf[ParserTest].getResource(file)).get
+
+      cspom.expressionMap.expressionsWithNames.size should be >= 1
+      cspom.constraints.size should be >= 1
+    }
+  }
 }

@@ -1,6 +1,6 @@
 package cspom.extension
 
-import mdd.{MDD, MDD0, MiniSet, Starrable}
+import mdd.{MDD, MDD0, Starrable}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
@@ -8,13 +8,13 @@ import scala.util.Try
 
 trait Relation[A] extends Iterable[Seq[A]] {
 
-  def tupleString = map {
+  def tupleString: String = map {
     _.mkString(" ")
   } mkString "|"
 
   def contains(t: Seq[A]): Boolean
 
-  def filter(f: IndexedSeq[MiniSet]): Relation[A]
+  def filter(f: IndexedSeq[Set[Int]]): Relation[A]
 
   def project(c: Seq[Int]): Relation[A]
 
@@ -39,13 +39,13 @@ object MDDRelation {
 class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[Int] {
   private lazy val modified = List.tabulate(arity)(identity)
 
-  def iterator = mdd.iterator
+  def iterator: Iterator[Seq[Int]] = mdd.iterator
 
-  def contains(t: Seq[Int]) = mdd.contains(t.toArray)
+  def contains(t: Seq[Int]): Boolean = mdd.contains(t.toArray)
 
-  def arity = mdd.depth().getOrElse(-1)
+  def arity: Int = mdd.depth().getOrElse(-1)
 
-  def filter(f: IndexedSeq[MiniSet]) = updated(mdd.filterTrie(f.toArray, modified), false)
+  def filter(f: IndexedSeq[Set[Int]]): MDDRelation = updated(mdd.filterTrie(f.toArray, modified), reduced = false)
 
   private def updated(mdd: MDD, reduced: Boolean) = {
     if (mdd eq this.mdd) {
@@ -60,17 +60,26 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
     }
   }
 
+  override def equals(r: Any): Boolean = {
+    r match {
+      case r: MDDRelation => mdd eq r.mdd
+      case _ => false
+    }
+  }
+
   // def +(t: Seq[Int]) =  updated(mdd + t, false)
 
-  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), false)
+  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), reduced = false)
 
-  def reduce() = if (reduced) this else updated(mdd.reduce(), true)
+  def reduce(): MDDRelation = if (reduced) this else {
+      updated(mdd.reduce(), reduced = true)
+  }
 
-  def merge(l: List[Int]) = updated(mdd.merge(l), false)
+  def merge(l: List[Int]): MDDRelation = updated(mdd.merge(l), reduced = false)
 
-  override def toString = mdd.toString
+  override def toString: String = mdd.toString
 
-  def space = mdd.edges()
+  def space: Int = mdd.edges()
 
   def lambda: BigInt = mdd.lambda()
 }
