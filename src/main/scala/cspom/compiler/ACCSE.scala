@@ -4,80 +4,114 @@ import java.util
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.{CSPOM, CSPOMConstraint}
-import cspom.variable.CSPOMExpression
+import cspom.variable.{CSPOMExpression, CSPOMVariable, FreeVariable}
 
 import scala.collection.mutable
 
-trait ACCSE[PairExp] extends ProblemCompiler with LazyLogging {
+trait ACCSE[PairExp, Data] extends ProblemCompiler with LazyLogging {
 
-  def populate(c: CSPOMConstraint[_]): Iterator[PairExp]
+  type Arg = (CSPOMExpression[Any], Data)
+  type Args = mutable.Map[CSPOMExpression[Any], Data]
 
-  def replace(pair: PairExp, ls: Seq[CSPOMConstraint[_]], dn: CSPOMExpression[_] => String): Seq[CSPOMConstraint[_]]
+  def filter(c: CSPOMConstraint[_]): Boolean
+
+  def pair(a1: Arg, a2: Arg): PairExp
+
+  def define(pair: PairExp, aux: CSPOMVariable[_]): (Arg, CSPOMConstraint[_])
+
+  def replace(pair: PairExp, arg: Arg, constraint: Args): Boolean
+
+  def constraintToArgs(c: CSPOMConstraint[_]): IndexedSeq[Arg]
+
+  def argsToConstraint(original: CSPOMConstraint[_], args: Args): CSPOMConstraint[_]
+
+
+  def toString(pair: PairExp, dn: CSPOMExpression[_] => String): String = pair.toString
+
+  def toString(arg: Arg, dn: CSPOMExpression[_] => String): String = arg.toString
+
+  def toHashMap[A, B](s: Iterable[(A, B)]): mutable.Map[A, B] = {
+    val m = new mutable.HashMap[A, B]()
+    m ++= s
+    require(s.size == m.size)
+    m
+  }
 
   def apply(cspom: CSPOM): Delta = {
     val newConstraints = new mutable.HashSet[CSPOMConstraint[_]]
-    val removed = new mutable.HashSet[CSPOMConstraint[_]]
 
-    val map = populateMapAC(
-      new util.HashMap[PairExp, List[CSPOMConstraint[_]]](), cspom.constraints.toSeq: _*)
+    val map = new mutable.HashMap[PairExp, List[Args]]().withDefaultValue(Nil)
 
-    map.values.removeIf(_.lengthCompare(1) <= 0)
+    val constraints = new util.IdentityHashMap[Args, CSPOMConstraint[_]]
+    val changed = new util.IdentityHashMap[Args, Unit]()
 
-    while (!map.isEmpty) {
-      val entry = map.entrySet.iterator.next()
-      val pairexp = entry.getKey
+    for (c <- cspom.constraints if filter(c)) {
+      val args = constraintToArgs(c)
+      val mutableArgs = toHashMap(args)
+      constraints.put(mutableArgs, c)
 
-      map.remove(pairexp)
-
-      val ls = entry.getValue.filter(c => newConstraints(c) || (cspom.constraintSet(c) && !removed(c)))
-
-      if (ls.lengthCompare(1) > 0) {
-        val added = replace(pairexp, ls, cspom.displayName)
-
-        newConstraints ++= added
-        for (c <- added) {
-          populateMapAC(map, c)
-        }
-
-        // All constraints from ls are removed
-        val (recentlyAdded, stillInProblem) = ls.partition(newConstraints)
-
-        // Some are in new constraints
-        newConstraints --= recentlyAdded
-
-        //        logger.debug("Adding constraints")
-        //        for (c <- added) {
-        //          logger.debug(c.toString(cspom.displayName))
-        //        }
-        //
-        //        logger.debug("Removing recent constraints")
-        //        for (c <- recentlyAdded) {
-        //          logger.debug(c.toString(cspom.displayName))
-        //        }
-        //
-        //        logger.debug("Removing older constraints")
-        //        for (c <- stillInProblem) {
-        //          logger.debug(c.toString(cspom.displayName))
-        //          assert(cspom.constraintSet(c))
-        //        }
-
-        // Some are in the original problem
-        removed ++= stillInProblem
+      for (i <- args.indices; j <- 0 until i) {
+        val p = pair(args(i), args(j))
+        map(p) ::= mutableArgs
       }
     }
 
-    ConstraintCompiler.replaceCtr(removed.toSeq, newConstraints.toSeq, cspom)
-  }
+    // Quickly filter singleton pairs
+    map.retain((_, v) => v.lengthCompare(1) > 0) // values.removeIf(_.lengthCompare(1) <= 0)
 
+    while (map.nonEmpty) {
 
-  def populateMapAC(map: util.HashMap[PairExp, List[CSPOMConstraint[_]]],
-                    constraints: CSPOMConstraint[_]*): util.HashMap[PairExp, List[CSPOMConstraint[_]]] = {
-    for {
-      c <- constraints
-      pair <- populate(c)
-    } {
-      map.put(pair, c :: map.getOrDefault(pair, Nil))
+      val (pairexp, list) = map.head
+
+      // println(map.size)
+      map -= pairexp
+
+      if (list.size > 1) {
+
+        val aux = new FreeVariable()
+        val (commonArg, definition) = define(pairexp, aux)
+
+        newConstraints += definition
+
+        // println(s"New subexpression in ${list.size} constraints: ${aux.toString(cspom.displayName(_))} = ${toString(pairexp, cspom.displayName(_))}")
+        // list.foreach(c => println(c.map(toString(_, cspom.displayName(_)))))
+
+        val enqueue = new mutable.HashMap[PairExp, List[Args]]().withDefaultValue(Nil)
+
+        for (c <- list) {
+          if (replace(pairexp, commonArg, c)) {
+            changed.put(c, ())
+            //println(s"arity ${c.size}")
+            for (a <- c if a._1 != aux) {
+              val p = pair(a, commonArg)
+              enqueue(p) ::= c
+            }
+
+          }
+        }
+        enqueue.retain((_, v) => v.lengthCompare(1) > 0) // values.removeIf(_.lengthCompare(1) <= 0)
+        map ++= enqueue
+      }
     }
-    map
+
+
+    //println("End")
+
+    var removed = Seq[CSPOMConstraint[_]]()
+    var added = Seq[CSPOMConstraint[_]]()
+    changed.keySet.forEach { c =>
+      val constraint = constraints.get(c)
+      removed +:= constraint
+      added +:= argsToConstraint(constraint, c)
+    }
+
+//    removed.foreach(println)
+//
+//    println("Add")
+//    added.foreach(println)
+
+    ConstraintCompiler.replaceCtr(removed.toSeq, added.toSeq ++ newConstraints, cspom)
+
   }
+
 }

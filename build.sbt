@@ -2,17 +2,17 @@ name := "cspom"
 
 organization := "fr.univ-valenciennes"
 
-version := "2.21"
+version := "2.25"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.6"
 
 libraryDependencies ++= Seq(
-  "fr.univ-valenciennes" %% "bitvectors" % "2.1",
-  "fr.univ-valenciennes" %% "mdd" % "1.6",
+  "fr.univ-valenciennes" %% "bitvectors" % "2.2",
+  "fr.univ-valenciennes" %% "mdd" % "1.8",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-  "org.apache.commons" % "commons-compress" % "1.16.1",
+  "org.apache.commons" % "commons-compress" % "1.17",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "com.storm-enroute" %% "scalameter-core" % "0.9",
+  "com.storm-enroute" %% "scalameter-core" % "0.10.1",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
   "org.tukaani" % "xz" % "1.8",
@@ -24,6 +24,7 @@ scalacOptions ++= Seq(
   , "-deprecation"
   //	"-unchecked"
   , "-Xlint"
+   , "-target:jvm-1.8"
   //
   //	"-feature"
   //	"-Yinline-warnings"

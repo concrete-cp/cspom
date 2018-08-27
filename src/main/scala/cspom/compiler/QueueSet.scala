@@ -9,7 +9,7 @@ class QueueSet(present: util.BitSet) {
   def this() = this(new util.BitSet())
 
   def this(init: Iterable[Int]) = {
-    this(new util.BitSet(init.max + 1))
+    this(if (init.isEmpty) new util.BitSet() else new util.BitSet(init.max + 1))
     enqueueAll(init)
   }
 

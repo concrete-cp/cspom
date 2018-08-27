@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import cspom.variable._
 import cspom.{CSPOM, CSPOMConstraint}
 import org.xcsp.common.Condition
-import org.xcsp.common.Condition.{ConditionVal, ConditionVar}
+import org.xcsp.common.Condition.{ConditionIntvl, ConditionVal, ConditionVar}
 import org.xcsp.common.Types.TypeConditionOperatorRel
 import org.xcsp.common.predicates.XNodeParent
 import org.xcsp.parser.entries.XVariables.XVarInteger
@@ -19,50 +19,50 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[Int], condition: Condition): Unit = {
-    val (vars, ks1, k, op) = manageCondition(toCspom(list), CSPOM.constantSeq(coeffs), condition)
-
-    buildSum(vars, ks1, op, k)
+    for (ss <- toSumSig(toCspom(list), CSPOM.constantSeq(coeffs), condition)) {
+      buildSum(ss)
+    }
   }
 
-  private def manageCondition(list: Seq[CSPOMExpression[Int]], coeffs: Seq[CSPOMExpression[Int]], condition: Condition):
-  (Seq[CSPOMExpression[Int]], Seq[CSPOMExpression[Int]], Int, TypeConditionOperatorRel) = {
+  case class SumSig(variables: Seq[CSPOMExpression[Int]], coeffs: Seq[CSPOMExpression[Int]], condition: TypeConditionOperatorRel, k: Int) {
+    def stringCondition: String = condition.toString.toLowerCase
+
+  }
+
+  private def toSumSig(vars: Seq[CSPOMExpression[Int]], coeffs: Seq[CSPOMExpression[Int]], condition: Condition): Seq[SumSig] = {
     condition match {
-      case cond: ConditionVal => (list, coeffs, Math.toIntExact(cond.k), cond.operator)
-      case cond: ConditionVar => (toCspom(cond.x.asInstanceOf[XVarInteger]) +: list, CSPOMConstant(-1) +: coeffs, 0, cond.operator)
+      case cond: ConditionVal => Seq(SumSig(vars, coeffs, cond.operator, Math.toIntExact(cond.k)))
+      case cond: ConditionVar => Seq(SumSig(toCspom(cond.x.asInstanceOf[XVarInteger]) +: vars, CSPOMConstant(-1) +: coeffs, cond.operator, 0))
+      case cond: ConditionIntvl =>
+        toSumSig(vars, coeffs, new ConditionVal(TypeConditionOperatorRel.GE, cond.min)) ++
+          toSumSig(vars, coeffs, new ConditionVal(TypeConditionOperatorRel.LE, cond.max))
       case o =>
         throw new UnsupportedOperationException(s"Sum condition $o is not supported")
     }
   }
 
-  protected def buildSum(vars: Seq[CSPOMExpression[Int]], ks1: Seq[CSPOMExpression[Int]], operator: TypeConditionOperatorRel, k: Int): Unit = {
-    import TypeConditionOperatorRel._
-    val (ks2: Seq[CSPOMExpression[Int]], constant: Int, mode: String) = operator match {
-      case LT => (ks1, k, "lt")
-      case LE => (ks1, k, "le")
-      case GE => (ks1.map { case CSPOMConstant(k) => CSPOMConstant(-k) }, -k, "le")
-      case GT => (ks1.map { case CSPOMConstant(k) => CSPOMConstant(-k) }, -k, "lt")
-      case NE => (ks1, k, "ne")
-      case EQ => (ks1, k, "eq")
-      case o => unimplementedCase(s"Sum operator $o is not supported")
-    }
+  protected def buildSum(s: SumSig): Unit = {
+
+    val mode = s.stringCondition
 
     cspom.ctr {
-      CSPOMConstraint('sum)(CSPOMSeq(ks2: _*), CSPOMSeq(vars: _*), CSPOMConstant(constant)) withParam ("mode" -> mode)
+      CSPOMConstraint('sum)(CSPOMSeq(s.coeffs: _*), CSPOMSeq(s.variables: _*), CSPOMConstant(s.k)) withParam ("mode" -> mode)
     }
   }
 
   override def buildCtrSum(id: String, list: Array[XVarInteger], coeffs: Array[XVarInteger], condition: Condition): Unit = {
-    val (vars, ks1, k, op) = manageCondition(toCspom(list), toCspom(coeffs), condition)
-
-    buildSum(vars, ks1, op, k)
+    for (ss <- toSumSig(toCspom(list), toCspom(coeffs), condition)) {
+      buildSum(ss)
+    }
   }
 
   override def buildCtrSum(id: String, trees: Array[XNodeParent[XVarInteger]], coeffs: Array[Int], condition: Condition): Unit = {
     val variables = trees.toSeq.map { node =>
       cspom.defineInt(x => intensionConstraint(x, node))
     }
-    val (vars, ks1, k, op) = manageCondition(variables, CSPOM.constantSeq(coeffs), condition)
-    buildSum(vars, ks1, op, k)
+    for (ss <- toSumSig(variables, CSPOM.constantSeq(coeffs), condition)) {
+      buildSum(ss)
+    }
   }
 
   override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
@@ -125,16 +125,26 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
   }
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
-    val count = values.map(i => cspom.defineInt( v => CSPOMConstraint(v)('occurrence)(CSPOMConstant(i), cspomSeq(list))))
-    val (vars, ks1, k, op) = manageCondition(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)
-    buildSum(vars, ks1, op, k)
+    val count = values.map(i => cspom.defineInt(v => CSPOMConstraint(v)('occurrence)(CSPOMConstant(i), cspomSeq(list))))
+    for (ss <- toSumSig(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)) {
+      buildSum(ss)
+    }
   }
 
   override def buildCtrCount(s: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = {
-    val count = values.map(i => cspom.defineInt( v => CSPOMConstraint(v)('occurrence)(toCspom(i), cspomSeq(list))))
-    val (vars, ks1, k, op) = manageCondition(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)
-    buildSum(vars, ks1, op, k)
+    val count = values.map(i => cspom.defineInt(v => CSPOMConstraint(v)('occurrence)(toCspom(i), cspomSeq(list))))
+    for (ss <- toSumSig(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)) {
+      buildSum(ss)
+    }
   }
 
+  override final def buildCtrNValues(id: String, list: Array[XVarInteger], condition: Condition): Unit = {
+    buildCtrNValuesExcept(id, list, Array(), condition)
+  }
+
+  override final def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = {
+    val r = cspom.defineInt(r => CSPOMConstraint(r)('nvalues)(toCspom(list): _*) withParam ("except" -> except.toSeq))
+    for (ss <- toSumSig(Seq(r), Seq(CSPOMConstant(1)), condition)) buildSum(ss)
+  }
 
 }

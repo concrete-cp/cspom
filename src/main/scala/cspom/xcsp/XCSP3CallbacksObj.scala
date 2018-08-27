@@ -30,6 +30,9 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
     import TypeObjective._
     typ match {
       case SUM => cspom.setGoal(CSPOMGoal.Minimize(buildObjSum(list, coefs)))
+      case NVALUES =>
+        require(coefs.forall(_ == 1))
+        cspom.setGoal(CSPOMGoal.Minimize(buildObjNValues(list)))
       case o => throw new UnsupportedOperationException(s"Objective type $o is not implemented")
     }
   }
@@ -52,9 +55,22 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
     import TypeObjective._
     typ match {
       case SUM => cspom.setGoal(CSPOMGoal.Maximize(buildObjSum(list, coefs)))
+      case NVALUES =>
+        require(coefs.forall(_ == 1))
+        cspom.setGoal(CSPOMGoal.Minimize(buildObjNValues(list)))
       case o => throw new UnsupportedOperationException(s"Objective type $o is not implemented")
 
     }
+  }
+
+  private def buildObjNValues(list: Array[XVarInteger]) = {
+    val vars = toCspom(list)
+
+    val obj = declareObj(IntVariable.free())
+
+    cspom.ctr(CSPOMConstraint(obj)('nvalues)(vars:_*))
+
+    obj
   }
 
   private def buildObjSum(list: Array[XVarInteger], coefs: Array[Int]) = {
@@ -65,7 +81,7 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
     val constants = -1 +: coefs
     val variables = obj +: vars
 
-    buildSum(variables, CSPOM.constantSeq(constants), TypeConditionOperatorRel.EQ, 0)
+    buildSum(SumSig(variables, CSPOM.constantSeq(constants), TypeConditionOperatorRel.EQ, 0))
 
     obj
   }
