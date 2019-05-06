@@ -12,7 +12,10 @@ import cspom.util.IntInterval
  * @author vion
  */
 object CSPOMTypes extends Types {
-  def types = {
+
+  def functions = Functions('clause)
+
+  def types: PartialFunction[CSPOMConstraint[_], A] = {
     case CSPOMConstraint(r, 'clause, Seq(CSPOMSeq(pos), CSPOMSeq(neg)), p) =>
       Map(r -> coerce(r)) ++
         pos.map(l => l -> coerce(l)) ++

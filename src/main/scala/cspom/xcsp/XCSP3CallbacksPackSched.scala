@@ -1,6 +1,5 @@
 package cspom.xcsp
 
-import cspom.util.IntInterval
 import cspom.variable.{CSPOMConstant, CSPOMExpression, CSPOMSeq, IntVariable}
 import cspom.{CSPOM, CSPOMConstraint}
 import org.xcsp.common.Condition

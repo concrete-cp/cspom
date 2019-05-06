@@ -1,6 +1,6 @@
 package cspom
 
-import java.util.{IdentityHashMap, LinkedHashSet}
+import java.util.IdentityHashMap
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.variable.{CSPOMConstant, CSPOMExpression, CSPOMSeq, CSPOMVariable}
@@ -15,9 +15,9 @@ class ExpressionMap extends LazyLogging {
   /**
     * Map used to easily retrieve a variable according to its name.
     */
-  private val namedExpressions = collection.mutable.HashMap[String, CSPOMExpression[_]]()
-  private val expressionNames = collection.mutable.HashMap[CSPOMExpression[_], SortedSet[String]]().withDefaultValue(SortedSet.empty)
-  private[cspom] val containers = new IdentityHashMap[CSPOMExpression[_], LinkedHashSet[(CSPOMSeq[_], Int)]]()
+  private val namedExpressions = mutable.HashMap[String, CSPOMExpression[_]]()
+  private val expressionNames = mutable.HashMap[CSPOMExpression[_], SortedSet[String]]().withDefaultValue(SortedSet.empty)
+  private[cspom] val containers = new IdentityHashMap[CSPOMExpression[_], mutable.LinkedHashSet[(CSPOMSeq[_], Int)]]()
 
 
   private val generatedNames = collection.mutable.Map[CSPOMExpression[_], String]()
@@ -43,7 +43,7 @@ class ExpressionMap extends LazyLogging {
 
   }
 
-  def getContainers(e: CSPOMExpression[_]): Option[LinkedHashSet[(CSPOMSeq[_], Int)]] = Option(containers.get(e))
+  def getContainers(e: CSPOMExpression[_]): Option[mutable.LinkedHashSet[(CSPOMSeq[_], Int)]] = Option(containers.get(e))
 
   def registerContainer(e: CSPOMExpression[_]): Unit = {
 
@@ -52,12 +52,7 @@ class ExpressionMap extends LazyLogging {
       (c, i) <- s.withIndex
     } {
       logger.trace(s"Registering $s")
-      val set = Option(containers.get(c)).getOrElse {
-        val set = new LinkedHashSet[(CSPOMSeq[_], Int)]()
-        containers.put(c, set)
-        set
-      }
-      set.add((s, i))
+      containers.computeIfAbsent(c, _ => new mutable.LinkedHashSet[(CSPOMSeq[_], Int)]()) += ((s, i))
       registerContainer(c)
     }
 
@@ -67,7 +62,7 @@ class ExpressionMap extends LazyLogging {
     val direct = expressionNames(e)
     val inContainers = for {
       cl <- Option(containers.get(e)).toIterable
-      (seq, index) <- cl.asScala
+      (seq, index) <- cl
       s <- namesOf(seq)
     } yield {
       s"$s[$index]"
@@ -102,17 +97,17 @@ class ExpressionMap extends LazyLogging {
         .flatten
   }
 
-  private  def cloneContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[Any], Seq[Int])]] =
-      getContainers(e).map { l =>
-        val m = new mutable.LinkedHashMap[CSPOMSeq[Any], ArrayBuffer[Int]]()
-        for (elem <- l.asScala) {
-          val key = elem._1
-          val bldr = m.getOrElseUpdate(key, new ArrayBuffer[Int]())
-          bldr += elem._2
-        }
-
-        m.toSeq
+  private def cloneContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[Any], Seq[Int])]] =
+    getContainers(e).map { l =>
+      val m = new mutable.LinkedHashMap[CSPOMSeq[Any], ArrayBuffer[Int]]()
+      for (elem <- l) {
+        val key = elem._1
+        val bldr = m.getOrElseUpdate(key, new ArrayBuffer[Int]())
+        bldr += elem._2
       }
+
+      m.toSeq
+    }
 
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): Unit = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
@@ -138,14 +133,14 @@ class ExpressionMap extends LazyLogging {
 
 
   def isReferenced(e: CSPOMExpression[_]): Boolean =
-    expressionNames(e).nonEmpty || Option(containers.get(e)).exists(s => !s.isEmpty)
+    expressionNames(e).nonEmpty || Option(containers.get(e)).exists(s => s.nonEmpty)
 
 
   def expressionsWithNames: Iterator[(String, CSPOMExpression[_])] = {
     namedExpressions.iterator
   }
 
-  def allNames = namedExpressions.keySet
+  def allNames: collection.Set[String] = namedExpressions.keySet
 
   def nextGeneratedName(e: CSPOMExpression[_]): String = e match {
     case CSPOMConstant(v) => v.toString

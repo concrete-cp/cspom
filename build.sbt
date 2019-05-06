@@ -1,22 +1,22 @@
 name := "cspom"
 
-organization := "fr.univ-valenciennes"
+organization := "fr.uphf"
 
-version := "2.25"
+version := "3.0-SNAPSHOT"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.8"
 
 libraryDependencies ++= Seq(
   "fr.univ-valenciennes" %% "bitvectors" % "2.2",
   "fr.univ-valenciennes" %% "mdd" % "1.8",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-  "org.apache.commons" % "commons-compress" % "1.17",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+  "org.apache.commons" % "commons-compress" % "1.18",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "com.storm-enroute" %% "scalameter-core" % "0.10.1",
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "com.storm-enroute" %% "scalameter-core" % "0.17",
+  "org.scalatest" %% "scalatest" % "3.0.7" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
   "org.tukaani" % "xz" % "1.8",
-  "com.lihaoyi" %% "fastparse" % "1.0.0"
+  "com.lihaoyi" %% "fastparse" % "2.1.2"
 )
 
 scalacOptions ++= Seq(  
@@ -24,11 +24,13 @@ scalacOptions ++= Seq(
   , "-deprecation"
   //	"-unchecked"
   , "-Xlint"
-   , "-target:jvm-1.8"
+  , "-target:jvm-1.8"
   //
   //	"-feature"
   //	"-Yinline-warnings"
 )
+
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 //wartremoverWarnings ++= Warts.all
 

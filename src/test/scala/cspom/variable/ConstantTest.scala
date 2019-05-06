@@ -1,10 +1,10 @@
-package cspom.variable;
+package cspom.variable
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.scalatest.prop.PropertyChecks
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class ConstantTest extends FlatSpec with Matchers with PropertyChecks {
+class ConstantTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
 
   "Int constants" should "behave like Ints" in {
 

@@ -7,12 +7,12 @@ import com.typesafe.scalalogging.LazyLogging
 import cspom.dimacs.CNFParser
 import cspom.extension.{MDDRelation, Relation}
 import cspom.flatzinc.FlatZincFastParser
+import cspom.util.LinkedIdentityHashMap
 import cspom.variable._
 import cspom.xcsp.{XCSP3Parser, XCSPParser}
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
-import scala.collection.JavaConverters._
-import scala.collection.SortedSet
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe.TypeTag
@@ -50,17 +50,17 @@ object NameParser extends JavaTokenParsers {
 class CSPOM extends LazyLogging {
 
   val expressionMap = new ExpressionMap
-  private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
-  private val ctrV =
-    collection.mutable.LinkedHashMap[CSPOMExpression[_], SortedSet[CSPOMConstraint[_]]]()
-      .withDefaultValue(SortedSet.empty(ConstraintOrdering))
+  // private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
+  private val ctrV = new LinkedIdentityHashMap[CSPOMExpression[_], mutable.LinkedHashSet[CSPOMConstraint[_]]]()
+
+  //      .withDefaultValue(SortedSet.empty(ConstraintOrdering))
   //  private def getContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[_], Int)]] =
   //    Option(containers.get(e)).map(_.asScala.toSeq)
-  private val annotations = collection.mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
+  private val annotations = mutable.HashMap[String, Annotations]().withDefaultValue(Annotations())
   /**
     * Collection of all constraints of the problem.
     */
-  private val _constraints = collection.mutable.LinkedHashSet[CSPOMConstraint[_]]()
+  private val _constraints = mutable.LinkedHashMap[Symbol, mutable.LinkedHashSet[CSPOMConstraint[_]]]()
   private var postponed: List[CSPOMConstraint[_]] = Nil
   private var _goal: Option[WithParam[CSPOMGoal[_]]] = None
 
@@ -83,7 +83,7 @@ class CSPOM extends LazyLogging {
   def getAnnotations(expressionName: String): Annotations = annotations(expressionName)
 
 
-  def constraintSet: collection.Set[CSPOMConstraint[_]] = _constraints //.toSet
+  //def constraintSet: collection.Set[CSPOMConstraint[_]] = _constraints //.toSet
 
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): A = {
     expressionMap.nameExpression(e, n)
@@ -104,45 +104,49 @@ class CSPOM extends LazyLogging {
   }
 
   def removeConstraint(c: CSPOMConstraint[_]): Unit = {
-    require(_constraints(c), s"$c not in problem")
-    _constraints -= c
+    require(getConstraints(c.function)(c), s"$c not in problem")
+    _constraints(c.function) -= c
 
     //require((Iterator(c.result) ++ c.arguments).forall(ctrV(_)(c)))
 
-    for (
-      v <- c.fullScope
-    ) {
-
-      ctrV(v) -= c
-      if (ctrV(v).isEmpty) {
+    for (v <- c.fullScope; ref <- ctrV.get(v)) {
+      // Note: ctrV.get(v) may be empty if v appears several times in the scope
+      ref -= c
+      if (ref.isEmpty) {
         ctrV -= v
-        //       freeContainer(v)
+        if (!expressionMap.isReferenced(v)) {
+          expressionMap.removeContainer(v)
+        }
       }
-
-      if (!isReferenced(v)) {
-        expressionMap.removeContainer(v)
-      }
-
     }
   }
 
-  def isReferenced(e: CSPOMExpression[_]): Boolean = ctrV(e).nonEmpty || expressionMap.isReferenced(e)
 
-  def constraints(v: CSPOMExpression[_]): SortedSet[CSPOMConstraint[_]] = {
-    ctrV(v) //++ containers(v).flatMap { case (container, _) => constraints(container) }
+  def isReferenced(e: CSPOMExpression[_]): Boolean = ctrV.get(e).exists(_.nonEmpty) || expressionMap.isReferenced(e)
+
+  def constraints(v: CSPOMExpression[_]): Seq[CSPOMConstraint[_]] = {
+    /**
+      * Should be kept immutable. ConstraintCompiler.replace will concurrently iterate and change
+      * contents.
+      */
+    ctrV.get(v).map(_.toSeq).getOrElse(Seq())
   }
 
   def deepConstraints(v: CSPOMExpression[_]): Iterable[CSPOMConstraint[_]] = {
-    expressionMap.getContainers(v) match {
-      case None => ctrV(v)
-      case Some(c) =>
-        val buf = new ArrayBuffer() ++ ctrV(v)
+    val buf = new ArrayBuffer[CSPOMConstraint[_]]()
 
-        for ((container, _) <- c.iterator.asScala) {
-          deepConstraints(container, buf)
-        }
-        buf
+    def crawl(v: CSPOMExpression[_]): Unit = {
+      ctrV.get(v).foreach(buf ++= _)
+      for (
+        cont <- expressionMap.getContainers(v);
+        (container, _) <- cont
+      ) {
+        crawl(container)
+      }
     }
+
+    crawl(v)
+    buf
   }
 
   def replaceExpression[R: TypeTag, T <: R](which: CSPOMExpression[R], by: CSPOMExpression[T]): Seq[(CSPOMExpression[_], CSPOMExpression[_])] = {
@@ -169,7 +173,7 @@ class CSPOM extends LazyLogging {
   }
 
   def ctrNetwork(c: CSPOMConstraint[_]): Seq[CSPOMConstraint[_]] = {
-    if (_constraints(c)) {
+    if (getConstraints(c.function)(c)) {
       logger.warn(s"$c already belongs to the problem")
       Nil
     } else {
@@ -221,7 +225,7 @@ class CSPOM extends LazyLogging {
     s"$vars\n$cons\n${expressionMap.count} named expressions, ${ctrV.size} first-level expressions and ${constraints.size} constraints"
   }
 
-  def constraints: Iterator[CSPOMConstraint[_]] = _constraints.iterator
+  def constraints: Iterator[CSPOMConstraint[_]] = _constraints.valuesIterator.flatten
 
   def referencedExpressions: Seq[CSPOMExpression[_]] = {
     val involvedInConstraints = for (e <- ctrV.keysIterator; f <- e.flatten) yield f
@@ -235,7 +239,7 @@ class CSPOM extends LazyLogging {
 
   def expression(name: String): Option[CSPOMExpression[_]] = expressionMap.expression(name)
 
-  def variable(name:String): Option[CSPOMVariable[_]] = expressionMap.variable(name)
+  def variable(name: String): Option[CSPOMVariable[_]] = expressionMap.variable(name)
 
   /**
     * Adds a constraint to the problem.
@@ -245,31 +249,25 @@ class CSPOM extends LazyLogging {
     */
   private[cspom] def addConstraint[A](constraint: CSPOMConstraint[A]): CSPOMConstraint[A] = {
 
-    require(!_constraints(constraint),
-      "The constraint " + constraint + " already belongs to the problem");
+    require(!getConstraints(constraint.function)(constraint),
+      "The constraint " + constraint + " already belongs to the problem")
 
-    _constraints += constraint
+    _constraints.getOrElseUpdate(constraint.function, new mutable.LinkedHashSet()) += constraint
 
     for (
       v <- constraint.fullScope
     ) {
-      ctrV(v) += constraint
+      ctrV.getOrElseUpdate(v, new mutable.LinkedHashSet()) += constraint
       expressionMap.registerContainer(v)
     }
 
     constraint
   }
 
-  private def deepConstraints(v: CSPOMExpression[_], c: ArrayBuffer[CSPOMConstraint[_]]): ArrayBuffer[CSPOMConstraint[_]] = {
-    c ++= ctrV(v)
-    for (
-      cont <- expressionMap.getContainers(v);
-      (container, _) <- cont.iterator.asScala
-    ) {
-      deepConstraints(container, c)
-    }
-    c
-  }
+  def getConstraints(function: Symbol): collection.Set[CSPOMConstraint[_]] = _constraints.getOrElse(function, Set())
+
+  def hasConstraint(c: CSPOMConstraint[_]): Boolean = _constraints(c.function)(c)
+
 
   private def resolvePostponed(c: CSPOMConstraint[_]): Seq[CSPOMConstraint[_]] = {
     resolvePostponed(c.flattenedScope)
@@ -371,7 +369,7 @@ object CSPOM extends LazyLogging {
     try {
       new CompressorStreamFactory().createCompressorInputStream(is)
     } catch {
-      case e: CompressorException if (e.getMessage == "No Compressor found for the stream signature.") =>
+      case e: CompressorException if e.getMessage == "No Compressor found for the stream signature." =>
         logger.info(e.getMessage)
         is
     }

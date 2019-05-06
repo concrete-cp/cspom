@@ -8,6 +8,18 @@ class QueueSet(present: util.BitSet) {
 
   def this() = this(new util.BitSet())
 
+  def iterator: Iterator[Int] = new Iterator[Int] {
+    private var i = present.nextSetBit(0)
+
+    def hasNext: Boolean = i >= 0
+
+    def next(): Int = {
+      val t = i
+      i = present.nextSetBit(i + 1)
+      t
+    }
+  }
+
   def this(init: Iterable[Int]) = {
     this(if (init.isEmpty) new util.BitSet() else new util.BitSet(init.max + 1))
     enqueueAll(init)
@@ -28,6 +40,8 @@ class QueueSet(present: util.BitSet) {
   def contains(e: Int): Boolean = present.get(e)
 
   def nonEmpty: Boolean = !present.isEmpty
+
+  def isEmpty: Boolean = present.isEmpty
 
   def enqueueAll(init: Traversable[Int]): Unit = {
     for (i <- init) present.set(i)

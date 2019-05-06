@@ -11,11 +11,13 @@ import cspom.variable.{CSPOMVariable, SimpleExpression}
   */
 class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
+  def functions = Functions('extension)
   //private val cache = new HashMap[(IdEq[Relation[_]], Seq[SimpleExpression[_]]), (Seq[Int], Relation[Int])]
 
   override def matchBool(c: CSPOMConstraint[_], problem: CSPOM): Boolean = {
     //println(c)
-    c.function == 'extension && c.nonReified
+    assert(c.function == 'extension)
+    c.nonReified
   }
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM): Delta = {

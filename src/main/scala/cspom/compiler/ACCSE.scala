@@ -8,50 +8,81 @@ import cspom.variable.{CSPOMExpression, CSPOMVariable, FreeVariable}
 
 import scala.collection.mutable
 
-trait ACCSE[PairExp, Data] extends ProblemCompiler with LazyLogging {
+trait ACCSE[Data] extends ProblemCompiler with LazyLogging {
 
-  type Arg = (CSPOMExpression[Any], Data)
-  type Args = mutable.Map[CSPOMExpression[Any], Data]
+  protected type Arg = (CSPOMExpression[Any], Data)
+  protected type Args = mutable.Map[CSPOMExpression[Any], Data]
 
-  def filter(c: CSPOMConstraint[_]): Boolean
+  def functions: Seq[Symbol]
 
-  def pair(a1: Arg, a2: Arg): PairExp
+  /**
+    * Converts a list of Args to SubExp
+    *
+    * @param args
+    * @return
+    */
+  def canonize(args: List[Arg]): List[Arg]
 
-  def define(pair: PairExp, aux: CSPOMVariable[_]): (Arg, CSPOMConstraint[_])
+  private def subExp(args: List[Arg]) = {
+    // Variables are always given in the same order -- avoids using Sets
+    val sorted = args.sortBy { case (x, _) => x.hashCode }
+    canonize(sorted)
+  }
 
-  def replace(pair: PairExp, arg: Arg, constraint: Args): Boolean
+  /**
+    * Finds an intersection between two subexps
+    * @param se1
+    * @param se2
+    * @return
+    */
+  def intersect(se1: List[Arg], se2: List[Arg], including: List[Arg]): List[Arg]
+
+  def define(pair: List[Arg], aux: CSPOMVariable[_]): (Arg, CSPOMConstraint[_])
+
+  def replace(pair: List[Arg], arg: Arg, constraint: Args): Option[Arg]
 
   def constraintToArgs(c: CSPOMConstraint[_]): IndexedSeq[Arg]
 
   def argsToConstraint(original: CSPOMConstraint[_], args: Args): CSPOMConstraint[_]
 
+  /**
+    * Checks whether pair is still contained in given args
+    *
+    * @param pair
+    * @param args
+    * @return
+    */
+  private def isValid(pair: List[Arg], args: Args): Boolean = {
+    pair.forall { case (x, _) => args.contains(x) }
+  }
 
-  def toString(pair: PairExp, dn: CSPOMExpression[_] => String): String = pair.toString
+  def toString(pair: List[Arg], dn: CSPOMExpression[_] => String): String = pair.toString
 
   def toString(arg: Arg, dn: CSPOMExpression[_] => String): String = arg.toString
 
   def toHashMap[A, B](s: Iterable[(A, B)]): mutable.Map[A, B] = {
     val m = new mutable.HashMap[A, B]()
     m ++= s
-    require(s.size == m.size)
+    assert(s.size == m.size)
     m
   }
+
 
   def apply(cspom: CSPOM): Delta = {
     val newConstraints = new mutable.HashSet[CSPOMConstraint[_]]
 
-    val map = new mutable.HashMap[PairExp, List[Args]]().withDefaultValue(Nil)
+    val map = new mutable.HashMap[List[Arg], List[Args]]().withDefaultValue(Nil)
 
     val constraints = new util.IdentityHashMap[Args, CSPOMConstraint[_]]
     val changed = new util.IdentityHashMap[Args, Unit]()
 
-    for (c <- cspom.constraints if filter(c)) {
+    for (f <- functions; c <- cspom.getConstraints(f)) {
       val args = constraintToArgs(c)
       val mutableArgs = toHashMap(args)
       constraints.put(mutableArgs, c)
 
-      for (i <- args.indices; j <- 0 until i) {
-        val p = pair(args(i), args(j))
+      for (i <- args.indices; firstArg = List(args(i)); j <- 0 until i) {
+        val p = subExp(args(j) :: firstArg)
         map(p) ::= mutableArgs
       }
     }
@@ -61,36 +92,43 @@ trait ACCSE[PairExp, Data] extends ProblemCompiler with LazyLogging {
 
     while (map.nonEmpty) {
 
-      val (pairexp, list) = map.head
+      for (pairexp <- map.toSeq.sortBy(-_._2.size).map(_._1)) {
+        // println(map.size)
+        val list: List[Args] = map.remove(pairexp).get
+          .filter(args => isValid(pairexp, args))
 
-      // println(map.size)
-      map -= pairexp
+        if (list.lengthCompare(1) > 0) {
+          val cs = list.map { a: Args => subExp(a.toList) }.reduce((se1, se2) => intersect(se1, se2, pairexp))
 
-      if (list.size > 1) {
+          // println(pairexp, list, cs)
 
-        val aux = new FreeVariable()
-        val (commonArg, definition) = define(pairexp, aux)
+          //  println(cs)
 
-        newConstraints += definition
+          val aux = new FreeVariable()
+          val (commonArg, definition) = define(cs, aux) //define(pairexp, aux)
 
-        // println(s"New subexpression in ${list.size} constraints: ${aux.toString(cspom.displayName(_))} = ${toString(pairexp, cspom.displayName(_))}")
-        // list.foreach(c => println(c.map(toString(_, cspom.displayName(_)))))
+          newConstraints += definition
 
-        val enqueue = new mutable.HashMap[PairExp, List[Args]]().withDefaultValue(Nil)
+          // println(s"New SE: ${aux.toString(cspom.displayName)} = ${definition.toString(cspom.displayName)} for ${list.length} constraints")
+          // list.foreach(c => println(c.map { case (k, v) => s"${k.toString(cspom.displayName)} -> $v" }))
 
-        for (c <- list) {
-          if (replace(pairexp, commonArg, c)) {
+          // println(s"New subexpression in ${list.size} constraints: ${aux.toString(cspom.displayName(_))} = ${toString(pairexp, cspom.displayName(_))}")
+          // list.foreach(c => println(c.map(toString(_, cspom.displayName(_)))))
+
+          val enqueue = new mutable.HashMap[List[Arg], List[Args]]().withDefaultValue(Nil)
+
+          for (c <- list; newArg <- replace(cs, commonArg, c)) {
             changed.put(c, ())
             //println(s"arity ${c.size}")
             for (a <- c if a._1 != aux) {
-              val p = pair(a, commonArg)
+              val p = subExp(List(a, newArg))
               enqueue(p) ::= c
             }
-
+          }
+          for (entry <- enqueue if entry._2.lengthCompare(1) > 0) {
+            map += entry
           }
         }
-        enqueue.retain((_, v) => v.lengthCompare(1) > 0) // values.removeIf(_.lengthCompare(1) <= 0)
-        map ++= enqueue
       }
     }
 
@@ -105,12 +143,16 @@ trait ACCSE[PairExp, Data] extends ProblemCompiler with LazyLogging {
       added +:= argsToConstraint(constraint, c)
     }
 
-//    removed.foreach(println)
-//
-//    println("Add")
-//    added.foreach(println)
+//    println(s"ACSSE will remove ${removed.size} constraints")
+//    println(s"ACSSE defines ${newConstraints.size} constraints")
+//    println(s"ACSSE will add ${added.size} constraints")
 
-    ConstraintCompiler.replaceCtr(removed.toSeq, added.toSeq ++ newConstraints, cspom)
+    //    removed.foreach(println)
+    //
+    //    println("Add")
+    //    added.foreach(println)
+
+    ConstraintCompiler.replaceCtr(removed, added ++ newConstraints, cspom)
 
   }
 

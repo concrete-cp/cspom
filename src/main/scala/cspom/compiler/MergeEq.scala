@@ -13,8 +13,11 @@ import ConstraintCompiler._
  */
 object MergeEq extends ConstraintCompilerNoData with LazyLogging {
 
+  override def functions = Functions('eq)
+
   override def matchBool(c: CSPOMConstraint[_], p: CSPOM): Boolean = {
-    c.function == 'eq && c.arguments.forall(_.isInstanceOf[SimpleExpression[_]])
+    assert(c.function == 'eq)
+    c.arguments.forall(_.isInstanceOf[SimpleExpression[_]])
   }
 
   def compile(constraint: CSPOMConstraint[_], problem: CSPOM): Delta = {

@@ -1,4 +1,4 @@
-package cspom;
+package cspom
 
 /**
  * Exception used to report an error while parsing an XCSP file.
@@ -11,5 +11,5 @@ final class CSPParseException(
   cause: Throwable = null,
   val lineNumber: Int = -1)
     extends Exception(
-      message + (if (lineNumber < 0) "" else " at line " + lineNumber),
+      message + (if (lineNumber < 0) "" else " at index " + lineNumber),
       cause)

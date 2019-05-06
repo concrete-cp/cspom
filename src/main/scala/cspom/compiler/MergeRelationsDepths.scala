@@ -12,15 +12,17 @@ import scala.collection.mutable.ArrayBuffer
   */
 object MergeRelationsDepths extends ConstraintCompilerNoData with LazyLogging {
 
+  def functions = Functions('extension)
   //private val cache = new HashMap[(IdEq[Relation[_]], Seq[SimpleExpression[_]]), (Seq[Int], Relation[Int])]
 
-  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM) = {
+  override def matchBool(c: CSPOMConstraint[_], problem: CSPOM): Boolean = {
     //println(c)
-    c.function == 'extension && c.arguments.distinct != c.arguments
+    assert(c.function == 'extension)
+    c.arguments.distinct != c.arguments
   }
 
 
-  def compile(c: CSPOMConstraint[_], problem: CSPOM) = {
+  def compile(c: CSPOMConstraint[_], problem: CSPOM): Delta = {
 
 
     var Some(relation: MDDRelation) = c.params.get("relation")

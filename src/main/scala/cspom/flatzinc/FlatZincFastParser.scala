@@ -3,24 +3,43 @@ package flatzinc
 
 import java.io.InputStream
 
-import scala.util.Try
+import cspom.flatzinc.MZWhitespace._
 import cspom.variable.CSPOMExpression
+import fastparse._
 
-
-import fastparse.noApi._
+import scala.annotation.{switch, tailrec}
 import scala.io.Source
-import fastparse.WhitespaceApi
+import scala.util.Try
+
+/**
+  * Whitespace syntax that supports % line-comments for MiniZinc
+  */
+object MZWhitespace {
+  implicit val whitespace: P[_] => P[Unit] = { implicit ctx: ParsingRun[_] =>
+    val input = ctx.input
+
+    @tailrec
+    def rec(current: Int, state: Int): ParsingRun[Unit] = {
+      if (!input.isReachable(current)) ctx.freshSuccessUnit(current)
+      else {
+        val currentChar = input(current)
+        (state: @switch) match {
+          case 0 =>
+            (currentChar: @switch) match {
+              case ' ' | '\t' | '\n' | '\r' => rec(current + 1, state)
+              case '%' => rec(current + 1, state = 1)
+              case _ => ctx.freshSuccessUnit(current)
+            }
+          case 1 => rec(current + 1, state = if (currentChar == '\n') 0 else state)
+        }
+      }
+    }
+
+    rec(current = ctx.index, state = 0)
+  }
+}
 
 object FlatZincFastParser extends CSPOM.Parser {
-
-  //import WhitespaceApi._
-
-  val White = WhitespaceApi.Wrapper {
-    import fastparse.all._
-    NoTrace(CharIn(" \r\n\t").rep)
-  }
-
-  import White._
 
   def fzAnnotations(ann: Seq[FZAnnotation]): Seq[(String, Seq[FZAnnotation])] = {
     if (ann.isEmpty) {
@@ -32,19 +51,19 @@ object FlatZincFastParser extends CSPOM.Parser {
 
   def apply(is: InputStream): Try[CSPOM] = {
     Try {
-      flatzincModel.parse(Source.fromInputStream(is).mkString)
+      parse(Source.fromInputStream(is).mkString, flatzincModel(_))
     }
       .flatMap {
         case Parsed.Success(cspom, _) => scala.util.Success(cspom)
-        case Parsed.Failure(expected, index, extra) =>
-          scala.util.Failure(new CSPParseException(s"expected: $expected", null, index))
+        case f: Parsed.Failure =>
+          scala.util.Failure(new CSPParseException(f.trace().longAggregateMsg, null, f.index))
       }
   }
 
   /*
    * Definition of what's a flatzinc file : predicate(s) + parameter(s) + constraint(s) + solve goal
    */
-  def flatzincModel: Parser[CSPOM] = P(Start ~ pred_decl.rep ~/ (param_decl | var_decl).rep ~/ constraint.rep ~/ solve_goal ~/ End).map {
+  def flatzincModel[_: P]: P[CSPOM] = P(Start ~ pred_decl.rep ~/ (param_decl | var_decl).rep ~/ constraint.rep ~/ solve_goal ~/ End).map {
     case (predicates, paramOrVar, constraints, goal) =>
 
       val params: Map[String, CSPOMExpression[Any]] = paramOrVar.collect {
@@ -101,40 +120,43 @@ object FlatZincFastParser extends CSPOM.Parser {
       }
   }
 
-  val pred_ann_id: Parser[String] = P(CharIn('A' to 'Z', 'a' to 'z') ~~ CharIn('A' to 'Z', 'a' to 'z', '0' to '9', "_").repX).!
+  def pred_ann_id[_: P]: P[String] = P(CharIn("a-zA-Z") ~~ CharIn("_0-9a-zA-Z").repX).!
+
   //
-  val var_par_id: Parser[FZVarParId[Any]] =
-    P("_".repX ~~ CharIn('A' to 'Z', 'a' to 'z') ~~ CharIn('A' to 'Z', 'a' to 'z', '0' to '9', "_").repX).!.map { id =>
+  def var_par_id[_: P]: P[FZVarParId[Any]] =
+    P("_".repX ~~ CharIn("a-zA-Z") ~~ CharIn("_0-9a-zA-Z").repX).!.map { id =>
       FZVarParId[Any](id)
     }
 
-  val bool_const: Parser[FZBoolConst] = P("true").map(_ => FZBoolConst(true)) |
+  def bool_const[_: P]: P[FZBoolConst] = P("true").map(_ => FZBoolConst(true)) |
     P("false").map(_ => FZBoolConst(false))
 
-  val float_const: Parser[FZFloatConst] = P(
-    CharIn("+-").? ~~ CharIn('0' to '9').repX(min = 1) ~~ "." ~~ CharIn('0' to '9').repX(min = 1) ~~ (
-      CharIn("eE") ~~ CharIn("+-").? ~~ CharIn('0' to '9').repX(1)).?).!.map {
-    f => println(f); FZFloatConst(f.toDouble)
+  def float_const[_: P]: P[FZFloatConst] = P(
+    CharIn("+\\-").? ~~ CharIn("0-9").repX(1) ~~ "." ~~ CharIn("0-9").repX(1) ~~ (
+      CharIn("eE") ~~ CharIn("+\\-").? ~~ CharIn("0-9").repX(1)).?).!.map {
+    f => FZFloatConst(f.toDouble)
   }
 
-  val int_const: Parser[FZIntConst] = P(CharIn("+-").? ~~ CharIn('0' to '9').repX(min = 1)).!.map { i => FZIntConst(i.toInt) }
+  def int_const[_: P]: P[FZIntConst] = P(
+    CharIn("+\\-").? ~~ CharIn("0-9").repX(1)
+  ).!.map { i => FZIntConst(i.toInt) }
 
-  val set_const: Parser[FZSetConst] = {
+  def set_const[_: P]: P[FZSetConst] = {
     P(int_const ~ ".." ~/ int_const).map { case (i, j) => FZSetConst(i.value to j.value) } |
-      P("{" ~ int_const.rep(sep = ",") ~ "}").map(i => FZSetConst(i map (_.value)))
+      P("{" ~ int_const.rep(sep = ",") ~ "}").map(i => FZSetConst(i.map(_.value)))
   }
 
-  val pred_decl: Parser[Any] = P("predicate" ~ pred_ann_id ~ "(" ~/ pred_param.rep(sep = ",") ~ ")" ~ ";").map {
+  def pred_decl[_: P]: P[Any] = P("predicate" ~ pred_ann_id ~ "(" ~/ pred_param.rep(sep = ",") ~ ")" ~ ";").map {
     case (a, p) => FZPredicate(a, p)
   }
 
-  val index_set1: Parser[Option[Range]] =
+  def index_set1[_: P]: P[Option[Range]] =
     (P("1..") ~ int_const).map { i => Some(1 to i.value) } |
       P("int").map(_ => None)
 
-  val index_set: Parser[Seq[Option[Range]]] = index_set1.rep(sep = ",")
+  def index_set[_: P]: P[Seq[Option[Range]]] = index_set1.rep(sep = ",")
 
-  val single_var_type: Parser[FZVarType[_]] =
+  def single_var_type[_: P]: P[FZVarType[_]] =
     P("var" ~ "bool").map(_ => FZBoolean) |
       P("var" ~ "float").map(_ => FZFloat) |
       P("var" ~ float_const ~ ".." ~ float_const).map {
@@ -150,20 +172,21 @@ object FlatZincFastParser extends CSPOM.Parser {
       P("var" ~ "set" ~ "of" ~ int_const ~ ".." ~ int_const).map(_ => throw new AssertionError("Unsupported domain type")) |
       P("var" ~ "set" ~ "of" ~ "{" ~ int_const.rep(sep = ",") ~ "}").map(_ => throw new AssertionError("Unsupported domain type"))
 
-  val var_type: Parser[FZVarType[Any]] = {
+  def var_type[_: P]: P[FZVarType[Any]] = {
     single_var_type |
       P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ single_var_type).map {
         case (indices, vartype) => FZArray(indices, vartype)
       }
   }
 
-  val var_pred_param_type: Parser[Any] =
+  def var_pred_param_type[_: P]: P[Any] =
     var_type |
       "var set of int" |
       "array" ~ "[" ~ index_set ~ "] of var set of int"
+
   //
 
-  val par_type: P[FZVarType[_]] =
+  def par_type[_: P]: P[FZVarType[AnyVal]] =
     P("bool").map(_ => FZBoolean) |
       P("float").map(_ => FZFloat) |
       P("int").map(_ => FZInt) |
@@ -179,7 +202,7 @@ object FlatZincFastParser extends CSPOM.Parser {
         FZArray[Int](_, FZIntSet)
       }
 
-  val par_pred_param_type: Parser[Any] =
+  def par_pred_param_type[_: P]: P[Any] =
     par_type |
       float_const ~ ".." ~/ float_const |
       int_const ~ ".." ~/ int_const |
@@ -192,32 +215,34 @@ object FlatZincFastParser extends CSPOM.Parser {
       P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "set" ~ "of" ~ int_const ~ ".." ~/ int_const) |
       P("array" ~ "[" ~ index_set ~ "]" ~ "of" ~ "set" ~ "of" ~ int_const ~ ".." ~/ int_const)
 
-  val pred_param_type: Parser[Any] = par_pred_param_type | var_pred_param_type
+  def pred_param_type[_: P]: P[Any] = par_pred_param_type | var_pred_param_type
 
-  val pred_param: Parser[Any] = pred_param_type ~ ":" ~ pred_ann_id
+  def pred_param[_: P]: P[Any] = pred_param_type ~ ":" ~ pred_ann_id
 
   //
 
-  val StringChars = !"\"\\".contains(_: Char)
-  val escape = P("\\" ~ CharIn("\"/\\bfnrt"))
-  val strChars = P(CharsWhile(StringChars))
+  def StringChars(c: Char): Boolean = !"\"\\".contains(c)
 
-  val stringLiteral: Parser[String] =
+  def escape[_: P]: P[Unit] = P("\\" ~ CharIn("\"/\\bfnrt"))
+
+  def strChars[_: P]: P[Unit] = P(CharsWhile(StringChars))
+
+  def stringLiteral[_: P]: P[String] =
     P("\"" ~/ (strChars | escape).rep.! ~ "\"")
 
-  lazy val array_expr: Parser[FZArrayExpr[Any]] = {
-    P("[" ~ expr.rep(sep = "," ~/ Pass) ~ "]").map { l => FZArrayExpr(l) }
+  def array_expr[_: P]: P[FZArrayExpr[Any]] = {
+    P("[" ~ expr.rep(sep = ",") ~ "]").map { l => FZArrayExpr(l) }
   }
 
-  lazy val array_exprInAnn: Parser[FZArrayExpr[Any]] = {
+  def array_exprInAnn[_: P]: P[FZArrayExpr[Any]] = {
     P("[" ~ exprInAnn.rep(sep = ",") ~ "]").map { l => FZArrayExpr(l) }
   }
 
-  val expr: Parser[FZExpr[Any]] = {
+  def expr[_: P]: P[FZExpr[Any]] = {
     bool_const |
       set_const |
-      int_const |
       float_const |
+      int_const |
       (var_par_id ~ "[" ~/ int_const ~ "]").map {
         case (varParId, index) => varParId.index(index.value)
       } |
@@ -226,23 +251,22 @@ object FlatZincFastParser extends CSPOM.Parser {
   }
 
   //
-  val annotation: Parser[FZAnnotation] = {
+  def annotation[_: P]: P[FZAnnotation] = {
     P(pred_ann_id ~ ("(" ~ exprInAnn.rep(sep = ",") ~ ")").?).map {
       case (id, expressions) => FZAnnotation(id, expressions.toSeq.flatten)
     }
   }
 
-  val annotations: Parser[Seq[FZAnnotation]] = P("::" ~ annotation).rep
+  def annotations[_: P]: P[Seq[FZAnnotation]] = P("::" ~ annotation).rep
 
   //
-  val exprInAnn: Parser[FZExpr[Any]] = P(
-
+  def exprInAnn[_: P]: P[FZExpr[Any]] = P(
     array_exprInAnn |
       annotation |
       expr |
       stringLiteral.map(FZStringLiteral))
 
-  val param_decl: Parser[FZParamDecl[Any]] = P(par_type ~ ":" ~/ var_par_id ~ "=" ~/ expr ~ ";" ~/).map {
+  def param_decl[_: P]: P[FZParamDecl[Any]] = P(par_type ~ ":" ~/ var_par_id ~ "=" ~/ expr ~ ";"./).map {
     case (t, id, expr) =>
       val e: CSPOMExpression[_] = (t, expr) match {
         case (FZArray(Seq(indices), _), a: FZArrayExpr[_]) => a.asConstant(indices.get)
@@ -253,24 +277,25 @@ object FlatZincFastParser extends CSPOM.Parser {
       FZParamDecl(id.ident, e)
   }
 
-  val var_decl: Parser[FZVarDecl[Any]] = {
-    P(var_type ~ ":" ~/ var_par_id ~ annotations ~ ("=" ~/ expr).? ~ ";" ~/).map {
+  def var_decl[_: P]: P[FZVarDecl[Any]] = {
+    P(var_type ~ ":" ~/ var_par_id ~ annotations ~ ("=" ~/ expr).? ~ ";"./).map {
       case (varType, varParId, ann, aff) => FZVarDecl[Any](varParId.ident, aff.map(Right(_)).getOrElse(Left(varType)), ann)
     }
-
   }
+
   //
-  val constraint: Parser[FZConstraint] =
-    P("constraint" ~ pred_ann_id ~ "(" ~ expr.rep(sep = ",") ~ ")" ~ annotations ~ ";" ~/) map {
+  def constraint[_: P]: P[FZConstraint] =
+    P("constraint" ~ pred_ann_id ~ "(" ~ expr.rep(sep = ",") ~ ")" ~ annotations ~ ";"./) map {
       case (predAnnId, expr, annotations) => FZConstraint(predAnnId, expr, annotations)
-      //      
-      //    }
     }
+
   //
-  val solve_goal: Parser[FZSolve] =
-    P("solve" ~ annotations ~ "satisfy" ~ ";").map { ann => FZSolve(Satisfy, ann) } |
-      P("solve" ~ annotations ~ "minimize" ~ expr ~ ";").map { case (ann, expr) => FZSolve(Minimize(expr), ann) } |
-      P("solve" ~ annotations ~ "maximize" ~ expr ~ ";").map { case (ann, expr) => FZSolve(Maximize(expr), ann) }
+  def solve_goal[_: P]: P[FZSolve] =
+    P("solve" ~ annotations).flatMap(ann =>
+      P("satisfy" ~ ";").map { _ => FZSolve(Satisfy, ann) } |
+        P("minimize" ~ expr ~ ";").map(expr => FZSolve(Minimize(expr), ann)) |
+        P("maximize" ~ expr ~ ";").map(expr => FZSolve(Maximize(expr), ann))
+    )
 
   //implicit def FZExpr2Scala[A](a: FZExpr[A]): A = a.value
 

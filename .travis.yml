@@ -1,9 +1,9 @@
 language: scala
 scala: 
-  - 2.12.4
+  - 2.12.7
 
 jdk:
-  - oraclejdk9
+  - openjdk11
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport coverageAggregate
+  - sbt ++$TRAVIS_SCALA_VERSION test

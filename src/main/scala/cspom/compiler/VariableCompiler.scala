@@ -7,13 +7,15 @@ import cspom.{CSPOM, CSPOMConstraint, UNSATException}
 
 abstract class VariableCompiler(val function: Symbol) extends ConstraintCompiler {
 
+  def functions = Functions(function)
+
   // Do not use Maps to avoid hash undeterminism
   type A = (Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean)
 
   def compiler(c: CSPOMConstraint[_]): Seq[(CSPOMExpression[_], CSPOMExpression[_])]
 
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[(Seq[(CSPOMExpression[_], CSPOMExpression[_])], Boolean)] = {
-    if (c.function == function && c.fullScope.exists(v => !v.fullyDefined)) {
+    if (c.fullScope.exists(v => !v.fullyDefined)) {
       val (reductions, entail) = try {
         compilerWEntail(c)
       } catch {

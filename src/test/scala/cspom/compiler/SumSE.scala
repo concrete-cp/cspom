@@ -5,8 +5,9 @@ import cspom.CSPOMConstraint
 import cspom.variable._
 
 
-object SumSE extends ACCSE[IntPair, Int] {
+object SumSE extends ACCSE[Int] {
 
+  def functions: Seq[Symbol] = Seq('sum)
 
   def readCSPOM(constraint: CSPOMConstraint[_]): (IndexedSeq[SimpleExpression[Any]], Seq[Int], Int, String) = {
     require(constraint.arguments.lengthCompare(3) == 0)
@@ -27,12 +28,10 @@ object SumSE extends ACCSE[IntPair, Int] {
     vars zip coefs
   }
 
-  def filter(c: CSPOMConstraint[_]): Boolean = c.function == 'sum
-
-  override def define(pairexp: IntPair, aux: CSPOMVariable[_]): (Arg, CSPOMConstraint[_]) = {
+  override def define(subexp: List[Arg], aux: CSPOMVariable[_]): (Arg, CSPOMConstraint[_]) = {
     val definition = CSPOMConstraint('sum)(
-      Seq(CSPOMConstant(pairexp.k1), CSPOMConstant(pairexp.k2), CSPOMConstant(-1)),
-      Seq(pairexp.v1, pairexp.v2, aux),
+      CSPOMConstant(-1) :: subexp.map { case (_, k) => CSPOMConstant(k) },
+      aux :: subexp.map { case (x, _) => x },
       CSPOMConstant(0))
       .withParam("mode" -> "eq")
 
@@ -41,55 +40,88 @@ object SumSE extends ACCSE[IntPair, Int] {
     (arg, definition)
   }
 
-  override def toString(pairexp: IntPair, dn: CSPOMExpression[_] => String): String =
-    s"${pairexp.k1}·${pairexp.v1.toString(dn)} + ${pairexp.k2}·${pairexp.v2.toString(dn)}"
+  override def toString(pairexp: List[Arg], dn: CSPOMExpression[_] => String): String =
+    pairexp.map(a => toString(a, dn)).mkString(" + ")
 
   override def toString(pairexp: Arg, dn: CSPOMExpression[_] => String): String =
     s"${pairexp._2}·${pairexp._1.toString(dn)}"
 
-  def replace(pairexp: IntPair, arg: Arg, constraint: Args): Boolean = {
+  def replace(subexp: List[Arg], arg: Arg, constraint: Args): Option[Arg] = {
 
-    // Obtain actual coefficients, use options because some variables might already have been removed
-    val r = for {
-      k1 <- constraint.get(pairexp.v1)
-      k2 <- constraint.get(pairexp.v2)
-      k = k1 / pairexp.k1
-      // Check also correction for second coef. May be wrong if there are several occurrences of the same variable in the scope!
-      if k2 == pairexp.k2 * k
-    } yield {
-      // Integer division should be correct
-      assert(pairexp.k1 * k == k1)
+    // Find the factor btw constraint and subexp
 
-      // remove subexpression
-      constraint -= pairexp.v1
-      constraint -= pairexp.v2
+    // First obtain actual coefs
+    val actualCoefs: Map[CSPOMExpression[_], Int] = subexp.flatMap { case (x, _) => constraint.get(x).map(x -> _) }.toMap
 
-      // Replace pairexp with aux variable
-      constraint += arg.copy(_2 = k)
-      //
+    // Checks whether all variables from subexp are present. May fail if some variable already have been removed
+    // by another subexpression
+    if (subexp.lengthCompare(actualCoefs.size) == 0) {
+
+      val (firstX, firstK) = subexp.head
+
+      // Actually compute factor
+      val globalK = actualCoefs(firstX) / firstK
+      // Check also correction for other coefs. May be wrong if there are several occurrences of the same variable in the scope!
+      if (subexp.tail.forall { case (x, k) => k * globalK == actualCoefs(x) }) {
+        constraint --= subexp.map { case (x, _) => x }
+        val newArg = arg.copy(_2 = globalK)
+        constraint += newArg
+        Some(newArg)
+      } else {
+        None
+      }
+    } else {
+      None
     }
-    r.isDefined
   }
 
-  def pair(a1: Arg, a2: Arg): IntPair = {
 
-    val (v1, k1) = a1
-    val (v2, k2) = a2
+  def canonize(args: List[Arg]): List[Arg] = {
+    val gcd = java.lang.Math.toIntExact(cspom.util.Math.gcd(
+      args.map { case (_, constant) => math.abs(constant).toLong }
+    ))
 
-    val gcd = IntPair.gcd(math.abs(k1), math.abs(k2))
+    // Variables are always given in the same order -- avoids using Sets
+    assert(args == args.sortBy { case (x, _) => x.hashCode })
 
-    if (k1 < k2) {
-      CoefPair(k1 / gcd, v1, k2 / gcd, v2)
-    } else if (k1 > k2) {
-      CoefPair(k2 / gcd, v2, k1 / gcd, v1)
+    // Canonize so that first non-zero arg is positive
+    val a = if (args.find(_._2 != 0).exists(_._2 < 0)) {
+      args.map { case (x, k) => (x, -k / gcd) }
     } else {
-      assert(gcd == math.abs(k1), s"Coefficients $k1 and $k2 are equal, should also be equal to gcd $gcd")
-      if (v1.hashCode < v2.hashCode) {
-        EqualPair(v1, v2)
-      } else {
-        EqualPair(v2, v1)
-      }
+      args.map { case (x, k) => (x, k / gcd) }
     }
+
+    a
+  }
+
+  def intersect(subExp1: List[Arg], subExp2: List[Arg], including: List[Arg]): List[Arg] = {
+
+
+    val subExp2Map = subExp2.toMap
+    assert {
+      val subExp1Map = subExp1.toMap
+      including.forall { case (x, _) => subExp1Map.contains(x) }
+    }
+    assert(including.forall { case (x, _) => subExp2Map.contains(x) })
+
+    val (firstX, firstK) = including.head
+    val k1 = subExp1.collectFirst { case (x, k) if x == firstX => k }.get / firstK
+    val k2 = subExp2Map(firstX) / firstK
+
+
+    val intersection = for {
+      // First compute intersection w.r.t variables
+      (x1, s1) <- subExp1
+      s2 <- subExp2Map.get(x1)
+
+      // Select variables with same factor
+      coef = s1 * k2
+      if coef == s2 * k1
+    } yield (x1, coef)
+
+    // Canonize
+    canonize(intersection)
+
   }
 
   override def argsToConstraint(original: CSPOMConstraint[_], args: Args): CSPOMConstraint[_] = {
@@ -97,51 +129,5 @@ object SumSE extends ACCSE[IntPair, Int] {
     val (vars, coefs) = args.unzip
     CSPOMConstraint(original.result)('sum)(seq2CSPOMSeq(coefs.map(CSPOMConstant(_))), seq2CSPOMSeq(vars), CSPOMConstant(constant)) withParam ("mode" -> mode)
   }
+
 }
-
-object IntPair {
-  def even(a: Int): Boolean = (a & 0x1) == 0
-
-  def gcd(ia: Int, ib: Int): Int = {
-    var d = 0
-    var a = ia
-    var b = ib
-    while (even(a) && even(b)) {
-      a /= 2
-      b /= 2
-      d += 1
-    }
-    while (a != b) {
-      if (even(a)) {
-        a /= 2
-      } else if (even(b)) {
-        b /= 2
-      } else if (a > b) {
-        a = (a - b) / 2
-      } else {
-        b = (b - a) / 2
-      }
-    }
-
-    a * (0x1 << d)
-  }
-}
-
-sealed trait IntPair {
-  def k1: Int
-
-  def k2: Int
-
-  def v1: CSPOMExpression[_]
-
-  def v2: CSPOMExpression[_]
-}
-
-
-case class EqualPair(v1: CSPOMExpression[_], v2: CSPOMExpression[_]) extends IntPair {
-  def k1 = 1
-
-  def k2 = 1
-}
-
-case class CoefPair(k1: Int, v1: CSPOMExpression[_], k2: Int, v2: CSPOMExpression[_]) extends IntPair

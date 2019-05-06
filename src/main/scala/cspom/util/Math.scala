@@ -19,7 +19,7 @@ object Math {
     * {@code RoundingMode}.
     *
     * @throws ArithmeticException if { @code q == 0}, or if { @code mode == UNNECESSARY} and { @code a}
-    *                                        is not an integer multiple of { @code b}
+    *                             is not an integer multiple of { @code b}
     */
   def divide(p: Int, q: Int, mode: RoundingMode): Int = {
     import RoundingMode._
@@ -81,4 +81,106 @@ object Math {
   def isSqrt(n: BigInt, r: BigInt): Boolean = {
     n >= r * r && n < (r + 1) * (r + 1)
   }
+
+  def even(a: Int): Boolean = (a & 0x1) == 0
+
+  def absExact(a: Long): Long = {
+    if (a == Long.MinValue) throw new ArithmeticException(s"abs(${Long.MinValue}) overflow")
+    math.abs(a)
+  }
+
+  def gcd(ia: Long, ib: Long): Long = {
+    import java.lang.Long.numberOfTrailingZeros
+
+    // corner cases
+    if (ia == 0) return ib
+    if (ib == 0) return ia
+
+    var a = absExact(ia)
+    var b = absExact(ib)
+
+    // number of tailing zeroes = power of 2 present
+    val a0 = numberOfTrailingZeros(a)
+    val b0 = numberOfTrailingZeros(b)
+    // extract the the number of trailing zeroes common to them
+    val commonPower = math.min(a0, b0)
+
+    // make them odd
+    a >>>= a0
+    b >>>= b0
+    while (a != b) {
+      if (a > b) {
+        a -= b
+        a >>>= numberOfTrailingZeros(a)
+      }
+      else {
+        b -= a
+        b >>>= numberOfTrailingZeros(b)
+      }
+    }
+    a << commonPower // multiply back the common power of 2
+
+  }
+
+  def gcd(s: Seq[Long]): Long = s.reduce(gcd)
+
+  def lcm(s: Seq[Long]): Long = s.reduce(lcm)
+
+  def lcm(ia: Long, ib: Long): Long = {
+    val gcd = this.gcd(ia, ib)
+    java.lang.Math.multiplyExact(ia / gcd, ib)
+  }
+
+  object Rational {
+    val zero = new Rational(0, 1)
+
+    def apply(num: Long, den: Long = 1): Rational = {
+      if (num == 0) {
+        zero
+      } else {
+        val gcd = cspom.util.Math.gcd(num, den)
+        if (den < 0) {
+          new Rational(-num / gcd, -den / gcd)
+        } else {
+          new Rational(num / gcd, den / gcd)
+        }
+      }
+    }
+  }
+
+  case class Rational(numerator: Long, denominator: Long) extends Ordered[Rational] {
+
+    assert(denominator > 0)
+
+    import java.lang.Math.multiplyExact
+    import java.lang.Math.addExact
+
+    def *(r: Rational) = Rational(multiplyExact(numerator, r.numerator), multiplyExact(denominator, r.denominator))
+
+    def inverse = Rational(denominator, numerator)
+
+    def +(r: Rational): Rational = {
+      val num = addExact(multiplyExact(numerator, r.denominator), multiplyExact(r.numerator, denominator))
+      val dem = multiplyExact(denominator, r.denominator)
+      Rational(num, dem)
+    }
+
+    def -(r: Rational): Rational = this + -r
+
+    def unary_-(): Rational = new Rational(-numerator, denominator)
+
+    def /(r: Rational): Rational = this * r.inverse
+
+    def toDouble: Double = numerator.toDouble / denominator
+
+    def abs: Rational = new Rational(absExact(numerator), denominator)
+
+    override def toString: String = if (denominator == 1) numerator.toString else s"$numerator/$denominator"
+
+    override def compare(that: Rational): Int = {
+      multiplyExact(numerator, that.denominator).compare(multiplyExact(that.numerator, denominator))
+    }
+  }
+
+
 }

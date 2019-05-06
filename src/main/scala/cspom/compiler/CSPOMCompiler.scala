@@ -1,13 +1,23 @@
 package cspom.compiler
 
-;
-
 import com.typesafe.scalalogging.LazyLogging
 import cspom.{CSPOM, CSPOMConstraint, Statistic, StatisticsManager}
 import cspom.util.VecMap
 import org.scalameter.Quantity
 
 import scala.util.Try
+
+sealed trait CompiledFunctions {
+  def mtch(c: CSPOMConstraint[_]): Boolean
+}
+
+case object AnyFunction extends CompiledFunctions {
+  def mtch(c: CSPOMConstraint[_]) = true
+}
+
+case class Functions(f: Symbol*) extends CompiledFunctions {
+  def mtch(c: CSPOMConstraint[_]): Boolean = f.contains(c.function)
+}
 
 /**
   * This class implements some known useful reformulation rules.
@@ -18,8 +28,7 @@ import scala.util.Try
 final class CSPOMCompiler(
                            private val problem: CSPOM,
                            private val constraintCompilers: IndexedSeq[ConstraintCompiler],
-                           private val problemCompilers: Seq[ProblemCompiler]) extends LazyLogging {
-
+                           private val problemCompilers: IndexedSeq[ProblemCompiler]) extends LazyLogging {
 
   private def compile(): CSPOM = {
 
@@ -28,36 +37,84 @@ final class CSPOMCompiler(
 
     val queue = new QueueSet(constraints.keys)
 
-    def updateQueue(delta: Delta): Unit = {
-      constraints ++= delta.added.view.map(c => c.id -> c)
-      constraints --= delta.removed.map(c => c.id)
-      queue.enqueueAll(delta.added.view.map(_.id))
+
+    val specCompilers: Map[Symbol, Seq[ConstraintCompiler]] = constraintCompilers
+      .flatMap(cc => cc.functions match {
+        case Functions(fs@_*) => fs.map(f => f -> cc)
+        case AnyFunction => Seq()
+      })
+      .groupBy(_._1)
+      .mapValues(_.map(_._2))
+      .withDefaultValue(Seq())
+
+    val anyCompilers = constraintCompilers.filter { cc =>
+      cc.functions match {
+        case AnyFunction => true
+        case _ => false
+      }
     }
 
+    // val toCompile = new mutable.HashMap[Int, mutable.Set[ConstraintCompiler]]()
+
+    val problemCompilerQueue = new QueueSet()
+
+    /**
+      * Updates the constraint queue
+      * @param delta
+      * @return True iff delta was not empty
+      */
+    def updateQueue(delta: Delta): Boolean = {
+      constraints ++= delta.added.view.map(c => c.id -> c)
+      constraints --= delta.removed.map(c => c.id)
+
+      for (c <- delta.added) {
+        queue.enqueue(c.id)
+      }
+
+      delta.nonEmpty
+    }
+
+    var changed = true
     while (queue.nonEmpty) {
       while (queue.nonEmpty) {
         val next = queue.dequeue()
-
         for {
-          compiler <- constraintCompilers
           constraint <- constraints.get(next)
+          compiler <- specCompilers(constraint.function).iterator ++ anyCompilers.iterator
+          //check is to detect when the constraint is removed by some compiler
+          if constraints.contains(next)
         } {
-          updateQueue(compile(compiler, constraint))
+          val delta = compile(compiler, constraint)
+          changed |= updateQueue(delta)
         }
       }
 
-      for (c <- problemCompilers) {
-        updateQueue(c(problem))
+      if (changed) {
+        problemCompilerQueue.enqueueAll(problemCompilers.indices)
+        changed = false
       }
+      for (pc <- problemCompilerQueue.iterator) {
+        problemCompilerQueue.remove(pc)
+        val c = problemCompilers(pc)
+        logger.info(s"$c")
+        val delta = c(problem)
+        if (updateQueue(delta)) {
+          for (i <- problemCompilers.indices if i != pc) {
+            problemCompilerQueue.enqueue(i)
+          }
+        }
+
+      }
+
+
     }
 
     problem
   }
 
 
-
   private def compile(compiler: ConstraintCompiler, constraint: CSPOMConstraint[_]): Delta = {
-    require(problem.constraintSet(constraint), {
+    assert(problem.hasConstraint(constraint), {
       s"${constraint.toString(problem.displayName)} not in $problem"
     })
     CSPOMCompiler.matches += 1
@@ -89,7 +146,8 @@ object CSPOMCompiler {
       .toIndexedSeq,
       compilers.collect {
         case c: ProblemCompiler => c
-      })
+      }
+        .toIndexedSeq)
 
     val (r, t) = StatisticsManager.measure(pbc.compile())
 

@@ -9,6 +9,8 @@ object MergeSame extends ConstraintCompiler {
 
   type A = Seq[CSPOMConstraint[_]]
 
+  def functions: CompiledFunctions = AnyFunction
+
   override def mtch(c: CSPOMConstraint[_], problem: CSPOM): Option[A] = {
     val s = for {
       arg <- c.arguments

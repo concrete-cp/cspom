@@ -1,8 +1,8 @@
 package cspom.util
-import scala.collection.mutable.AbstractMap
+import scala.collection.mutable
 
 class VecMap[T](buckets: Int = 16)
-    extends AbstractMap[Int, T] with collection.mutable.Map[Int, T] with collection.mutable.MapLike[Int, T, VecMap[T]] {
+    extends mutable.AbstractMap[Int, T] with collection.mutable.Map[Int, T] with collection.mutable.MapLike[Int, T, VecMap[T]] {
   var map: Array[Option[T]] = Array.fill(buckets)(None)
 
   def get(key: Int): Option[T] =

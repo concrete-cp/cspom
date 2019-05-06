@@ -1,0 +1,9 @@
+predicate cumulative(array [int] of var int: s,array [int] of var int: d,array [int] of var int: r,var int: b);
+array [1..3] of int: X_INTRODUCED_0_ = [1,1,1];
+array [1..3] of int: X_INTRODUCED_1_ = [1,1,7];
+var 0..0: x;
+var 8..8: y;
+var 0..8: z:: output_var;
+var 0..1: l:: output_var;
+constraint cumulative([x,y,z],X_INTRODUCED_1_,X_INTRODUCED_0_,l);
+solve  satisfy;

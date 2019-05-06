@@ -34,7 +34,8 @@ object ConstraintCompiler extends LazyLogging {
 
       var delta = Delta.empty
       for ((w, b) <- in.replaceExpression(wh, by)) {
-        logger.info(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
+        logger.debug(s"replaced ${w.toString(in.displayName)} with ${b.toString(in.displayName)}")
+
         for (c <- in.constraints(w)) {
 
           val c2 = c.replacedVar(w, b)
@@ -79,7 +80,7 @@ object ConstraintCompiler extends LazyLogging {
   }
 
   def removeCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
-    logger.info(c.map(_.toString(in.displayName)).mkString("Removing ", ", ", ""))
+    logger.debug(c.map(_.toString(in.displayName)).mkString("Removing ", ", ", ""))
     c.foreach(in.removeConstraint)
     Delta.empty.removed(c)
   }
@@ -93,7 +94,7 @@ object ConstraintCompiler extends LazyLogging {
   def addCtr(c: CSPOMConstraint[_], in: CSPOM): Delta = addCtr(Seq(c), in)
   def addCtr(c: Seq[CSPOMConstraint[_]], in: CSPOM): Delta = {
     val posted = c.flatMap(in.ctrNetwork)
-    logger.info(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
+    logger.debug(posted.map(_.toString(in.displayName)).mkString("Adding ", ", ", ""))
     Delta.empty.added(posted)
   }
 
@@ -134,11 +135,13 @@ trait Compiler {
 trait ConstraintCompiler extends Compiler with LazyLogging {
   type A
 
+  def functions: CompiledFunctions
+
   def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = matcher.lift((c, p)) orElse matchConstraint(c)
 
   def matcher: PartialFunction[(CSPOMConstraint[_], CSPOM), A] = PartialFunction.empty
 
-  def matchConstraint(c: CSPOMConstraint[_]) = constraintMatcher.lift(c)
+  def matchConstraint(c: CSPOMConstraint[_]): Option[A] = constraintMatcher.lift(c)
 
   def constraintMatcher: PartialFunction[CSPOMConstraint[_], A] = PartialFunction.empty
 
@@ -201,10 +204,8 @@ object Delta {
 /**
  * Facilities to write easy compilers easily
  */
-abstract class GlobalCompiler(
-  override val constraintMatcher: PartialFunction[CSPOMConstraint[_], CSPOMConstraint[_]])
-    extends ConstraintCompiler {
-  type A = CSPOMConstraint[_]
+trait GlobalCompiler extends ConstraintCompiler {
+  type A = Seq[CSPOMConstraint[_]]
 
   def compile(c: CSPOMConstraint[_], problem: CSPOM, data: A): Delta = {
     ConstraintCompiler.replaceCtr(c, data, problem)
