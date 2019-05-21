@@ -1,8 +1,8 @@
 package cspom.compiler
 
 import com.typesafe.scalalogging.LazyLogging
-import cspom.{CSPOM, CSPOMConstraint, Statistic, StatisticsManager}
 import cspom.util.VecMap
+import cspom.{CSPOM, CSPOMConstraint, Statistic, StatisticsManager}
 import org.scalameter.Quantity
 
 import scala.util.Try
@@ -35,80 +35,83 @@ final class CSPOMCompiler(
     val constraints = new VecMap[CSPOMConstraint[_]]() ++=
       problem.constraints.map(c => c.id -> c)
 
-    val queue = new QueueSet(constraints.keys)
-
-
-    val specCompilers: Map[Symbol, Seq[ConstraintCompiler]] = constraintCompilers
-      .flatMap(cc => cc.functions match {
-        case Functions(fs@_*) => fs.map(f => f -> cc)
-        case AnyFunction => Seq()
-      })
+    val specCompilers: Map[Symbol, Seq[Int]] = constraintCompilers.zipWithIndex
+      .flatMap { case (cc, i) =>
+        cc.functions match {
+          case Functions(fs@_*) => fs.map(f => f -> i)
+          case AnyFunction => Seq()
+        }
+      }
       .groupBy(_._1)
       .mapValues(_.map(_._2))
       .withDefaultValue(Seq())
 
-    val anyCompilers = constraintCompilers.filter { cc =>
-      cc.functions match {
-        case AnyFunction => true
-        case _ => false
+    val anyCompilers = constraintCompilers
+      .zipWithIndex
+      .collect {
+        case (cc, i) if cc.functions == AnyFunction => i
       }
-    }
 
     // val toCompile = new mutable.HashMap[Int, mutable.Set[ConstraintCompiler]]()
 
-    val problemCompilerQueue = new QueueSet()
+    val queues = constraintCompilers.map { cc =>
+      new QueueSet(cc.functions match {
+        case Functions(fs@_*) => fs.flatMap(problem.getConstraints).map(_.id)
+        case AnyFunction => problem.constraints.map(_.id).toIterable
+      })
+    }
+
+    val compilerQueue = new QueueSet(constraintCompilers.indices)
+    var pcQueue = new QueueSet(problemCompilers.indices)
 
     /**
       * Updates the constraint queue
+      *
       * @param delta
       * @return True iff delta was not empty
       */
-    def updateQueue(delta: Delta): Boolean = {
+    def updateQueue(delta: Delta): Seq[Int] = {
       constraints ++= delta.added.view.map(c => c.id -> c)
       constraints --= delta.removed.map(c => c.id)
 
-      for (c <- delta.added) {
-        queue.enqueue(c.id)
+      for (c <- delta.added; cc <- specCompilers(c.function) ++ anyCompilers) yield {
+        queues(cc).enqueue(c.id)
+        cc
       }
-
-      delta.nonEmpty
     }
 
-    var changed = true
-    while (queue.nonEmpty) {
-      while (queue.nonEmpty) {
-        val next = queue.dequeue()
-        for {
-          constraint <- constraints.get(next)
-          compiler <- specCompilers(constraint.function).iterator ++ anyCompilers.iterator
-          //check is to detect when the constraint is removed by some compiler
-          if constraints.contains(next)
-        } {
-          val delta = compile(compiler, constraint)
-          changed |= updateQueue(delta)
-        }
-      }
-
-      if (changed) {
-        problemCompilerQueue.enqueueAll(problemCompilers.indices)
-        changed = false
-      }
-      for (pc <- problemCompilerQueue.iterator) {
-        problemCompilerQueue.remove(pc)
-        val c = problemCompilers(pc)
-        logger.info(s"$c")
-        val delta = c(problem)
-        if (updateQueue(delta)) {
-          for (i <- problemCompilers.indices if i != pc) {
-            problemCompilerQueue.enqueue(i)
+    while (compilerQueue.nonEmpty || pcQueue.nonEmpty) {
+      var change = false
+      while (compilerQueue.nonEmpty) {
+        val i = compilerQueue.dequeue()
+        val queue = queues(i)
+        val compiler = constraintCompilers(i)
+        while (queue.nonEmpty) {
+          val next = queue.dequeue()
+          for {
+            constraint <- constraints.get(next)
+          } {
+            val delta = compile(compiler, constraint)
+            compilerQueue.enqueueAll(updateQueue(delta))
+            change |= delta.nonEmpty
           }
         }
-
       }
 
+      if (change) {
+          pcQueue.enqueueAll(problemCompilers.indices)
+      }
 
+      while (pcQueue.nonEmpty) {
+        val i = pcQueue.dequeue()
+        val compiler = problemCompilers(i)
+        val delta = compiler(problem)
+        compilerQueue.enqueueAll(updateQueue(delta))
+        if (delta.nonEmpty) {
+          pcQueue.enqueueAll(problemCompilers.indices.filter(_ != i))
+        }
+      }
     }
-
     problem
   }
 
@@ -149,7 +152,7 @@ object CSPOMCompiler {
       }
         .toIndexedSeq)
 
-    val (r, t) = StatisticsManager.measure(pbc.compile())
+    val (r, t: Quantity[Double]) = StatisticsManager.measure(pbc.compile())
 
     compileTime = t
 

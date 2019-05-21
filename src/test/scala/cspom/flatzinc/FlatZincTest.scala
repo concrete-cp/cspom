@@ -1,12 +1,9 @@
 package cspom.flatzinc
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import cspom.variable.CSPOMConstant
-import cspom.compiler.StandardCompilers
-import cspom.compiler.CSPOMCompiler
 import cspom.CSPOM
-import fastparse.Parsed
+import cspom.compiler.{CSPOMCompiler, StandardCompilers}
+import cspom.variable.CSPOMConstant
+import org.scalatest.{FlatSpec, Matchers}
 
 class FlatZincTest extends FlatSpec with Matchers {
 
@@ -42,12 +39,13 @@ class FlatZincTest extends FlatSpec with Matchers {
   }
 
   it should "correctly parse array" in {
-    fastparse.parse("[500.0,700.0,400.0,300.0]", FlatZincFastParser.array_expr(_))    match {
-      case p: Parsed.Failure=>
-        println(p.trace().longAggregateMsg)
-      case Parsed.Success(value, index) =>
-        println(value, index)
-    }
+    fastparse.parse("[500.0,700.0,400.0,300.0]", FlatZincFastParser.array_expr(_)) should be a 'success
+    //    match {
+//      case p: Parsed.Failure=>
+//        println(p.trace().longAggregateMsg)
+//      case Parsed.Success(value, index) =>
+//        println(value, index)
+//    }
 
   }
 

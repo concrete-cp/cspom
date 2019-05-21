@@ -82,7 +82,7 @@ object SumSE extends ACCSE[Int] {
     ))
 
     // Variables are always given in the same order -- avoids using Sets
-    assert(args == args.sortBy { case (x, _) => x.hashCode })
+    assert(args == args.sortBy { case (x, _) => x.hashCode }, s"$args are not sorted in hashcode order: ${args.map(_._1.hashCode())}")
 
     // Canonize so that first non-zero arg is positive
     val a = if (args.find(_._2 != 0).exists(_._2 < 0)) {

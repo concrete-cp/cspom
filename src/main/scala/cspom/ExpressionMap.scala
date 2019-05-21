@@ -1,15 +1,13 @@
 package cspom
 
-import java.util.IdentityHashMap
-
 import com.typesafe.scalalogging.LazyLogging
 import cspom.variable.{CSPOMConstant, CSPOMExpression, CSPOMSeq, CSPOMVariable}
 
-import scala.collection.{SortedSet, mutable}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.util.parsing.input.CharSequenceReader
+import scala.collection.{SortedSet, mutable}
 import scala.reflect.runtime.universe.TypeTag
+import scala.util.parsing.input.CharSequenceReader
 
 class ExpressionMap extends LazyLogging {
   /**
@@ -17,7 +15,7 @@ class ExpressionMap extends LazyLogging {
     */
   private val namedExpressions = mutable.HashMap[String, CSPOMExpression[_]]()
   private val expressionNames = mutable.HashMap[CSPOMExpression[_], SortedSet[String]]().withDefaultValue(SortedSet.empty)
-  private[cspom] val containers = new IdentityHashMap[CSPOMExpression[_], mutable.LinkedHashSet[(CSPOMSeq[_], Int)]]()
+  private[cspom] val containers = new java.util.IdentityHashMap[CSPOMExpression[_], mutable.LinkedHashSet[(CSPOMSeq[_], Int)]]()
 
 
   private val generatedNames = collection.mutable.Map[CSPOMExpression[_], String]()
@@ -43,7 +41,8 @@ class ExpressionMap extends LazyLogging {
 
   }
 
-  def getContainers(e: CSPOMExpression[_]): Option[mutable.LinkedHashSet[(CSPOMSeq[_], Int)]] = Option(containers.get(e))
+  def getContainers(e: CSPOMExpression[_]): Iterable[(CSPOMSeq[_], Int)] =
+    Option(containers.get(e)).getOrElse(Nil)
 
   def registerContainer(e: CSPOMExpression[_]): Unit = {
 
@@ -86,36 +85,12 @@ class ExpressionMap extends LazyLogging {
     }
   }
 
-
-  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = s match {
-    case Seq() => e
-    case head +: tail =>
-      e
-        .collect {
-          case v: CSPOMSeq[_] => getInSeq(Some(v(head)), tail)
-        }
-        .flatten
-  }
-
-  private def cloneContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[Any], Seq[Int])]] =
-    getContainers(e).map { l =>
-      val m = new mutable.LinkedHashMap[CSPOMSeq[Any], ArrayBuffer[Int]]()
-      for (elem <- l) {
-        val key = elem._1
-        val bldr = m.getOrElseUpdate(key, new ArrayBuffer[Int]())
-        bldr += elem._2
-      }
-
-      m.toSeq
-    }
-
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): Unit = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
     namedExpressions += n -> e
     expressionNames(e) += n
     registerContainer(e)
   }
-
 
   def removeContainer(e: CSPOMExpression[_]): Unit = {
     for {
@@ -131,10 +106,8 @@ class ExpressionMap extends LazyLogging {
     }
   }
 
-
   def isReferenced(e: CSPOMExpression[_]): Boolean =
     expressionNames(e).nonEmpty || Option(containers.get(e)).exists(s => s.nonEmpty)
-
 
   def expressionsWithNames: Iterator[(String, CSPOMExpression[_])] = {
     namedExpressions.iterator
@@ -165,10 +138,10 @@ class ExpressionMap extends LazyLogging {
     logger.debug(s"Replacing $which with $by: contained in ${getContainers(which)}")
 
 
-    for {
-      get <- cloneContainers(which)
-      (container, indices) <- get // cloning is required to obtain a copy and prevent ConcurrentModificationException
-    } {
+    for (
+      // cloning is required to obtain a copy and prevent ConcurrentModificationException
+      (container, indices) <- cloneContainers(which)
+    ) {
       val nc = indices.foldLeft(container)((acc, index) => acc.replaceIndex(index, by))
       replaced ++:= replaceExpression(container, nc)
 
@@ -179,5 +152,26 @@ class ExpressionMap extends LazyLogging {
 
 
     (which, by) :: replaced
+  }
+
+  private def getInSeq(e: Option[CSPOMExpression[_]], s: Seq[Int]): Option[CSPOMExpression[_]] = s match {
+    case Seq() => e
+    case head +: tail =>
+      e
+        .collect {
+          case v: CSPOMSeq[_] => getInSeq(Some(v(head)), tail)
+        }
+        .flatten
+  }
+
+  private def cloneContainers(e: CSPOMExpression[_]): Iterable[(CSPOMSeq[Any], Seq[Int])] = {
+    val m = new mutable.LinkedHashMap[CSPOMSeq[Any], ArrayBuffer[Int]]()
+    for (elem <- getContainers(e)) {
+      val key = elem._1
+      val bldr = m.getOrElseUpdate(key, new ArrayBuffer[Int]())
+      bldr += elem._2
+    }
+
+    m.toSeq
   }
 }

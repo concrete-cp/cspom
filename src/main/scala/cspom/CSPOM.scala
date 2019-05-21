@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import cspom.dimacs.CNFParser
 import cspom.extension.{MDDRelation, Relation}
 import cspom.flatzinc.FlatZincFastParser
-import cspom.util.LinkedIdentityHashMap
 import cspom.variable._
 import cspom.xcsp.{XCSP3Parser, XCSPParser}
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
@@ -51,7 +50,7 @@ class CSPOM extends LazyLogging {
 
   val expressionMap = new ExpressionMap
   // private val ConstraintOrdering = Ordering.by { c: CSPOMConstraint[_] => c.id }
-  private val ctrV = new LinkedIdentityHashMap[CSPOMExpression[_], mutable.LinkedHashSet[CSPOMConstraint[_]]]()
+  private val ctrV = new mutable.LinkedHashMap[CSPOMExpression[_], mutable.LinkedHashSet[CSPOMConstraint[_]]]()
 
   //      .withDefaultValue(SortedSet.empty(ConstraintOrdering))
   //  private def getContainers(e: CSPOMExpression[_]): Option[Seq[(CSPOMSeq[_], Int)]] =
@@ -121,6 +120,7 @@ class CSPOM extends LazyLogging {
     }
   }
 
+  def getConstraints(function: Symbol): collection.Set[CSPOMConstraint[_]] = _constraints.getOrElse(function, Set())
 
   def isReferenced(e: CSPOMExpression[_]): Boolean = ctrV.get(e).exists(_.nonEmpty) || expressionMap.isReferenced(e)
 
@@ -129,7 +129,7 @@ class CSPOM extends LazyLogging {
       * Should be kept immutable. ConstraintCompiler.replace will concurrently iterate and change
       * contents.
       */
-    ctrV.get(v).map(_.toSeq).getOrElse(Seq())
+    ctrV.get(v).toSeq.flatten
   }
 
   def deepConstraints(v: CSPOMExpression[_]): Iterable[CSPOMConstraint[_]] = {
@@ -138,8 +138,7 @@ class CSPOM extends LazyLogging {
     def crawl(v: CSPOMExpression[_]): Unit = {
       ctrV.get(v).foreach(buf ++= _)
       for (
-        cont <- expressionMap.getContainers(v);
-        (container, _) <- cont
+        (container, _) <- expressionMap.getContainers(v)
       ) {
         crawl(container)
       }
@@ -165,7 +164,6 @@ class CSPOM extends LazyLogging {
     replacements
 
   }
-
 
   def ctr[A](c: CSPOMConstraint[A]): CSPOMConstraint[A] = {
     ctrNetwork(c)
@@ -196,9 +194,6 @@ class CSPOM extends LazyLogging {
     define(IntVariable.free())(f)
   }
 
-  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
-    define(new FreeVariable())(f)
-
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f
     postpone(g(r))
@@ -209,6 +204,9 @@ class CSPOM extends LazyLogging {
     postponed ::= c
     c
   }
+
+  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
+    define(new FreeVariable())(f)
 
   def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
     define(new BoolVariable())(f)
@@ -241,6 +239,8 @@ class CSPOM extends LazyLogging {
 
   def variable(name: String): Option[CSPOMVariable[_]] = expressionMap.variable(name)
 
+  def hasConstraint(c: CSPOMConstraint[_]): Boolean = _constraints(c.function)(c)
+
   /**
     * Adds a constraint to the problem.
     *
@@ -264,11 +264,6 @@ class CSPOM extends LazyLogging {
     constraint
   }
 
-  def getConstraints(function: Symbol): collection.Set[CSPOMConstraint[_]] = _constraints.getOrElse(function, Set())
-
-  def hasConstraint(c: CSPOMConstraint[_]): Boolean = _constraints(c.function)(c)
-
-
   private def resolvePostponed(c: CSPOMConstraint[_]): Seq[CSPOMConstraint[_]] = {
     resolvePostponed(c.flattenedScope)
   }
@@ -285,21 +280,11 @@ class CSPOM extends LazyLogging {
     if (post.isEmpty) {
       (posted, remaining)
     } else {
-      post.foreach(addConstraint(_))
+      post.foreach(c => addConstraint(c))
       resolvePostponed(post.map(_.flattenedScope).reduce(_ ++ _), remaining, post ::: posted)
     }
   }
 
-  private def crawl(c: CSPOMConstraint[_], visited: Set[CSPOMConstraint[_]]): Set[CSPOMConstraint[_]] = {
-    if (visited(c)) {
-      visited
-    } else {
-      val inCScope = c.flattenedScope.toSet
-      postponed.filter(const => inCScope(const.result)).foldLeft(visited + c) {
-        case (visit, c) => visit ++ crawl(c, visit)
-      }
-    }
-  }
 }
 
 object CSPOM extends LazyLogging {
@@ -316,12 +301,6 @@ object CSPOM extends LazyLogging {
     */
   def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
 
-  def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
-
-  def loadCNF(file: String): Try[CSPOM] = load(file2url(file), CNFParser)
-
-  def load(file: String): Try[CSPOM] = load(file2url(file))
-
   def file2url(file: String): URL = {
     val uri = new URI(file.replace(" ", "%20"))
     if (uri.isAbsolute && Option(uri.getScheme).isDefined) {
@@ -330,11 +309,6 @@ object CSPOM extends LazyLogging {
       new URL("file:" + uri)
     }
   }
-
-  def load(url: URL): Try[CSPOM] =
-    autoParser(url)
-      .map(p => load(url, p))
-      .getOrElse(Failure(new IllegalArgumentException(s"${url.getFile}: unknown file format")))
 
   /**
     * Loads a CSPOM from a given XCSP file.
@@ -374,6 +348,17 @@ object CSPOM extends LazyLogging {
         is
     }
   }
+
+  def loadFZ(file: String): Try[CSPOM] = load(file2url(file), FlatZincFastParser)
+
+  def loadCNF(file: String): Try[CSPOM] = load(file2url(file), CNFParser)
+
+  def load(file: String): Try[CSPOM] = load(file2url(file))
+
+  def load(url: URL): Try[CSPOM] =
+    autoParser(url)
+      .map(p => load(url, p))
+      .getOrElse(Failure(new IllegalArgumentException(s"${url.getFile}: unknown file format")))
 
   def autoParser(url: URL): Option[Parser] = url.getFile match {
     case name if name.contains(".xml") => Some(XCSP3Parser)
@@ -415,7 +400,7 @@ object CSPOM extends LazyLogging {
 
   implicit def constantSeq[A <: AnyVal : TypeTag](c: Seq[A]): CSPOMSeq[A] = CSPOMSeq(c.map(constant): _*)
 
-  implicit def matrix(sc: StringContext) = Relation.MatrixContext(sc)
+  implicit def matrix(sc: StringContext): Relation.MatrixContext = Relation.MatrixContext(sc)
 
   def goal(g: WithParam[CSPOMGoal[_]])(implicit problem: CSPOM): Unit = {
     problem.setGoal(g)

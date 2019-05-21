@@ -42,8 +42,9 @@ object ConstraintCompiler extends LazyLogging {
           logger.debug(s"rewriting ${c.toString(in.displayName)} to ${c2.toString(in.displayName)}")
           delta ++= replaceCtr(c, c2, in)
         }
-        assert(!in.isReferenced(w),
-          s"$w (${in.namesOf(w)}) is still referenced: constraints = ${in.constraints(w)}, containers = ${in.expressionMap.getContainers(w)}")
+//        assert(!in.isReferenced(w),
+//          s"$w (${in.namesOf(w)}) is still referenced: constraints = ${in.constraints(w)}, " +
+//            s"containers = ${in.expressionMap.getContainers(w).map(_._1.toString(in.displayName))}")
       }
 
       //lazy val newConstraints = problem.deepConstraints(merged).map(_.toString).toSeq.sorted
@@ -56,7 +57,8 @@ object ConstraintCompiler extends LazyLogging {
       //assert(in.deepConstraints(by).nonEmpty, s"$by (${in.namesOf(by)}) is not involved by constraints")
       assert(in.namesOf(wh).isEmpty, s"$wh (${in.namesOf(by)}) still have names: ${in.namesOf(wh)}")
       assert(in.constraints(wh).isEmpty, s"$wh (${in.namesOf(by)}) is still involved by: ${in.constraints(wh).mkString("\n")}")
-      assert(in.expressionMap.getContainers(wh).forall(_.isEmpty), s"$wh (${in.namesOf(by)}) is still contained in: ${in.expressionMap.getContainers(wh)}")
+      assert(in.expressionMap.getContainers(wh).isEmpty,
+        s"$wh (${in.namesOf(by)}) is still contained in: ${in.expressionMap.getContainers(wh)}")
       delta //deltas.fold(Delta.empty)(_ ++ _)
     }
   }
@@ -192,7 +194,7 @@ case class Delta private (
   def nonEmpty: Boolean = removed.nonEmpty || added.nonEmpty
 
   override def toString = s"[ -- ${removed.mkString(", ")} ++ ${added.mkString(", ")} ]"
-  def toString(cspom: CSPOM) = s"[ -- ${removed.map(e => e.toString(cspom.displayName)).mkString(", ")} ++ ${added.map(_.toString(cspom.displayName)).mkString(", ")} ]"
+  def toString(cspom: CSPOM) = s"[ -- \n${removed.map(e => e.toString(cspom.displayName)).mkString("\n")}\n ++ \n${added.map(_.toString(cspom.displayName)).mkString("\n")} ]"
 }
 
 object Delta {

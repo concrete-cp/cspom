@@ -1,12 +1,11 @@
 package cspom.compiler
 
 import com.typesafe.scalalogging.LazyLogging
+import cspom.CSPOMConstraint
 import cspom.compiler.ConstraintCompiler._
-import cspom.compiler.VariableCompiler
 import cspom.util.IntervalsArithmetic.Arithmetics
 import cspom.util.{Finite, IntInterval}
 import cspom.variable._
-import cspom.{CSPOMConstraint, UNSATException}
 
 import scala.util.{Failure, Try}
 

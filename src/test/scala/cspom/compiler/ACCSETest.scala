@@ -1,9 +1,8 @@
 package cspom.compiler
 
-import cspom.{CSPOM, CSPOMConstraint, UNSATException}
-import cspom.CSPOM.{ctr, goal}
-import cspom.CSPOMGoal.Minimize
+import cspom.CSPOM.ctr
 import cspom.variable._
+import cspom.{CSPOM, CSPOMConstraint, UNSATException}
 import org.scalatest.{FlatSpec, Matchers, TryValues}
 
 import scala.reflect.runtime.universe._
@@ -157,12 +156,12 @@ class ACCSETest extends FlatSpec with Matchers with TryValues {
   it should "scale more" in {
     val cspom = CSPOM.load(CSPOM.getClass.getResource("flatzinc/oocsp_racks-oocsp_racks_100_r1_cc.fzn.xz")).get
     CSPOMCompiler.compile(cspom, FZPatterns()).get
-    CSPOMCompiler.compile(cspom, Seq(MergeEq, ReifiedConj, SimplClause, UnaryClause, SumSE)).get
+    CSPOMCompiler.compile(cspom, Seq(MergeEq, SumDuplicates, ReifiedConj, SimplClause, UnaryClause, SumSE)).get
 
   }
 
   it should "find correct intersection" in {
-    val vars = IndexedSeq.tabulate(4)(i => IntVariable(i to i))
+    val vars = IndexedSeq.tabulate(4)(i => IntVariable(i to i)).sortBy(_.hashCode())
 
     val subExp1 = List((vars(0), 12), (vars(1), 13), (vars(2), 9), (vars(3), 15))
     val subExp2 = List((vars(0), 8), (vars(1), 9), (vars(2), 6), (vars(3), 10))

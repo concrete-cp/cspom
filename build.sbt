@@ -20,11 +20,11 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions ++= Seq(  
-  "-Xdisable-assertions"
-  , "-deprecation"
+  "-Xdisable-assertions",
+  "-deprecation",
   //	"-unchecked"
-  , "-Xlint"
-  , "-target:jvm-1.8"
+  "-Xlint",
+  "-target:jvm-1.8",
   //
   //	"-feature"
   //	"-Yinline-warnings"

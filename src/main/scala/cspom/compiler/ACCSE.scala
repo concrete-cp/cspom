@@ -63,7 +63,7 @@ trait ACCSE[Data] extends ProblemCompiler with LazyLogging {
   def toHashMap[A, B](s: Iterable[(A, B)]): mutable.Map[A, B] = {
     val m = new mutable.HashMap[A, B]()
     m ++= s
-    assert(s.size == m.size)
+    assert(s.size == m.size, s"$s contains duplicates")
     m
   }
 

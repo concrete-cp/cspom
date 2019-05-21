@@ -6,6 +6,7 @@ import cspom.util.ContiguousIntRangeSet
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 
 /*
@@ -193,7 +194,7 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
 
   def isConstant = true
 
-  def flattenVariables = Seq()
+  def flattenVariables: Seq[CSPOMVariable[T]] = Seq()
 
   def toString(names: CSPOMExpression[_] => String): String = toString
 
@@ -208,7 +209,7 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
 abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
   def tpe: Type = typeOf[T]
 
-  def flattenVariables = Seq(this)
+  def flattenVariables: Seq[CSPOMVariable[T]] = Seq(this)
 
   def isTrue = false
 
@@ -236,7 +237,7 @@ object CSPOMSeq {
     }
 
 
-  def unapply[A](s: CSPOMSeq[A]): Option[Seq[CSPOMExpression[A]]] =
+  def unapply[A](s: CSPOMSeq[A]): Option[IndexedSeq[CSPOMExpression[A]]] =
     Some(s.values)
 
   def collectAll[A, B](s: Seq[A])(f: PartialFunction[A, B]): Option[Seq[B]] = {
@@ -248,7 +249,7 @@ object CSPOMSeq {
         return None
       }
     }
-    Some(r)
+    Some(r.result())
   }
 
   def searchSpace(s: Seq[CSPOMExpression[_]]): Double = {
@@ -266,17 +267,17 @@ final class CSPOMSeq[+T: TypeTag] private (
   //    logger.info(s"$this is 0-indexed CSPOMSeq")
   //  }
 
-  lazy val flatten = values.flatMap(_.flatten)
-  lazy val fullyDefined = values.forall(_.fullyDefined)
-  lazy val isConstant = values.forall(_.isConstant)
+  lazy val flatten: IndexedSeq[SimpleExpression[T]] = values.flatMap(_.flatten)
+  lazy val fullyDefined: Boolean = values.forall(_.fullyDefined)
+  lazy val isConstant: Boolean = values.forall(_.isConstant)
 
   require(values.size == definedIndices.size)
-  lazy val flattenVariables = values.flatMap(_.flattenVariables)
-  override lazy val hashCode = super.hashCode
+  lazy val flattenVariables: IndexedSeq[CSPOMVariable[T]] = values.flatMap(_.flattenVariables)
+  override lazy val hashCode: Int = super.hashCode
 
 
 
-  def tpe = typeOf[T]
+  def tpe: universe.Type = typeOf[T]
 
   def +:[S >: T : TypeTag](v: CSPOMExpression[S]) = CSPOMSeq(v +: values, definedIndices.head - 1 to definedIndices.last)
 
@@ -284,7 +285,7 @@ final class CSPOMSeq[+T: TypeTag] private (
 
   override def iterator: Iterator[CSPOMExpression[T]] = values.iterator
 
-  def withIndex = values zip definedIndices
+  def withIndex: IndexedSeq[(CSPOMExpression[T], Int)] = values zip definedIndices
 
   def apply(idx: Int): CSPOMExpression[T] = {
     val index = definedIndices.indexOf(idx)
@@ -294,7 +295,7 @@ final class CSPOMSeq[+T: TypeTag] private (
 
   def length: Int = values.length
 
-  def replaceVar[R >: T : TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]) = {
+  def replaceVar[R >: T : TypeTag](which: CSPOMExpression[_ >: T], by: CSPOMExpression[R]): CSPOMExpression[R] = {
     if (which == this) {
       by
     } else {
@@ -307,7 +308,7 @@ final class CSPOMSeq[+T: TypeTag] private (
     }
   }
 
-  def replaceIndex[R >: T : TypeTag](index: Int, by: CSPOMExpression[R]) = {
+  def replaceIndex[R >: T : TypeTag](index: Int, by: CSPOMExpression[R]): CSPOMSeq[R] = {
     val realIndex = definedIndices.indexOf(index)
     new CSPOMSeq(values.updated(realIndex, by), definedIndices)
   }
@@ -321,15 +322,18 @@ final class CSPOMSeq[+T: TypeTag] private (
   def zipWithIndex: Iterator[(CSPOMExpression[T], Int)] = values.iterator.zip(definedIndices.iterator)
 
   override def equals(o: Any): Boolean = o match {
-    case a: CSPOMSeq[_] => (a.values, values).zipped.forall(_ eq _) && a.definedIndices == definedIndices
+    case a: CSPOMSeq[_] => a.values == values && a.definedIndices == definedIndices
     case _ => false
   }
 
   def toString(names: CSPOMExpression[_] => String): String = {
-    if (isEmpty)
+    if (isEmpty) {
       s"${names(this)}: CSPOMSeq()"
-    else
+    } else if (indices.head != 0) {
       s"${names(this)}: CSPOMSeq[${indices.head}..${indices.last}](${values.map(_.toString(names)).mkString(", ")})"
+    } else {
+      s"${names(this)}: CSPOMSeq(${values.map(_.toString(names)).mkString(", ")})"
+    }
   }
 
   //

@@ -1,12 +1,11 @@
 package cspom.compiler
 
 
+import cspom.CSPOM._
+import cspom.util.IntInterval
+import cspom.variable.{CSPOMSeq, IntVariable, SimpleExpression}
 import cspom.{CSPOM, CSPOMConstraint}
-import cspom.variable.IntVariable
-import org.scalatest.FlatSpec
-import org.scalatest.TryValues
-import org.scalatest.Matchers
-import CSPOM._
+import org.scalatest.{FlatSpec, Matchers, TryValues}
 
 final class CompileTest extends FlatSpec with Matchers with TryValues {
   //  "CSPOMCompiler" should "compile zebra" in {
@@ -47,6 +46,54 @@ final class CompileTest extends FlatSpec with Matchers with TryValues {
         c => c.function == 'eq && c.result.isFalse
       })
     }
+  }
+
+  it should "replace properly" in {
+    var a1, a2: SimpleExpression[Int] = null
+    var eq, le1, le2: CSPOMConstraint[_] = null
+
+    val problem = CSPOM { implicit problem =>
+      val x = IntVariable(0 to 1) as "X"
+
+
+      a1 = problem.defineInt(a =>
+        CSPOMConstraint('sum)(CSPOMSeq(a, x), CSPOMSeq(-1, 1), 0) withParam "mode" -> "eq")
+
+      a2 = problem.defineInt { a =>
+        eq = CSPOMConstraint('eq)(a1, a)
+        eq
+      }
+
+      le1 = CSPOMConstraint('sum)(CSPOMSeq(a1, 10), CSPOMSeq(1, -1), 0) withParam "mode" -> "le"
+      le2 = CSPOMConstraint('sum)(CSPOMSeq(11, a2), CSPOMSeq(1, -1), 0) withParam "mode" -> "le"
+
+      ctr(le1)
+      ctr(le2)
+    }
+    println(problem)
+
+
+    val delta2 = ConstraintCompiler.replaceCtr(le1, CSPOMConstraint('sum)(CSPOMSeq(a1), CSPOMSeq(1), 10) withParam "mode" -> "le", problem)
+    println(delta2.toString(problem))
+    println(problem)
+    println("==========")
+
+    val delta3 = ConstraintCompiler.replaceCtr(le2, CSPOMConstraint('sum)(CSPOMSeq(a2), CSPOMSeq(-1), -11) withParam "mode" -> "le", problem)
+    println(delta3.toString(problem))
+    println(problem)
+    println("==========")
+
+    val delta4 = MergeEq.compile(eq, problem)
+    println(delta4.toString(problem))
+    println(problem)
+    println("==========")
+
+    val delta5 = ConstraintCompiler.replace(a1, IntVariable(IntInterval.atMost(10)), problem)
+    println(delta5.toString(problem))
+    println(problem)
+    //withClue(delta5.toString(problem)) {
+      problem.referencedExpressions should not contain a1
+    //}
   }
 
 
