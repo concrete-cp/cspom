@@ -62,7 +62,7 @@ final class CSPOMCompiler(
     }
 
     val compilerQueue = new QueueSet(constraintCompilers.indices)
-    var pcQueue = new QueueSet(problemCompilers.indices)
+    val pcQueue = new QueueSet(problemCompilers.indices)
 
     /**
       * Updates the constraint queue

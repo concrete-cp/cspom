@@ -8,7 +8,7 @@ scalaVersion := "2.12.8"
 
 libraryDependencies ++= Seq(
   "fr.univ-valenciennes" %% "bitvectors" % "2.2",
-  "fr.univ-valenciennes" %% "mdd" % "1.8",
+  "fr.uphf" %% "mdd" % "2.0-SNAPSHOT",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.apache.commons" % "commons-compress" % "1.18",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
