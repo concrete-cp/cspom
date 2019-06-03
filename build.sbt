@@ -6,7 +6,7 @@ version := "3.0-SNAPSHOT"
 
 scalaVersion := "2.12.8"
 
-resolvers += Resolver.sonatypeRepo("snapshot")
+resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
   "fr.univ-valenciennes" %% "bitvectors" % "2.2",
