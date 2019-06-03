@@ -6,6 +6,8 @@ version := "3.0-SNAPSHOT"
 
 scalaVersion := "2.12.8"
 
+resolvers += Resolver.sonatypeRepo("snapshot")
+
 libraryDependencies ++= Seq(
   "fr.univ-valenciennes" %% "bitvectors" % "2.2",
   "com.github.concrete-cp" %% "mdd" % "2.0-SNAPSHOT",
@@ -25,7 +27,6 @@ scalacOptions ++= Seq(
   //	"-unchecked"
   "-Xlint",
   "-target:jvm-1.8",
-  //
   //	"-feature"
   //	"-Yinline-warnings"
 )
@@ -46,8 +47,6 @@ publishTo := {
 publishArtifact in Test := false
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${(target in Test).value / "test-reports"}")
-
-// EclipseKeys.withBundledScalaContainers := false
 
 val scalaMeterFramework = new TestFramework("org.scalameter.ScalaMeterFramework")
 
