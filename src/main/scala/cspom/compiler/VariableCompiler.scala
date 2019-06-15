@@ -5,7 +5,7 @@ import cspom.variable.{CSPOMConstant, CSPOMExpression}
 import cspom.{CSPOM, CSPOMConstraint, UNSATException}
 
 
-abstract class VariableCompiler(val function: Symbol) extends ConstraintCompiler {
+abstract class VariableCompiler(val function: String) extends ConstraintCompiler {
 
   def functions = Functions(function)
 

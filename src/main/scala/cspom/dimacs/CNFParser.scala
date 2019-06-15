@@ -62,7 +62,7 @@ final object CNFParser extends CSPOM.Parser {
      * Variable indices starts at 1 in Dimacs format, 0 in IndexedSeq
      */
 
-    CSPOMConstraint('clause)(positive.map(i => variables(i - 1)), negative.map(i => variables(-i - 1)))
+    CSPOMConstraint("clause")(positive.map(i => variables(i - 1)), negative.map(i => variables(-i - 1)))
 
   }
 }

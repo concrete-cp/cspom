@@ -10,7 +10,7 @@ import cspom.variable.CSPOMSeq
   **/
 object NegToCNF extends ConstraintCompilerNoData {
 
-  def functions = Functions('not)
+  def functions = Functions("not")
 
   override def matchBool(c: CSPOMConstraint[_], p: CSPOM) = true
 
@@ -20,8 +20,8 @@ object NegToCNF extends ConstraintCompilerNoData {
     val Seq(arg) = fc.arguments
 
     val newConstraints = Seq(
-      CSPOMConstraint('clause)(CSPOMSeq(res, arg), CSPOMSeq()),
-      CSPOMConstraint('clause)(CSPOMSeq(), CSPOMSeq(res, arg)))
+      CSPOMConstraint("clause")(CSPOMSeq(res, arg), CSPOMSeq()),
+      CSPOMConstraint("clause")(CSPOMSeq(), CSPOMSeq(res, arg)))
 
     ConstraintCompiler.replaceCtr(fc, newConstraints, problem)
   }

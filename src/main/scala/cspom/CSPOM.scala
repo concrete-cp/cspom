@@ -8,22 +8,15 @@ import cspom.dimacs.CNFParser
 import cspom.extension.{MDDRelation, Relation}
 import cspom.flatzinc.FlatZincFastParser
 import cspom.variable._
-import cspom.xcsp.{XCSP3Parser, XCSPParser}
+import cspom.xcsp.XCSP3Parser
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe.TypeTag
-import scala.util.parsing.combinator.JavaTokenParsers
 import scala.util.{Failure, Try}
 
-object NameParser extends JavaTokenParsers {
-
-  def parse: Parser[(String, Seq[Int])] = ident ~ rep("[" ~> wholeNumber <~ "]") ^^ {
-    case n ~ i => (n, i.map(_.toInt))
-  }
-}
 
 /**
   *
@@ -59,7 +52,7 @@ class CSPOM extends LazyLogging {
   /**
     * Collection of all constraints of the problem.
     */
-  private val _constraints = mutable.LinkedHashMap[Symbol, mutable.LinkedHashSet[CSPOMConstraint[_]]]()
+  private val _constraints = mutable.LinkedHashMap[String, mutable.LinkedHashSet[CSPOMConstraint[_]]]()
   private var postponed: List[CSPOMConstraint[_]] = Nil
   private var _goal: Option[WithParam[CSPOMGoal[_]]] = None
 
@@ -120,7 +113,7 @@ class CSPOM extends LazyLogging {
     }
   }
 
-  def getConstraints(function: Symbol): collection.Set[CSPOMConstraint[_]] = _constraints.getOrElse(function, Set())
+  def getConstraints(function: String): collection.Set[CSPOMConstraint[_]] = _constraints.getOrElse(function, Set())
 
   def isReferenced(e: CSPOMExpression[_]): Boolean = ctrV.get(e).exists(_.nonEmpty) || expressionMap.isReferenced(e)
 
@@ -181,18 +174,24 @@ class CSPOM extends LazyLogging {
   }
 
   def ctr(v: SimpleExpression[Boolean]): CSPOMConstraint[Boolean] = {
-    ctr(CSPOMConstraint('eq)(v, CSPOMConstant(true)))
+    ctr(CSPOMConstraint("eq")(v, CSPOMConstant(true)))
   }
 
-  def ctr(function: scala.Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
+  def ctr(function: String)(arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
     ctr(CSPOMConstraint(function)(arguments: _*))
 
-  def ctr[A](result: CSPOMExpression[A])(function: scala.Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[A] =
+  def ctr[A](result: CSPOMExpression[A])(function: String)(arguments: CSPOMExpression[_]*): CSPOMConstraint[A] =
     ctr(CSPOMConstraint(result)(function)(arguments: _*))
 
   def defineInt(f: SimpleExpression[Int] => CSPOMConstraint[_]): SimpleExpression[Int] = {
     define(IntVariable.free())(f)
   }
+
+  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
+    define(new FreeVariable())(f)
+
+  def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
+    define(new BoolVariable())(f)
 
   def define[R](f: => R)(g: R => CSPOMConstraint[_]): R = {
     val r = f
@@ -204,12 +203,6 @@ class CSPOM extends LazyLogging {
     postponed ::= c
     c
   }
-
-  def defineFree(f: SimpleExpression[_] => CSPOMConstraint[_]): SimpleExpression[_] =
-    define(new FreeVariable())(f)
-
-  def defineBool(f: SimpleExpression[Boolean] => CSPOMConstraint[_]): SimpleExpression[Boolean] =
-    define(new BoolVariable())(f)
 
   def getPostponed: Seq[CSPOMConstraint[_]] = postponed
 
@@ -292,14 +285,14 @@ object CSPOM extends LazyLogging {
   type Parser = InputStream => Try[CSPOM]
 
   /**
-    * Loads a CSPOM from a given XCSP2 or 3 file.
+    * Loads a CSPOM from a given XCSP3 file.
     *
     * @param file
     * Either a filename or an URI. Filenames ending with .gz or .bz2
     * will be inflated accordingly.
     * @return The loaded CSPOM
     */
-  def loadXCSP(file: String): Try[CSPOM] = load(file2url(file), XCSPParser)
+  def loadXCSP3(file: String): Try[CSPOM] = load(file2url(file), XCSP3Parser)
 
   def file2url(file: String): URL = {
     val uri = new URI(file.replace(" ", "%20"))
@@ -378,9 +371,10 @@ object CSPOM extends LazyLogging {
   def ctr[A](c: CSPOMConstraint[A])(implicit problem: CSPOM): CSPOMConstraint[A] = problem.ctr(c)
 
   implicit class SeqOperations[A](vars: Seq[SimpleExpression[A]]) {
-    def in(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam("init" -> false, "relation" -> rel)
+    def in(rel: Relation[A]): CSPOMConstraint[Boolean] =
+      CSPOMConstraint("extension")(vars: _*) withParam("init" -> false, "relation" -> rel)
 
-    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint('extension)(vars: _*) withParam("init" -> true, "relation" -> rel)
+    def notIn(rel: Relation[A]): CSPOMConstraint[Boolean] = CSPOMConstraint("extension")(vars: _*) withParam("init" -> true, "relation" -> rel)
   }
 
   implicit class IntSeqOperations(vars: Seq[SimpleExpression[Int]]) {

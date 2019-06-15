@@ -215,7 +215,7 @@ trait GlobalCompiler extends ConstraintCompiler {
 }
 
 object Ctr {
-  def unapply(c: CSPOMConstraint[_]): Option[(scala.Symbol, Seq[CSPOMExpression[_]], Map[String, Any])] = {
+  def unapply(c: CSPOMConstraint[_]): Option[(String, Seq[CSPOMExpression[_]], Map[String, Any])] = {
     if (c.nonReified) {
       Some((c.function, c.arguments, c.params))
     } else {

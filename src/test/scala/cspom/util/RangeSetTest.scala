@@ -44,7 +44,7 @@ class RangeSetTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks 
     val itv1 = IntInterval(0, 10)
     val itv2 = IntInterval(10, 15)
 
-    RangeSet(Seq(itv1, itv2)) shouldBe 'convex
+    assert(RangeSet(Seq(itv1, itv2)).isConvex)
 
   }
 
@@ -183,7 +183,7 @@ class RangeSetTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks 
     s should contain(-1)
 
     Set(0, -1) shouldBe s
-    s.iterator.toStream shouldBe Stream(-1, 0)
+    s.iterator.toSeq shouldBe Seq(-1, 0)
 
   }
 

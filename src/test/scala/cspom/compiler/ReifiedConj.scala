@@ -14,15 +14,15 @@ import cspom.variable.CSPOMSeq
  */
 object ReifiedConj extends ConstraintCompilerNoData {
 
-  def functions = Functions('and)
+  def functions = Functions("and")
 
   override def matchBool(c: CSPOMConstraint[_], p: CSPOM): Boolean = true
 
   def compile(fc: CSPOMConstraint[_], problem: CSPOM): Delta = {
     val res = fc.result
     val args = fc.arguments
-    val c1 = CSPOMConstraint('clause)(CSPOMSeq(res), CSPOMSeq(args: _*))
-    val c2 = args.map(v => CSPOMConstraint('clause)(CSPOMSeq(v), CSPOMSeq(res)))
+    val c1 = CSPOMConstraint("clause")(CSPOMSeq(res), CSPOMSeq(args: _*))
+    val c2 = args.map(v => CSPOMConstraint("clause")(CSPOMSeq(v), CSPOMSeq(res)))
     ConstraintCompiler.replaceCtr(fc, c1 +: c2, problem)
   }
 

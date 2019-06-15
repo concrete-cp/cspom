@@ -3,8 +3,10 @@ package cspom.xcsp
 import cspom.extension.MDDRelation
 import cspom.variable.CSPOMConstant
 import cspom.{CSPOM, CSPOMConstraint}
-import mdd.{JavaMap, MDD, MDDLeaf}
+import mdd.{MDD, MDDLeaf}
 import org.xcsp.parser.entries.XVariables.XVarInteger
+
+import scala.collection.mutable
 
 /**
   * Created by vion on 30/05/17.
@@ -24,7 +26,7 @@ trait XCSP3CallbacksLanguage extends XCSP3CallbacksVars {
     val intFinal: Seq[Int] = finalStates.map(states)
 
     cspom.ctr(
-      CSPOMConstraint('regular)(
+      CSPOMConstraint("regular")(
         cspomSeq(list),
         CSPOMConstant(states(startState)),
         CSPOM.constantSeq(intFinal)) withParam ("dfa" -> dfa))
@@ -33,7 +35,7 @@ trait XCSP3CallbacksLanguage extends XCSP3CallbacksVars {
   override def buildCtrMDD(id: String, list: Array[XVarInteger], transitions: Array[Array[AnyRef]]): Unit = {
     val nodeNames = transitions.groupBy(x => x(0))
 
-    val nodes = new JavaMap[String, MDD]()
+    val nodes = new mutable.HashMap[String, MDD]()
     nodes.put("nodeT", MDDLeaf)
 
     def buildMDD(node: String): MDD = {

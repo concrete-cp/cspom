@@ -22,7 +22,7 @@ trait Parameterized {
   def displayParams: String = {
     params
       .map {
-        case (k, Unit) => k
+        case (k, ()) => k
         case (k, v) => s"$k: $v"
       }
       .map(s => s" :: $s")

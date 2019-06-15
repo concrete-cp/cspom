@@ -16,32 +16,32 @@ trait XCSP3CallbacksPackSched extends XCSP3CallbacksVars {
   override def buildCtrNoOverlap(id: String,
                                  origins: Array[XVarInteger],
                                  lengths: Array[Int],
-                                 zeroIgnored: Boolean) {
-    buildCtrNoOverlap(cspomSeq(origins), CSPOM.constantSeq(lengths), zeroIgnored)
+                                 zeroIgnored: Boolean): Unit = {
+    buildCtrNoOverlap(cspomSeq(origins), CSPOM.constantSeq(lengths.toSeq), zeroIgnored)
   }
 
   override def buildCtrNoOverlap(id: String,
                                  origins: Array[XVarInteger],
                                  lengths: Array[XVarInteger],
-                                 zeroIgnored: Boolean) {
+                                 zeroIgnored: Boolean): Unit = {
     buildCtrNoOverlap(cspomSeq(origins), cspomSeq(lengths), zeroIgnored)
   }
 
-  private def buildCtrNoOverlap(origins: CSPOMSeq[Int], lengths: CSPOMSeq[Int], zeroIgnored: Boolean): Unit = {
+  private def buildCtrNoOverlap(origins: CSPOMSeq[Int], lengths: CSPOMSeq[Int], zeroIgnored: Boolean) = {
     cspom.ctr {
-      CSPOMConstraint('noOverlap)(origins, lengths) withParam "zeroIgnored" -> zeroIgnored
+      CSPOMConstraint("noOverlap")(origins, lengths) withParam "zeroIgnored" -> zeroIgnored
     }
   }
 
   override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[XVarInteger]], zeroIgnored: Boolean): Unit = {
     cspom.ctr {
-      CSPOMConstraint('diffn)(CSPOMSeq(origins.map(cspomSeq): _*), CSPOMSeq(lengths.map(cspomSeq): _*)) withParam "zeroIgnored" -> zeroIgnored
+      CSPOMConstraint("diffn")(CSPOMSeq(origins.toSeq.map(cspomSeq): _*), CSPOMSeq(lengths.toSeq.map(cspomSeq): _*)) withParam "zeroIgnored" -> zeroIgnored
     }
   }
 
   override def buildCtrNoOverlap(id: String, origins: Array[Array[XVarInteger]], lengths: Array[Array[Int]], zeroIgnored: Boolean): Unit = {
     cspom.ctr {
-      CSPOMConstraint('diffn)(CSPOMSeq(origins.map(cspomSeq): _*), CSPOMSeq(lengths.map(cspomSeq): _*)) withParam "zeroIgnored" -> zeroIgnored
+      CSPOMConstraint("diffn")(CSPOMSeq(origins.toSeq.map(cspomSeq): _*), CSPOMSeq(lengths.toSeq.map(cspomSeq): _*)) withParam "zeroIgnored" -> zeroIgnored
     }
   }
 
@@ -66,7 +66,7 @@ trait XCSP3CallbacksPackSched extends XCSP3CallbacksVars {
 
     require(operator == TypeConditionOperatorRel.LE)
 
-    cspom.ctr('cumulative)(s, d, r, operand)
+    cspom.ctr("cumulative")(s, d, r, operand)
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
@@ -74,20 +74,20 @@ trait XCSP3CallbacksPackSched extends XCSP3CallbacksVars {
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
-    endsCtr(toCspom(origins), lengths.map(CSPOMConstant(_)), toCspom(ends))
+    endsCtr(toCspom(origins), lengths.toSeq.map(CSPOMConstant(_)), toCspom(ends))
     cumulative(cspomSeq(origins), cspomSeq(lengths), cspomSeq(heights), condition)
-  }
-
-  private def endsCtr(s: Seq[CSPOMExpression[Int]], d: Seq[CSPOMExpression[Int]], e: Seq[CSPOMExpression[Int]]): Unit = {
-    (s, d, e).zipped.foreach { (s, d, e) =>
-      cspom.ctr(CSPOMConstraint(e)('add)(s, d))
-    }
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
-    endsCtr(toCspom(origins), lengths.map(CSPOMConstant(_)), toCspom(ends))
+    endsCtr(toCspom(origins), lengths.toSeq.map(CSPOMConstant(_)), toCspom(ends))
     cumulative(cspomSeq(origins), cspomSeq(lengths), cspomSeq(heights), condition)
 
+  }
+
+  private def endsCtr(s: Seq[CSPOMExpression[Int]], d: Seq[CSPOMExpression[Int]], e: Seq[CSPOMExpression[Int]]): Unit = {
+    (s lazyZip d lazyZip e).foreach { (s, d, e) =>
+      cspom.ctr(CSPOMConstraint(e)("add")(s, d))
+    }
   }
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
@@ -113,7 +113,7 @@ trait XCSP3CallbacksPackSched extends XCSP3CallbacksVars {
   }
 
   private def circuit(list: Array[XVarInteger], startIndex: Int, size: CSPOMExpression[Int]) = {
-    cspom.ctr('circuit)(cspomSeq(list), CSPOMConstant(startIndex), size)
+    cspom.ctr("circuit")(cspomSeq(list), CSPOMConstant(startIndex), size)
   }
 
 }

@@ -19,7 +19,7 @@ class ACCSETest extends FlatSpec with Matchers with TryValues {
   }
 
   def linear[A: TypeTag](vars: Seq[SimpleExpression[A]], coefs: Seq[Int], mode: String, constant: Int): CSPOMConstraint[Boolean] =
-    CSPOMConstraint('sum)(CSPOM.constantSeq(coefs), CSPOM.seq2CSPOMSeq(vars), CSPOMConstant(constant)) withParam ("mode" -> mode)
+    CSPOMConstraint("sum")(CSPOM.constantSeq(coefs), CSPOM.seq2CSPOMSeq(vars), CSPOMConstant(constant)) withParam ("mode" -> mode)
 
   def minus(e: SimpleExpression[Int], other: SimpleExpression[Int])(implicit problem: CSPOM): SimpleExpression[Int] = {
     sumProd((1, e), (-1, other))
@@ -75,7 +75,7 @@ class ACCSETest extends FlatSpec with Matchers with TryValues {
 
 
     val c = CSPOMCompiler.compile(problem, Seq(SumDomains, SumSE))
-    println(c)
+    // println(c)
     c.failure.exception shouldBe an[UNSATException]
   }
 
@@ -86,8 +86,8 @@ class ACCSETest extends FlatSpec with Matchers with TryValues {
       val z = IntVariable(-10 to 10) as "Z"
       val w = IntVariable(-10 to 10) as "W"
 
-      ctr(CSPOMConstraint('eq)(sumProd((2, x), (3, y), (1, z)), CSPOMConstant(5)))
-      ctr(CSPOMConstraint('eq)(sumProd((4, x), (6, y), (1, w)), CSPOMConstant(5)))
+      ctr(CSPOMConstraint("eq")(sumProd((2, x), (3, y), (1, z)), CSPOMConstant(5)))
+      ctr(CSPOMConstraint("eq")(sumProd((4, x), (6, y), (1, w)), CSPOMConstant(5)))
     }
 
 

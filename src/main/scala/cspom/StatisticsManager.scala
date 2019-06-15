@@ -1,18 +1,17 @@
-package cspom;
+package cspom
 
 import java.lang.reflect.Field
-import scala.annotation.tailrec
+
 import com.typesafe.scalalogging.LazyLogging
-import scala.util.Try
-import scala.util.Failure
-import org.scalameter._
+
+import scala.annotation.tailrec
 import scala.reflect.runtime.universe._
 
 class StatisticsManager extends LazyLogging {
 
   var objects: Map[String, AnyRef] = Map.empty
 
-  def register(name: String, o: AnyRef) {
+  def register(name: String, o: AnyRef): Unit = {
     require(!o.isInstanceOf[Class[_]])
     if (objects.contains(name)) {
       logger.warn(name + ": an object with the same name is already registered");
@@ -24,8 +23,6 @@ class StatisticsManager extends LazyLogging {
 
     objects += name -> o
   }
-
-  private def annoted(f: Field) = f.getAnnotation(classOf[cspom.Statistic]) != null
 
   def tagged[T: TypeTag](name: String): T = get(name).map {
     case t: T => t
@@ -52,13 +49,6 @@ class StatisticsManager extends LazyLogging {
       }
   }
 
-  private def fields(c: Class[_], f: List[Field] = Nil): List[Field] =
-    if (c == null) {
-      f
-    } else {
-      fields(c.getSuperclass, c.getDeclaredFields.toList.filter(annoted) ::: f)
-    }
-
   def digest: Map[String, Any] = objects flatMap {
     case (s, o) =>
       fields(o.getClass).flatMap { f =>
@@ -71,16 +61,26 @@ class StatisticsManager extends LazyLogging {
       }
   }
 
-  override def toString: String = digest.map(t => t._1 + " = " + t._2).toSeq.sorted.mkString("\n")
+  override def toString: String = digest.map(t => s"${t._1} = ${t._2}").toSeq.sorted.mkString("\n")
 
-  def reset() {
+  def reset(): Unit = {
     objects = Map.empty
   }
+
+  private def annoted(f: Field) = f.getAnnotation(classOf[cspom.Statistic]) != null
+
+  private def fields(c: Class[_], f: List[Field] = Nil): List[Field] =
+    if (c == null) {
+      f
+    } else {
+      fields(c.getSuperclass, c.getDeclaredFields.toList.filter(annoted) ::: f)
+    }
 }
 
 object StatisticsManager {
 
   def average[A: Numeric](s: Iterable[A]): Double = average(s.iterator)
+
   def average[A](xs: Iterator[A])(implicit n: Numeric[A]): Double = {
     if (xs.hasNext) {
       var m = n.toDouble(xs.next)
@@ -95,9 +95,9 @@ object StatisticsManager {
     }
   }
 
-  def averageBigInt(s: Iterable[BigInt]): BigInt = {
-    s.sum / s.size
-  }
+  def stDev[A: Numeric](s: Iterable[A]): Double = stDev(s.iterator)
+
+  def stDev[A: Numeric](s: Iterator[A]): Double = math.sqrt(variance(s))
 
   def variance[A](xs: Iterator[A])(implicit n: Numeric[A]): Double = {
     if (xs.hasNext) {
@@ -116,14 +116,14 @@ object StatisticsManager {
     }
   }
 
-  def stDev[A: Numeric](s: Iterator[A]): Double = math.sqrt(variance(s))
-
-  def stDev[A: Numeric](s: Iterable[A]): Double = stDev(s.iterator)
-
   def stDevBigInt(s: Seq[BigInt]): BigInt = {
     val avg = averageBigInt(s)
     val variance = s.map(i => (i - avg).pow(2)).sum / s.size
     util.Math.sqrt(variance)
+  }
+
+  def averageBigInt(s: Iterable[BigInt]): BigInt = {
+    s.sum / s.size
   }
 
   def min[A: Ordering](s: Iterable[A]): A = s.min
@@ -146,7 +146,7 @@ object StatisticsManager {
         }
 
       case i if i < k => findKMedian(b, k - s.size)
-      
+
       case _ => findKMedian(s, k)
 
     }
@@ -176,21 +176,13 @@ object StatisticsManager {
     }
   }
 
-  def measureTry[A, T, U](f: => Try[A], measureBuilder: MeasureBuilder[T, U] = org.scalameter.`package`): (Try[A], Quantity[U]) = {
-    var r: Try[A] = null //
-    val t = measureBuilder.measure {
-      r = f
-      r.isSuccess
-    }
-    (Option(r).getOrElse(Failure(new IllegalStateException("No execution"))), t)
+  def measure[A](f: => A): (scala.util.Try[A], Double) = measureTry(scala.util.Try(f))
 
-    //    var t = -System.nanoTime
-    //    val r: Try[A] = f //.apply()
-    //    t += System.nanoTime
-    //    (r, t / 1e9)
+  def measureTry[A](f: => scala.util.Try[A]): (scala.util.Try[A], Double) = {
+    var t = -System.nanoTime
+    val r: scala.util.Try[A] = f
+    t += System.nanoTime
+    (r, t / 1e6)
   }
-
-  def measure[A, T, U](f: => A, measureBuilder: MeasureBuilder[T, U] = org.scalameter.`package`): (Try[A], Quantity[U]) =
-    measureTry(Try(f), measureBuilder)
 
 }

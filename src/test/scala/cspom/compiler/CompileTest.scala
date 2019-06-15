@@ -31,7 +31,7 @@ final class CompileTest extends FlatSpec with Matchers with TryValues {
       //      val v2 = IntVariable(1, 2, 3) as "v2"
       //      val v3 = IntVariable(1, 2, 3) as "v3"
 
-      val b = problem.defineBool(r => CSPOMConstraint(r)('not)(v0 === v1))
+      val b = problem.defineBool(r => CSPOMConstraint(r)("not")(v0 === v1))
       ctr(b)
 
     }
@@ -43,7 +43,7 @@ final class CompileTest extends FlatSpec with Matchers with TryValues {
       cspom.constraints should have size 1
 
       assert(cspom.constraints.exists {
-        c => c.function == 'eq && c.result.isFalse
+        c => c.function == "eq" && c.result.isFalse
       })
     }
   }
@@ -57,40 +57,40 @@ final class CompileTest extends FlatSpec with Matchers with TryValues {
 
 
       a1 = problem.defineInt(a =>
-        CSPOMConstraint('sum)(CSPOMSeq(a, x), CSPOMSeq(-1, 1), 0) withParam "mode" -> "eq")
+        CSPOMConstraint("sum")(CSPOMSeq(a, x), CSPOMSeq(-1, 1), 0) withParam "mode" -> "eq")
 
       a2 = problem.defineInt { a =>
-        eq = CSPOMConstraint('eq)(a1, a)
+        eq = CSPOMConstraint("eq")(a1, a)
         eq
       }
 
-      le1 = CSPOMConstraint('sum)(CSPOMSeq(a1, 10), CSPOMSeq(1, -1), 0) withParam "mode" -> "le"
-      le2 = CSPOMConstraint('sum)(CSPOMSeq(11, a2), CSPOMSeq(1, -1), 0) withParam "mode" -> "le"
+      le1 = CSPOMConstraint("sum")(CSPOMSeq(a1, 10), CSPOMSeq(1, -1), 0) withParam "mode" -> "le"
+      le2 = CSPOMConstraint("sum")(CSPOMSeq(11, a2), CSPOMSeq(1, -1), 0) withParam "mode" -> "le"
 
       ctr(le1)
       ctr(le2)
     }
-    println(problem)
+    // println(problem)
 
 
-    val delta2 = ConstraintCompiler.replaceCtr(le1, CSPOMConstraint('sum)(CSPOMSeq(a1), CSPOMSeq(1), 10) withParam "mode" -> "le", problem)
-    println(delta2.toString(problem))
-    println(problem)
-    println("==========")
+    val delta2 = ConstraintCompiler.replaceCtr(le1, CSPOMConstraint("sum")(CSPOMSeq(a1), CSPOMSeq(1), 10) withParam "mode" -> "le", problem)
+//    println(delta2.toString(problem))
+//    println(problem)
+//    println("==========")
 
-    val delta3 = ConstraintCompiler.replaceCtr(le2, CSPOMConstraint('sum)(CSPOMSeq(a2), CSPOMSeq(-1), -11) withParam "mode" -> "le", problem)
-    println(delta3.toString(problem))
-    println(problem)
-    println("==========")
+    val delta3 = ConstraintCompiler.replaceCtr(le2, CSPOMConstraint("sum")(CSPOMSeq(a2), CSPOMSeq(-1), -11) withParam "mode" -> "le", problem)
+//    println(delta3.toString(problem))
+//    println(problem)
+//    println("==========")
 
     val delta4 = MergeEq.compile(eq, problem)
-    println(delta4.toString(problem))
-    println(problem)
-    println("==========")
+//    println(delta4.toString(problem))
+//    println(problem)
+//    println("==========")
 
     val delta5 = ConstraintCompiler.replace(a1, IntVariable(IntInterval.atMost(10)), problem)
-    println(delta5.toString(problem))
-    println(problem)
+//    println(delta5.toString(problem))
+//    println(problem)
     //withClue(delta5.toString(problem)) {
       problem.referencedExpressions should not contain a1
     //}

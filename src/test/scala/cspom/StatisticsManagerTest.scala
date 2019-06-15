@@ -10,7 +10,7 @@ object StatisticsManagerTest {
   @Statistic
   val testInt = 8
   @Statistic
-  val testLong = 9l
+  val testLong = 9L
   @Statistic
   val testFloat = 10.0f
   @Statistic
@@ -23,7 +23,7 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
     val stats = new StatisticsManager
     stats.register("test", StatisticsManagerTest)
     stats("test.testInt") shouldBe 8
-    stats("test.testLong") shouldBe 9l
+    stats("test.testLong") shouldBe 9L
     stats("test.testFloat") shouldBe 10.0f
     stats("test.testDouble") shouldBe 11.0
   }
@@ -43,8 +43,8 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
       Thread.sleep(1000)
     }
 
-    t.value shouldBe 1000.0 +- 100
-    r should be a 'success
+    t shouldBe 1000.0 +- 100
+    assert(r.isSuccess)
   }
 
   it should "measure time in exception case" in {
@@ -53,15 +53,15 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
       throw new Exception
     }
 
-    t.value shouldBe 1000.0 +- 100
-    r should be a 'failure
+    t shouldBe 1000.0 +- 100
+    assert(r.isFailure)
   }
 
   it should "measure time in success case" in {
     val (r, t) = StatisticsManager.measureTry(Try(Thread.sleep(1000)))
 
-    t.value shouldBe 1000.0 +- 100
-    r should be a 'success
+    t shouldBe 1000.0 +- 100
+    assert(r.isSuccess)
   }
 
   it should "measure time in failure case" in {
@@ -70,8 +70,8 @@ final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues 
       Failure(new Exception)
     }
 
-    t.value shouldBe 1000.0 +- 100
-    r should be a 'failure
+    t shouldBe 1000.0 +- 100
+    assert(r.isFailure)
   }
 
 }

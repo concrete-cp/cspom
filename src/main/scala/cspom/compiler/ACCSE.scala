@@ -13,7 +13,7 @@ trait ACCSE[Data] extends ProblemCompiler with LazyLogging {
   protected type Arg = (CSPOMExpression[Any], Data)
   protected type Args = mutable.Map[CSPOMExpression[Any], Data]
 
-  def functions: Seq[Symbol]
+  def functions: Seq[String]
 
   /**
     * Converts a list of Args to SubExp
@@ -88,7 +88,7 @@ trait ACCSE[Data] extends ProblemCompiler with LazyLogging {
     }
 
     // Quickly filter singleton pairs
-    map.retain((_, v) => v.lengthCompare(1) > 0) // values.removeIf(_.lengthCompare(1) <= 0)
+    map.filterInPlace((_, v) => v.lengthCompare(1) > 0) // values.removeIf(_.lengthCompare(1) <= 0)
 
     while (map.nonEmpty) {
 

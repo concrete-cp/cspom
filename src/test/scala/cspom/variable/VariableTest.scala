@@ -13,7 +13,7 @@ class VariableTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks 
     var c: CSPOMConstraint[_] = null
     val cspom = CSPOM { implicit problem =>
       v = IntVariable(0 to 10)
-      c = ctr(CSPOMConstraint('leq)(v))
+      c = ctr(CSPOMConstraint("leq")(v))
     }
     cspom.referencedExpressions should contain theSameElementsAs Seq(CSPOMConstant(true), v)
     cspom.constraints(v) should contain theSameElementsAs Seq(c)

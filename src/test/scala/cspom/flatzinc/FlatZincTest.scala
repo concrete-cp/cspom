@@ -39,7 +39,7 @@ class FlatZincTest extends FlatSpec with Matchers {
   }
 
   it should "correctly parse array" in {
-    fastparse.parse("[500.0,700.0,400.0,300.0]", FlatZincFastParser.array_expr(_)) should be a 'success
+    assert(fastparse.parse("[500.0,700.0,400.0,300.0]", FlatZincFastParser.array_expr(_)).isSuccess)
     //    match {
 //      case p: Parsed.Failure=>
 //        println(p.trace().longAggregateMsg)

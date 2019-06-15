@@ -14,7 +14,7 @@ final class ParserTest extends FlatSpec with Matchers with Inspectors {
     cspom.constraints should have size 9
 
 
-    val mdds = cspom.constraints.collect { case c: CSPOMConstraint[_] if c.function == 'extension => c.getParam[MDDRelation]("relation").get }.toSeq
+    val mdds = cspom.constraints.collect { case c: CSPOMConstraint[_] if c.function == "extension" => c.getParam[MDDRelation]("relation").get }.toSeq
     mdds should have size 8
     forAll(mdds) { m: MDDRelation =>
       m.mdd.vertices() shouldBe 20
@@ -22,16 +22,6 @@ final class ParserTest extends FlatSpec with Matchers with Inspectors {
       m.arity shouldBe 3
     }
 
-  }
-
-  it should "correctly parse MDD" in {
-    val relation = """
-0 1 |0 2 |0 3 |0 4 |1 0 |1 2 |1 3 |1 4 |2 0 |2 1 |2 3 |2 4 |3 0 |3 1 |3 2 |3 4 |4 0 |4 1 |4 2 |4 3 |
-                   """
-
-    val mdd = ConstraintParser.parseTable(relation, 2, 20)
-
-    mdd.lambda shouldBe 20
   }
 
   for (file <- Seq("GolombRuler-a3-7annot.xml.xz", "ModelFile.xml.xz", "testExtension1.xml.xz", "testExtension2.xml.xz", "testPrimitive.xml.xz")) {

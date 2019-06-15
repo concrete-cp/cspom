@@ -7,7 +7,7 @@ import cspom.variable._
 
 object SumSE extends ACCSE[Int] {
 
-  def functions: Seq[Symbol] = Seq('sum)
+  def functions: Seq[String] = Seq("sum")
 
   def readCSPOM(constraint: CSPOMConstraint[_]): (IndexedSeq[SimpleExpression[Any]], Seq[Int], Int, String) = {
     require(constraint.arguments.lengthCompare(3) == 0)
@@ -29,7 +29,7 @@ object SumSE extends ACCSE[Int] {
   }
 
   override def define(subexp: List[Arg], aux: CSPOMVariable[_]): (Arg, CSPOMConstraint[_]) = {
-    val definition = CSPOMConstraint('sum)(
+    val definition = CSPOMConstraint("sum")(
       CSPOMConstant(-1) :: subexp.map { case (_, k) => CSPOMConstant(k) },
       aux :: subexp.map { case (x, _) => x },
       CSPOMConstant(0))
@@ -127,7 +127,7 @@ object SumSE extends ACCSE[Int] {
   override def argsToConstraint(original: CSPOMConstraint[_], args: Args): CSPOMConstraint[_] = {
     val (_, _, constant, mode) = readCSPOM(original)
     val (vars, coefs) = args.unzip
-    CSPOMConstraint(original.result)('sum)(seq2CSPOMSeq(coefs.map(CSPOMConstant(_))), seq2CSPOMSeq(vars), CSPOMConstant(constant)) withParam ("mode" -> mode)
+    CSPOMConstraint(original.result)("sum")(seq2CSPOMSeq(coefs.map(CSPOMConstant(_))), seq2CSPOMSeq(vars), CSPOMConstant(constant)) withParam ("mode" -> mode)
   }
 
 }

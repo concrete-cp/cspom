@@ -23,8 +23,8 @@ object JCSPOM {
   def constant(a: Int) = CSPOMConstant(a)
 
   def constraint(function: String, arguments: Array[CSPOMExpression[_]], params: ConstraintParameters): CSPOMConstraint[Boolean] =
-    CSPOMConstraint(Symbol(function))(arguments: _*) withParam (params.toSeq: _*)
+    CSPOMConstraint(function)(arguments: _*) withParam (params.toSeq: _*)
 
   def constraint[T](result: CSPOMExpression[T], function: String, arguments: Array[CSPOMExpression[Any]], params: Map[String, Any]): CSPOMConstraint[T] =
-    new CSPOMConstraint(result, Symbol(function), arguments.toSeq, params)
+    new CSPOMConstraint(result, function, arguments.toSeq, params)
 }

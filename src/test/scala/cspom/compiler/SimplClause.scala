@@ -10,7 +10,7 @@ import cspom.variable.{BoolExpression, CSPOMConstant, CSPOMSeq}
   * Removes constants from clauses
   */
 object SimplClause extends ConstraintCompilerNoData {
-  def functions = Functions('clause)
+  def functions = Functions("clause")
 
   def matchBool(fc: CSPOMConstraint[_], problem: CSPOM): Boolean = fc match {
     case CSPOMConstraint(_, _, Seq(positive: CSPOMSeq[_], negative: CSPOMSeq[_]), _) =>
@@ -35,7 +35,7 @@ object SimplClause extends ConstraintCompilerNoData {
       val newP = positive.filterNot(_.isFalse)
       val newN = negative.filterNot(_.isTrue)
       if (newP.isEmpty && newN.isEmpty) throw new UNSATException("Empty clause created during compilation")
-      replaceCtr(fc, CSPOMConstraint(fc.result)('clause)(newP, newN), problem)
+      replaceCtr(fc, CSPOMConstraint(fc.result)("clause")(newP, newN), problem)
     }
 
   }

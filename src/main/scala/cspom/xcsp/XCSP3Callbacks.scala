@@ -42,7 +42,7 @@ class XCSP3Callbacks extends XCSP3CallbacksObj
 
 
 
-  override def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]) {
+  override def buildCtrInstantiation(id: String, list: Array[XVarInteger], values: Array[Int]): Unit = {
     implicit def problem: CSPOM = cspom
 
     for ((variable, value) <- (list, values).zipped) {
@@ -51,7 +51,7 @@ class XCSP3Callbacks extends XCSP3CallbacksObj
   }
 
   override def buildCtrClause(id: String, pos: Array[XVarInteger], neg: Array[XVarInteger]): Unit = {
-    cspom.ctr('clause)(toCspom(pos), toCspom(neg))
+    cspom.ctr("clause")(toCspom(pos), toCspom(neg))
   }
 
   override def buildCtrFalse(id: String, list: Array[XVariables.XVar]): Unit = {

@@ -28,7 +28,7 @@ object GML {
 
   private def ctr(variables: Map[CSPOMVariable[_], String], constraints: Iterator[CSPOMConstraint[_]]) = {
 
-    var gen = 0;
+    var gen = 0
 
     constraints.flatMap { c =>
       c.flattenedScope.collect {
@@ -38,7 +38,7 @@ object GML {
           edge [
             source "$source"
             target "$target"
-            label "${c.function.name}"
+            label "${c.function}"
           ]
           """
         case s =>
@@ -46,7 +46,7 @@ object GML {
           s"""
           node [
             id "cons$gen"
-            label "${c.function.name}"
+            label "${c.function}"
             graphics [ fill "#FFAA00" ]
           ]
           """ ++ s.flatMap(v => s"""

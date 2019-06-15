@@ -32,11 +32,11 @@ sealed trait CSPOMExpression[+T] {
     this !== other
 
   def !==(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] = {
-    problem.defineBool(result => CSPOMConstraint(result)('ne)(this, other))
+    problem.defineBool(result => CSPOMConstraint(result)("ne")(this, other))
   }
 
   def ===(other: CSPOMExpression[_ >: T])(implicit problem: CSPOM): SimpleExpression[Boolean] =
-    problem.defineBool(result => CSPOMConstraint(result)('eq)(this, other))
+    problem.defineBool(result => CSPOMConstraint(result)("eq")(this, other))
 
   def flatten: Seq[SimpleExpression[T]]
 
@@ -79,16 +79,16 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
   def isEmpty: Boolean
 
-//
-//  def set: Set[T] = new Set[T] {
-//    def contains(i: T): Boolean = SimpleExpression.this.contains(i)
-//
-//    override def +(elem: T): Set[T] = ???
-//
-//    override def -(elem: T): Set[T] = ???
-//
-//    override def iterator: Iterator[T] = ???
-//  }
+
+  def set[A >: T]: Set[A] = new Set[A] {
+    def contains(i: A): Boolean = SimpleExpression.this.contains(i)
+
+    override def incl(elem: A): Set[A] = ???
+
+    override def excl(elem: A): Set[A] = ???
+
+    override def iterator: Iterator[A] = ???
+  }
 }
 
 object SimpleExpression {
@@ -160,14 +160,7 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
 
   def contains[S >: T](that: S): Boolean = bool2int(value) == bool2int(that)
 
-  private def bool2int(b: Any): Any = b match {
-    case true => 1
-    case false => 0
-    case e => e
-
-  }
-
-  def intersected(that: SimpleExpression[_>:T]): SimpleExpression[T] = {
+  def intersected(that: SimpleExpression[_ >: T]): SimpleExpression[T] = {
     if (that.contains(value)) {
       this
     } else {
@@ -183,6 +176,13 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
   }
 
   override def hashCode: Int = 31 * bool2int(value).hashCode
+
+  private def bool2int(b: Any): Any = b match {
+    case true => 1
+    case false => 0
+    case e => e
+
+  }
 
   def isFalse: Boolean = value == false || value == 0
 
@@ -222,9 +222,8 @@ abstract class CSPOMVariable[+T: TypeTag]() extends SimpleExpression[T] {
 
 object CSPOMSeq {
 
-  private val cache = new mutable.WeakHashMap[CSPOMSeq[_], CSPOMSeq[_]]
-
   lazy val empty: CSPOMSeq[Nothing] = new CSPOMSeq(IndexedSeq.empty, IndexedSeq.empty.indices)
+  private val cache = new mutable.WeakHashMap[CSPOMSeq[_], CSPOMSeq[_]]
   // @annotation.varargs def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] = CSPOMSeq(seq.toIndexedSeq, seq.indices)
 
   def apply[T: TypeTag](seq: CSPOMExpression[T]*): CSPOMSeq[T] =
@@ -242,14 +241,16 @@ object CSPOMSeq {
 
   def collectAll[A, B](s: Seq[A])(f: PartialFunction[A, B]): Option[Seq[B]] = {
     val r = new ArrayBuffer[B](s.length)
-    for (h <- s) {
+    val it = s.iterator
+    while(it.hasNext) {
+      val h = it.next()
       if (f.isDefinedAt(h)) {
         r += f(h)
       } else {
         return None
       }
     }
-    Some(r.result())
+    Some(r.toSeq)
   }
 
   def searchSpace(s: Seq[CSPOMExpression[_]]): Double = {
@@ -258,9 +259,9 @@ object CSPOMSeq {
 
 }
 
-final class CSPOMSeq[+T: TypeTag] private (
-                                   val values: IndexedSeq[CSPOMExpression[T]],
-                                   val definedIndices: Range)
+final class CSPOMSeq[+T: TypeTag] private(
+                                           val values: IndexedSeq[CSPOMExpression[T]],
+                                           val definedIndices: Range)
   extends CSPOMExpression[T] with IndexedSeq[CSPOMExpression[T]] with LazyLogging {
 
   //  if (definedIndices.headOption.contains(0)) {
@@ -273,8 +274,7 @@ final class CSPOMSeq[+T: TypeTag] private (
 
   require(values.size == definedIndices.size)
   lazy val flattenVariables: IndexedSeq[CSPOMVariable[T]] = values.flatMap(_.flattenVariables)
-  override lazy val hashCode: Int = super.hashCode
-
+  override lazy val hashCode: Int = (values, definedIndices).hashCode
 
 
   def tpe: universe.Type = typeOf[T]
@@ -319,7 +319,7 @@ final class CSPOMSeq[+T: TypeTag] private (
 
   def searchSpace: Double = CSPOMSeq.searchSpace(values)
 
-  def zipWithIndex: Iterator[(CSPOMExpression[T], Int)] = values.iterator.zip(definedIndices.iterator)
+  override def zipWithIndex: IndexedSeq[(CSPOMExpression[T], Int)] = values.zip(definedIndices)
 
   override def equals(o: Any): Boolean = o match {
     case a: CSPOMSeq[_] => a.values == values && a.definedIndices == definedIndices
@@ -334,6 +334,10 @@ final class CSPOMSeq[+T: TypeTag] private (
     } else {
       s"${names(this)}: CSPOMSeq(${values.map(_.toString(names)).mkString(", ")})"
     }
+  }
+
+  override def map[B](f: CSPOMExpression[T] => B): IndexedSeq[B] = {
+    values.map(f)
   }
 
   //

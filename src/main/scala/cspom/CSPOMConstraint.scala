@@ -1,12 +1,12 @@
 package cspom
 import cspom.variable.{CSPOMConstant, CSPOMExpression}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import com.typesafe.scalalogging.LazyLogging
 
 final case class CSPOMConstraint[+T](
     result: CSPOMExpression[T],
-    function: Symbol,
+    function: String,
     arguments: Seq[CSPOMExpression[Any]],
     params: Map[String, Any] = Map()) extends Parameterized with LazyLogging {
   assert(arguments.nonEmpty)
@@ -86,23 +86,18 @@ object CSPOMConstraint {
 
   def param(key: String, v: Any): ConstraintParameters = ConstraintParameters(Map(key -> v))
 
-  //  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]]): CSPOMConstraint[Boolean] =
-  //    CSPOMConstraint(function, arguments, Map[String, Any]())
-
-  //  def apply(function: Symbol, arguments: Seq[CSPOMExpression[_]], params: Map[String, Any]): CSPOMConstraint[Boolean] =
-  //    new CSPOMConstraint(CSPOMConstant(true), function, arguments, params)
-  def apply(function: Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
+  def apply(function: String)(arguments: CSPOMExpression[_]*): CSPOMConstraint[Boolean] =
     apply(CSPOMConstant(true))(function)(arguments: _*)
 
-  def apply[R](result: CSPOMExpression[R])(function: Symbol)(arguments: CSPOMExpression[_]*): CSPOMConstraint[R] =
-    new CSPOMConstraint(result, function, arguments)
+  def apply[R](result: CSPOMExpression[R])(function: String)(arguments: CSPOMExpression[_]*): CSPOMConstraint[R] =
+    new CSPOMConstraint(result, function, arguments.toSeq)
 
 }
 
 case class ConstraintParameters(m: Map[String, Any]) extends Map[String, Any] {
   def param(key: String, v: Any): ConstraintParameters = ConstraintParameters(m + (key -> v))
-  def +[B1 >: Any](kv: (String, B1)): Map[String, B1] = ConstraintParameters(m + kv)
-  def -(key: String): scala.collection.immutable.Map[String, Any] = ConstraintParameters(m - key)
+  def updated[B1 >: Any](key: String, value: B1): Map[String, B1] = ConstraintParameters(m.updated(key, value))
+  def removed(key: String): scala.collection.immutable.Map[String, Any] = ConstraintParameters(m - key)
   def get(key: String): Option[Any] = m.get(key)
   def iterator: Iterator[(String, Any)] = m.iterator
 }

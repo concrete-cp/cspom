@@ -11,12 +11,12 @@ import cspom.variable.{CSPOMVariable, SimpleExpression}
   */
 class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
-  def functions = Functions('extension)
+  def functions = Functions("extension")
   //private val cache = new HashMap[(IdEq[Relation[_]], Seq[SimpleExpression[_]]), (Seq[Int], Relation[Int])]
 
   override def matchBool(c: CSPOMConstraint[_], problem: CSPOM): Boolean = {
     //println(c)
-    assert(c.function == 'extension)
+    assert(c.function == "extension")
     c.nonReified
   }
 
@@ -38,17 +38,17 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
     logger.info(s"will reduce $relation for $args")
 
-    val filtered = relation.filter(args.map { expr: SimpleExpression[_] =>
-      new Set[Int] {
-        def contains(i: Int): Boolean = expr.contains(i)
-
-        override def +(elem: Int): Set[Int] = ???
-
-        override def -(elem: Int): Set[Int] = ???
-
-        override def iterator: Iterator[Int] = ???
-      }
-    })
+    val filtered = relation.filter(args.map { expr: SimpleExpression[Any] => expr.set })
+//      new Set[Any] {
+//        def contains(i: Any): Boolean = expr.contains(i)
+//
+//        override def incl(elem: Any): Set[Any] = ???
+//
+//        override def excl(elem: Any): Set[Any] = ???
+//
+//        override def iterator: Iterator[Any] = ???
+//      }
+//    })
 
     logger.info(s"filtered: {}, {} -> {}", filtered != relation, relation.space, filtered.space)
 
@@ -82,7 +82,7 @@ class ReduceRelations extends ConstraintCompilerNoData with LazyLogging {
 
         logger.info(s"$relation -> $reduced")
         replaceCtr(c,
-          CSPOMConstraint('extension)(vars.map(args): _*) withParams (c.params + ("relation" -> reduced)),
+          CSPOMConstraint("extension")(vars.map(args): _*) withParams (c.params + ("relation" -> reduced)),
           problem)
 
       } else {

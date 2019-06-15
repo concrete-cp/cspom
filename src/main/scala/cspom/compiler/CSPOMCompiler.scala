@@ -3,7 +3,6 @@ package cspom.compiler
 import com.typesafe.scalalogging.LazyLogging
 import cspom.util.VecMap
 import cspom.{CSPOM, CSPOMConstraint, Statistic, StatisticsManager}
-import org.scalameter.Quantity
 
 import scala.util.Try
 
@@ -15,7 +14,7 @@ case object AnyFunction extends CompiledFunctions {
   def mtch(c: CSPOMConstraint[_]) = true
 }
 
-case class Functions(f: Symbol*) extends CompiledFunctions {
+case class Functions(f: String*) extends CompiledFunctions {
   def mtch(c: CSPOMConstraint[_]): Boolean = f.contains(c.function)
 }
 
@@ -35,15 +34,14 @@ final class CSPOMCompiler(
     val constraints = new VecMap[CSPOMConstraint[_]]() ++=
       problem.constraints.map(c => c.id -> c)
 
-    val specCompilers: Map[Symbol, Seq[Int]] = constraintCompilers.zipWithIndex
+    val specCompilers: Map[String, Seq[Int]] = constraintCompilers.zipWithIndex
       .flatMap { case (cc, i) =>
         cc.functions match {
           case Functions(fs@_*) => fs.map(f => f -> i)
           case AnyFunction => Seq()
         }
       }
-      .groupBy(_._1)
-      .mapValues(_.map(_._2))
+      .groupMap(_._1)(_._2)
       .withDefaultValue(Seq())
 
     val anyCompilers = constraintCompilers
@@ -140,7 +138,7 @@ object CSPOMCompiler {
   @Statistic
   var compiles = 0
   @Statistic
-  var compileTime: Quantity[Double] = Quantity(0, "")
+  var compileTime: Double = 0
 
   def compile(problem: CSPOM, compilers: Seq[Compiler]): Try[CSPOM] = {
     val pbc = new CSPOMCompiler(problem, compilers.collect {
@@ -152,7 +150,7 @@ object CSPOMCompiler {
       }
         .toIndexedSeq)
 
-    val (r, t: Quantity[Double]) = StatisticsManager.measure(pbc.compile())
+    val (r, t) = StatisticsManager.measure(pbc.compile())
 
     compileTime = t
 

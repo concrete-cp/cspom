@@ -1,26 +1,27 @@
 package cspom.util
 import scala.collection.mutable
 
-class VecMap[T](buckets: Int = 16)
-    extends mutable.AbstractMap[Int, T] with collection.mutable.Map[Int, T] with collection.mutable.MapLike[Int, T, VecMap[T]] {
-  var map: Array[Option[T]] = Array.fill(buckets)(None)
+final class VecMap[T](buckets: Int = 16)
+    extends mutable.AbstractMap[Int, T] { //with collection.mutable.Map[Int, T] with collection.mutable.MapOps[Int, T, mutable.Map, VecMap[T]] {
+  private var map: Array[Option[T]] = Array.fill(buckets)(None)
 
   def get(key: Int): Option[T] =
     if (key < map.length) {
       map(key)
     } else None
 
-  def iterator: Iterator[(Int, T)] =
+  def iterator: Iterator[(Int, T)] = {
     map.iterator.zipWithIndex.collect {
       case (Some(v), i) => i -> v
     }
+  }
 
-  def -=(key: Int): this.type = {
+  def subtractOne(key: Int): this.type = {
     map(key) = None
     this
   }
 
-  def +=(kv: (Int, T)): this.type = {
+  def addOne(kv: (Int, T)): this.type = {
     update(kv._1, kv._2)
     this
   }

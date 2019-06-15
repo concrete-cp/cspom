@@ -3,18 +3,32 @@ package cspom
 import com.typesafe.scalalogging.LazyLogging
 import cspom.variable.{CSPOMConstant, CSPOMExpression, CSPOMSeq, CSPOMVariable}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{SortedSet, mutable}
+import scala.collection.{immutable, mutable}
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe.TypeTag
-import scala.util.parsing.input.CharSequenceReader
+
+object NameParser {
+
+  import fastparse._
+
+  def apply[_: P]: P[(String, Seq[Int])] =
+    P(var_par_id ~~ ("[" ~~ int_const ~~ "]").repX)
+
+  def var_par_id[_: P]: P[String] =
+    P(CharIn("_a-zA-Z") ~~ CharIn("_0-9a-zA-Z").repX).!
+
+  def int_const[_: P]: P[Int] =
+    P(CharIn("+\\-").? ~~ CharIn("0-9").repX(1)).!.map(i => i.toInt)
+}
+
 
 class ExpressionMap extends LazyLogging {
   /**
     * Map used to easily retrieve a variable according to its name.
     */
   private val namedExpressions = mutable.HashMap[String, CSPOMExpression[_]]()
-  private val expressionNames = mutable.HashMap[CSPOMExpression[_], SortedSet[String]]().withDefaultValue(SortedSet.empty)
+  private val expressionNames = mutable.HashMap[CSPOMExpression[_], immutable.SortedSet[String]]().withDefaultValue(immutable.SortedSet.empty)
   private[cspom] val containers = new java.util.IdentityHashMap[CSPOMExpression[_], mutable.LinkedHashSet[(CSPOMSeq[_], Int)]]()
 
 
@@ -34,12 +48,14 @@ class ExpressionMap extends LazyLogging {
     * @return The variable with the corresponding name.
     */
   def expression(name: String): Option[CSPOMExpression[_]] = {
-    NameParser.parse(new CharSequenceReader(name)).map(Some(_)).getOrElse(None).flatMap {
-      case (n, s) => getInSeq(namedExpressions.get(n), s)
-    }
+    fastparse.parse(name, NameParser(_)).fold(
+      { (_, _, _) => logger.warn(s"Could not parse $name"); None },
+      { case ((n, s), _) => getInSeq(namedExpressions.get(n), s) }
+    )
       .orElse(namedExpressions.get(name))
 
   }
+
 
   def getContainers(e: CSPOMExpression[_]): Iterable[(CSPOMSeq[_], Int)] =
     Option(containers.get(e)).getOrElse(Nil)
@@ -47,7 +63,9 @@ class ExpressionMap extends LazyLogging {
   def registerContainer(e: CSPOMExpression[_]): Unit = {
 
     for {
-      s <- PartialFunction.condOpt(e) { case s: CSPOMSeq[_] => s }
+      s <- PartialFunction.condOpt(e) {
+        case s: CSPOMSeq[_] => s
+      }
       (c, i) <- s.withIndex
     } {
       logger.trace(s"Registering $s")
@@ -87,6 +105,7 @@ class ExpressionMap extends LazyLogging {
 
   def nameExpression[A <: CSPOMExpression[_]](e: A, n: String): Unit = {
     require(!namedExpressions.contains(n), s"${namedExpressions(n)} is already named $n")
+    if (n.contains("[") || n.contains("]")) logger.debug(s"Naming $e as $n: array expressions should be registered as CSPOMSeqs")
     namedExpressions += n -> e
     expressionNames(e) += n
     registerContainer(e)
@@ -94,7 +113,9 @@ class ExpressionMap extends LazyLogging {
 
   def removeContainer(e: CSPOMExpression[_]): Unit = {
     for {
-      s <- PartialFunction.condOpt(e) { case s: CSPOMSeq[_] => s }
+      s <- PartialFunction.condOpt(e) {
+        case s: CSPOMSeq[_] => s
+      }
       (e, i) <- s.withIndex
     } {
       logger.trace(s"Deregistering $s")
@@ -135,7 +156,9 @@ class ExpressionMap extends LazyLogging {
     }
     expressionNames.remove(which)
 
-    logger.debug(s"Replacing $which with $by: contained in ${getContainers(which)}")
+    logger.debug(s"Replacing $which with $by: contained in ${
+      getContainers(which)
+    }")
 
 
     for (
@@ -148,7 +171,11 @@ class ExpressionMap extends LazyLogging {
       removeContainer(container)
       registerContainer(nc)
     }
-    logger.debug(s"replacing ${which.toString(displayName)} with ${by.toString(displayName)}") // from ${Thread.currentThread().getStackTrace.toSeq}")
+    logger.debug(s"replacing ${
+      which.toString(displayName)
+    } with ${
+      by.toString(displayName)
+    }") // from ${Thread.currentThread().getStackTrace.toSeq}")
 
 
     (which, by) :: replaced
@@ -172,6 +199,6 @@ class ExpressionMap extends LazyLogging {
       bldr += elem._2
     }
 
-    m.toSeq
+    m.view.mapValues(_.toSeq)
   }
 }

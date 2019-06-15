@@ -2,23 +2,22 @@ name := "cspom"
 
 organization := "com.github.concrete-cp"
 
-version := "3.0-SNAPSHOT"
+version := "3.0"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.13.0"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
-  "fr.univ-valenciennes" %% "bitvectors" % "2.2",
-  "com.github.concrete-cp" %% "mdd" % "2.0-SNAPSHOT",
+  "com.github.concrete-cp" %% "bitvectors" % "3.0",
+  "com.github.concrete-cp" %% "mdd" % "2.0",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.apache.commons" % "commons-compress" % "1.18",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "com.storm-enroute" %% "scalameter-core" % "0.17",
-  "org.scalatest" %% "scalatest" % "3.0.7" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.8" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
   "org.tukaani" % "xz" % "1.8",
-  "com.lihaoyi" %% "fastparse" % "2.1.2"
+  "com.lihaoyi" %% "fastparse" % "2.1.3"
 )
 
 scalacOptions ++= Seq(  
@@ -46,15 +45,9 @@ publishTo := {
 
 publishArtifact in Test := false
 
-testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${(target in Test).value / "test-reports"}")
-
-val scalaMeterFramework = new TestFramework("org.scalameter.ScalaMeterFramework")
-
-testFrameworks += scalaMeterFramework
+// testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${(target in Test).value / "test-reports"}")
 
 parallelExecution in Test := false
-
-testOptions += Tests.Argument(scalaMeterFramework, "-silent")
 
 licenses := Seq("LGPL 3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.txt"))
 

@@ -9,7 +9,7 @@ import cspom.variable._
 
 import scala.util.{Failure, Try}
 
-object SumDomains extends VariableCompiler('sum) with LazyLogging {
+object SumDomains extends VariableCompiler("sum") with LazyLogging {
 
   def compiler(c: CSPOMConstraint[_]) = throw new IllegalStateException
 
@@ -29,7 +29,7 @@ object SumDomains extends VariableCompiler('sum) with LazyLogging {
           case "ne" => IntInterval.all
         }
 
-        val coefspan = (iargs, coef).zipped.map((a, c) => IntExpression.span(a) * Finite(c)).toIndexedSeq
+        val coefspan = (iargs lazyZip coef).map((a, c) => IntExpression.span(a) * Finite(c))
 
         val filt = for {
           i <- iargs.indices

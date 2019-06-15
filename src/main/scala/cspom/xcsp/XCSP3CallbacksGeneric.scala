@@ -42,7 +42,7 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars with LazyLogging {
   private def buildCtrPrimitiveCSPOM(x: SimpleExpression[Int], opa: TypeArithmeticOperator,
                                      y: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
     val aux = cspom.defineInt { r =>
-      CSPOMConstraint(r)(Symbol(opa.toString.toLowerCase))(x, y)
+      CSPOMConstraint(r)(opa.toString.toLowerCase)(x, y)
     }
 
     buildCtrPrimitiveCSPOM(aux, op, k)
@@ -51,12 +51,12 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars with LazyLogging {
   private def buildCtrPrimitiveCSPOM(x: SimpleExpression[Int], op: TypeConditionOperatorRel, k: SimpleExpression[Int]): Unit = {
     import TypeConditionOperatorRel._
     op match {
-      case LT => cspom.ctr('lt)(x, k)
-      case LE => cspom.ctr('le)(x, k)
-      case EQ => cspom.ctr('eq)(x, k)
-      case NE => cspom.ctr('ne)(x, k)
-      case GT => cspom.ctr('lt)(k, x)
-      case GE => cspom.ctr('le)(k, x)
+      case LT => cspom.ctr("lt")(x, k)
+      case LE => cspom.ctr("le")(x, k)
+      case EQ => cspom.ctr("eq")(x, k)
+      case NE => cspom.ctr("ne")(x, k)
+      case GT => cspom.ctr("lt")(k, x)
+      case GE => cspom.ctr("le")(k, x)
     }
   }
 
@@ -68,10 +68,10 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars with LazyLogging {
     import TypeConditionOperatorSet._
     op match {
       case IN =>
-        cspom.ctr('in)(toCspom(x), CSPOM.constantSeq(array))
+        cspom.ctr("in")(toCspom(x), CSPOM.constantSeq(array))
 
       case NOTIN =>
-        cspom.ctr(CSPOMConstraint(CSPOMConstant(false))('in)(toCspom(x), CSPOM.constantSeq(array)))
+        cspom.ctr(CSPOMConstraint(CSPOMConstant(false))("in")(toCspom(x), CSPOM.constantSeq(array)))
     }
   }
 
@@ -98,15 +98,15 @@ trait XCSP3CallbacksGeneric extends XCSP3CallbacksVars with LazyLogging {
     }
   }
 
-  def typeSymbol(t: TypeExpr): Symbol = {
-    Symbol(t.toString.toLowerCase)
+  def typeString(t: TypeExpr): String = {
+    t.toString.toLowerCase
   }
 
   def intensionConstraint(result: CSPOMExpression[_], p: XNodeParent[XVarInteger]): CSPOMConstraint[_] = {
-    CSPOMConstraint(result)(typeSymbol(p.getType))(p.sons.toSeq.map(extract): _*)
+    CSPOMConstraint(result)(typeString(p.getType))(p.sons.toSeq.map(extract): _*)
   }
 
-  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVarInteger]) {
+  override def buildCtrIntension(id: String, scope: Array[XVarInteger], syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     cspom.ctr(intensionConstraint(CSPOMConstant(true), syntaxTreeRoot))
   }
 

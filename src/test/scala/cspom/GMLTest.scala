@@ -15,10 +15,10 @@ class GMLTest extends FlatSpec with Matchers with LazyLogging {
       val (x, y, z) = (
         IntVariable(0 to 10) as "X",
         IntVariable(0 to 10) as "Y",
-        IntVariable(0 to 10) as "Z");
+        IntVariable(0 to 10) as "Z")
 
-      ctr(CSPOMConstraint('leq)(x, y))
-      ctr(CSPOMConstraint('leq)(x, y, z))
+      ctr(CSPOMConstraint("leq")(x, y))
+      ctr(CSPOMConstraint("leq")(x, y, z))
 
     }
 

@@ -12,14 +12,14 @@ object SumDuplicates extends ConstraintCompiler {
 
   type A = (CSPOMExpression[_], collection.Map[CSPOMExpression[Any], Int], Int)
 
-  def functions = Functions('sum)
+  def functions = Functions("sum")
 
   override def mtch(c: CSPOMConstraint[_], p: CSPOM): Option[A] = {
     val (vars, coefs, const, mode) = SumSE.readCSPOM(c)
 
     var duplicates = false
     val factors = collection.mutable.Map[CSPOMExpression[_], Int]()
-    for ((v, c) <- (vars, coefs).zipped) {
+    for ((v, c) <- vars lazyZip coefs) {
       factors.get(v) match {
         case Some(i) =>
           duplicates = true
@@ -59,7 +59,7 @@ object SumDuplicates extends ConstraintCompiler {
 
     } else {
       val newConstraint =
-        CSPOMConstraint(r)('sum)(factors.toSeq, variables.toSeq, const) withParams constraint.params
+        CSPOMConstraint(r)("sum")(factors.toSeq, variables.toSeq, const) withParams constraint.params
 
       //println(s"replacing $constraint with $newConstraint")
       replaceCtr(constraint, newConstraint, p)

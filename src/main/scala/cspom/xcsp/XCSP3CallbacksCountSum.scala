@@ -46,7 +46,7 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
     val mode = s.stringCondition
 
     cspom.ctr {
-      CSPOMConstraint('sum)(CSPOMSeq(s.coeffs: _*), CSPOMSeq(s.variables: _*), CSPOMConstant(s.k)) withParam ("mode" -> mode)
+      CSPOMConstraint("sum")(CSPOMSeq(s.coeffs: _*), CSPOMSeq(s.variables: _*), CSPOMConstant(s.k)) withParam ("mode" -> mode)
     }
   }
 
@@ -67,13 +67,13 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
 
   override def buildCtrAtLeast(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
     cspom.ctr {
-      CSPOMConstraint('atLeast)(CSPOMConstant(k), CSPOMConstant(value), cspomSeq(list))
+      CSPOMConstraint("atLeast")(CSPOMConstant(k), CSPOMConstant(value), cspomSeq(list))
     }
   }
 
   override def buildCtrAtMost(id: String, list: Array[XVarInteger], value: Int, k: Int): Unit = {
     cspom.ctr {
-      CSPOMConstraint('atMost)(CSPOMConstant(k), CSPOMConstant(value), cspomSeq(list))
+      CSPOMConstraint("atMost")(CSPOMConstant(k), CSPOMConstant(value), cspomSeq(list))
     }
   }
 
@@ -83,7 +83,7 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
 
   private def buildCtrExactly(list: Array[XVarInteger], value: Int, k: SimpleExpression[Int]): Unit = {
     cspom.ctr {
-      CSPOMConstraint(k)('occurrence)(CSPOMConstant(value), cspomSeq(list))
+      CSPOMConstraint(k)("occurrence")(CSPOMConstant(value), cspomSeq(list))
     }
   }
 
@@ -108,7 +108,7 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
   }
 
   private def buildCardExact(list: Array[XVarInteger], closed: Boolean, values: CSPOMSeq[Int], occurs: CSPOMSeq[Int]): Unit = {
-    cspom.ctr('gccExact)(cspomSeq(list), CSPOMConstant(closed), values, occurs)
+    cspom.ctr("gccExact")(cspomSeq(list), CSPOMConstant(closed), values, occurs)
   }
 
 
@@ -121,18 +121,18 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
   }
 
   private def buildCardMinMax(list: Array[XVarInteger], closed: Boolean, values: CSPOMSeq[Int], occursMin: Seq[Int], occursMax: Seq[Int]): Unit = {
-    cspom.ctr('gccMinMax)(cspomSeq(list), CSPOMConstant(closed), values, CSPOM.constantSeq(occursMin), CSPOM.constantSeq(occursMax))
+    cspom.ctr("gccMinMax")(cspomSeq(list), CSPOMConstant(closed), values, CSPOM.constantSeq(occursMin), CSPOM.constantSeq(occursMax))
   }
 
   override def buildCtrCount(id: String, list: Array[XVarInteger], values: Array[Int], condition: Condition): Unit = {
-    val count = values.map(i => cspom.defineInt(v => CSPOMConstraint(v)('occurrence)(CSPOMConstant(i), cspomSeq(list))))
+    val count = values.map(i => cspom.defineInt(v => CSPOMConstraint(v)("occurrence")(CSPOMConstant(i), cspomSeq(list))))
     for (ss <- toSumSig(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)) {
       buildSum(ss)
     }
   }
 
   override def buildCtrCount(s: String, list: Array[XVarInteger], values: Array[XVarInteger], condition: Condition): Unit = {
-    val count = values.map(i => cspom.defineInt(v => CSPOMConstraint(v)('occurrence)(toCspom(i), cspomSeq(list))))
+    val count = values.map(i => cspom.defineInt(v => CSPOMConstraint(v)("occurrence")(toCspom(i), cspomSeq(list))))
     for (ss <- toSumSig(count, Seq.fill(count.length)(CSPOMConstant(1)), condition)) {
       buildSum(ss)
     }
@@ -143,7 +143,7 @@ trait XCSP3CallbacksCountSum extends XCSP3CallbacksVars with XCSP3CallbacksGener
   }
 
   override final def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = {
-    val r = cspom.defineInt(r => CSPOMConstraint(r)('nvalues)(toCspom(list): _*) withParam ("except" -> except.toSeq))
+    val r = cspom.defineInt(r => CSPOMConstraint(r)("nvalues")(toCspom(list): _*) withParam ("except" -> except.toSeq))
     for (ss <- toSumSig(Seq(r), Seq(CSPOMConstant(1)), condition)) buildSum(ss)
   }
 

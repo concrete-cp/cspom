@@ -18,17 +18,17 @@ final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSe
 
   override def isEmpty: Boolean = r.isEmpty
 
-  def -(elem: Int): SortedSet[Int] =
+  def excl(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r -- IntInterval.singleton(elem))
 
-  def +(elem: Int): SortedSet[Int] =
+  def incl(elem: Int): SortedSet[Int] =
     new ContiguousIntRangeSet(r ++ IntInterval.singleton(elem))
 
   def contains(elem: Infinitable): Boolean = r.intersects(IntInterval.singleton(elem))
 
   def contains(elem: Int): Boolean = contains(Finite(elem))
 
-  def keysIteratorFrom(start: Int): Iterator[Int] =
+  def iteratorFrom(start: Int): Iterator[Int] =
     (r & IntInterval.atLeast(start)).contents.iterator.flatMap(allValues)
 
   def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = {

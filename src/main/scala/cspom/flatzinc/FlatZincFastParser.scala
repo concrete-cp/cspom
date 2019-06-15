@@ -100,7 +100,7 @@ object FlatZincFastParser extends CSPOM.Parser {
 
         for (FZConstraint(predAnnId, expr, annotations) <- constraints) {
           CSPOM.ctr(
-            CSPOMConstraint(Symbol(predAnnId))(expr.map(_.toCSPOM(declared)): _*) withParam
+            CSPOMConstraint(predAnnId)(expr.map(_.toCSPOM(declared)): _*) withParam
               (fzAnnotations(annotations): _*))
         }
 

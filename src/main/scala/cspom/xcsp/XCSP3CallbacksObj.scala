@@ -68,7 +68,7 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
 
     val obj = declareObj(IntVariable.free())
 
-    cspom.ctr(CSPOMConstraint(obj)('nvalues)(vars:_*))
+    cspom.ctr(CSPOMConstraint(obj)("nvalues")(vars:_*))
 
     obj
   }
@@ -94,7 +94,7 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
     val vars = toCspom(list)
     val obj = declareObj(IntVariable(union(vars)))
     cspom.ctr {
-      CSPOMConstraint(obj)('max)(vars: _*)
+      CSPOMConstraint(obj)("max")(vars: _*)
     }
     obj
   }
@@ -103,7 +103,7 @@ trait XCSP3CallbacksObj extends XCallbacks2 with XCSP3CallbacksVars with XCSP3Ca
     val vars = toCspom(list)
     val obj = declareObj(IntVariable(union(vars)))
     cspom.ctr {
-      CSPOMConstraint(obj)('min)(vars: _*)
+      CSPOMConstraint(obj)("min")(vars: _*)
     }
     obj
   }

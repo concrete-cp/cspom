@@ -7,6 +7,7 @@ import org.xcsp.common.Constants
 import org.xcsp.parser.XCallbacks2
 import org.xcsp.parser.entries.XVariables.XVarInteger
 
+import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 /**
@@ -61,7 +62,7 @@ trait XCSP3CallbacksVars extends XCallbacks2 {
     CSPOMSeq(toCspom(x), indices)
   }
 
-  def cspomSeq(x: Array[Int]): CSPOMSeq[Int] = CSPOM.constantSeq(x)
+  def cspomSeq(x: Array[Int]): CSPOMSeq[Int] = CSPOM.constantSeq(ArraySeq.unsafeWrapArray(x))
 
   /**
     * Default case

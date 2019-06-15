@@ -8,10 +8,10 @@ object RemoveUselessEq extends ConstraintCompiler {
 
   type A = Seq[CSPOMExpression[_]]
 
-  override def functions: CompiledFunctions = Functions('eq)
+  override def functions: CompiledFunctions = Functions("eq")
 
   override def matchConstraint(c: CSPOMConstraint[_]): Option[Seq[CSPOMExpression[Any]]] = {
-    assert(c.function == 'eq)
+    assert(c.function == "eq")
 
     val distinct = c.arguments.distinct
     val dsize = distinct.size
@@ -26,7 +26,7 @@ object RemoveUselessEq extends ConstraintCompiler {
   def compile(c: CSPOMConstraint[_], problem: CSPOM, distinct: A): Delta = {
 
     if (distinct.size > 1) {
-      replaceCtr(c, new CSPOMConstraint(c.result, 'eq, distinct, c.params), problem)
+      replaceCtr(c, new CSPOMConstraint(c.result, "eq", distinct, c.params), problem)
     } else {
       require(c.result != CSPOMConstant(false))
       val d = replaceCtr(c, Nil, problem)

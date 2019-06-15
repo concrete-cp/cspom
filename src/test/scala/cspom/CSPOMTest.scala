@@ -45,8 +45,8 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
   it should "accept and reference bool variables" in {
     val cspom = CSPOM { implicit problem =>
-      ctr(CSPOMConstraint('dummy)(new BoolVariable()))
-      ctr(CSPOMConstraint('dummy)(new BoolVariable()))
+      ctr(CSPOMConstraint("dummy")(new BoolVariable()))
+      ctr(CSPOMConstraint("dummy")(new BoolVariable()))
     }
     // Third is CSPOMConstant(true) !
     cspom.referencedExpressions should have size 3
@@ -63,7 +63,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
       //v foreach { cspom.addVariable(_) }
 
-      leq = ctr(CSPOMConstraint('leq)(v(0), v(1)))
+      leq = ctr(CSPOMConstraint("leq")(v(0), v(1)))
     }
 
     cspom.constraints(v(0)) should contain(leq)
@@ -71,10 +71,10 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
 
     cspom.removeConstraint(leq)
 
-    cspom.constraints should not be ('hasNext)
+    cspom.constraints shouldBe empty
 
-    cspom.constraints(v(0)) should not contain (leq)
-    cspom.constraints(v(1)) should not contain (leq)
+    cspom.constraints(v(0)) should not contain leq
+    cspom.constraints(v(1)) should not contain leq
 
     cspom.referencedExpressions shouldBe empty
 
@@ -100,7 +100,7 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
     cspom.expression("T[0]").value shouldBe rx
     cspom.expression("T[1]").value shouldBe y
     cspom.referencedExpressions should contain theSameElementsAs Seq(rx, y, t)
-    cspom.namesOf(x) shouldBe 'empty
+    cspom.namesOf(x) shouldBe empty
     cspom.namesOf(rx) should contain theSameElementsAs Seq("X", "T[0]")
     cspom.namesOf(y) should contain theSameElementsAs Seq("Y", "T[1]")
 
@@ -147,8 +147,8 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
       //
       //      val albert1 = for (i <- 5 to 8) yield for (j <- 14 to 19) yield new BoolVariable() as s"albert1 $i/$j"
       def lt(x: CSPOMExpression[_], y: CSPOMExpression[_]) = (x, y) match {
-        case (BoolExpression(xi), BoolExpression(yi)) => problem.defineBool(r => CSPOMConstraint(r)('clause)(Seq(yi), Seq(xi)))
-        case (IntExpression(xi), IntExpression(yi))   => problem.defineBool(r => CSPOMConstraint(r)('lt)(xi, yi))
+        case (BoolExpression(xi), BoolExpression(yi)) => problem.defineBool(r => CSPOMConstraint(r)("clause")(Seq(yi), Seq(xi)))
+        case (IntExpression(xi), IntExpression(yi))   => problem.defineBool(r => CSPOMConstraint(r)("lt")(xi, yi))
       }
 
       val x = for (i <- 0 until 5) yield new BoolVariable() as s"X$i"
@@ -160,14 +160,14 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
       val disjunction = Seq(
         lt(x(0), y(0)),
         problem.defineBool(r =>
-          CSPOMConstraint(r)('and)((0 until n).map(i => x(i) === y(i)): _*))) ++
+          CSPOMConstraint(r)("and")((0 until n).map(i => x(i) === y(i)): _*))) ++
         (0 until n - 1).map { i =>
           val conjunction =
             (0 until i).map(j => x(j) === y(j)) :+ lt(x(i + 1), y(i + 1))
-          problem.defineBool(r => CSPOMConstraint(r)('and)(conjunction))
+          problem.defineBool(r => CSPOMConstraint(r)("and")(conjunction))
         }
 
-      ctr(problem.defineBool(r => CSPOMConstraint(r)('or)(disjunction)))
+      ctr(problem.defineBool(r => CSPOMConstraint(r)("or")(disjunction)))
 
     }
 
@@ -181,9 +181,9 @@ class CSPOMTest extends FlatSpec with Matchers with OptionValues {
       val v0 = IntVariable(1 to 3)
       val v1 = IntVariable(2 to 4)
 
-      val r = problem.defineInt(r => CSPOMConstraint('sum)(Seq(v0, v1, r), 0))
+      val r = problem.defineInt(r => CSPOMConstraint("sum")(Seq(v0, v1, r), 0))
 
-      problem.defineInt(result => CSPOMConstraint(result)('abs)(r)) as "r2"
+      problem.defineInt(result => CSPOMConstraint(result)("abs")(r)) as "r2"
 
     }
 

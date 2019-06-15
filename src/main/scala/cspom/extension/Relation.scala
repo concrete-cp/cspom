@@ -14,7 +14,7 @@ trait Relation[A] extends Iterable[Seq[A]] {
 
   def contains(t: Seq[A]): Boolean
 
-  def filter(f: IndexedSeq[Set[Int]]): Relation[A]
+  def filter[B >: A](f: IndexedSeq[Set[B]]): Relation[A]
 
   def project(c: Seq[Int]): Relation[A]
 
@@ -45,7 +45,21 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
 
   def arity: Int = mdd.depth().getOrElse(-1)
 
-  def filter(f: IndexedSeq[Set[Int]]): MDDRelation = updated(mdd.filterTrie(f.toArray, modified), reduced = false)
+  def filter[B >: Int](f: IndexedSeq[Set[B]]): MDDRelation = {
+    val s = f.map(_.asInstanceOf[Set[Int]])
+    updated(mdd.filterTrie(s.toArray, modified), reduced = false)
+  }
+
+  override def equals(r: Any): Boolean = {
+    r match {
+      case r: MDDRelation => mdd eq r.mdd
+      case _ => false
+    }
+  }
+
+  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), reduced = false)
+
+  // def +(t: Seq[Int]) =  updated(mdd + t, false)
 
   private def updated(mdd: MDD, reduced: Boolean) = {
     if (mdd eq this.mdd) {
@@ -60,19 +74,8 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
     }
   }
 
-  override def equals(r: Any): Boolean = {
-    r match {
-      case r: MDDRelation => mdd eq r.mdd
-      case _ => false
-    }
-  }
-
-  // def +(t: Seq[Int]) =  updated(mdd + t, false)
-
-  def project(c: Seq[Int]): MDDRelation = updated(mdd.project(c.toSet), reduced = false)
-
   def reduce(): MDDRelation = if (reduced) this else {
-      updated(mdd.reduce(), reduced = true)
+    updated(mdd.reduce(), reduced = true)
   }
 
   def merge(l: List[Int]): MDDRelation = updated(mdd.merge(l), reduced = false)
