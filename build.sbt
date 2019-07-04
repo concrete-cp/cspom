@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "com.github.concrete-cp"
 
-version := "3.0"
+version := "3.1"
 
 scalaVersion := "2.13.0"
 
@@ -10,7 +10,7 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 
 libraryDependencies ++= Seq(
   "com.github.concrete-cp" %% "bitvectors" % "3.0",
-  "com.github.concrete-cp" %% "mdd" % "2.0",
+  "com.github.concrete-cp" %% "mdd" % "2.1",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.apache.commons" % "commons-compress" % "1.18",
   "ch.qos.logback" % "logback-classic" % "1.2.3",

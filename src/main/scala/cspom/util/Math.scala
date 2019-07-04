@@ -5,6 +5,14 @@ import java.math.RoundingMode
 object Math {
 
 
+  def toIntExact(bi: BigInt): Int = {
+    if (!bi.isValidInt) {
+      throw new ArithmeticException("integer overflow")
+    } else {
+      bi.intValue
+    }
+  }
+
   def checkedPow(a: Int, b: Int): Int = {
     val r = BigInt(a).pow(b)
     if (r.isValidInt) {

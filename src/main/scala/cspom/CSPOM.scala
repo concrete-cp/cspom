@@ -125,6 +125,10 @@ class CSPOM extends LazyLogging {
     ctrV.get(v).toSeq.flatten
   }
 
+  def unsafeConstraints(v: CSPOMExpression[_]): Iterator[CSPOMConstraint[_]] = {
+    ctrV.get(v).iterator.flatten
+  }
+
   def deepConstraints(v: CSPOMExpression[_]): Iterable[CSPOMConstraint[_]] = {
     val buf = new ArrayBuffer[CSPOMConstraint[_]]()
 

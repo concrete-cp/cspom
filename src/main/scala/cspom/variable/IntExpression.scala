@@ -18,10 +18,10 @@ object IntExpression extends SimpleExpression.Typed[Int] {
 
   def span(e: SimpleExpression[_]): Interval[Infinitable] = e match {
 
-    case f: FreeVariable => IntInterval.all
+    case _: FreeVariable => IntInterval.all
     case i: IntVariable => i.domain.span
     case CSPOMConstant(i: Int) => IntInterval.singleton(i)
-    case b: BoolVariable => IntInterval(0, 1)
+    case BoolExpression(b) => BoolExpression.span(b)
     case _ => throw new IllegalArgumentException(s"Cannot span $e")
   }
 

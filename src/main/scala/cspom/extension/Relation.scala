@@ -85,6 +85,10 @@ class MDDRelation(val mdd: MDD, val reduced: Boolean = false) extends Relation[I
   def space: Int = mdd.edges()
 
   def lambda: BigInt = mdd.lambda()
+
+  override def isEmpty: Boolean = mdd.isEmpty
+
+  override def size: Int = throw new UnsupportedOperationException("Size of MDD relation is not computable")
 }
 
 
