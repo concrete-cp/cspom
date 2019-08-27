@@ -150,7 +150,7 @@ class ACCSETest extends FlatSpec with Matchers with TryValues {
     }
 
     val compiled = CSPOMCompiler.compile(problem, Seq(SumSE)).get
-    println(compiled)
+    // println(compiled)
   }
 
   it should "scale more" in {
