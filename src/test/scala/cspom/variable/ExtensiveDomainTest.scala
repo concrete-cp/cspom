@@ -19,14 +19,14 @@ final class ExtensiveDomainTest extends FlatSpec with Matchers with ScalaCheckPr
     intDomain should contain(-2147483648)
     intDomain should have size 2
 
-    d.toSet shouldBe intDomain
+    d.map(BigInt(_)).toSet shouldBe intDomain
 
-    forAll { d: Seq[Int] =>
+    forAll { d: Seq[BigInt] =>
 
       whenever(d.nonEmpty) {
 
         val intDomain = new ContiguousIntRangeSet(
-          RangeSet(d.map(IntInterval.singleton(_))))
+          RangeSet(d.map(IntInterval.singleton)))
 
         d.toSet shouldBe intDomain
 

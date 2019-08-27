@@ -7,7 +7,7 @@ object Math {
 
   def toIntExact(bi: BigInt): Int = {
     if (!bi.isValidInt) {
-      throw new ArithmeticException("integer overflow")
+      throw new ArithmeticException(s"integer overflow: $bi")
     } else {
       bi.intValue
     }
@@ -72,6 +72,12 @@ object Math {
     }
   }
 
+  def divide(p: BigInt, q: BigInt, mode: RoundingMode): BigInt = {
+    val pDec = BigDecimal(p).underlying
+    val qDec = BigDecimal(q).underlying
+    pDec.divide(qDec, 0, mode).toBigIntegerExact
+  }
+
   def sqrt(i: BigInt): BigInt = {
     if (i == 0) 0
     else if (i > 0) {
@@ -92,9 +98,13 @@ object Math {
 
   def even(a: Int): Boolean = (a & 0x1) == 0
 
-  def absExact(a: Long): Long = {
-    if (a == Long.MinValue) throw new ArithmeticException(s"abs(${Long.MinValue}) overflow")
-    math.abs(a)
+  def gcd(s: Seq[Long]): Long = s.reduce(gcd)
+
+  def lcm(s: Seq[Long]): Long = s.reduce(lcm)
+
+  def lcm(ia: Long, ib: Long): Long = {
+    val gcd = this.gcd(ia, ib)
+    java.lang.Math.multiplyExact(ia / gcd, ib)
   }
 
   def gcd(ia: Long, ib: Long): Long = {
@@ -130,13 +140,42 @@ object Math {
 
   }
 
-  def gcd(s: Seq[Long]): Long = s.reduce(gcd)
+  def absExact(a: Long): Long = {
+    if (a == Long.MinValue) throw new ArithmeticException(s"abs(${Long.MinValue}) overflow")
+    math.abs(a)
+  }
 
-  def lcm(s: Seq[Long]): Long = s.reduce(lcm)
+  case class Rational(numerator: Long, denominator: Long) extends Ordered[Rational] {
 
-  def lcm(ia: Long, ib: Long): Long = {
-    val gcd = this.gcd(ia, ib)
-    java.lang.Math.multiplyExact(ia / gcd, ib)
+    assert(denominator > 0)
+
+    import java.lang.Math.{addExact, multiplyExact}
+
+    def -(r: Rational): Rational = this + -r
+
+    def +(r: Rational): Rational = {
+      val num = addExact(multiplyExact(numerator, r.denominator), multiplyExact(r.numerator, denominator))
+      val dem = multiplyExact(denominator, r.denominator)
+      Rational(num, dem)
+    }
+
+    def unary_-(): Rational = new Rational(-numerator, denominator)
+
+    def /(r: Rational): Rational = this * r.inverse
+
+    def *(r: Rational) = Rational(multiplyExact(numerator, r.numerator), multiplyExact(denominator, r.denominator))
+
+    def inverse = Rational(denominator, numerator)
+
+    def toDouble: Double = numerator.toDouble / denominator
+
+    def abs: Rational = new Rational(absExact(numerator), denominator)
+
+    override def toString: String = if (denominator == 1) numerator.toString else s"$numerator/$denominator"
+
+    override def compare(that: Rational): Int = {
+      multiplyExact(numerator, that.denominator).compare(multiplyExact(that.numerator, denominator))
+    }
   }
 
   object Rational {
@@ -153,40 +192,6 @@ object Math {
           new Rational(num / gcd, den / gcd)
         }
       }
-    }
-  }
-
-  case class Rational(numerator: Long, denominator: Long) extends Ordered[Rational] {
-
-    assert(denominator > 0)
-
-    import java.lang.Math.multiplyExact
-    import java.lang.Math.addExact
-
-    def *(r: Rational) = Rational(multiplyExact(numerator, r.numerator), multiplyExact(denominator, r.denominator))
-
-    def inverse = Rational(denominator, numerator)
-
-    def +(r: Rational): Rational = {
-      val num = addExact(multiplyExact(numerator, r.denominator), multiplyExact(r.numerator, denominator))
-      val dem = multiplyExact(denominator, r.denominator)
-      Rational(num, dem)
-    }
-
-    def -(r: Rational): Rational = this + -r
-
-    def unary_-(): Rational = new Rational(-numerator, denominator)
-
-    def /(r: Rational): Rational = this * r.inverse
-
-    def toDouble: Double = numerator.toDouble / denominator
-
-    def abs: Rational = new Rational(absExact(numerator), denominator)
-
-    override def toString: String = if (denominator == 1) numerator.toString else s"$numerator/$denominator"
-
-    override def compare(that: Rational): Int = {
-      multiplyExact(numerator, that.denominator).compare(multiplyExact(that.numerator, denominator))
     }
   }
 

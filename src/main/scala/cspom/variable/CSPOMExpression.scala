@@ -4,6 +4,7 @@ package variable
 import com.typesafe.scalalogging.LazyLogging
 import cspom.util.ContiguousIntRangeSet
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.runtime.universe
@@ -93,7 +94,7 @@ sealed trait SimpleExpression[+T] extends CSPOMExpression[T] {
 
 object SimpleExpression {
   def iterable[A](e: SimpleExpression[A]): Iterable[A] = e match {
-    case v: IntVariable => new ContiguousIntRangeSet(v.domain)
+    case v: IntVariable => new ContiguousIntRangeSet(v.domain).toSeq.map(cspom.util.Math.toIntExact)
     case _: BoolVariable => Iterable(false, true)
     case CSPOMConstant(c) => Iterable[A](c)
     case _: CSPOMVariable[A] => throw new IllegalArgumentException(s"Cannot iterate over $e")
@@ -177,13 +178,6 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
 
   override def hashCode: Int = 31 * bool2int(value).hashCode
 
-  private def bool2int(b: Any): Any = b match {
-    case true => 1
-    case false => 0
-    case e => e
-
-  }
-
   def isFalse: Boolean = value == false || value == 0
 
   def fullyDefined = true
@@ -203,6 +197,13 @@ class CSPOMConstant[+T: TypeTag](val value: T) extends SimpleExpression[T] {
   def intValue: Int = bool2int(value) match {
     case i: Int => i
     case _ => throw new ClassCastException(s"Cannot convert $this to int")
+  }
+
+  private def bool2int(b: Any): Any = b match {
+    case true => 1
+    case false => 0
+    case e => e
+
   }
 }
 
@@ -242,7 +243,7 @@ object CSPOMSeq {
   def collectAll[A, B](s: Seq[A])(f: PartialFunction[A, B]): Option[Seq[B]] = {
     val r = new ArrayBuffer[B](s.length)
     val it = s.iterator
-    while(it.hasNext) {
+    while (it.hasNext) {
       val h = it.next()
       if (f.isDefinedAt(h)) {
         r += f(h)

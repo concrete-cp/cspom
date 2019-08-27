@@ -11,14 +11,15 @@ final class IntVariable(val domain: RangeSet[Infinitable])
 
   if (domain.isEmpty) throw new UNSATException("A variable with empty domain was created")
 
-  def isConvex = domain.isConvex
+  def isConvex: Boolean = domain.isConvex
 
   if (asSortedSet.singletonMatch.isDefined) {
     logger.info(s"$domain: a variable domain should be of size 2 or more, created in ${Thread.currentThread().getStackTrace.toSeq}")
   }
 
-  override def toString = domain.toString
+  override def toString: String = domain.toString
 
+  @scala.annotation.tailrec
   def contains[S >: Int](that: S): Boolean = that match {
     case true => contains(1)
     case false => contains(0)
@@ -29,6 +30,7 @@ final class IntVariable(val domain: RangeSet[Infinitable])
 
   def isEmpty = false
 
+  @scala.annotation.tailrec
   def intersected(that: SimpleExpression[_ >: Int]): SimpleExpression[Int] =
     that match {
       case k@CSPOMConstant(v: Int) if contains(v) => k.asInstanceOf[CSPOMConstant[Int]]
@@ -36,7 +38,7 @@ final class IntVariable(val domain: RangeSet[Infinitable])
       //      if domain.contains(Finite(c)) =>
       //        const.asInstanceOf[CSPOMConstant[Int]]
       //      //CSPOMConstant(c, Map("intersection" -> ((this, c))))
-      case v: IntVariable => {
+      case v: IntVariable =>
         val d = domain & v.domain
         if (d.isEmpty) {
           EmptyVariable
@@ -46,15 +48,13 @@ final class IntVariable(val domain: RangeSet[Infinitable])
           v
         } else {
           new ContiguousIntRangeSet(d).singletonMatch match {
-            case Some(s) => CSPOMConstant(s) //, Map("intersection" -> ((this, v))))
+            case Some(s) => CSPOMConstant(Math.toIntExact(s)) //, Map("intersection" -> ((this, v))))
             case None => new IntVariable(d) //, Map("intersection" -> ((this, v))))
           }
         }
-      }
+
       case _: FreeVariable => this //new IntVariable(domain, Map("intersection" -> ((this, v))))
-      case _: BoolVariable => {
-        IntVariable(0, 1) intersected this
-      }
+      case _: BoolVariable => IntVariable(0, 1) intersected this
       case EmptyVariable => EmptyVariable
       case t =>
         throw new IllegalArgumentException("Cannot intersect " + this + " with " + t)

@@ -2,12 +2,6 @@ package cspom.util
 
 object Interval {
   def unapply[T](itv: Interval[T]): Option[(T, T)] = Some((itv.lb, itv.ub))
-
-  //  def apply[T](lb: T, ub: T): Interval[T] = (lb, ub) match {
-  //    case (l: Int, u: Int)                 => IntInterval(l, u).asInstanceOf[Interval[T]]
-  //    case (l: Infinitable, u: Infinitable) => IntInterval(l, u).asInstanceOf[Interval[T]]
-  //  }
-
 }
 
 abstract class Interval[T: Ordering] {

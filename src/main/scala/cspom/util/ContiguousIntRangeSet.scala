@@ -2,50 +2,48 @@ package cspom.util
 
 import scala.collection.immutable.SortedSet
 
-final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSet[Int] {
+final class ContiguousIntRangeSet(val r: RangeSet[Infinitable]) extends SortedSet[BigInt] {
 
-  def ordering: Ordering[Int] = Ordering.Int
+  def ordering: Ordering[BigInt] = Ordering.BigInt
 
-  def allValues(i: Interval[Infinitable]): Iterable[Int] = i.asInstanceOf[IntInterval]
+  def allValues(i: Interval[Infinitable]): Iterable[BigInt] = i.asInstanceOf[IntInterval]
 
-  def iterator: Iterator[Int] = r.contents.iterator.flatMap(allValues)
-
-  override def foreach[U](f: Int => U): Unit = {
-    for (rs <- r.contents) {
-      rs.asInstanceOf[IntInterval].foreach(f)
-    }
-  }
+  def iterator: Iterator[BigInt] = r.contents.iterator.flatMap(allValues)
 
   override def isEmpty: Boolean = r.isEmpty
 
-  def excl(elem: Int): SortedSet[Int] =
+  def excl(elem: BigInt): SortedSet[BigInt] =
     new ContiguousIntRangeSet(r -- IntInterval.singleton(elem))
 
-  def incl(elem: Int): SortedSet[Int] =
+  def incl(elem: BigInt): SortedSet[BigInt] =
     new ContiguousIntRangeSet(r ++ IntInterval.singleton(elem))
 
   def contains(elem: Infinitable): Boolean = r.intersects(IntInterval.singleton(elem))
 
-  def contains(elem: Int): Boolean = contains(Finite(elem))
+  def contains(elem: BigInt): Boolean = contains(Finite(elem))
 
-  def iteratorFrom(start: Int): Iterator[Int] =
+  def contains(elem: Int): Boolean = contains(BigInt(elem))
+
+  def iteratorFrom(start: BigInt): Iterator[BigInt] =
     (r & IntInterval.atLeast(start)).contents.iterator.flatMap(allValues)
 
-  def rangeImpl(from: Option[Int], until: Option[Int]): SortedSet[Int] = {
+  def rangeImpl(from: Option[BigInt], until: Option[BigInt]): SortedSet[BigInt] = {
     val i = from.map(IntInterval.atLeast).getOrElse(IntInterval.all) &
       until.map(IntInterval.atMost).getOrElse(IntInterval.all)
 
     new ContiguousIntRangeSet(r & i)
   }
 
-  override def last: Int = r.upperBound match {
+  override def last: BigInt = r.upperBound match {
     case Finite(u) => u
     case _         => throw new IllegalStateException(s"$r is not finite")
   }
 
-  override def size: Int = r.contents.iterator.map(allValues(_).size).sum
+  def totalSize: Infinitable = r.contents.view.map(_.itvSize).foldLeft(Finite(0): Infinitable)(_ + _)
 
-  def singletonMatch: Option[Int] = {
+  override def size: Int = Math.toIntExact(totalSize.finite)
+
+  def singletonMatch: Option[BigInt] = {
     if (r.isEmpty) {
       None
     } else if (r.fullyDefined) {

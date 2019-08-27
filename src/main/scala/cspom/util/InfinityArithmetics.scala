@@ -1,27 +1,29 @@
 package cspom.util
 
 import java.math.RoundingMode
-import java.lang
 
 object Infinitable {
 
   implicit object InfinitableOrdering extends Ordering[Infinitable] {
     def compare(i: Infinitable, j: Infinitable): Int = {
       i match {
-        case MinInf => -1
-        case PlusInf => 1
+        case MinInf =>
+          if (j == MinInf) 0 else -1
+        case PlusInf =>
+          if (j == PlusInf) 0 else 1
         case Finite(i) => -Infinitable.compare(j, i)
       }
     }
   }
 
-  def compare(i: Infinitable, j: Int): Int = {
+  def compare(i: Infinitable, j: BigInt): Int = {
     i match {
       case MinInf => -1
       case PlusInf => 1
-      case Finite(i) => Ordering.Int.compare(i, j)
+      case Finite(i) => Ordering.BigInt.compare(i, j)
     }
   }
+
 }
 
 sealed trait Infinitable extends Any {
@@ -54,6 +56,8 @@ sealed trait Infinitable extends Any {
   def min(v: Infinitable): Infinitable = Infinitable.InfinitableOrdering.min(this, v)
 
   def pow(v: Infinitable): Infinitable
+
+  def finite: BigInt
 }
 
 case object MinInf extends Infinitable {
@@ -64,9 +68,9 @@ case object MinInf extends Infinitable {
     }
   }
 
-  def +(v: Infinitable) = MinInf
+  def +(v: Infinitable): MinInf.type = MinInf
 
-  def -(v: Infinitable) = {
+  def -(v: Infinitable): MinInf.type = {
     if (v == MinInf) {
       throw new ArithmeticException("-Infinity - -Infinity is undefined")
     } else {
@@ -74,9 +78,9 @@ case object MinInf extends Infinitable {
     }
   }
 
-  def div(v: Infinitable, rm: RoundingMode) = this * v
+  def div(v: Infinitable, rm: RoundingMode): Infinitable = this * v
 
-  def *(v: Infinitable) = {
+  def *(v: Infinitable): Infinitable = {
     val comp = Infinitable.InfinitableOrdering.compare(v, Finite(0))
     if (comp > 0) {
       MinInf
@@ -89,7 +93,7 @@ case object MinInf extends Infinitable {
 
   def divisible(v: Infinitable) = false
 
-  def unary_-() = PlusInf
+  def unary_-(): PlusInf.type = PlusInf
 
   def <=(i: BigInt) = true
 
@@ -101,13 +105,15 @@ case object MinInf extends Infinitable {
 
   override def toString = "-∞"
 
-  def abs = PlusInf
+  def abs: PlusInf.type = PlusInf
+
+  def finite = throw new ArithmeticException(s"${this} is not finite")
 }
 
 case object PlusInf extends Infinitable {
-  def +(v: Infinitable) = PlusInf
+  def +(v: Infinitable): PlusInf.type = PlusInf
 
-  def -(v: Infinitable) = {
+  def -(v: Infinitable): PlusInf.type = {
     if (v == PlusInf) {
       throw new ArithmeticException("Infinity - Infinity is undefined")
     } else {
@@ -115,11 +121,11 @@ case object PlusInf extends Infinitable {
     }
   }
 
-  def *(v: Infinitable) = -(MinInf * v)
+  def *(v: Infinitable): Infinitable = -(MinInf * v)
 
-  def div(v: Infinitable, rm: RoundingMode) = -MinInf.div(v, rm)
+  def div(v: Infinitable, rm: RoundingMode): Infinitable = -MinInf.div(v, rm)
 
-  def unary_-() = MinInf
+  def unary_-(): MinInf.type = MinInf
 
   def divisible(v: Infinitable) = false
 
@@ -133,61 +139,64 @@ case object PlusInf extends Infinitable {
 
   override def toString = "+∞"
 
-  def abs = PlusInf
+  def abs: PlusInf.type = PlusInf
 
-  def pow(b: Infinitable) = {
+  def pow(b: Infinitable): PlusInf.type = {
     b match {
       case MinInf => throw new ArithmeticException(s"pow($this, $b) is undefined")
       case _ => PlusInf
     }
   }
+
+  def finite = throw new ArithmeticException(s"${this} is not finite")
 }
 
-case class Finite(i: Int) extends AnyVal with Infinitable {
-  def +(v: Infinitable) = v match {
-    case Finite(j) => Finite(lang.Math.addExact(i, j))
+case class Finite(i: BigInt) extends AnyVal with Infinitable {
+  def finite: BigInt = i
+
+  def +(v: Infinitable): Infinitable = v match {
+    case Finite(j) => Finite(i + j)
     case u => u + this
   }
 
-  def -(v: Infinitable) = v match {
-    case Finite(j) => Finite(lang.Math.subtractExact(i, j))
-    case u => -u + this
-  }
+  def -(v: Infinitable): Infinitable = -v + this
 
-  def *(v: Infinitable) = v match {
-    case Finite(j) => Finite(lang.Math.multiplyExact(i, j))
+  def *(v: Infinitable): Infinitable = v match {
+    case Finite(j) => Finite(i * j)
     case u => u * this
   }
 
-  def div(v: Infinitable, rm: RoundingMode) = v match {
+  def div(v: Infinitable, rm: RoundingMode): Infinitable = v match {
     case Finite(j) => Finite(Math.divide(i, j, rm))
-    case u => Finite(0)
+    case _ => Finite(0)
   }
 
-  def divisible(v: Infinitable) = v match {
+  def divisible(v: Infinitable): Boolean = v match {
     case Finite(j) => i % j == 0
     case _ => false
   }
 
-  def unary_-() = Finite(-i)
+  override def unary_-() = Finite(-i)
 
-  def <=(j: BigInt) = i <= j
+  def <=(j: BigInt): Boolean = i <= j
 
-  def <(j: BigInt) = i < j
+  def <(j: BigInt): Boolean = i < j
 
-  def >=(j: BigInt) = i >= j
+  def >=(j: BigInt): Boolean = i >= j
 
-  def >(j: BigInt) = i > j
+  def >(j: BigInt): Boolean = i > j
 
-  override def toString = i.toString
+  override def toString: String = i.toString
 
-  def abs = Finite(math.abs(i))
+  def abs: Infinitable = Finite(i.abs)
 
-  def pow(b: Infinitable) = {
+  def pow(b: Infinitable): Infinitable = {
     b match {
-      case Finite(b) => Finite(Math.checkedPow(i, b))
+      case Finite(b) if b.isValidInt => Finite(i.pow(b.intValue))
       case PlusInf => PlusInf
       case MinInf => Finite(0)
+      case _ => throw new ArithmeticException(s"Cannot compute $this^$b")
     }
   }
+
 }

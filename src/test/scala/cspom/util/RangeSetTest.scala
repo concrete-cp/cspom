@@ -9,7 +9,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class RangeSetTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
 
-  def asSet(r: RangeSet[Infinitable]): SortedSet[Int] =
+  def asSet(r: RangeSet[Infinitable]): SortedSet[BigInt] =
     new ContiguousIntRangeSet(r)
 
   "RangeSet" should "be conform" in {
@@ -179,10 +179,10 @@ class RangeSetTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks 
   it should "contain given values" in {
     val r = RangeSet(Seq(IntInterval.singleton(0), IntInterval.singleton(-1)))
     val s = new ContiguousIntRangeSet(r)
-    s should contain(0)
-    s should contain(-1)
+    assert(s.contains(0))
+    assert(s.contains(-1))
 
-    Set(0, -1) shouldBe s
+    s shouldBe Set(0, -1)
     s.iterator.toSeq shouldBe Seq(-1, 0)
 
   }

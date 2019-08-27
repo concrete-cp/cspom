@@ -2,22 +2,25 @@ package cspom.util
 
 import com.typesafe.scalalogging.LazyLogging
 import cspom.util.Infinitable.InfinitableOrdering
-import java.lang
+
+import scala.collection.immutable.NumericRange
 
 object IntInterval {
   val all: IntInterval = IntInterval(MinInf, PlusInf)
 
-  def atLeast(endpoint: Int) = IntInterval(Finite(endpoint), PlusInf)
+  def atLeast(endpoint: BigInt) = IntInterval(Finite(endpoint), PlusInf)
 
-  def atMost(endpoint: Int) = IntInterval(MinInf, Finite(endpoint))
+  def atMost(endpoint: BigInt) = IntInterval(MinInf, Finite(endpoint))
 
-  def apply(lower: Int, upper: Int): IntInterval =
+  def apply(lower: BigInt, upper: BigInt): IntInterval =
     IntInterval(Finite(lower), Finite(upper))
 
   def apply(lower: Infinitable, upper: Infinitable): IntInterval =
     new IntInterval(lower, upper)
 
-  def singleton(v: Int): IntInterval = {
+  def singleton(v: Int): IntInterval = singleton(BigInt(v))
+
+  def singleton(v: BigInt): IntInterval = {
     singleton(Finite(v))
   }
 
@@ -26,21 +29,26 @@ object IntInterval {
 }
 
 object FiniteIntInterval {
-  def unapply(itv: IntInterval): Option[(Int, Int)] = Interval.unapply(itv).collect {
+  def unapply(itv: IntInterval): Option[(BigInt, BigInt)] = Interval.unapply(itv).collect {
     case (Finite(l), Finite(u)) => (l, u)
   }
 }
 
 final class IntInterval(
                          val lb: Infinitable, val ub: Infinitable)
-  extends Interval[Infinitable] with Iterable[Int]
+
+
+  extends Interval[Infinitable] with Iterable[BigInt]
     with LazyLogging {
 
-  def iterator: Iterator[Int] = asRange.iterator
+  require((lb != MinInf || ub != MinInf) && (lb != PlusInf || ub != PlusInf), s"Interval $this is not allowed")
 
-  def asRange: Range = (lb, ub) match {
+
+  def iterator: Iterator[BigInt] = asRange.iterator
+
+  def asRange: NumericRange[BigInt] = (lb, ub) match {
     case (Finite(l), Finite(u)) => l to u
-    case _ => throw new ArithmeticException(s"Cannot create infinite range $this")
+    case _ => throw new ArithmeticException(s"Cannot create infinite range $this ")
   }
 
   def itvSize: Infinitable = {
@@ -66,8 +74,9 @@ final class IntInterval(
   }
 
   def lessThan(siub: Infinitable): IntInterval = {
-    if (siub <= Int.MinValue) {
-      IntInterval(lb, MinInf)
+    if (siub == MinInf) {
+      // Force empty interval
+      IntInterval(PlusInf, MinInf)
     } else {
       val rsiub = siub - Finite(1)
       val upperCmp = InfinitableOrdering.compare(ub, rsiub)
@@ -79,9 +88,11 @@ final class IntInterval(
     }
   }
 
+
   def moreThan(silb: Infinitable): IntInterval = {
-    if (Infinitable.compare(silb, Int.MaxValue) >= 0) {
-      IntInterval(PlusInf, ub)
+    if (silb == PlusInf) {
+      // Force empty interval
+      IntInterval(PlusInf, MinInf)
     } else {
       val rsilb = silb + Finite(1)
       val lowerCmp = InfinitableOrdering.compare(lb, rsilb)
@@ -111,56 +122,42 @@ final class IntInterval(
   }
 
   override def isEmpty: Boolean = {
-    lb == PlusInf ||
-      ub == MinInf ||
-      InfinitableOrdering.compare(lb, ub) > 0
+    InfinitableOrdering.compare(lb, ub) > 0
   }
 
-  override def size: Int = lang.Math.incrementExact(lang.Math.subtractExact(finiteUb, finiteLb))
-
-  def finiteLb: Int = lb match {
-    case Finite(l) => l
-    case _ => throw new AssertionError("lb is not finite")
-  }
-
-  def finiteUb: Int = ub match {
-    case Finite(u) => u
-    case _ => throw new AssertionError("ub is not finite")
-  }
+  override def size: Int = Math.toIntExact(itvSize.finite)
 
   def isBefore(h: Interval[Infinitable]): Boolean = {
     h.lb match {
       case MinInf => false
       case Finite(i) => isBefore(i)
-      case PlusInf => throw new IllegalArgumentException
+      case PlusInf => throw new ArithmeticException(s"Interval $h lb is incorrect")
     }
   }
 
-  def isBefore(elem: Int): Boolean = {
-    elem > Int.MinValue && (
-      ub match {
-        case PlusInf => false
-        case Finite(i) => i < elem - 1
-        case MinInf => throw new IllegalArgumentException
-      })
+  def isBefore(elem: BigInt): Boolean = {
+    ub match {
+      case PlusInf => false
+      case Finite(i) => i < elem - 1
+      case MinInf => throw new ArithmeticException(s"Interval $this ub is incorrect")
+    }
   }
 
   def isAfter(h: Interval[Infinitable]): Boolean = {
     h.ub match {
       case PlusInf => false
       case Finite(i) => isAfter(i)
-      case MinInf => throw new IllegalArgumentException
+      case MinInf => throw new ArithmeticException(s"Interval $h ub is incorrect")
     }
   }
 
-  def isAfter(elem: Int): Boolean = {
-    elem < Int.MaxValue && (
-      lb match {
-        case MinInf => false
-        case Finite(i) =>
-          i > elem + 1
-        case PlusInf => throw new IllegalArgumentException
-      })
+  def isAfter(elem: BigInt): Boolean = {
+    lb match {
+      case MinInf => false
+      case Finite(i) =>
+        i > elem + 1
+      case PlusInf => throw new ArithmeticException(s"Interval $this lb is incorrect")
+    }
   }
 
   //  override def equals(o: Any) = {

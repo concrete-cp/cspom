@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "com.github.concrete-cp"
 
-version := "3.1"
+version := "3.2-SNAPSHOT"
 
 scalaVersion := "2.13.0"
 
@@ -25,12 +25,12 @@ scalacOptions ++= Seq(
   "-deprecation",
   //	"-unchecked"
   "-Xlint",
-  "-target:jvm-1.8",
+//  "-target:jvm-1.8",
   //	"-feature"
   //	"-Yinline-warnings"
 )
 
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+// javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 //wartremoverWarnings ++= Warts.all
 
