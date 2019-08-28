@@ -2,7 +2,7 @@ name := "cspom"
 
 organization := "com.github.concrete-cp"
 
-version := "3.2-SNAPSHOT"
+version := "3.1.1"
 
 scalaVersion := "2.13.0"
 
@@ -33,7 +33,6 @@ scalacOptions ++= Seq(
 // javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 //wartremoverWarnings ++= Warts.all
-
 
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
