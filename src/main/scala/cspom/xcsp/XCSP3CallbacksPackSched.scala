@@ -101,19 +101,19 @@ trait XCSP3CallbacksPackSched extends XCSP3CallbacksVars {
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
-    circuit(list, startIndex, IntVariable(2 to list.length))
+    circuit(list, startIndex)
   }
 
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = {
-    circuit(list, startIndex, CSPOMConstant(size))
-  }
+//  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = {
+//    circuit(list, startIndex, CSPOMConstant(size))
+//  }
+//
+//  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = {
+//    circuit(list, startIndex, toCspom(size))
+//  }
 
-  override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = {
-    circuit(list, startIndex, toCspom(size))
-  }
-
-  private def circuit(list: Array[XVarInteger], startIndex: Int, size: CSPOMExpression[Int]) = {
-    cspom.ctr("circuit")(cspomSeq(list), CSPOMConstant(startIndex), size)
+  private def circuit(list: Array[XVarInteger], startIndex: Int) = {
+    cspom.ctr("circuit")(cspomSeq(list), CSPOMConstant(startIndex))
   }
 
 }
