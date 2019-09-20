@@ -2,9 +2,9 @@ name := "cspom"
 
 organization := "com.github.concrete-cp"
 
-version := "3.1.2"
+version := "3.2-SNAPSHOT"
 
-scalaVersion := "2.13.0"
+scalaVersion := "2.13.1"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
@@ -34,14 +34,6 @@ scalacOptions ++= Seq(
 
 //wartremoverWarnings ++= Warts.all
 
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
-
 publishArtifact in Test := false
 
 // testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", s"${(target in Test).value / "test-reports"}")
@@ -68,3 +60,5 @@ pomExtra in Global := {
       </developer>
     </developers>
 }
+
+publishTo := sonatypePublishToBundle.value
