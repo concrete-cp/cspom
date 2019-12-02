@@ -1,7 +1,5 @@
 package cspom.compiler
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import org.scalatest.OptionValues
 
 import cspom.CSPOM
@@ -13,8 +11,10 @@ import cspom.variable.CSPOMExpression
 import cspom.variable.CSPOMSeq
 import cspom.variable.IntVariable
 import cspom.variable.SimpleExpression
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class MergeEqTest extends FlatSpec with Matchers with OptionValues {
+class MergeEqTest extends AnyFlatSpec with Matchers with OptionValues {
   "MergeEq" should "simplify booleans" in {
     val cspom = CSPOM { implicit problem =>
       val vars = Seq.tabulate(4)(i => new BoolVariable as s"b$i")
