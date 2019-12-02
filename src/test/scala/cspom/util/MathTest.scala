@@ -1,10 +1,11 @@
 package cspom.util
 
 import cspom.util.Math.Rational
-import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class MathTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
+class MathTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
   "GCD" should "compute properly" in {
     forAll { (a: Int, b: Int) =>
       whenever(a > Int.MinValue && b > Int.MinValue) {

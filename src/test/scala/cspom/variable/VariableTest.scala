@@ -3,10 +3,11 @@ package cspom.variable
 import cspom.CSPOM._
 import cspom.util.{IntInterval, Intervals, RangeSet}
 import cspom.{CSPOM, CSPOMConstraint}
-import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class VariableTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
+class VariableTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
 
   "CSPOM" should "register variables" in {
     var v: IntVariable = null
