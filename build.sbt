@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-compress" % "1.19",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.scalatest" %% "scalatest" % "3.0.8" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.14.3" % "test",
   "org.tukaani" % "xz" % "1.8",
   "com.lihaoyi" %% "fastparse" % "2.1.3"
 )
