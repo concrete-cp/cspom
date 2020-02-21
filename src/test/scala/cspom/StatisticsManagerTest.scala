@@ -1,10 +1,10 @@
 package cspom;
 
 import scala.util.Failure
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import org.scalatest.TryValues
 import scala.util.Try
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 object StatisticsManagerTest {
   @Statistic
@@ -17,7 +17,7 @@ object StatisticsManagerTest {
   val testDouble = 11.0
 }
 
-final class StatisticsManagerTest extends FlatSpec with Matchers with TryValues {
+final class StatisticsManagerTest extends AnyFlatSpec with Matchers with TryValues {
 
   "StatisticsManager" should "register objects" in {
     val stats = new StatisticsManager
