@@ -1,13 +1,13 @@
 package cspom.util
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import IntervalsArithmetic.Arithmetics
 import IntervalsArithmetic.RangeArithmetics
 import org.scalatest.concurrent.TimeLimits
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class IntervalsArithmeticTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks with TimeLimits {
+class IntervalsArithmeticTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks with TimeLimits {
   "Intervals" should "provide correct shrinking integer division" in {
     assert((IntInterval(1, 19) / 20).isEmpty)
     IntInterval(0, 19) / 20 shouldBe IntInterval(0, 0)

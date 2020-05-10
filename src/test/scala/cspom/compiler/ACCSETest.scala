@@ -3,11 +3,13 @@ package cspom.compiler
 import cspom.CSPOM.ctr
 import cspom.variable._
 import cspom.{CSPOM, CSPOMConstraint, UNSATException}
-import org.scalatest.{FlatSpec, Matchers, TryValues}
+import org.scalatest.TryValues
 
 import scala.reflect.runtime.universe._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ACCSETest extends FlatSpec with Matchers with TryValues {
+class ACCSETest extends AnyFlatSpec with Matchers with TryValues {
 
   def sum(variables: SimpleExpression[Int]*)(implicit problem: CSPOM): SimpleExpression[Int] = {
     sumProd(variables.map((1, _)): _*)

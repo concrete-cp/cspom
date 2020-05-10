@@ -3,9 +3,10 @@ package cspom.flatzinc
 import cspom.CSPOM
 import cspom.compiler.{CSPOMCompiler, StandardCompilers}
 import cspom.variable.CSPOMConstant
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class FlatZincTest extends FlatSpec with Matchers {
+class FlatZincTest extends AnyFlatSpec with Matchers {
 
   val url = classOf[FlatZincTest].getResource("1d_rubiks_cube.fzn.xz")
 
