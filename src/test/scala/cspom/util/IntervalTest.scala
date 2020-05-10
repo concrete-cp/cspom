@@ -1,11 +1,11 @@
 package cspom.util
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class IntervalTest extends FlatSpec with Matchers {
+class IntervalTest extends AnyFlatSpec with Matchers {
 
   "Intervals" should "compare correctly" in {
     assert(IntInterval(0, 5) isBefore IntInterval(7, 10))

@@ -1,10 +1,10 @@
 package cspom.dimacs;
 
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-final class ParserTest extends FlatSpec with Matchers {
+final class ParserTest extends AnyFlatSpec with Matchers {
 
   val FILENAME = "flat30-1.cnf";
 
