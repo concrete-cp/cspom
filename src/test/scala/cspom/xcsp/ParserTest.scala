@@ -2,9 +2,11 @@ package cspom.xcsp
 
 import cspom.extension.MDDRelation
 import cspom.{CSPOM, CSPOMConstraint}
-import org.scalatest.{FlatSpec, Inspectors, Matchers}
+import org.scalatest.Inspectors
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-final class ParserTest extends FlatSpec with Matchers with Inspectors {
+final class ParserTest extends AnyFlatSpec with Matchers with Inspectors {
 
 
   "XCSP parser" should "correctly parse XCSP3 MDD" in {
