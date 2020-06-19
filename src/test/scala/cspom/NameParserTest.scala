@@ -2,9 +2,10 @@ package cspom
 
 import cspom.variable.{CSPOMSeq, IntVariable}
 import fastparse.Parsed
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class NameParserTest extends FlatSpec with Matchers {
+class NameParserTest extends AnyFlatSpec with Matchers {
 
   "NameParser" should "parse array" in {
     val Parsed.Success((name, indices), _) = fastparse.parse("pdr[0]", NameParser(_))
