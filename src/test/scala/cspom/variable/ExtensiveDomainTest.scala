@@ -1,13 +1,13 @@
 package cspom.variable
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import cspom.util.ContiguousIntRangeSet
 import cspom.util.IntInterval
 import cspom.util.RangeSet
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-final class ExtensiveDomainTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
+final class ExtensiveDomainTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
 
   "Extensive domains" should "behave like sets" in {
     val d = List(0, 0, -2147483648)
