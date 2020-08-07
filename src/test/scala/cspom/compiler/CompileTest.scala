@@ -5,9 +5,11 @@ import cspom.CSPOM._
 import cspom.util.IntInterval
 import cspom.variable.{CSPOMSeq, IntVariable, SimpleExpression}
 import cspom.{CSPOM, CSPOMConstraint}
-import org.scalatest.{FlatSpec, Matchers, TryValues}
+import org.scalatest.TryValues
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-final class CompileTest extends FlatSpec with Matchers with TryValues {
+final class CompileTest extends AnyFlatSpec with Matchers with TryValues {
   //  "CSPOMCompiler" should "compile zebra" in {
   //    compileTest("zebra.xml.xz");
   //  }
