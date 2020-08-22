@@ -1,13 +1,13 @@
 package cspom.util
 
 import scala.collection.SortedSet
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
 import Intervals.smallIntervals
 import Intervals.validIntervals
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class RangeSetTest extends FlatSpec with Matchers with ScalaCheckPropertyChecks {
+class RangeSetTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
 
   def asSet(r: RangeSet[Infinitable]): SortedSet[BigInt] =
     new ContiguousIntRangeSet(r)
