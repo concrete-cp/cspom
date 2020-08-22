@@ -3,8 +3,6 @@ package cspom
 import cspom.variable.CSPOMVariable
 import cspom.variable.IntVariable
 import CSPOM._
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
 import org.scalatest.OptionValues
 import cspom.variable.CSPOMSeq
 import cspom.compiler.MergeEq
@@ -14,9 +12,11 @@ import cspom.variable.BoolExpression
 import cspom.variable.IntExpression
 import cspom.variable.CSPOMExpression
 import cspom.compiler.MergeSame
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class CSPOMTest extends FlatSpec with Matchers with OptionValues {
+class CSPOMTest extends AnyFlatSpec with Matchers with OptionValues {
 
   "CSPOM" should "accept variables" in {
     var vars: List[CSPOMVariable[Int]] = null

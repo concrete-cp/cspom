@@ -1,14 +1,14 @@
 package cspom
 import CSPOM._
 import cspom.variable.IntVariable
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
 import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * @author vion
  */
-class GMLTest extends FlatSpec with Matchers with LazyLogging {
+class GMLTest extends AnyFlatSpec with Matchers with LazyLogging {
 
   "GML" should "generate proper GML" in {
     val cspom = CSPOM { implicit problem =>
