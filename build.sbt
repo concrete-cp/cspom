@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.scalatest" %% "scalatest" % "3.0.8" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
-  "org.tukaani" % "xz" % "1.8",
+  "org.tukaani" % "xz" % "1.9",
   "com.lihaoyi" %% "fastparse" % "2.1.3"
 )
 
