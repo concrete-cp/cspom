@@ -4,7 +4,7 @@ organization := "com.github.concrete-cp"
 
 version := "3.2-SNAPSHOT"
 
-scalaVersion := "2.13.1"
+scalaVersion := "2.13.7"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
