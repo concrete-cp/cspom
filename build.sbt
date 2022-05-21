@@ -11,7 +11,7 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 libraryDependencies ++= Seq(
   "com.github.concrete-cp" %% "bitvectors" % "3.0",
   "com.github.concrete-cp" %% "mdd" % "2.1",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "org.apache.commons" % "commons-compress" % "1.19",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.scalatest" %% "scalatest" % "3.0.8" % "test",
