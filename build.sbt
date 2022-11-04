@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
   "com.github.concrete-cp" %% "bitvectors" % "3.0",
   "com.github.concrete-cp" %% "mdd" % "2.1",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "org.apache.commons" % "commons-compress" % "1.19",
+  "org.apache.commons" % "commons-compress" % "1.22",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.scalatest" %% "scalatest" % "3.0.8" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
